@@ -204,7 +204,7 @@ function setup() {
 
   const startOpen = window.screenController?.getState('terminal') === 'normal';
   syncToggleBtn(startOpen);
-  if (startOpen) requestAnimationFrame(() => _input?.focus());
+  if (startOpen && window.innerWidth > 768) requestAnimationFrame(() => _input?.focus());
 
   injectToggleBtn();
   setupResizeHandle(panel);
@@ -257,7 +257,7 @@ function setup() {
   });
 
   document.addEventListener('screen-opened', ({ detail }) => {
-    if (detail.id === 'terminal') { syncToggleBtn(true); requestAnimationFrame(() => _input?.focus()); }
+    if (detail.id === 'terminal') { syncToggleBtn(true); if (window.innerWidth > 768) requestAnimationFrame(() => _input?.focus()); }
   });
   document.addEventListener('screen-closed', ({ detail }) => {
     if (detail.id === 'terminal') syncToggleBtn(false);

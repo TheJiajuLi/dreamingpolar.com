@@ -129,6 +129,7 @@ function setupAiChatScreen() {
   async function doSend(text) {
     text = text.trim();
     if (!text) return;
+    inputEl.blur(); // dismiss iOS keyboard so viewport restores before messages scroll
     inputEl.value = '';
     sendBtn.disabled = true;
     sendBtn.textContent = '…';

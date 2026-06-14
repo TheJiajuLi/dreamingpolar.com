@@ -67,7 +67,8 @@
   #cds-max-btn,
   #cds-min-btn,
   #aic-max-btn,
-  #aic-min-btn { display: none !important; }
+  #aic-min-btn,
+  .coding-toolbar .dp-terminal-toolbar-btn { display: none !important; }
 
   /* ── Prevent iOS auto-zoom when focusing text inputs ─────── */
   /* iOS zooms in whenever a focused input has font-size < 16px.

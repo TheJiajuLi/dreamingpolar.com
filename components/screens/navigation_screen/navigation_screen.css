@@ -162,9 +162,9 @@
 
 /* ── Hamburger → X ────────────────────────────────────── */
 .menu-button .bar                    { background: #3a3d42; transition: transform 0.22s ease, opacity 0.15s ease; }
-.menu-button.active .bar:nth-child(1){ transform: translateY(6px) rotate(45deg); }
+.menu-button.active .bar:nth-child(1){ transform: translateY(10.5px) rotate(45deg); }
 .menu-button.active .bar:nth-child(2){ opacity: 0; transform: scaleX(0); }
-.menu-button.active .bar:nth-child(3){ transform: translateY(-6px) rotate(-45deg); }
+.menu-button.active .bar:nth-child(3){ transform: translateY(-10.5px) rotate(-45deg); }
 
 /* ── Mobile overlay ───────────────────────────────────── */
 @media (max-width: 768px) {
