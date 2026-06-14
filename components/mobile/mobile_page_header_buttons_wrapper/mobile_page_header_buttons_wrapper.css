@@ -25,6 +25,11 @@
   display: contents; /* cells are transparent on desktop */
 }
 
+/* Cache cell is mobile-only — must come after .mob-hdr-btn-cell to win the cascade */
+.mob-hdr-cache-cell {
+  display: none;
+}
+
 .mob-hdr-btn-label {
   display: none;     /* labels only appear inside the mobile panel */
 }
@@ -132,7 +137,8 @@
   .mob-hdr-btns-dropdown .theme-controller,
   .mob-hdr-btns-dropdown .lang-btn,
   .mob-hdr-btns-dropdown .font-switcher-btn,
-  .mob-hdr-btns-dropdown .mob-hdr-terminal-btn {
+  .mob-hdr-btns-dropdown .mob-hdr-terminal-btn,
+  .mob-hdr-btns-dropdown .mob-hdr-cache-btn {
     color: #a8c8e0;
     background: transparent;
     border: none;
@@ -141,6 +147,16 @@
     margin: 0;
     padding: 6px 10px;
     height: auto;
+  }
+
+  /* Cache button always red */
+  .mob-hdr-btns-dropdown .mob-hdr-cache-btn {
+    color: #f87171;
+    font-size: 1.05rem;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    font-family: inherit;
   }
 
   .mob-hdr-btns-dropdown .theme-controller:hover,
@@ -153,12 +169,89 @@
     color: #22d3ee;
   }
 
+  .mob-hdr-btns-dropdown .mob-hdr-cache-btn:hover,
+  .mob-hdr-btns-dropdown .mob-hdr-cache-btn.active {
+    background: rgba(248, 113, 113, 0.12);
+    color: #fca5a5;
+  }
+
   .mob-hdr-btns-dropdown .theme-controller:active,
   .mob-hdr-btns-dropdown .lang-btn:active,
   .mob-hdr-btns-dropdown .font-switcher-btn:active,
   .mob-hdr-btns-dropdown .mob-hdr-terminal-btn:active {
     background: rgba(34, 211, 238, 0.16);
     transform: scale(0.91);
+  }
+
+  .mob-hdr-btns-dropdown .mob-hdr-cache-btn:active {
+    background: rgba(248, 113, 113, 0.20);
+    transform: scale(0.91);
+  }
+
+  /* ── Confirmation shelf ──── */
+  /* Hidden by default; .visible makes it appear as a full-width row below cells */
+  .mob-hdr-cache-shelf {
+    display: none;
+    flex-basis: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 14px 4px;
+    margin-top: 8px;
+    border-top: 1px solid rgba(248, 113, 113, 0.20);
+  }
+
+  .mob-hdr-cache-shelf.visible {
+    display: flex;
+  }
+
+  .mob-hdr-cache-shelf-msg {
+    font-size: 0.7rem;
+    color: rgba(252, 165, 165, 0.85);
+    letter-spacing: 0.03em;
+    flex: 1;
+    text-align: left;
+  }
+
+  .mob-hdr-cache-yes,
+  .mob-hdr-cache-no {
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .mob-hdr-cache-yes {
+    background: rgba(248, 113, 113, 0.20);
+    color: #fca5a5;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+  }
+
+  .mob-hdr-cache-yes:active {
+    background: rgba(248, 113, 113, 0.35);
+    transform: scale(0.93);
+  }
+
+  .mob-hdr-cache-no {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(168, 200, 224, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .mob-hdr-cache-no:active {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(0.93);
+  }
+
+  /* Dropdown needs wrap for shelf row */
+  .mob-hdr-btns-dropdown {
+    flex-wrap: wrap;
   }
 
   /* Language sub-dropdown: dark to match the panel */

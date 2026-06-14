@@ -22,6 +22,11 @@ let _streamLineFn = null; // () => { update(text), finalize() }
 export function setConfirmFn(fn)    { _confirmFn    = fn; }
 export function setStreamLineFn(fn) { _streamLineFn = fn; }
 
+export async function askConfirm(question, print) {
+  if (!_confirmFn) return false;
+  return _confirmFn(question, print);
+}
+
 // ── Chat-mode state + conversation history ─────────────────────────────────────
 
 let _aiChatActive = false;

@@ -1,7 +1,8 @@
 // ── Dreaming Polar terminal command registry ───────────────
 // Handlers may be async. executeCommand awaits them so async commands work.
 
-import { runAiPrompt } from './terminal_ai.js';
+import { runAiPrompt, askConfirm } from './terminal_ai.js';
+import { getCacheEntries, clearAllCaches, exportCacheJson } from '../storage_controller/storage_controller.js';
 
 const _registry = new Map();
 
@@ -134,4 +135,56 @@ registerCommand('screens', (args, print) => {
     const state = sc.getState?.(id) ?? 'unknown';
     print(`  ${state === 'normal' ? '●' : '○'} ${id.padEnd(20)} ${state}`);
   }
+});
+
+// ── Cache command ──────────────────────────────────────────
+//  cache          → same as cache list
+//  cache list     → show all DP cache entries with key, store, and size
+//  cache export   → print full JSON to terminal + expose on window for copy
+//  cache reset    → y/n confirmation, then wipes all DP caches and reloads
+
+registerCommand('cache', async (args, print) => {
+  const sub = (args[0] ?? 'list').toLowerCase();
+
+  if (sub === 'list') {
+    const entries = getCacheEntries();
+    if (!entries.length) { print('No DP cache entries found.'); return; }
+    print(`DP cache  (${entries.length} entries):`);
+    print('');
+    for (const { key, store, bytes } of entries) {
+      const size = bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
+      const tag  = store === 'localStorage' ? '\x1b[2mls\x1b[0m' : '\x1b[2mss\x1b[0m';
+      print(`  ${tag}  \x1b[36m${key}\x1b[0m  \x1b[2m${size}\x1b[0m`);
+    }
+    print('');
+    print('\x1b[2mSubcommands: cache list · cache export · cache reset\x1b[0m');
+    return;
+  }
+
+  if (sub === 'export') {
+    const json = exportCacheJson();
+    print('DP cache export:');
+    print('');
+    for (const ln of json.split('\n')) print(ln);
+    print('');
+    window.__dpCacheExport = json;
+    print('\x1b[2m(also stored at window.__dpCacheExport — paste into browser console to copy)\x1b[0m');
+    return;
+  }
+
+  if (sub === 'reset') {
+    const entries = getCacheEntries();
+    print(`\x1b[33m将清除 ${entries.length} 条 DP 缓存记录（主题、代码、历史记录等）\x1b[0m`);
+    const ok = await askConfirm('\x1b[33m确认清除所有 DP 缓存？(y/n)\x1b[0m', print);
+    if (!ok) { print('\x1b[2m✕ 已取消\x1b[0m'); return; }
+    clearAllCaches();
+    print('\x1b[32m✓ 所有 DP 缓存已清除，页面将在 2 秒后刷新…\x1b[0m');
+    setTimeout(() => location.reload(), 2000);
+    return;
+  }
+
+  print('Usage: cache [list | export | reset]');
+  print('  list   — show all stored DP cache entries');
+  print('  export — print full cache JSON to terminal');
+  print('  reset  — clear all DP caches (with y/n confirmation)');
 });

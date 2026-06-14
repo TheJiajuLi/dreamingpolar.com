@@ -4,6 +4,8 @@
 //  grid-trigger dropdown for mobile. On desktop the dropdown is always
 //  open (trigger hidden) so layout is unchanged.
 
+import { clearAllCaches, getCacheEntries } from '../../storage_controller/storage_controller.js';
+
 const GRID_ICON = `<svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" aria-hidden="true">
   <rect x="0.5"  y="0.5"  width="4" height="4" rx="1"/>
   <rect x="5.5"  y="0.5"  width="4" height="4" rx="1"/>
@@ -41,6 +43,50 @@ function setupMobHeaderWrapper() {
   dropdown.className = 'mob-hdr-btns-dropdown';
   dropdown.setAttribute('aria-hidden', 'true');
 
+  // ── Cache cell ────────────────────────────────────────────────────────────
+  const cacheBtn = document.createElement('button');
+  cacheBtn.className = 'mob-hdr-cache-btn';
+  cacheBtn.setAttribute('aria-label', '清除缓存');
+  cacheBtn.textContent = '⊘';
+
+  // Confirmation shelf (hidden until cacheBtn is tapped)
+  const cacheShelf = document.createElement('div');
+  cacheShelf.className = 'mob-hdr-cache-shelf';
+  cacheShelf.innerHTML = `
+    <span class="mob-hdr-cache-shelf-msg"></span>
+    <button class="mob-hdr-cache-yes">是</button>
+    <button class="mob-hdr-cache-no">否</button>
+  `;
+
+  function showShelf() {
+    const count = getCacheEntries().length;
+    cacheShelf.querySelector('.mob-hdr-cache-shelf-msg').textContent =
+      `清除 ${count} 条缓存记录？`;
+    cacheShelf.classList.add('visible');
+    cacheBtn.classList.add('active');
+  }
+
+  function hideShelf() {
+    cacheShelf.classList.remove('visible');
+    cacheBtn.classList.remove('active');
+  }
+
+  cacheBtn.addEventListener('click', () => {
+    if (cacheShelf.classList.contains('visible')) { hideShelf(); return; }
+    showShelf();
+  });
+
+  cacheShelf.querySelector('.mob-hdr-cache-yes').addEventListener('click', () => {
+    clearAllCaches();
+    hideShelf();
+    close();
+    location.reload();
+  });
+
+  cacheShelf.querySelector('.mob-hdr-cache-no').addEventListener('click', () => {
+    hideShelf();
+  });
+
   // ── Terminal cell (mobile only) ───────────────────────────────────────────
   const termBtn = document.createElement('button');
   termBtn.className = 'dp-terminal-toolbar-btn mob-hdr-terminal-btn';
@@ -71,16 +117,17 @@ function setupMobHeaderWrapper() {
 
   // Wrap each button in a labelled cell
   const CELL_DEFS = [
-    { el: themeBtn, label: '主题' },
-    { el: langWrap, label: '语言' },
-    { el: fontBtn,  label: '字体' },
-    { el: termBtn,  label: '终端' },
+    { el: themeBtn,  label: '主题' },
+    { el: langWrap,  label: '语言' },
+    { el: fontBtn,   label: '字体' },
+    { el: termBtn,   label: '终端' },
+    { el: cacheBtn,  label: '缓存', cls: 'mob-hdr-cache-cell' },
   ];
 
-  CELL_DEFS.forEach(({ el, label }) => {
+  CELL_DEFS.forEach(({ el, label, cls }) => {
     if (!el) return;
     const cell = document.createElement('div');
-    cell.className = 'mob-hdr-btn-cell';
+    cell.className = 'mob-hdr-btn-cell' + (cls ? ` ${cls}` : '');
     const lbl = document.createElement('span');
     lbl.className   = 'mob-hdr-btn-label';
     lbl.textContent = label;
@@ -88,6 +135,8 @@ function setupMobHeaderWrapper() {
     cell.appendChild(lbl);
     dropdown.appendChild(cell);
   });
+
+  dropdown.appendChild(cacheShelf);
 
   outerWrap.appendChild(trigger);
   outerWrap.appendChild(dropdown);
@@ -108,6 +157,7 @@ function setupMobHeaderWrapper() {
     outerWrap.classList.remove('open');
     trigger.setAttribute('aria-expanded', 'false');
     dropdown.setAttribute('aria-hidden', 'true');
+    hideShelf();
   }
 
   trigger.addEventListener('click', e => {
