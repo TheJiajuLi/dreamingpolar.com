@@ -192,6 +192,14 @@ body:has(#terminal-panel.terminal--max) .hero-screens-row {
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
   }
+
+  /* When maximised, shrink the internal layout area by the iOS keyboard height
+     so the input row stays visible above the keyboard.
+     --keyboard-h is written by visualViewport listener in mobile_controller.js. */
+  #terminal-panel.terminal--max {
+    padding-bottom: var(--keyboard-h, 0px);
+    transition: padding-bottom 0.15s ease;
+  }
 }
 
 /* ── Terminal toggle button (page-header) ────────────────── */
