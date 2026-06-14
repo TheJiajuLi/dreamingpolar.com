@@ -41,7 +41,12 @@ function setupMobHeaderWrapper() {
 
   const dropdown = document.createElement('div');
   dropdown.className = 'mob-hdr-btns-dropdown';
-  dropdown.setAttribute('aria-hidden', 'true');
+  // On desktop the trigger is CSS-hidden and dropdown is always inline — never mark it
+  // aria-hidden there. On mobile it starts closed, so hide from screen readers + focus.
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    dropdown.setAttribute('aria-hidden', 'true');
+    dropdown.setAttribute('inert', '');
+  }
 
   // ── Cache cell ────────────────────────────────────────────────────────────
   const cacheBtn = document.createElement('button');
@@ -120,7 +125,7 @@ function setupMobHeaderWrapper() {
     { el: themeBtn,  label: '主题' },
     { el: langWrap,  label: '语言' },
     { el: fontBtn,   label: '字体' },
-    { el: termBtn,   label: '终端' },
+    { el: termBtn,   label: '终端',  cls: 'mob-hdr-terminal-cell' },
     { el: cacheBtn,  label: '缓存', cls: 'mob-hdr-cache-cell' },
   ];
 
@@ -150,6 +155,7 @@ function setupMobHeaderWrapper() {
     outerWrap.classList.add('open');
     trigger.setAttribute('aria-expanded', 'true');
     dropdown.setAttribute('aria-hidden', 'false');
+    dropdown.removeAttribute('inert');
   }
 
   function close() {
@@ -157,6 +163,7 @@ function setupMobHeaderWrapper() {
     outerWrap.classList.remove('open');
     trigger.setAttribute('aria-expanded', 'false');
     dropdown.setAttribute('aria-hidden', 'true');
+    dropdown.setAttribute('inert', '');
     hideShelf();
   }
 

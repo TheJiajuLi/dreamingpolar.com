@@ -25,6 +25,16 @@
 
   <link rel="canonical" href="https://dreamingpolar.com/">
 
+  <!-- Preconnect for Google Fonts (font_switcher.js loads JetBrains Mono for code areas).
+       By preconnecting here and loading the default mono font early, the font is likely
+       ready before the hero-loader fades out (1200ms), preventing CLS from font-swap. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- id="gf-mono-inter" matches font_switcher.js so it won't add a duplicate link -->
+  <link id="gf-mono-inter" rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap"
+        media="print" onload="this.media='all'">
+
   <link rel="icon" href="assets/app_logo/favicon.png" type="image/png" sizes="96x96">
   <link rel="icon" href="assets/app_logo/favicon-32.png" type="image/png" sizes="32x32">
   <link rel="shortcut icon" href="assets/app_logo/favicon.png">
@@ -47,23 +57,24 @@
   <link rel="stylesheet" href="components/customise_code_block/customise_code_block.css">
   <link rel="stylesheet" href="components/screens/coding_screen/coding_screen_python/coding_screen_python.css">
   <link rel="stylesheet" href="components/screens/compiling_screen/compiling_screen.css">
-  <link rel="stylesheet" href="components/screens/compiling_screen/refactorization_button/refactorization_button.css">
   <link rel="stylesheet" href="components/compiler/compiler.css">
   <link rel="stylesheet" href="components/compiler/compiler_mode_switcher/compiler_mode_switcher.css">
-  <link rel="stylesheet" href="components/look_up_source/look_up_source.css">
   <link rel="stylesheet" href="components/start_coding/start_coding.css">
-  <link rel="stylesheet" href="components/import/import_btn.css">
   <link rel="stylesheet" href="components/terminal/terminal.css">
   <link rel="stylesheet" href="components/ai/ai.css">
   <link rel="stylesheet" href="components/ai/ai_chat_screen/ai_chat_screen.css">
   <link rel="stylesheet" href="components/hero_loader/hero_loader.css">
   <link rel="stylesheet" href="components/screens/coding_screen/intelligent_coding_mode/intelligent_coding_mode.css">
-  <link rel="stylesheet" href="components/screens/coding_screen/coding_screen_python/python_syntax_highlight/python_syntax_highlight.css">
-  <link rel="stylesheet" href="components/screens/coding_screen/coding_screen_python/python_text_highlight/python_text_highlight.css">
-  <link rel="stylesheet" href="components/screens/coding_screen/coding_screen_python/python_code-completion/python_code_completion.css">
   <link rel="stylesheet" href="home_mobile.css">
   <link rel="stylesheet" href="components/mobile/mobile_page_header_buttons_wrapper/mobile_page_header_buttons_wrapper.css">
-  <link rel="stylesheet" href="components/pwa_install/pwa_install.css">
+  <!-- Non-critical CSS: loaded async — veil stays up until hero_loader.js removes it -->
+  <link rel="stylesheet" href="components/screens/compiling_screen/refactorization_button/refactorization_button.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="components/look_up_source/look_up_source.css"                                          media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="components/import/import_btn.css"                                                      media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="components/screens/coding_screen/coding_screen_python/python_syntax_highlight/python_syntax_highlight.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="components/screens/coding_screen/coding_screen_python/python_text_highlight/python_text_highlight.css"      media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="components/screens/coding_screen/coding_screen_python/python_code-completion/python_code_completion.css"   media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="components/pwa_install/pwa_install.css"                                               media="print" onload="this.media='all'">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <script>
     window.BASE = window.location.hostname === 'thejiajuli.github.io' ? '/dreamingpolar.com' : '';
@@ -92,7 +103,7 @@
       <span class="bar"></span>
       <span class="bar"></span>
     </button>
-    <img src="assets/home_page/imgs/dp_logo.png" alt="Dreaming Polar" class="app-logo">
+    <img src="assets/home_page/imgs/dp_logo.png" alt="Dreaming Polar" class="app-logo" width="543" height="160">
   </header>
 
   <div id="page-layout">
