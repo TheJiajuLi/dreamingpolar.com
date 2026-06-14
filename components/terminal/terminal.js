@@ -250,10 +250,24 @@ function setup() {
   panel.querySelector('.term-close-btn')?.addEventListener('click', closeTerminal);
 
   const termMaxBtn = panel.querySelector('.term-max-btn');
+
+  function setMax(max) {
+    panel.classList.toggle('terminal--max', max);
+    if (termMaxBtn) termMaxBtn.textContent = max ? '⤡' : '⤢';
+  }
+
   termMaxBtn?.addEventListener('click', () => {
-    const isMax = panel.classList.toggle('terminal--max');
-    if (termMaxBtn) termMaxBtn.textContent = isMax ? '⤡' : '⤢';
+    const isMax = !panel.classList.contains('terminal--max');
+    setMax(isMax);
     if (isMax) requestAnimationFrame(() => _input?.focus());
+  });
+
+  // On mobile: auto-maximise when the input is focused so the user gets a
+  // full-height terminal instead of a cramped sliver above the keyboard.
+  _input?.addEventListener('focus', () => {
+    if (window.innerWidth <= 768 && !panel.classList.contains('terminal--max')) {
+      setMax(true);
+    }
   });
 
   document.addEventListener('screen-opened', ({ detail }) => {

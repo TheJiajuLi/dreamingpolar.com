@@ -94,12 +94,13 @@
   /* ── Mobile tab bar ───────────────────────────────────── */
   .mob-tab-bar {
     position: fixed;
-    bottom: 0;
+    bottom: var(--keyboard-h, 0px); /* floats above iOS keyboard via visualViewport */
     left: 0;
     right: 0;
     height: 56px;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     z-index: 200;
+    transition: bottom 0.2s ease;
     display: flex;
     align-items: stretch;
     background: var(--surface, #ffffffee);

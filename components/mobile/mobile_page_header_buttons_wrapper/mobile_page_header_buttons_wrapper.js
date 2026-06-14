@@ -50,6 +50,15 @@ function setupMobHeaderWrapper() {
     const state = window.screenController?.getState('terminal');
     if (state === 'closed' || !state) {
       window.screenController?.open('terminal');
+      // Immediately maximise on mobile so the terminal is full-screen on open
+      requestAnimationFrame(() => {
+        const panel = document.getElementById('terminal-panel');
+        if (panel && !panel.classList.contains('terminal--max')) {
+          panel.classList.add('terminal--max');
+          const maxBtn = panel.querySelector('.term-max-btn');
+          if (maxBtn) maxBtn.textContent = '⤡';
+        }
+      });
     } else {
       window.screenController?.close('terminal');
     }

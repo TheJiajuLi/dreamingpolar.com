@@ -67,6 +67,13 @@ function init() {
   function switchTo(idx) {
     if (idx === active) return;
     active = idx;
+    // If the terminal is maximised, collapse it before switching screens
+    const termPanel = document.getElementById('terminal-panel');
+    if (termPanel?.classList.contains('terminal--max')) {
+      termPanel.classList.remove('terminal--max');
+      const maxBtn = termPanel.querySelector('.term-max-btn');
+      if (maxBtn) maxBtn.textContent = '⤢';
+    }
     showPanel(idx);
     document.dispatchEvent(new CustomEvent('mob-close-nav'));
   }
@@ -91,6 +98,20 @@ function init() {
       bar.remove();
     }
   });
+}
+
+// ── iOS keyboard: keep tab bar above the virtual keyboard ─────
+// When the iOS keyboard opens, `visualViewport.height` shrinks while
+// `window.innerHeight` stays the same. The difference is the keyboard
+// height. Writing it to --keyboard-h lets the tab bar float above it.
+if (window.visualViewport) {
+  const updateKeyboardH = () => {
+    if (window.innerWidth > 768) return;
+    const kh = Math.max(0, window.innerHeight - window.visualViewport.height);
+    document.documentElement.style.setProperty('--keyboard-h', kh + 'px');
+  };
+  window.visualViewport.addEventListener('resize', updateKeyboardH);
+  window.visualViewport.addEventListener('scroll', updateKeyboardH);
 }
 
 if (document.readyState === 'loading') {
