@@ -1,5 +1,5 @@
 import { escapeHtml, renderJson,
-         createMaximizeBtn, createMinimizeBtn }             from './content_screen_utility.js';
+         createMaximizeBtn }                                from './content_screen_utility.js';
 import { CONTENT_PATH_KEY,
          attachContentScreenHooks, restoreLastContent }     from './content_screen_hook.js';
 import { getActivePersona, cyclePersona, PERSONAS }         from '../../ai/ai_persona_switch.js';
@@ -10,8 +10,6 @@ function setupContentScreen() {
   if (!hero) return;
 
   const maximizeBtn = createMaximizeBtn();
-  const minimizeBtn = createMinimizeBtn();
-
   const clearChatBtn = document.createElement('button');
   clearChatBtn.className = 'sc-btn cs-clear-chat-btn';
   clearChatBtn.title = 'Clear chat';
@@ -23,7 +21,7 @@ function setupContentScreen() {
 
   const toolbar = document.createElement('div');
   toolbar.className = 'sc-toolbar';
-  toolbar.append(clearChatBtn, maximizeBtn, minimizeBtn);
+  toolbar.append(clearChatBtn, maximizeBtn);
 
   const backBtn = document.createElement('button');
   backBtn.className = 'cs-back-btn sc-btn';
@@ -69,7 +67,7 @@ function setupContentScreen() {
 
   const getBody = () => document.getElementById('content-screen-body');
 
-  attachContentScreenHooks(hero, maximizeBtn, minimizeBtn, getBody);
+  attachContentScreenHooks(hero, maximizeBtn, getBody);
 
   // ── Width resizer ──────────────────────────────────────
   const CS_WIDTH_KEY = 'dp-cs-width';
@@ -123,11 +121,12 @@ function setupContentScreen() {
   });
 
   // ── Three-view slots ───────────────────────────────────
-  let _chatSlot  = null;
-  let _navSlot   = null;
-  let _navUsed   = false;  // show back btn once nav has been opened
+  let _chatSlot      = null;
+  let _navSlot       = null;
+  let _navUsed       = false;
+  let _currentPageTitle = null;
 
-  const VIEW_LABELS = { content: 'Content', nav: '导航' };
+  const VIEW_LABELS = { nav: '导航' };
 
   function _setView(name) {
     hero.classList.add('cs-active');
@@ -140,7 +139,9 @@ function setupContentScreen() {
     personaBtn.style.display   = name === 'chat' ? '' : 'none';
     backBtn.style.display      = (name === 'content' && _navUsed) ? '' : 'none';
     labelEl.style.display      = name === 'chat' ? 'none' : '';
-    labelEl.textContent        = VIEW_LABELS[name] ?? 'Content';
+    labelEl.textContent        = name === 'content'
+      ? (_currentPageTitle ?? 'Content')
+      : (VIEW_LABELS[name] ?? 'Content');
     if (name !== 'chat') document.dispatchEvent(new CustomEvent('content-chat-closed-externally'));
     if (name !== 'nav')  document.dispatchEvent(new CustomEvent('content-nav-closed'));
     if (name === 'nav')  _navUsed = true;
@@ -151,8 +152,9 @@ function setupContentScreen() {
     clear()      { getBody().innerHTML = ''; },
     getBody,
 
-    async renderFromJson(jsonPath, { openScreen = true } = {}) {
+    async renderFromJson(jsonPath, { openScreen = true, title = null } = {}) {
       if (openScreen) window.screenController?.ensureVisible('content');
+      _currentPageTitle = title;
       _setView('content');
       localStorage.setItem(CONTENT_PATH_KEY, jsonPath);
 

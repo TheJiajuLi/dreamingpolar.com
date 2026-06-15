@@ -184,3 +184,271 @@ function setupMobHeaderWrapper() {
 // Modules are deferred — by the time this runs, theme/font/lang buttons
 // are already in the DOM (no DOMContentLoaded listener needed).
 setupMobHeaderWrapper();
+
+// ── Mobile Auth Panel ─────────────────────────────────────────────────────────
+// Adds a user icon button to the mobile header. Tapping opens a full-screen
+// panel (below the header) with login/register or profile content.
+// auth_client.js loads after this module, so auth state is read via events.
+
+(function setupMobAuth() {
+  const header = document.querySelector('header.page-header');
+  if (!header) return;
+
+  const _USER_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+  const _OUT_SVG  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`;
+
+  // ── Header button ───────────────────────────────────────────────────────────
+  const authBtn = document.createElement('button');
+  authBtn.className = 'mob-auth-btn';
+  authBtn.setAttribute('aria-label', 'Account');
+  authBtn.innerHTML = _USER_SVG;
+
+  // Place auth button as a cell inside the existing dropdown
+  const dropdown = header.querySelector('.mob-hdr-btns-dropdown');
+  if (dropdown) {
+    const authCell = document.createElement('div');
+    authCell.className = 'mob-hdr-btn-cell mob-hdr-auth-cell';
+    const authLbl = document.createElement('span');
+    authLbl.className = 'mob-hdr-btn-label';
+    authLbl.textContent = '账号';
+    authCell.append(authBtn, authLbl);
+    // Insert before cache shelf (last element) so it appears at the end of the grid
+    const shelf = dropdown.querySelector('.mob-hdr-cache-shelf');
+    shelf ? dropdown.insertBefore(authCell, shelf) : dropdown.appendChild(authCell);
+  }
+
+  // ── Panel ───────────────────────────────────────────────────────────────────
+  const panel = document.createElement('div');
+  panel.className = 'mob-auth-panel';
+  document.body.appendChild(panel);
+
+  let _user    = null;
+  let _isMax   = false;
+  let _isOpen  = false;
+
+  // ── Panel header (persists across views) ────────────────────────────────────
+  const panelHdr = document.createElement('div');
+  panelHdr.className = 'mob-auth-panel-hdr';
+
+  const panelTitle = document.createElement('span');
+  panelTitle.className = 'mob-auth-panel-title';
+  panelTitle.textContent = '账号';
+
+  const maxBtn = document.createElement('button');
+  maxBtn.className = 'sc-btn mob-auth-max-btn';
+  maxBtn.title = 'Maximize';
+  maxBtn.textContent = '⤢';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'sc-btn mob-auth-close-btn';
+  closeBtn.title = 'Close';
+  closeBtn.textContent = '−';
+
+  const hdrToolbar = document.createElement('div');
+  hdrToolbar.className = 'sc-toolbar';
+  hdrToolbar.append(maxBtn, closeBtn);
+  panelHdr.append(panelTitle, hdrToolbar);
+
+  const panelBody = document.createElement('div');
+  panelBody.className = 'mob-auth-panel-body';
+
+  panel.append(panelHdr, panelBody);
+
+  // ── Open / close / maximize ─────────────────────────────────────────────────
+  function openPanel() {
+    _isOpen = true;
+    panel.classList.add('open');
+    render();
+  }
+
+  function closePanel() {
+    _isOpen = false;
+    panel.classList.remove('open');
+    panel.classList.remove('maximized');
+    _isMax = false;
+    maxBtn.textContent = '⤢';
+  }
+
+  maxBtn.addEventListener('click', () => {
+    _isMax = !_isMax;
+    panel.classList.toggle('maximized', _isMax);
+    maxBtn.textContent = _isMax ? '⤡' : '⤢';
+  });
+
+  closeBtn.addEventListener('click', closePanel);
+
+  authBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    // Close the settings dropdown first
+    header.querySelector('.mob-hdr-btns-wrapper')?.classList.remove('open');
+    _isOpen ? closePanel() : openPanel();
+  });
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _isOpen) closePanel(); });
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  function _esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function render() {
+    _user ? renderProfile() : renderAuth();
+    updateAuthBtn();
+  }
+
+  function renderAuth() {
+    panelTitle.textContent = '账号';
+    panelBody.innerHTML = `
+      <div class="mob-auth-tabs">
+        <button class="mob-auth-tab active" data-tab="login">登录</button>
+        <button class="mob-auth-tab" data-tab="register">注册</button>
+      </div>
+
+      <form class="mob-auth-form" id="mob-login-form">
+        <div class="au-field">
+          <label class="au-lbl" for="mob-l-email">Email</label>
+          <input class="au-input" id="mob-l-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="au-field">
+          <label class="au-lbl" for="mob-l-pass">Password</label>
+          <input class="au-input" id="mob-l-pass" type="password" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+        <div class="au-err" id="mob-l-err"></div>
+        <button class="au-submit" type="submit">登录</button>
+      </form>
+
+      <form class="mob-auth-form" id="mob-reg-form" style="display:none">
+        <div class="au-field">
+          <label class="au-lbl" for="mob-r-name">用户名</label>
+          <input class="au-input" id="mob-r-name" type="text" placeholder="极地" autocomplete="username" required>
+        </div>
+        <div class="au-field">
+          <label class="au-lbl" for="mob-r-email">Email</label>
+          <input class="au-input" id="mob-r-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="au-field">
+          <label class="au-lbl" for="mob-r-pass">Password</label>
+          <input class="au-input" id="mob-r-pass" type="password" placeholder="至少 8 位" autocomplete="new-password" required>
+        </div>
+        <div class="au-err" id="mob-r-err"></div>
+        <button class="au-submit" type="submit">注册</button>
+      </form>`;
+
+    // Tab switching
+    panelBody.querySelectorAll('.mob-auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        panelBody.querySelectorAll('.mob-auth-tab').forEach(t => t.classList.toggle('active', t === tab));
+        panelBody.querySelector('#mob-login-form').style.display = tab.dataset.tab === 'login'    ? '' : 'none';
+        panelBody.querySelector('#mob-reg-form').style.display   = tab.dataset.tab === 'register' ? '' : 'none';
+        panelBody.querySelectorAll('.au-err').forEach(e => e.classList.remove('show'));
+      });
+    });
+
+    // Login handler
+    panelBody.querySelector('#mob-login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = e.target, btn = f.querySelector('.au-submit'), err = panelBody.querySelector('#mob-l-err');
+      btn.disabled = true; btn.textContent = '登录中…'; err.classList.remove('show');
+      try {
+        await window.authClient.login(
+          f.querySelector('#mob-l-email').value.trim(),
+          f.querySelector('#mob-l-pass').value
+        );
+        _user = await window.authClient.getMe();
+        document.dispatchEvent(new CustomEvent('dp-auth-login', { detail: _user }));
+        render();
+      } catch (ex) {
+        err.textContent = ex.message || '登录失败';
+        err.classList.add('show');
+        btn.disabled = false; btn.textContent = '登录';
+      }
+    });
+
+    // Register handler
+    panelBody.querySelector('#mob-reg-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = e.target, btn = f.querySelector('.au-submit'), err = panelBody.querySelector('#mob-r-err');
+      btn.disabled = true; btn.textContent = '注册中…'; err.classList.remove('show');
+      try {
+        const email = f.querySelector('#mob-r-email').value.trim();
+        await window.authClient.register(f.querySelector('#mob-r-name').value.trim(), email, f.querySelector('#mob-r-pass').value);
+        await window.authClient.login(email, f.querySelector('#mob-r-pass').value);
+        _user = await window.authClient.getMe();
+        document.dispatchEvent(new CustomEvent('dp-auth-login', { detail: _user }));
+        render();
+      } catch (ex) {
+        err.textContent = ex.message || '注册失败';
+        err.classList.add('show');
+        btn.disabled = false; btn.textContent = '注册';
+      }
+    });
+  }
+
+  function renderProfile() {
+    const joined   = _user?.created_at
+      ? new Date(_user.created_at * 1000).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' })
+      : '—';
+    const initials = (_user?.username ?? '?').slice(0, 2).toUpperCase();
+    panelTitle.textContent = _user?.username ?? '账号';
+    panelBody.innerHTML = `
+      <div class="mob-auth-profile">
+        <div class="au-profile-head">
+          <div class="au-profile-avatar">${initials}</div>
+          <div>
+            <div class="au-profile-name">${_esc(_user?.username)}</div>
+            <div class="au-profile-email">${_esc(_user?.email)}</div>
+          </div>
+        </div>
+        <div class="au-profile-stats">
+          <div class="au-profile-row">
+            <span class="au-profile-key">加入时间</span>
+            <span class="au-profile-val">${joined}</span>
+          </div>
+          <div class="au-profile-row">
+            <span class="au-profile-key">Templates</span>
+            <span class="au-phase-badge">Phase 2</span>
+          </div>
+          <div class="au-profile-row">
+            <span class="au-profile-key">Notebooks</span>
+            <span class="au-phase-badge">Phase 2</span>
+          </div>
+        </div>
+        <div class="au-profile-actions">
+          <button class="au-logout" id="mob-auth-logout">${_OUT_SVG} 退出登录</button>
+        </div>
+      </div>`;
+
+    panelBody.querySelector('#mob-auth-logout').addEventListener('click', async () => {
+      await window.authClient.logout().catch(() => {});
+      _user = null;
+      document.dispatchEvent(new CustomEvent('dp-auth-logout'));
+      render();
+    });
+  }
+
+  function updateAuthBtn() {
+    if (_user) {
+      const initials = (_user.username ?? '?').slice(0, 2).toUpperCase();
+      authBtn.innerHTML = `<span class="au-vt-avatar" style="font-size:0.6rem">${initials}</span>`;
+      authBtn.title = _user.username;
+      authBtn.classList.add('mob-auth-btn--in');
+    } else {
+      authBtn.innerHTML = _USER_SVG;
+      authBtn.title = 'Account';
+      authBtn.classList.remove('mob-auth-btn--in');
+    }
+  }
+
+  // ── Auth event listeners ─────────────────────────────────────────────────────
+  document.addEventListener('dp-auth-login', ({ detail }) => {
+    _user = detail;
+    updateAuthBtn();
+    if (_isOpen) render();
+  });
+
+  document.addEventListener('dp-auth-logout', () => {
+    _user = null;
+    updateAuthBtn();
+    if (_isOpen) render();
+  });
+}());

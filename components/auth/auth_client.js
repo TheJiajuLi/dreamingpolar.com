@@ -123,17 +123,18 @@ function _initUI() {
     : go();
 }
 
-// ── VT button ─────────────────────────────────────────────────
+// ── Header button ─────────────────────────────────────────────
 function _buildVtBtn() {
-  const vtBottom = document.querySelector('#vertical-toolbar .vt-bottom');
-  if (!vtBottom) return;
+  const target = document.querySelector('.mob-hdr-btns-dropdown') ||
+                 document.querySelector('.page-header');
+  if (!target) return;
   const btn = document.createElement('button');
-  btn.className = 'vt-btn au-vt-btn';
+  btn.className = 'au-hdr-btn';
   btn.id = 'au-vt-btn';
   btn.title = 'Account';
   btn.innerHTML = _USER_SVG;
   btn.addEventListener('click', () => isLoggedIn() ? _toggleProfile() : _openModal('login'));
-  vtBottom.appendChild(btn);
+  target.appendChild(btn);
 }
 
 function _updateVtBtn() {

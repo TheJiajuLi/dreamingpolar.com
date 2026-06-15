@@ -3,7 +3,7 @@ import { handleCopyClick, createPlotRunHandler } from './content_screen_utility.
 
 export const CONTENT_PATH_KEY = 'dreaming-polar-content-path';
 
-export function attachContentScreenHooks(hero, maximizeBtn, minimizeBtn, getBody) {
+export function attachContentScreenHooks(hero, maximizeBtn, getBody) {
   const onPlotRun = createPlotRunHandler(getBody, compile);
 
   hero.addEventListener('click', async e => {
@@ -18,7 +18,6 @@ export function attachContentScreenHooks(hero, maximizeBtn, minimizeBtn, getBody
   requestAnimationFrame(() => {
     window.screenController?.register('content', hero, { onStateChange: syncBtn, label: 'Content', persisted: true });
     maximizeBtn.addEventListener('click', () => window.screenController?.toggle('content'));
-    minimizeBtn.addEventListener('click', () => window.screenController?.close('content'));
   });
 }
 

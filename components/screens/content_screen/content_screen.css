@@ -263,7 +263,7 @@
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
-  background: var(--bg, #f3f5f8);
+  background: var(--surface, #ffffff);
 }
 
 /* Messages area fills available height */
@@ -335,7 +335,7 @@ body.cs-resizing * {
   align-items: center;
   gap: 5px;
   padding: 4px 9px;
-  margin: 0 auto 0 8px;
+  margin: 0 auto 0 0;
   border-radius: 20px;
   border: 1px solid var(--border, #e2e8f0);
   background: var(--bg, #f8fafc);
@@ -366,13 +366,13 @@ body.cs-resizing * {
 }
 
 .cs-persona-btn.aic-persona-btn[data-persona-id="boby"] {
-  border-color: rgba(167,139,250,0.35);
-  color: #a78bfa;
-  background: rgba(167,139,250,0.06);
+  border-color: rgba(14,165,233,0.35);
+  color: #0ea5e9;
+  background: rgba(14,165,233,0.08);
 }
 
 .cs-persona-btn.aic-persona-btn[data-persona-id="boby"]:hover {
-  border-color: #a78bfa;
-  background: rgba(167,139,250,0.12);
-  color: #c4b5fd;
+  border-color: #0ea5e9;
+  background: rgba(14,165,233,0.14);
+  color: #38bdf8;
 }

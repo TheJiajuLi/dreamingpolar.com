@@ -131,7 +131,7 @@ function setupNavigationScreen() {
         e.preventDefault();
         tree.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         a.classList.add('active');
-        window.contentScreen?.renderFromJson(a.dataset.file);
+        window.contentScreen?.renderFromJson(a.dataset.file, { title: a.textContent.trim() });
       });
     });
 

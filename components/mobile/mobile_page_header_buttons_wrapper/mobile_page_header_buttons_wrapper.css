@@ -2,6 +2,11 @@
 /* Groups theme / language / font controls behind a grid-trigger on mobile.  */
 /* On desktop the trigger is hidden and the row is always visible.           */
 
+/* Auth button and panel are mobile-only */
+.mob-auth-btn   { display: none; }
+.mob-auth-panel { display: none; }
+.mob-hdr-auth-cell { display: none; }
+
 .mob-hdr-btns-wrapper {
   position: relative;
   display: flex;
@@ -540,8 +545,171 @@
 
   [data-theme="aurora"] .mob-hdr-btns-dropdown .lang-option.active .lang-option-short {
     color: #c084fc;
-
-
   }
 
+  /* ── Mobile auth cell (inside dropdown) ──────────────────────────────────── */
+
+  .mob-hdr-auth-cell {
+    display: flex;
+  }
+
+  .mob-auth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 6px 10px;
+    height: auto;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .mob-auth-btn--in { color: #6366f1; }
+
+  .mob-auth-btn:hover  { background: rgba(15, 23, 42, 0.06); color: #0f172a; }
+  .mob-auth-btn:active { background: rgba(15, 23, 42, 0.10); transform: scale(0.91); }
+
+  [data-theme="dark"] .mob-auth-btn,
+  [data-theme="grey"] .mob-auth-btn  { color: #a8c8e0; }
+
+  [data-theme="aurora"] .mob-auth-btn { color: #c4b5fd; }
+
+  [data-theme="dark"] .mob-auth-btn:hover,
+  [data-theme="grey"] .mob-auth-btn:hover {
+    background: rgba(34, 211, 238, 0.10);
+    color: #22d3ee;
+  }
+
+  [data-theme="aurora"] .mob-auth-btn:hover {
+    background: rgba(192, 132, 252, 0.12);
+    color: #d8b4fe;
+  }
+
+  /* ── Mobile auth fullscreen panel ────────────────────────────────────────── */
+
+  .mob-auth-panel {
+    position: fixed;
+    top: var(--header-height, 76px);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 600;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface, #ffffff);
+    border-top: 1px solid var(--border, #e2e8f0);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  .mob-auth-panel.open {
+    transform: translateY(0);
+  }
+
+  .mob-auth-panel.maximized {
+    top: 0;
+    border-top: none;
+  }
+
+  .mob-auth-panel-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px 0 16px;
+    height: 52px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+  }
+
+  .mob-auth-panel-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted, #94a3b8);
+  }
+
+  .mob-auth-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Reuse .au-* classes from auth_ui.css, but make forms full-width */
+  .mob-auth-panel-body .au-field { margin-bottom: 14px; }
+  .mob-auth-panel-body .au-input { width: 100%; box-sizing: border-box; }
+  .mob-auth-panel-body .au-submit { width: 100%; margin-top: 4px; }
+
+  /* Tabs */
+  .mob-auth-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    margin-bottom: 24px;
+  }
+
+  .mob-auth-tab {
+    flex: 1;
+    padding: 10px 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted, #94a3b8);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .mob-auth-tab.active {
+    color: #6366f1;
+    border-bottom-color: #6366f1;
+  }
+
+  /* Profile */
+  .mob-auth-profile {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Dark/grey/aurora theme overrides for the panel */
+  [data-theme="dark"] .mob-auth-panel,
+  [data-theme="grey"] .mob-auth-panel {
+    background: var(--bg, #0f172a);
+    border-top-color: rgba(34, 211, 238, 0.15);
+  }
+
+  [data-theme="aurora"] .mob-auth-panel {
+    background: var(--bg, #0a0720);
+    border-top-color: rgba(192, 132, 252, 0.20);
+  }
+
+  [data-theme="dark"] .mob-auth-panel-hdr,
+  [data-theme="grey"] .mob-auth-panel-hdr {
+    border-bottom-color: rgba(34, 211, 238, 0.12);
+  }
+
+  [data-theme="aurora"] .mob-auth-panel-hdr {
+    border-bottom-color: rgba(192, 132, 252, 0.15);
+  }
+
+  [data-theme="dark"] .mob-auth-tabs,
+  [data-theme="grey"] .mob-auth-tabs {
+    border-bottom-color: rgba(34, 211, 238, 0.12);
+  }
+
+  [data-theme="aurora"] .mob-auth-tabs {
+    border-bottom-color: rgba(192, 132, 252, 0.15);
+  }
 }
