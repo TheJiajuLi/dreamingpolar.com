@@ -30,7 +30,7 @@
   justify-content: space-between;
   padding: 0 8px 0 12px;
   height: var(--screen-header-h, 65px);
-  border-bottom: 1px solid var(--border, #e2e8f0);
+  border-bottom: none;
   flex-shrink: 0;
   user-select: none;
   box-sizing: border-box;

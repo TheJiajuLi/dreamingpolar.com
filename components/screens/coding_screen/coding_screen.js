@@ -1,4 +1,4 @@
-import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
+import { getCurrentMode, mountModeSwitcher } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
 import { init as initNotebook } from '../../customise_code_block/customise_code_block.js';
 import { compile } from '../../compiler/compiler.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
@@ -115,6 +115,11 @@ const singleView   = document.getElementById('cds-single-view');
 
   const toolbar = document.createElement('div');
   toolbar.className = 'coding-toolbar';
+
+  const modeSlot = document.createElement('div');
+  modeSlot.className = 'cds-mode-slot';
+  mountModeSwitcher(modeSlot);
+
   const icmSlot = document.createElement('div');
   icmSlot.className = 'cds-icm-slot';
   mountICM(icmSlot);
@@ -139,6 +144,7 @@ const singleView   = document.getElementById('cds-single-view');
   const toolbarClearBtn = createClearCellsBtn();
   toolbarClearBtn.id = 'cds-toolbar-clear-btn';
 
+  toolbar.appendChild(modeSlot);
   toolbar.appendChild(icmSlot);
   toolbar.appendChild(copyBtn);
   toolbar.appendChild(toolbarClearBtn);

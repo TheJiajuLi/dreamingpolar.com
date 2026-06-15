@@ -131,10 +131,13 @@ export async function* streamChat(messages, systemPrompt = SYSTEM_DEFAULT, maxTo
       const raw = line.slice(6).trim();
       if (raw === '[DONE]') return;
       try {
-        const json  = JSON.parse(raw);
-        const d     = json.choices?.[0]?.delta ?? {};
-        // deepseek-reasoner streams reasoning_content before content — yield content only
-        const delta = d.content ?? null;
+        const json = JSON.parse(raw);
+        // Anthropic streaming: content_block_delta events carry text_delta
+        if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
+          if (json.delta.text) yield json.delta.text;
+        }
+        // OpenAI-compatible streaming fallback
+        const delta = json.choices?.[0]?.delta?.content ?? null;
         if (delta) yield delta;
       } catch { /* partial JSON — skip */ }
     }

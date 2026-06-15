@@ -7,7 +7,6 @@ const MODES = [
   { id: 'mathjax',   label: 'MathJax'   },
   { id: 'markdown',  label: 'Markdown'  },
   { id: 'customise', label: 'Customise' },
-  { id: 'ai_chat',   label: 'Chat'      },
 ];
 
 const MODE_KEY = 'dreaming-polar-mode';
