@@ -58,7 +58,7 @@
   cursor: pointer;
 }
 .menu-button:focus { outline: 2px solid #9fc2ee; }
-.menu-button .bar  { display: block; height: 3px; background: #3a3d42; border-radius: 2px; }
+.menu-button .bar  { display: block; width: 18px; height: 2.5px; background: var(--text-muted, #64748b); border-radius: 2px; }
 
 /* ── Overview menu ───────────────────────────────────────── */
 .overview-menu {
@@ -154,8 +154,6 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 /* ══ PAGE-LEVEL OVERRIDES ═══════════════════════════════════ */
 
 /* ── .menu-button .bar ───────────────────────────────────── */
-[data-theme="dark"]   .menu-button .bar { background: #e8eaf0; }
-[data-theme="grey"]   .menu-button .bar { background: #adbac7; }
 [data-theme="aurora"] .menu-button .bar { background: linear-gradient(90deg, #c084fc, #818cf8); }
 
 /* ── .page-header / h1 / h2 ──────────────────────────────── */

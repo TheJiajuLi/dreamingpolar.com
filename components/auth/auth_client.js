@@ -1,5 +1,6 @@
 // ── Dreaming Polar Auth Client ────────────────────────────────
 // Access Token 存内存，Refresh Token 由后端以 httpOnly Cookie 管理
+import { saveUserCache, loadUserCache, clearUserCache } from './auth_hooks.js';
 
 const BASE = window.location.hostname === 'localhost' ||
              window.location.hostname === '127.0.0.1'
@@ -103,7 +104,19 @@ function _initUI() {
   _buildProfile();
   const go = () => {
     _buildVtBtn();
-    silentRefresh().then(ok => { if (ok) _fetchUser(); });
+    // Restore UI immediately from cache, then verify with silentRefresh
+    const cached = loadUserCache();
+    if (cached) { _uiUser = cached; _updateVtBtn(); _renderProfile(); }
+    silentRefresh().then(ok => {
+      if (ok) {
+        _fetchUser();
+      } else {
+        clearUserCache();
+        _uiUser = null;
+        _updateVtBtn();
+        _renderProfile();
+      }
+    });
   };
   document.readyState === 'loading'
     ? document.addEventListener('DOMContentLoaded', go)
@@ -284,6 +297,7 @@ function _renderProfile() {
     </div>`;
   _uiProfile.querySelector('#au-logout-btn').addEventListener('click', async () => {
     await logout();
+    clearUserCache();
     _uiUser = null;
     _updateVtBtn();
     _renderProfile();
@@ -294,7 +308,7 @@ function _renderProfile() {
 
 // ── Helpers ───────────────────────────────────────────────────
 async function _fetchUser() {
-  try { _uiUser = await getMe(); } catch { _uiUser = null; }
+  try { _uiUser = await getMe(); saveUserCache(_uiUser); } catch { _uiUser = null; }
   _updateVtBtn();
   _renderProfile();
   document.dispatchEvent(new CustomEvent('dp-auth-login', { detail: _uiUser }));

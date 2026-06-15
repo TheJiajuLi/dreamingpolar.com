@@ -113,10 +113,17 @@
 
 /* ── Hosted buttons: normalize sizing & centering ────────────────────────── */
 
-/* menu-button: keep its natural column-flex/bar layout, just add hover rounding */
+/* menu-button: same size as other vt-btn icons */
 #vertical-toolbar .menu-button {
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
-  padding: 9px 7px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   transition: background 0.15s;
   overflow: visible;
 }

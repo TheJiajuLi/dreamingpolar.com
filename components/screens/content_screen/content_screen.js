@@ -2,6 +2,7 @@ import { escapeHtml, renderJson,
          createMaximizeBtn, createMinimizeBtn }             from './content_screen_utility.js';
 import { CONTENT_PATH_KEY,
          attachContentScreenHooks, restoreLastContent }     from './content_screen_hook.js';
+import { getActivePersona, cyclePersona, PERSONAS }         from '../../ai/ai_persona_switch.js';
 
 // ── Setup ──────────────────────────────────────────────
 function setupContentScreen() {
@@ -37,9 +38,26 @@ function setupContentScreen() {
   labelEl.className = 'content-screen-label';
   labelEl.textContent = 'Content';
 
+  const _CYCLE_SVG = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`;
+
+  const personaBtn = document.createElement('button');
+  personaBtn.className = 'aic-persona-btn cs-persona-btn';
+  personaBtn.style.display = 'none';
+  function syncPersonaBtn() {
+    const p    = getActivePersona();
+    const idx  = PERSONAS.findIndex(x => x.id === p.id);
+    const next = PERSONAS[(idx + 1) % PERSONAS.length];
+    personaBtn.innerHTML = `<span class="cs-persona-label">${p.label}</span>${_CYCLE_SVG}`;
+    personaBtn.title = `Switch to ${next.label}`;
+    personaBtn.dataset.personaId = p.id;
+  }
+  syncPersonaBtn();
+  personaBtn.addEventListener('click', () => { cyclePersona(); syncPersonaBtn(); });
+  document.addEventListener('ai-persona-changed', syncPersonaBtn);
+
   const header = document.createElement('div');
   header.className = 'content-screen-header';
-  header.append(backBtn, labelEl, toolbar);
+  header.append(backBtn, labelEl, personaBtn, toolbar);
 
   const body = document.createElement('div');
   body.className = 'content-screen-body';
@@ -53,12 +71,63 @@ function setupContentScreen() {
 
   attachContentScreenHooks(hero, maximizeBtn, minimizeBtn, getBody);
 
+  // ── Width resizer ──────────────────────────────────────
+  const CS_WIDTH_KEY = 'dp-cs-width';
+  const CS_MIN_W     = 220;
+
+  const savedW = parseFloat(localStorage.getItem(CS_WIDTH_KEY));
+  if (savedW) { hero.style.width = savedW + 'px'; hero.style.flex = 'none'; }
+
+  const resizer = document.createElement('div');
+  resizer.className = 'cs-resizer';
+  resizer.title = 'Drag to resize · Double-click to reset';
+  hero.appendChild(resizer);
+
+  function _startResize(clientX) {
+    const startX = clientX;
+    const startW = hero.getBoundingClientRect().width;
+    document.body.classList.add('cs-resizing');
+
+    function onMove(ex) {
+      const maxW = hero.parentElement.getBoundingClientRect().width * 0.65;
+      const w    = Math.min(maxW, Math.max(CS_MIN_W, startW + ex - startX));
+      hero.style.width = w + 'px';
+      hero.style.flex  = 'none';
+    }
+    function onUp(ex) {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup',   onMouseUp);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend',  onTouchEnd);
+      document.body.classList.remove('cs-resizing');
+      onMove(ex);
+      localStorage.setItem(CS_WIDTH_KEY, parseFloat(hero.style.width));
+    }
+    const onMouseMove = e => onMove(e.clientX);
+    const onMouseUp   = e => onUp(e.clientX);
+    const onTouchMove = e => { e.preventDefault(); onMove(e.touches[0].clientX); };
+    const onTouchEnd  = e => onUp(e.changedTouches[0].clientX);
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup',   onMouseUp);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend',  onTouchEnd);
+  }
+
+  resizer.addEventListener('mousedown',  e => { e.preventDefault(); _startResize(e.clientX); });
+  resizer.addEventListener('touchstart', e => { e.preventDefault(); _startResize(e.touches[0].clientX); }, { passive: false });
+  resizer.addEventListener('dblclick',   () => {
+    hero.style.width = '';
+    hero.style.flex  = '';
+    localStorage.removeItem(CS_WIDTH_KEY);
+  });
+
   // ── Three-view slots ───────────────────────────────────
   let _chatSlot  = null;
   let _navSlot   = null;
   let _navUsed   = false;  // show back btn once nav has been opened
 
-  const VIEW_LABELS = { content: 'Content', chat: '小梦', nav: '导航' };
+  const VIEW_LABELS = { content: 'Content', nav: '导航' };
 
   function _setView(name) {
     hero.classList.add('cs-active');
@@ -68,8 +137,10 @@ function setupContentScreen() {
     hero.classList.toggle('cs-chat-mode', name === 'chat');
     hero.classList.toggle('cs-nav-mode',  name === 'nav');
     clearChatBtn.style.display = name === 'chat' ? '' : 'none';
+    personaBtn.style.display   = name === 'chat' ? '' : 'none';
     backBtn.style.display      = (name === 'content' && _navUsed) ? '' : 'none';
-    labelEl.textContent = VIEW_LABELS[name] ?? 'Content';
+    labelEl.style.display      = name === 'chat' ? 'none' : '';
+    labelEl.textContent        = VIEW_LABELS[name] ?? 'Content';
     if (name !== 'chat') document.dispatchEvent(new CustomEvent('content-chat-closed-externally'));
     if (name !== 'nav')  document.dispatchEvent(new CustomEvent('content-nav-closed'));
     if (name === 'nav')  _navUsed = true;

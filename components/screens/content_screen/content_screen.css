@@ -4,6 +4,7 @@
   place-items: unset;
   padding: 0 !important;
   overflow: hidden;
+  position: relative;
 }
 
 .content-screen.cs-active {
@@ -305,3 +306,73 @@
 }
 
 /* Theme overrides live in theme_controller.css */
+
+/* ── Width resizer handle ─────────────────────────────────────────────────── */
+
+.cs-resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: col-resize;
+  z-index: 30;
+  user-select: none;
+  background: transparent !important;
+}
+
+body.cs-resizing,
+body.cs-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* ── Content-screen persona switcher ─────────────────────────────────────── */
+
+.cs-persona-btn.aic-persona-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  margin: 0 auto 0 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--bg, #f8fafc);
+  color: var(--text-muted, #64748b);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.cs-persona-btn.aic-persona-btn svg {
+  opacity: 0.55;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.35s;
+}
+
+.cs-persona-btn.aic-persona-btn:hover {
+  border-color: #6366f1;
+  background: rgba(99,102,241,0.07);
+  color: #6366f1;
+}
+
+.cs-persona-btn.aic-persona-btn:hover svg {
+  opacity: 1;
+  transform: rotate(180deg);
+}
+
+.cs-persona-btn.aic-persona-btn[data-persona-id="boby"] {
+  border-color: rgba(167,139,250,0.35);
+  color: #a78bfa;
+  background: rgba(167,139,250,0.06);
+}
+
+.cs-persona-btn.aic-persona-btn[data-persona-id="boby"]:hover {
+  border-color: #a78bfa;
+  background: rgba(167,139,250,0.12);
+  color: #c4b5fd;
+}

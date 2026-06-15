@@ -47,6 +47,7 @@ function setupNavigationScreen() {
   let _isOpen = false;
 
   function open() {
+    window.screenController?.ensureVisible('content');
     const cs = window.contentScreen;
     if (!cs) return;
     if (!_built) {
