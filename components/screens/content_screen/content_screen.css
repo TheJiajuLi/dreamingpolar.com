@@ -224,4 +224,84 @@
   border-radius: 4px;
 }
 
+/* ── Embedded nav slot ────────────────────────────────────────────────────── */
+
+.cs-nav-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  background: var(--surface, #ffffff);
+}
+
+.cs-nav-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.cs-nav-inner .nav-sections {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0 24px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.cs-nav-inner .nav-sections::-webkit-scrollbar       { width: 3px; }
+.cs-nav-inner .nav-sections::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* ── Embedded AI chat slot ────────────────────────────────────────────────── */
+
+.cs-chat-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  background: var(--bg, #f3f5f8);
+}
+
+/* Messages area fills available height */
+.cs-chat-slot .aic-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border, #cbd5e1) transparent;
+}
+
+/* Input bar stays anchored at bottom */
+.cs-chat-slot .aic-input-bar {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+/* ── Back-to-nav button ───────────────────────────────────────────────────── */
+
+.cs-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+  color: var(--text-muted, #64748b);
+  opacity: 0.8;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.cs-back-btn:hover {
+  opacity: 1;
+  background: var(--bg, #f1f5f9);
+}
+
 /* Theme overrides live in theme_controller.css */

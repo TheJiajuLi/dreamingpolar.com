@@ -7,8 +7,8 @@ const PORT = process.env.PORT ?? 3001;
 
 // ── 配置 ──────────────────────────────────────────────────────
 const CONFIG = {
-  model:  process.env.AI_MODEL ?? 'DeepSeek-R1-0528',
-  apiUrl: 'https://www.moyu.info/v1/chat/completions',
+  model:  process.env.AI_MODEL ?? 'claude-haiku-4-5',
+  apiUrl: 'https://api.anthropic.com/v1/messages',
   apiKey: process.env[process.env.ACTIVE_KEY] ?? process.env.AI_API_KEY,
 };
 

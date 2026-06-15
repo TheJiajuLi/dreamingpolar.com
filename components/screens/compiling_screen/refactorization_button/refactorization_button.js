@@ -43,7 +43,7 @@ export function createRefactorBtn({ sourceCode, sourceLang, cellId, explanation 
       const runBtn = document.createElement('button');
       runBtn.className = 'refactor-run-btn';
       runBtn.title = 'Run the refactored code';
-      runBtn.innerHTML = '▶ Run';
+      runBtn.innerHTML = '⟳ Re-try';
       runBtn.addEventListener('click', () => {
         document.dispatchEvent(new CustomEvent('ai-insert-and-run', {
           detail: { code, cellId },

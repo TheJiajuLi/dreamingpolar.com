@@ -1,11 +1,6 @@
 import { PAGES }          from '../../../content_pages/pages.js';
 import { setupNavSearch } from '../../search_bar/search_bar.js';
 
-// ── Config ─────────────────────────────────────────────
-const STORAGE = {
-  open: 'dreaming-polar-nav-open',
-};
-
 // ── Tree builder ───────────────────────────────────────
 function buildTree(pages, depth = 0) {
   if (!pages?.length) return '';
@@ -29,99 +24,80 @@ function buildTree(pages, depth = 0) {
   return `<ul class="nav-list" data-depth="${depth}">${items}</ul>`;
 }
 
-// ── Sidebar template ───────────────────────────────────
-function createSidebar() {
-  const el = document.createElement('aside');
-  el.className = 'nav-sidebar';
-  el.setAttribute('aria-label', 'Navigation');
-  el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = `
-    <div class="nav-sidebar-inner">
-      <div class="nav-header">
-        <span class="nav-title">Navigation</span>
-        <button class="nav-close-btn" aria-label="Close navigation">✕</button>
-      </div>
-      <div class="nav-search-container" id="nav-search-mount"></div>
-      <div class="nav-sections">
-        <p class="nav-section-label">Pages</p>
-        <div id="nav-pages-tree"></div>
-      </div>
-    </div>
-  `;
-  return el;
-}
-
 // ── Main setup ─────────────────────────────────────────
 function setupNavigationScreen() {
-  const menuBtn    = document.getElementById('menu-button');
-  const pageLayout = document.getElementById('page-layout');
-  if (!menuBtn || !pageLayout) return;
+  const menuBtn = document.getElementById('menu-button');
+  if (!menuBtn) return;
 
   window.renderPages    = PAGES;
   window.renderSections = [];
 
-  const NAV_W_KEY = 'dreaming-polar-nav-width';
-  const savedW = localStorage.getItem(NAV_W_KEY);
-  if (savedW) document.documentElement.style.setProperty('--nav-w', savedW);
+  // ── Nav content (injected once into content screen's nav slot) ──
+  const navInner = document.createElement('div');
+  navInner.className = 'cs-nav-inner';
+  navInner.innerHTML = `
+    <div class="nav-search-container" id="nav-search-mount"></div>
+    <div class="nav-sections">
+      <p class="nav-section-label">Pages</p>
+      <div id="nav-pages-tree"></div>
+    </div>
+  `;
 
-  const sidebar = createSidebar();
-  const vt = document.getElementById('vertical-toolbar');
-  pageLayout.insertBefore(sidebar, vt ? vt.nextSibling : pageLayout.firstChild);
+  let _built  = false;
+  let _isOpen = false;
 
-  // ── Resize handle ──
-  const handle = document.createElement('div');
-  handle.className = 'nav-resize-handle';
-  sidebar.appendChild(handle);
+  function open() {
+    const cs = window.contentScreen;
+    if (!cs) return;
+    if (!_built) {
+      _built = true;
+      cs.getNavSlot().appendChild(navInner);
+      const searchMount = navInner.querySelector('#nav-search-mount');
+      if (searchMount) setupNavSearch(searchMount, PAGES);
+    }
+    cs.showNav();
+    refreshTree();
+    _isOpen = true;
+    menuBtn.classList.add('active');
+    menuBtn.setAttribute('aria-expanded', 'true');
+  }
 
-  handle.addEventListener('pointerdown', e => {
-    if (e.button !== 0) return;
-    handle.setPointerCapture(e.pointerId);
-    const startX = e.clientX;
-    const startW = sidebar.offsetWidth;
-    handle.classList.add('dragging');
-    document.body.classList.add('nav-resizing');
-    e.preventDefault();
+  function close() {
+    window.contentScreen?.hideNav();
+    _isOpen = false;
+    menuBtn.classList.remove('active');
+    menuBtn.setAttribute('aria-expanded', 'false');
+  }
 
-    let rafId = null;
-    let pendingW = startW;
+  menuBtn.addEventListener('click', () => (_isOpen ? close() : open()));
 
-    const onMove = mv => {
-      const newW = Math.max(140, Math.min(startW + (mv.clientX - startX), window.innerWidth * 0.45));
-      if (newW === pendingW) return;
-      pendingW = newW;
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        document.documentElement.style.setProperty('--nav-w', pendingW + 'px');
-      });
-    };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _isOpen) close(); });
 
-    const onUp = () => {
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-      handle.classList.remove('dragging');
-      document.body.classList.remove('nav-resizing');
-      localStorage.setItem(NAV_W_KEY, getComputedStyle(document.documentElement).getPropertyValue('--nav-w').trim());
-      handle.removeEventListener('pointermove', onMove);
-      handle.removeEventListener('pointerup', onUp);
-      handle.removeEventListener('pointercancel', onUp);
-    };
-
-    handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup', onUp);
-    handle.addEventListener('pointercancel', onUp);
+  // Sync when AI chat or a content link takes over the view
+  document.addEventListener('content-nav-closed', () => {
+    if (!_isOpen) return;
+    _isOpen = false;
+    menuBtn.classList.remove('active');
+    menuBtn.setAttribute('aria-expanded', 'false');
   });
 
-  // ── Embedded search ──
-  const searchMount = document.getElementById('nav-search-mount');
-  if (searchMount) setupNavSearch(searchMount, PAGES);
+  document.addEventListener('open-ai-in-content', () => {
+    if (_isOpen) {
+      _isOpen = false;
+      menuBtn.classList.remove('active');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
 
-  // ── Tree ──
+  document.addEventListener('cs-back-to-nav', () => open());
+
+  // ── Tree ──────────────────────────────────────────────
   function refreshTree() {
-    const tree = document.getElementById('nav-pages-tree');
+    const tree = navInner.querySelector('#nav-pages-tree');
     if (!tree) return;
     tree.innerHTML = buildTree(PAGES);
 
-    // active link + auto-expand its ancestors
+    // Active link + auto-expand ancestors
     const path = window.location.pathname;
     tree.querySelectorAll('.nav-link').forEach(a => {
       const active = a.getAttribute('href') === path;
@@ -139,33 +115,26 @@ function setupNavigationScreen() {
       }
     });
 
-    // parent links (has children, no data-file) → clicking text also toggles
+    // Parent links toggle on click
     tree.querySelectorAll('.nav-row').forEach(row => {
       const link   = row.querySelector('.nav-link:not([data-file])');
       const toggle = row.querySelector('.nav-toggle');
       if (link && toggle) {
-        link.addEventListener('click', e => {
-          e.preventDefault();
-          toggle.click();
-        });
+        link.addEventListener('click', e => { e.preventDefault(); toggle.click(); });
       }
     });
 
-    // content links — render JSON in content screen instead of navigating
+    // Content links → render in content screen (switches to content view)
     tree.querySelectorAll('.nav-link[data-file]').forEach(a => {
       a.addEventListener('click', e => {
         e.preventDefault();
         tree.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         a.classList.add('active');
         window.contentScreen?.renderFromJson(a.dataset.file);
-        if (window.innerWidth <= 768) {
-          close();
-          document.dispatchEvent(new CustomEvent('mob-switch-to-content'));
-        }
       });
     });
 
-    // toggle click
+    // Toggle click
     tree.querySelectorAll('.nav-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         const item     = btn.closest('.nav-item');
@@ -177,41 +146,6 @@ function setupNavigationScreen() {
       });
     });
   }
-
-  // ── Open / close ──
-  let isOpen = localStorage.getItem(STORAGE.open) === 'true';
-
-  function open() {
-    isOpen = true;
-    sidebar.classList.add('open');
-    sidebar.setAttribute('aria-hidden', 'false');
-    menuBtn.setAttribute('aria-expanded', 'true');
-    menuBtn.classList.add('active');
-    localStorage.setItem(STORAGE.open, 'true');
-    refreshTree();
-  }
-
-  function close() {
-    isOpen = false;
-    sidebar.classList.remove('open');
-    sidebar.setAttribute('aria-hidden', 'true');
-    menuBtn.setAttribute('aria-expanded', 'false');
-    menuBtn.classList.remove('active');
-    localStorage.setItem(STORAGE.open, 'false');
-  }
-
-  menuBtn.addEventListener('click', () => (isOpen ? close() : open()));
-  sidebar.querySelector('.nav-close-btn').addEventListener('click', close);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) close(); });
-  document.addEventListener('mob-close-nav', () => { if (isOpen) close(); });
-
-  // click on blank content area closes nav
-  document.querySelector('main.hero')?.addEventListener('click', () => {
-    if (isOpen) close();
-  });
-
-  if (isOpen) open();
-
 }
 
 // ── Init ───────────────────────────────────────────────

@@ -8,19 +8,41 @@
 
 // ── Input weight ──────────────────────────────────────────────────────────────
 
+// Signals that the answer needs substantial depth regardless of message length
+const DEPTH_PATTERNS = [
+  // Explicit depth requests
+  /formal(ly)?|prove|proof|derive|step.by.step|in.detail/i,
+  /详细|深入|完整|全面|系统性|一步一步|怎么推导|请解释/,
+  // Explanation-type questions
+  /explain|elaborate|how does|how do|why does|why do/i,
+  /什么是|是什么|为什么|怎么|如何|原理|机制/,
+  // Comparison / contrast
+  /compare|versus|\bvs\.?\b|contrast|difference between|区别|对比/i,
+  // Technical intent
+  /implement|algorithm|complexity|example|举例|示例|代码|程序/i,
+];
+
+// Technical domain — short questions in these domains still need long answers
+const TECHNICAL_PATTERN = /\b(matrix|vector|tensor|gradient|eigen|fourier|laplace|bayesian|neural|regression|recursion|theorem|lemma|integral|derivative|kernel|topology|entropy|convex|markov|stochastic)\b|[∑∫∂∇≈≤≥×±λσμπ]|\$\$?|\bO\([^)]+\)/i;
+
 function measureWeight(text) {
-  const len = text.trim().length;
-  if (len < 12)  return 'micro';
-  if (len < 40)  return 'brief';
-  if (len < 120) return 'normal';
-  return 'detailed';
+  const t = text.trim();
+
+  if (DEPTH_PATTERNS.some(r => r.test(t))) return 'detailed';
+  if (TECHNICAL_PATTERN.test(t))           return 'detailed';
+
+  // Fallback: word count (more meaningful than char count for tone calibration)
+  const words = t.split(/[\s　]+/).filter(Boolean).length;
+  if (words >= 20) return 'normal';
+  if (words >= 5)  return 'brief';
+  return 'micro';
 }
 
 const MAX_TOKENS = {
   micro:    2000,
-  brief:    2800,
-  normal:   3400,
-  detailed: 6000,
+  brief:    3500,
+  normal:   5000,
+  detailed: 8192,
 };
 
 // ── Directives ────────────────────────────────────────────────────────────────

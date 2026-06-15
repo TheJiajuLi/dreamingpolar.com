@@ -11,6 +11,7 @@ import { getActivePersona, cyclePersona } from '../ai_persona_switch.js';
 
 const SCREEN_ID = 'ai-chat';
 
+// ── Shared helpers (module scope) ─────────────────────────────────────────────
 function escHtml(str) {
   return (str ?? '')
     .replace(/&/g, '&amp;')
@@ -201,8 +202,133 @@ function setupAiChatScreen() {
   });
 }
 
+// ── Embedded chat (renders inside content screen) ─────────────────────────────
+function setupEmbeddedChat() {
+  let _built = false;
+  let _messagesEl, _inputEl, _sendEl, _tokensEl;
+
+  function build(slot) {
+    if (_built) return;
+    _built = true;
+
+    slot.innerHTML = `
+      <div class="aic-messages cs-aic-messages" id="cs-aic-messages"></div>
+      <div class="aic-input-bar">
+        <div class="aic-token-row">
+          每日额度剩余：<span id="cs-aic-tokens">—</span> tokens
+        </div>
+        <div class="aic-dialog-wrap">
+          <div class="ai-dialog-main">
+            <div class="ai-input-wrap">
+              <input id="cs-aic-input" class="ai-header-input" type="text"
+                autocomplete="off" spellcheck="false"
+                placeholder="和小梦聊聊… (Enter 发送，Shift+Enter 换行)">
+            </div>
+            <button class="ai-header-submit" id="cs-aic-send">-></button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    _messagesEl = slot.querySelector('#cs-aic-messages');
+    _inputEl    = slot.querySelector('#cs-aic-input');
+    _sendEl     = slot.querySelector('#cs-aic-send');
+    _tokensEl   = slot.querySelector('#cs-aic-tokens');
+
+    function refreshTokens() {
+      if (_tokensEl) _tokensEl.textContent = getRemainingTokens().toLocaleString();
+    }
+    function scrollBottom() {
+      _messagesEl.scrollTop = _messagesEl.scrollHeight;
+    }
+    function renderHistory() {
+      _messagesEl.innerHTML = '';
+      getHistory().forEach(({ role, content }) => {
+        if (role === 'user' || role === 'assistant')
+          _messagesEl.appendChild(makeBubble(role, content));
+      });
+      scrollBottom();
+    }
+
+    refreshTokens();
+    renderHistory();
+
+    async function doSend(text) {
+      text = text.trim();
+      if (!text) return;
+      _inputEl.blur();
+      _inputEl.value = '';
+      _sendEl.disabled = true;
+      _sendEl.textContent = '…';
+
+      _messagesEl.appendChild(makeBubble('user', text));
+
+      const replyBubble = makeBubble('assistant', '');
+      const replyInner  = replyBubble.querySelector('.aic-bubble-inner');
+      const textNode    = document.createElement('span');
+      const cursor      = document.createElement('span');
+      cursor.className  = 'aic-typing';
+      cursor.innerHTML  = '<i></i><i></i><i></i>';
+      replyInner.append(textNode, cursor);
+      _messagesEl.appendChild(replyBubble);
+      scrollBottom();
+
+      try {
+        await sendMessage(text, {
+          onChunk(chunk) { textNode.textContent += chunk; scrollBottom(); },
+        });
+        cursor.remove();
+      } catch (e) {
+        replyBubble.remove();
+        const err = makeBubble('assistant', `⚠ ${e.message}`);
+        err.classList.add('aic-bubble--error');
+        _messagesEl.appendChild(err);
+      }
+
+      refreshTokens();
+      scrollBottom();
+      _sendEl.disabled = false;
+      _sendEl.textContent = '->';
+    }
+
+    _sendEl.addEventListener('click', () => doSend(_inputEl.value));
+    _inputEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); doSend(_inputEl.value); }
+    });
+
+    document.addEventListener('cs-chat-clear', () => {
+      clearHistory();
+      _messagesEl.innerHTML = '';
+      refreshTokens();
+    });
+
+    // ai-chat-send from input_filter routes here too
+    document.addEventListener('ai-chat-send', ({ detail: { text } }) => {
+      window.screenController?.ensureVisible('content');
+      window.contentScreen?.showChat();
+      doSend(text);
+    });
+  }
+
+  document.addEventListener('open-ai-in-content', () => {
+    const cs = window.contentScreen;
+    if (!cs) return;
+    build(cs.getChatSlot());
+    cs.showChat();
+    _inputEl?.focus();
+  });
+
+  document.addEventListener('close-ai-in-content', () => {
+    window.contentScreen?.hideChat();
+  });
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setupAiChatScreen);
+  document.addEventListener('DOMContentLoaded', () => {
+    setupAiChatScreen();
+    setupEmbeddedChat();
+  });
 } else {
   setupAiChatScreen();
+  setupEmbeddedChat();
 }

@@ -192,6 +192,20 @@
   opacity: 0;
 }
 
+#vertical-toolbar .ai-header-btn {
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+/* suppress the header-scale hover; use the same glow as start-coding-btn */
+#vertical-toolbar .ai-header-btn:hover {
+  transform: none;
+  background: var(--sc-glow-c);
+  border-color: var(--sc-glow-b);
+}
+
 #vertical-toolbar .menu-button:hover {
   background: var(--bg, #f1f5f9);
 }
