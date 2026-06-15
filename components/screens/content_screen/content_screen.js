@@ -1,6 +1,6 @@
 import { escapeHtml, renderJson,
          createMaximizeBtn }                                from './content_screen_utility.js';
-import { CONTENT_PATH_KEY,
+import { CONTENT_PATH_KEY, CONTENT_TITLE_KEY, CONTENT_CHAT_KEY,
          attachContentScreenHooks, restoreLastContent }     from './content_screen_hook.js';
 import { getActivePersona, cyclePersona, PERSONAS }         from '../../ai/ai_persona_switch.js';
 
@@ -126,7 +126,7 @@ function setupContentScreen() {
   let _navUsed       = false;
   let _currentPageTitle = null;
 
-  const VIEW_LABELS = { nav: '导航' };
+  const VIEW_LABELS = { nav: 'Navigation' };
 
   function _setView(name) {
     hero.classList.add('cs-active');
@@ -138,10 +138,13 @@ function setupContentScreen() {
     clearChatBtn.style.display = name === 'chat' ? '' : 'none';
     personaBtn.style.display   = name === 'chat' ? '' : 'none';
     backBtn.style.display      = (name === 'content' && _navUsed) ? '' : 'none';
-    labelEl.style.display      = name === 'chat' ? 'none' : '';
-    labelEl.textContent        = name === 'content'
-      ? (_currentPageTitle ?? 'Content')
-      : (VIEW_LABELS[name] ?? 'Content');
+    const showLabel = name !== 'chat' && (name !== 'content' || !!_currentPageTitle);
+    labelEl.style.display = showLabel ? '' : 'none';
+    labelEl.textContent   = name === 'content'
+      ? (_currentPageTitle ?? '')
+      : (VIEW_LABELS[name] ?? '');
+    if (name === 'chat') localStorage.setItem(CONTENT_CHAT_KEY, 'open');
+    else                 localStorage.removeItem(CONTENT_CHAT_KEY);
     if (name !== 'chat') document.dispatchEvent(new CustomEvent('content-chat-closed-externally'));
     if (name !== 'nav')  document.dispatchEvent(new CustomEvent('content-nav-closed'));
     if (name === 'nav')  _navUsed = true;
@@ -157,6 +160,7 @@ function setupContentScreen() {
       _currentPageTitle = title;
       _setView('content');
       localStorage.setItem(CONTENT_PATH_KEY, jsonPath);
+      if (title) localStorage.setItem(CONTENT_TITLE_KEY, title);
 
       const b = getBody();
       b.innerHTML = '<p class="content-loading">Loading…</p>';

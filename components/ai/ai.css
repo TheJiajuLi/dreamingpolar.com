@@ -143,11 +143,10 @@
 }
 
 .ai-header-icon {
-  width: 28px;
-  height: 28px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
   display: block;
-  animation: ai-icon-breathe 3.2s ease-in-out infinite;
 }
 .ai-header-btn:disabled .ai-header-icon {
   animation: ai-icon-working 0.9s ease-in-out infinite;

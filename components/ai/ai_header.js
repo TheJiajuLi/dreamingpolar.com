@@ -1,4 +1,5 @@
 import { getCurrentMode } from '../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
+import { CONTENT_CHAT_KEY } from '../screens/content_screen/content_screen_hook.js';
 
 function setup() {
   const vtTop = document.querySelector('#vertical-toolbar .vt-top');
@@ -9,7 +10,7 @@ function setup() {
   btn.id        = 'ai-header-btn';
   btn.title     = 'Open AI chat';
   btn.setAttribute('aria-label', 'Toggle AI chat');
-  btn.innerHTML = `<img src="${window.BASE}/assets/buttons/ai.png" alt="AI" class="ai-header-icon">`;
+  btn.innerHTML = `<img src="${window.BASE}/assets/buttons/chat_ai.png" alt="AI" class="ai-header-icon">`;
 
   vtTop.appendChild(btn);
 
@@ -35,6 +36,11 @@ function setup() {
     btn.classList.remove('active');
     btn.title = 'Open AI chat';
   });
+
+  // Restore chat-open state after all module listeners are registered
+  if (localStorage.getItem(CONTENT_CHAT_KEY) === 'open') {
+    requestAnimationFrame(() => setOpen(true));
+  }
 }
 
 if (document.readyState === 'loading') {

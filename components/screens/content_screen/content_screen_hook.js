@@ -1,7 +1,9 @@
 import { compile }                              from '../../compiler/compiler.js';
 import { handleCopyClick, createPlotRunHandler } from './content_screen_utility.js';
 
-export const CONTENT_PATH_KEY = 'dreaming-polar-content-path';
+export const CONTENT_PATH_KEY  = 'dreaming-polar-content-path';
+export const CONTENT_TITLE_KEY = 'dreaming-polar-content-title';
+export const CONTENT_CHAT_KEY  = 'dp-cs-chat-open';
 
 export function attachContentScreenHooks(hero, maximizeBtn, getBody) {
   const onPlotRun = createPlotRunHandler(getBody, compile);
@@ -22,8 +24,9 @@ export function attachContentScreenHooks(hero, maximizeBtn, getBody) {
 }
 
 export function restoreLastContent() {
-  const savedPath = localStorage.getItem(CONTENT_PATH_KEY);
+  const savedPath  = localStorage.getItem(CONTENT_PATH_KEY);
+  const savedTitle = localStorage.getItem(CONTENT_TITLE_KEY) || null;
   if (savedPath) {
-    requestAnimationFrame(() => window.contentScreen?.renderFromJson(savedPath, { openScreen: false }));
+    requestAnimationFrame(() => window.contentScreen?.renderFromJson(savedPath, { openScreen: false, title: savedTitle }));
   }
 }

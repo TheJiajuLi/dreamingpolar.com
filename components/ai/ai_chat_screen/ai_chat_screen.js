@@ -68,7 +68,7 @@ function setupAiChatScreen() {
     <div class="aic-messages" id="aic-messages"></div>
     <div class="aic-input-bar">
       <div class="aic-token-row">
-        每日额度剩余：<span id="aic-tokens">—</span> tokens
+        Daily quota remains：<span id="aic-tokens">—</span> tokens
       </div>
       <div class="aic-dialog-wrap">
         <div class="ai-dialog-main">
@@ -79,7 +79,7 @@ function setupAiChatScreen() {
               type="text"
               autocomplete="off"
               spellcheck="false"
-              placeholder="和小梦聊聊… (Enter 发送，Shift+Enter 换行)"
+              placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
             >
           </div>
           <button class="ai-header-submit" id="aic-send">go</button>
@@ -237,14 +237,14 @@ function setupEmbeddedChat() {
       <div class="aic-messages cs-aic-messages" id="cs-aic-messages"></div>
       <div class="aic-input-bar">
         <div class="aic-token-row">
-          每日额度剩余：<span id="cs-aic-tokens">—</span> tokens
+          Daily quota remains：<span id="cs-aic-tokens">—</span> tokens
         </div>
         <div class="aic-dialog-wrap">
           <div class="ai-dialog-main">
             <div class="ai-input-wrap">
               <input id="cs-aic-input" class="ai-header-input" type="text"
                 autocomplete="off" spellcheck="false"
-                placeholder="和小梦聊聊… (Enter 发送，Shift+Enter 换行)">
+                placeholder="Ask anything… (Enter to send, Shift+Enter for new line)">
             </div>
             <button class="ai-header-submit" id="cs-aic-send">-></button>
           </div>
