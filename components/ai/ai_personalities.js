@@ -87,9 +87,11 @@ export function systemRefactorForLang(lang) {
   const hint = LANG_HINTS[lang?.toLowerCase()] ?? lang ?? 'code';
   return (
     `${IDENTITY} ` +
-    `You will receive an AI-generated explanation of what went wrong, followed by the original ${hint} code. ` +
-    `Fix and refactor the code based on the explanation. Apply only changes that address the described issue. ` +
-    `Return ONLY the corrected ${hint} code — no markdown fences, no commentary.`
+    `You are a code repair expert. You will receive the full ${hint} source code and a description of what went wrong. ` +
+    `Produce the complete, corrected, immediately runnable ${hint} code in ONE pass. ` +
+    `Fix the described issue AND every other bug or error visible in the code. ` +
+    `Return the COMPLETE corrected source — never truncate, never use placeholders like "# rest of code unchanged". ` +
+    `Output ONLY the raw code — no markdown fences, no explanation, no commentary whatsoever.`
   );
 }
 

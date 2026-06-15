@@ -21,10 +21,12 @@ export function createRefactorBtn({ sourceCode, sourceLang, cellId, explanation 
     btn.innerHTML = '<span class="status-spinner"><i></i><i></i><i></i></span> Refactoring';
 
     try {
-      const prompt = `AI suggestion:\n${explanation}\n\nOriginal code:\n${sourceCode}`;
-      const raw = await ask(prompt, systemRefactorForLang(sourceLang), 2048);
+      const prompt =
+        `Error / issue:\n${explanation}\n\n` +
+        `Full source code (${sourceLang}):\n${sourceCode}`;
 
-      // Strip markdown fences if the model wraps the code anyway
+      const raw = await ask(prompt, systemRefactorForLang(sourceLang), 4096);
+
       const code = raw
         .replace(/^```[\w]*\s*\n?/m, '')
         .replace(/\n?```\s*$/m, '')
@@ -35,6 +37,20 @@ export function createRefactorBtn({ sourceCode, sourceLang, cellId, explanation 
       }));
 
       btn.textContent = '✓ Applied';
+      btn.classList.add('refactor-btn--applied');
+
+      // Run button appears right after "✓ Applied"
+      const runBtn = document.createElement('button');
+      runBtn.className = 'refactor-run-btn';
+      runBtn.title = 'Run the refactored code';
+      runBtn.innerHTML = '▶ Run';
+      runBtn.addEventListener('click', () => {
+        document.dispatchEvent(new CustomEvent('ai-insert-and-run', {
+          detail: { code, cellId },
+        }));
+      });
+      btn.insertAdjacentElement('afterend', runBtn);
+
     } catch (e) {
       btn.textContent = '✗ Failed';
       btn.disabled = false;

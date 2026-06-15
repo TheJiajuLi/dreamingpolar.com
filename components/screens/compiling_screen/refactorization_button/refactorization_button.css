@@ -34,6 +34,44 @@
   box-shadow: none;
 }
 
+/* ── Applied state ───────────────────────────────────────────── */
+.refactor-btn--applied {
+  color: #16a34a;
+  background:
+    linear-gradient(var(--surface, #fff) 0 100%) padding-box,
+    linear-gradient(90deg, #16a34a, #7c3aed) border-box;
+  opacity: 1;
+}
+
+/* ── Run button — appears after ✓ Applied ────────────────────── */
+.refactor-run-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #16a34a;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: color 0.2s, box-shadow 0.2s, transform 0.15s;
+  background:
+    linear-gradient(var(--surface, #fff) 0 100%) padding-box,
+    linear-gradient(90deg, #16a34a, #059669) border-box;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.refactor-run-btn:hover {
+  color: #059669;
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.3), 0 0 20px rgba(5, 150, 105, 0.12);
+  transform: translateY(-1px);
+}
+
 /* ── Label row: make room for the button ─────────────────────── */
 .ai-explanation-label {
   display: flex;
@@ -65,4 +103,23 @@
 [data-theme="aurora"] .refactor-btn:hover {
   color: #c4b5fd;
   box-shadow: 0 0 10px rgba(167, 139, 250, 0.3), 0 0 20px rgba(52, 211, 153, 0.12);
+}
+
+[data-theme="aurora"] .refactor-btn--applied {
+  color: #34d399;
+  background:
+    linear-gradient(var(--surface, #0d1b2e) 0 100%) padding-box,
+    linear-gradient(90deg, #34d399, #a78bfa) border-box;
+}
+
+[data-theme="aurora"] .refactor-run-btn {
+  color: #34d399;
+  background:
+    linear-gradient(var(--surface, #0d1b2e) 0 100%) padding-box,
+    linear-gradient(90deg, #34d399, #059669) border-box;
+}
+
+[data-theme="aurora"] .refactor-run-btn:hover {
+  color: #6ee7b7;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.3), 0 0 20px rgba(52, 211, 153, 0.12);
 }
