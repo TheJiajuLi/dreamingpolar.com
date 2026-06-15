@@ -109,8 +109,18 @@
   word-break: break-word;
   white-space: pre-wrap;
   position: relative;
-  overflow: hidden;
 }
+
+/* ── Copy button (assistant bubbles only) ────────────────── */
+.aic-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.1s, color 0.1s;
+}
+
+.aic-bubble:hover .aic-copy-btn { opacity: 1; }
 
 /* ── User bubbles ────────────────────────────────────────── */
 .aic-bubble--user .aic-bubble-inner {

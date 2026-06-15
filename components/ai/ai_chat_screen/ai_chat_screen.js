@@ -19,12 +19,34 @@ function escHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
+const COPY_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+
 function makeBubble(role, content) {
   const wrap  = document.createElement('div');
   wrap.className = `aic-bubble aic-bubble--${role}`;
   const inner = document.createElement('div');
   inner.className = 'aic-bubble-inner';
-  inner.innerHTML = escHtml(content).replace(/\n/g, '<br>');
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'aic-bubble-text';
+  textSpan.innerHTML = escHtml(content).replace(/\n/g, '<br>');
+  inner.appendChild(textSpan);
+
+  if (role === 'assistant') {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'aic-copy-btn lus-copy-btn';
+    copyBtn.title = 'Copy response';
+    copyBtn.innerHTML = COPY_ICON;
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(textSpan.textContent);
+        copyBtn.classList.add('lus-copy-btn--done');
+        setTimeout(() => copyBtn.classList.remove('lus-copy-btn--done'), 1500);
+      } catch (_) {}
+    });
+    inner.appendChild(copyBtn);
+  }
+
   wrap.appendChild(inner);
   return wrap;
 }
@@ -140,11 +162,11 @@ function setupAiChatScreen() {
     // Cursor visible immediately while waiting for first chunk
     const replyBubble = makeBubble('assistant', '');
     const replyInner  = replyBubble.querySelector('.aic-bubble-inner');
-    const textNode    = document.createElement('span');
+    const textNode    = replyBubble.querySelector('.aic-bubble-text');
     const cursor      = document.createElement('span');
     cursor.className  = 'aic-typing';
     cursor.innerHTML  = '<i></i><i></i><i></i>';
-    replyInner.append(textNode, cursor);
+    textNode.after(cursor);
     messagesEl.appendChild(replyBubble);
     scrollBottom();
 
@@ -264,12 +286,11 @@ function setupEmbeddedChat() {
       _messagesEl.appendChild(makeBubble('user', text));
 
       const replyBubble = makeBubble('assistant', '');
-      const replyInner  = replyBubble.querySelector('.aic-bubble-inner');
-      const textNode    = document.createElement('span');
+      const textNode    = replyBubble.querySelector('.aic-bubble-text');
       const cursor      = document.createElement('span');
       cursor.className  = 'aic-typing';
       cursor.innerHTML  = '<i></i><i></i><i></i>';
-      replyInner.append(textNode, cursor);
+      textNode.after(cursor);
       _messagesEl.appendChild(replyBubble);
       scrollBottom();
 
