@@ -60,9 +60,56 @@ function setupNavigationScreen() {
   window.renderPages    = PAGES;
   window.renderSections = [];
 
-  localStorage.removeItem('dreaming-polar-nav-width');
+  const NAV_W_KEY = 'dreaming-polar-nav-width';
+  const savedW = localStorage.getItem(NAV_W_KEY);
+  if (savedW) document.documentElement.style.setProperty('--nav-w', savedW);
+
   const sidebar = createSidebar();
-  pageLayout.insertBefore(sidebar, pageLayout.firstChild);
+  const vt = document.getElementById('vertical-toolbar');
+  pageLayout.insertBefore(sidebar, vt ? vt.nextSibling : pageLayout.firstChild);
+
+  // ── Resize handle ──
+  const handle = document.createElement('div');
+  handle.className = 'nav-resize-handle';
+  sidebar.appendChild(handle);
+
+  handle.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    handle.setPointerCapture(e.pointerId);
+    const startX = e.clientX;
+    const startW = sidebar.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.classList.add('nav-resizing');
+    e.preventDefault();
+
+    let rafId = null;
+    let pendingW = startW;
+
+    const onMove = mv => {
+      const newW = Math.max(140, Math.min(startW + (mv.clientX - startX), window.innerWidth * 0.45));
+      if (newW === pendingW) return;
+      pendingW = newW;
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        document.documentElement.style.setProperty('--nav-w', pendingW + 'px');
+      });
+    };
+
+    const onUp = () => {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      handle.classList.remove('dragging');
+      document.body.classList.remove('nav-resizing');
+      localStorage.setItem(NAV_W_KEY, getComputedStyle(document.documentElement).getPropertyValue('--nav-w').trim());
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
+    };
+
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
+  });
 
   // ── Embedded search ──
   const searchMount = document.getElementById('nav-search-mount');

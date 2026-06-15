@@ -1,8 +1,8 @@
 import { preloadPython } from '../compiler/compiler.js';
 
 function setupStartCodingBtn() {
-  const header = document.querySelector('header.page-header');
-  if (!header) return;
+  const vtTop = document.querySelector('#vertical-toolbar .vt-top');
+  if (!vtTop) return;
 
   const btn = document.createElement('button');
   btn.className = 'start-coding-btn';
@@ -20,16 +20,7 @@ function setupStartCodingBtn() {
       <line x1="11.5" y1="4.5" x2="8.5" y2="15.5"/>
     </svg>`;
 
-  const fsBtn = header.querySelector('.dp-fullscreen-btn');
-  if (fsBtn) {
-    header.insertBefore(btn, fsBtn);
-  } else {
-    // .mob-hdr-btns-wrapper groups the theme/lang/font buttons and is a direct
-    // child of header; fall back to .theme-controller for environments without it.
-    const anchor = header.querySelector('.mob-hdr-btns-wrapper')
-                ?? header.querySelector('.theme-controller');
-    anchor ? header.insertBefore(btn, anchor) : header.appendChild(btn);
-  }
+  vtTop.appendChild(btn);
 
   function syncActiveState() {
     const state = window.screenController?.getState('coding');

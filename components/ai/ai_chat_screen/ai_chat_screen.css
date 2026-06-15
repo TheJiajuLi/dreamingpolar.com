@@ -5,7 +5,7 @@
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
-  background: transparent;        /* inherits dot-grid from hero panel */
+  background: var(--surface, #ffffff);
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */

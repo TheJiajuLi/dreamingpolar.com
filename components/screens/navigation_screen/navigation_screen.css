@@ -24,7 +24,7 @@
 }
 
 .nav-sidebar.open {
-  width: 19% !important;
+  width: var(--nav-w, 19%) !important;
   overflow: visible;
   opacity: 1;
 }
@@ -38,6 +38,27 @@
   height: 100%;
   background: #ffffff;
   border-right: 1px solid #e2e8f0;
+}
+
+/* ── Resize handle ────────────────────────────────────── */
+.nav-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+}
+
+
+body.nav-resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.nav-resizing .nav-sidebar {
+  transition: none !important;
 }
 
 /* ── Header ───────────────────────────────────────────── */

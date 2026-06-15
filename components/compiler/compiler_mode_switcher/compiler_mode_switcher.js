@@ -21,32 +21,28 @@ export function setMode(id) {
   if (!MODES.some(m => m.id === id) || id === _currentMode) return;
   _currentMode = id;
   localStorage.setItem(MODE_KEY, _currentMode);
-  document.querySelector('.compiler-mode-switcher')
-    ?.querySelectorAll('.mode-btn')
-    .forEach(b => b.classList.toggle('active', b.dataset.mode === id));
+  document.querySelectorAll('.compiler-mode-select').forEach(sel => { sel.value = id; });
   document.dispatchEvent(new CustomEvent('compiler-mode-change', { detail: { mode: id } }));
 }
 
 export function mountModeSwitcher(container) {
-  const pill = document.createElement('div');
-  pill.className = 'compiler-mode-switcher';
+  const sel = document.createElement('select');
+  sel.className = 'compiler-mode-select nb-lang-select';
 
   for (const m of MODES) {
-    const btn = document.createElement('button');
-    btn.className  = 'mode-btn' + (m.id === _currentMode ? ' active' : '');
-    btn.textContent = m.label;
-    btn.dataset.mode = m.id;
-
-    btn.addEventListener('click', () => {
-      _currentMode = m.id;
-      localStorage.setItem(MODE_KEY, _currentMode);
-      pill.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.dispatchEvent(new CustomEvent('compiler-mode-change', { detail: { mode: _currentMode } }));
-    });
-
-    pill.appendChild(btn);
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.label;
+    if (m.id === _currentMode) opt.selected = true;
+    sel.appendChild(opt);
   }
 
-  container.appendChild(pill);
+  sel.addEventListener('change', () => {
+    _currentMode = sel.value;
+    localStorage.setItem(MODE_KEY, _currentMode);
+    document.querySelectorAll('.compiler-mode-select').forEach(s => { if (s !== sel) s.value = _currentMode; });
+    document.dispatchEvent(new CustomEvent('compiler-mode-change', { detail: { mode: _currentMode } }));
+  });
+
+  container.appendChild(sel);
 }

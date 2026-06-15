@@ -18,12 +18,6 @@
   gap: 8px;
 }
 
-.cds-header-bottom {
-  display: flex;
-  align-items: center;
-  padding: 0 8px 6px 10px;
-  flex-shrink: 0;
-}
 
 .cds-header-left {
   display: flex;

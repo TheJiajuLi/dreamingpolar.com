@@ -1,0 +1,254 @@
+/* ── Vertical Toolbar ─────────────────────────────────────────────────────── */
+
+#vertical-toolbar {
+  width: var(--vt-w, 44px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: calc(100dvh - var(--header-height, 76px));
+  background: var(--surface, #ffffff);
+  border-right: 1px solid var(--border, #e2e8f0);
+  box-sizing: border-box;
+  overflow: visible;
+  user-select: none;
+  z-index: 10;
+}
+
+/* ── Top and bottom icon groups ──────────────────────────────────────────── */
+
+.vt-top,
+.vt-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 0;
+}
+
+/* ── Individual icon buttons ─────────────────────────────────────────────── */
+
+.vt-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.vt-btn:hover {
+  background: var(--bg, #f1f5f9);
+  color: var(--text, #0f172a);
+}
+
+.vt-btn.active {
+  background: var(--bg, #f1f5f9);
+  color: var(--text, #0f172a);
+}
+
+/* ── Active indicator bar ────────────────────────────────────────────────── */
+
+.vt-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #6366f1;
+}
+
+/* ── Badge dot (for notifications) ──────────────────────────────────────── */
+
+.vt-btn[data-badge]::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6366f1;
+}
+
+/* ── Theme overrides ─────────────────────────────────────────────────────── */
+
+[data-theme="dark"] #vertical-toolbar,
+[data-theme="grey"] #vertical-toolbar {
+  border-right-color: rgba(255,255,255,0.06);
+}
+
+[data-theme="aurora"] #vertical-toolbar {
+  border-right-color: rgba(99,102,241,0.2);
+}
+
+[data-theme="dark"]  .vt-btn:hover,
+[data-theme="grey"]  .vt-btn:hover,
+[data-theme="dark"]  .vt-btn.active,
+[data-theme="grey"]  .vt-btn.active {
+  background: rgba(255,255,255,0.06);
+  color: rgba(220,235,255,0.88);
+}
+
+[data-theme="aurora"] .vt-btn:hover,
+[data-theme="aurora"] .vt-btn.active {
+  background: rgba(99,102,241,0.12);
+  color: #c4b5fd;
+}
+
+[data-theme="aurora"] .vt-btn.active::before {
+  background: #818cf8;
+}
+
+/* ── Hosted buttons: normalize sizing & centering ────────────────────────── */
+
+/* menu-button: keep its natural column-flex/bar layout, just add hover rounding */
+#vertical-toolbar .menu-button {
+  border-radius: 8px;
+  padding: 9px 7px;
+  transition: background 0.15s;
+  overflow: visible;
+}
+
+#vertical-toolbar .start-coding-btn,
+#vertical-toolbar .dp-terminal-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s, box-shadow 0.3s, color 0.3s;
+  flex-shrink: 0;
+  padding: 0;
+  box-sizing: border-box;
+  position: relative;
+  overflow: visible;
+}
+
+/* ── Terminal btn: comet border layer ────────────────────── */
+#vertical-toolbar .dp-terminal-toolbar-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  padding: 1.5px;
+  border-radius: 10px;
+  background: conic-gradient(
+    from var(--sc-angle),
+    transparent      0%,
+    var(--sc-glow-c) 4%,
+    var(--sc-glow-b) 9%,
+    var(--sc-glow-a) 13%,
+    var(--sc-glow)   14%,
+    var(--sc-glow-a) 15%,
+    var(--sc-glow-b) 19%,
+    var(--sc-glow-c) 24%,
+    transparent      28%,
+    transparent      100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+
+/* ── Terminal btn: shimmer sweep ─────────────────────────── */
+#vertical-toolbar .dp-terminal-toolbar-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 7px;
+  background: linear-gradient(
+    108deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 65%
+  );
+  background-size: 220% 100%;
+  background-position: 220% 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+#vertical-toolbar .menu-button:hover {
+  background: var(--bg, #f1f5f9);
+}
+
+#vertical-toolbar .start-coding-btn:hover,
+#vertical-toolbar .dp-terminal-toolbar-btn:hover {
+  border-color: var(--sc-glow-b);
+  background: var(--sc-glow-c);
+  box-shadow: 0 0 8px var(--sc-glow-b), 0 0 18px var(--sc-glow-c);
+}
+
+#vertical-toolbar .start-coding-btn:not(.active):hover::before,
+#vertical-toolbar .dp-terminal-toolbar-btn:not(.active):hover::before {
+  opacity: 0.3;
+}
+
+#vertical-toolbar .start-coding-btn:hover::after,
+#vertical-toolbar .dp-terminal-toolbar-btn:hover::after {
+  opacity: 1;
+  animation: sc-shimmer 0.55s ease forwards;
+}
+
+#vertical-toolbar .menu-button.active {
+  background: transparent;
+  transform: scale(0.72);
+}
+
+#vertical-toolbar .dp-terminal-toolbar-btn.active {
+  border-color: var(--sc-glow-b);
+  background: var(--sc-glow-c);
+  animation: sc-breathe 3s ease-in-out infinite;
+}
+
+body.dp-ready #vertical-toolbar .dp-terminal-toolbar-btn.active::before {
+  opacity: 1;
+  animation: sc-comet 3s linear infinite;
+}
+
+/* Theme overrides for hosted buttons */
+[data-theme="dark"]  #vertical-toolbar .menu-button:hover,
+[data-theme="grey"]  #vertical-toolbar .menu-button:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+/* ── Mobile: hide toolbar, menu-button lives in header ───────────────────── */
+
+@media (max-width: 768px) {
+  #vertical-toolbar {
+    display: none;
+  }
+}
+
+/* ── Fullscreen: collapse toolbar ────────────────────────────────────────── */
+
+body.dp-fullscreen #vertical-toolbar {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+  border-right: none;
+}

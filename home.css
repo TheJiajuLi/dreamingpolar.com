@@ -20,10 +20,9 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 16px;
-  padding: 0 24px;
+  padding: 0 24px 0 3px;
   background: #ffffffee;
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid #d7e1eb;
   user-select: none;
   flex-shrink: 0;
 }
@@ -88,8 +87,21 @@ main.hero {
 
 .hero-screen:last-child { border-right: none; }
 
-[data-theme="dark"] .page-header { background: rgba(1,4,9,0.88); backdrop-filter: blur(12px); border-bottom-color: #30363d; }
-[data-theme="grey"] .page-header { background: rgba(13,17,23,0.88); backdrop-filter: blur(12px); border-bottom-color: #444c56; }
+.page-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: var(--vt-w, 44px);
+  right: 0;
+  height: 1px;
+  background: #d7e1eb;
+  pointer-events: none;
+}
+
+[data-theme="dark"] .page-header { background: rgba(1,4,9,0.88); backdrop-filter: blur(12px); }
+[data-theme="grey"] .page-header { background: rgba(13,17,23,0.88); backdrop-filter: blur(12px); }
+[data-theme="dark"] .page-header::after { background: #30363d; }
+[data-theme="grey"] .page-header::after { background: #444c56; }
 
 [data-theme="dark"] .hero-screen { background: var(--bg); border-right-color: rgba(255,255,255,0.05); }
 [data-theme="grey"] .hero-screen { background: var(--bg); border-right-color: rgba(255,255,255,0.05); }
@@ -187,8 +199,10 @@ p {
 }
 
 :root {
-  --header-height: 76px;
-  --screen-header-h: 65px;
+  --header-height: 44px;
+  --screen-header-h: 35px;
+  --status-bar-h: 26px;
+  --vt-w: 44px;
 }
 
 /* ── Fullscreen toggle button ─────────────────────────── */
@@ -210,7 +224,6 @@ p {
 }
 .dp-fullscreen-btn:hover  { background: rgba(0,0,0,0.055); color: var(--text, #102040); transform: scale(1.08); }
 
-.dp-fullscreen-btn ~ .theme-controller { margin-left: 0; }
 
 /* ── Fullscreen exit hint toast ───────────────────────── */
 .dp-fs-toast {
@@ -353,8 +366,8 @@ body.dp-fullscreen .dp-fullscreen-btn:hover {
 [data-theme="aurora"] .page-header {
   background: rgba(7,7,26,0.92);
   backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(99,102,241,0.22);
 }
+[data-theme="aurora"] .page-header::after { background: rgba(99,102,241,0.22); }
 
 /* Aurora logo: purple/magenta glow */
 [data-theme="aurora"] .app-logo {

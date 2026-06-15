@@ -64,13 +64,12 @@ function mount() {
   _btn.innerHTML = SVG_EXPAND;
   _btn.addEventListener('click', () => setFullscreen(!_active));
 
-  // mob-hdr-btns-wrapper wraps theme/lang/font on mobile — insert before it.
-  // Fall back to appending if the wrapper isn't present.
-  const anchor = header.querySelector('.mob-hdr-btns-wrapper');
-  if (anchor) {
-    header.insertBefore(_btn, anchor);
+  const dropdown = header.querySelector('.mob-hdr-btns-dropdown');
+  if (dropdown) {
+    dropdown.insertBefore(_btn, dropdown.firstChild);
   } else {
-    header.appendChild(_btn);
+    const wrapper = header.querySelector('.mob-hdr-btns-wrapper');
+    wrapper ? header.insertBefore(_btn, wrapper) : header.appendChild(_btn);
   }
 }
 

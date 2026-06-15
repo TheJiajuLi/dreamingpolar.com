@@ -1,4 +1,4 @@
-import { mountModeSwitcher, getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
+import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
 import { init as initNotebook } from '../../customise_code_block/customise_code_block.js';
 import { compile } from '../../compiler/compiler.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
@@ -63,9 +63,6 @@ function setupCodingScreen() {
           <button class="sc-btn" id="cds-min-btn" title="Minimize">−</button>
         </div>
       </div>
-      <div class="cds-header-bottom">
-        <div id="cds-mode-slot"></div>
-      </div>
     </div>
     <div class="coding-screen-body" id="coding-screen-body">
       <div id="cds-single-view"></div>
@@ -107,10 +104,7 @@ function setupCodingScreen() {
     minBtn?.addEventListener('click', () => window.screenController?.close('coding'));
   });
 
-  // ── Mode switcher in header ───────────────────────────
-  mountModeSwitcher(document.getElementById('cds-mode-slot'));
-
-  const singleView   = document.getElementById('cds-single-view');
+const singleView   = document.getElementById('cds-single-view');
   const notebookView = document.getElementById('cds-notebook-view');
 
   // ── Single-cell view ──────────────────────────────────
