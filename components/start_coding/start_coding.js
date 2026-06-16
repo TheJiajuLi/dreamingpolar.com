@@ -29,10 +29,15 @@ function setupStartCodingBtn() {
     btn.title = isOpen ? 'Close code editor' : 'Open code editor';
   }
 
+  let _preloaded = false;
   btn.addEventListener('click', () => {
+    if (!_preloaded) {
+      _preloaded = true;
+      preloadPython();
+    }
     const state = window.screenController?.getState('coding');
     if (!state || state === 'closed') {
-      preloadPython();               // start loading in background on first open
+      window.screenController?.minimize('content');
       window.screenController?.open('coding');
     } else {
       window.screenController?.close('coding');
@@ -56,8 +61,8 @@ if (document.readyState === 'loading') {
   setupStartCodingBtn();
 }
 
-// Inject @property only after Pyodide is ready so it doesn't run during load
-function injectCometProperty() {
+// Inject @property immediately so the comet animation is ready before first click
+(function injectCometProperty() {
   if (document.getElementById('sc-property')) return;
   const s = document.createElement('style');
   s.id = 'sc-property';
@@ -67,10 +72,4 @@ function injectCometProperty() {
   inherits: false;
 }`;
   document.head.appendChild(s);
-}
-
-if (document.body.classList.contains('dp-ready')) {
-  injectCometProperty();
-} else {
-  document.body.addEventListener('dp-ready-event', injectCometProperty, { once: true });
-}
+}());

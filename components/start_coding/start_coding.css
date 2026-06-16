@@ -22,7 +22,8 @@
   position: relative;
   background: transparent;
   overflow: visible;
-  transition: border-color 0.3s, background 0.3s, box-shadow 0.3s, color 0.3s;
+  will-change: border-color, background;
+  transition: border-color 0.3s, background 0.3s, color 0.3s;
 }
 
 /* ── Comet layer — gradient clipped to border-width zone ─── */
@@ -31,7 +32,7 @@
   content: '';
   position: absolute;
   inset: -2px;
-  padding: 1.5px;          /* border thickness */
+  padding: 1.5px;
   border-radius: 10px;
   background: conic-gradient(
     from var(--sc-angle),
@@ -57,6 +58,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s;
+  animation: sc-comet 3s linear infinite; /* always running — no restart on toggle */
 }
 
 /* ── Shimmer sweep ──────────────────────────────────────── */
@@ -81,7 +83,6 @@
 .start-coding-btn:hover {
   border-color: var(--sc-glow-b);
   background: var(--sc-glow-c);
-  box-shadow: 0 0 8px var(--sc-glow-b), 0 0 18px var(--sc-glow-c);
 }
 
 .start-coding-btn:not(.active):hover::before {
@@ -105,10 +106,8 @@
   animation: sc-breathe 3s ease-in-out infinite;
 }
 
-/* Comet only starts after Pyodide is ready — avoids GPU load during init */
-body.dp-ready .start-coding-btn.active::before {
+.start-coding-btn.active::before {
   opacity: 1;
-  animation: sc-comet 3s linear infinite;
 }
 
 .start-coding-btn.active .start-coding-icon {
@@ -135,21 +134,9 @@ body.dp-ready .start-coding-btn.active::before {
   to { --sc-angle: 360deg; }
 }
 
-/* Atmospheric glow: multi-layer box-shadow breathes softly */
 @keyframes sc-breathe {
-  0%, 100% {
-    box-shadow:
-      0 0  4px var(--sc-glow-b),
-      0 0 12px var(--sc-glow-b),
-      0 0 24px var(--sc-glow-c);
-  }
-  50% {
-    box-shadow:
-      0 0  7px var(--sc-glow-a),
-      0 0 18px var(--sc-glow-b),
-      0 0 38px var(--sc-glow-b),
-      0 0 56px var(--sc-glow-c);
-  }
+  0%, 100% { background: var(--sc-glow-c); }
+  50%       { background: var(--sc-glow-b); }
 }
 
 /* Icon glow breathes in sync with the aura */

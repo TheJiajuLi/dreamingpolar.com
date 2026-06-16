@@ -36,35 +36,39 @@
 /* ── Persona selector ────────────────────────────────────────────────────── */
 
 .aic-persona-btn {
-  flex: 1;
-  text-align: left;
-  padding: 3px 8px;
-  margin-left: 4px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background: transparent;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 9px;
+  border-radius: 20px;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--surface, #fff) 0 100%) padding-box,
+    linear-gradient(90deg, #16a34a 0%, #7c3aed 35%, #06b6d4 65%, #16a34a 100%) border-box;
+  background-size: 100% 100%, 300% 100%;
+  animation: ai-border-flow 3s linear infinite;
   cursor: pointer;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  color: var(--text-muted, #94a3b8);
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  font-size: 0.63rem;
+  font-weight: 600;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  letter-spacing: 0.05em;
+  color: var(--text, #0f172a);
   white-space: nowrap;
+  transition: opacity 0.2s;
 }
 
-.aic-persona-btn:hover {
-  border-color: var(--border, #e2e8f0);
-  background: var(--bg-2, rgba(0,0,0,0.04));
-  color: var(--text, #1e293b);
+.aic-persona-btn svg {
+  opacity: 0.55;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.35s;
 }
 
-.aic-persona-btn[data-persona-id="boby"] {
-  color: #a78bfa;
-}
-.aic-persona-btn[data-persona-id="boby"]:hover {
-  border-color: rgba(167,139,250,0.3);
-  background: rgba(167,139,250,0.08);
-  color: #c4b5fd;
+.aic-persona-btn:hover { opacity: 0.8; }
+
+.aic-persona-btn:hover svg {
+  opacity: 1;
+  transform: rotate(180deg);
 }
 
 /* ── Messages area ───────────────────────────────────────────────────────── */
@@ -207,15 +211,20 @@
 
 .aic-input-bar {
   flex-shrink: 0;
-  border-top: 1px solid var(--border, #e2e8f0);
-  padding: 7px 9px 9px;
+  border-top: none;
+  padding: 7px 8px 9px 12px;
   display: flex;
   flex-direction: column;
   gap: 5px;
   background: var(--surface, #fff);
+  border-radius: 12px;
+  margin-bottom: 8px;
 }
 
 .aic-token-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 0.6rem;
   color: var(--text-muted, #94a3b8);
   letter-spacing: 0.04em;

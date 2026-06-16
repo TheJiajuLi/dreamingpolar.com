@@ -31,6 +31,9 @@
   justify-content: center;
   transition: background 0.12s, color 0.12s;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .sc-btn:hover              { background: rgba(0, 0, 0, 0.06);   color: #334155; }
@@ -52,6 +55,9 @@
   line-height: 1;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .sc-restore-chip:hover {

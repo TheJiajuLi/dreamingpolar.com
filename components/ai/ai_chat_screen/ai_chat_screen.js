@@ -20,6 +20,7 @@ function escHtml(str) {
 }
 
 const COPY_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+const _SEND_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
 
 function makeBubble(role, content) {
   const wrap  = document.createElement('div');
@@ -61,8 +62,6 @@ function setupAiChatScreen() {
       <button class="aic-persona-btn" id="aic-persona-btn" title="切换 AI 角色"></button>
       <div class="sc-toolbar">
         <button class="sc-btn" id="aic-clear-btn" title="Clear chat">⊘</button>
-        <button class="sc-btn" id="aic-max-btn"   title="Maximize">⤢</button>
-        <button class="sc-btn" id="aic-min-btn"   title="Minimize">−</button>
       </div>
     </div>
     <div class="aic-messages" id="aic-messages"></div>
@@ -82,7 +81,7 @@ function setupAiChatScreen() {
               placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
             >
           </div>
-          <button class="ai-header-submit" id="aic-send">go</button>
+          <button class="ai-header-submit" id="aic-send" aria-label="Send">${_SEND_ICON}</button>
         </div>
       </div>
     </div>
@@ -92,8 +91,6 @@ function setupAiChatScreen() {
   const inputEl       = document.getElementById('aic-input');
   const sendBtn       = document.getElementById('aic-send');
   const clearBtn      = document.getElementById('aic-clear-btn');
-  const maxBtn      = document.getElementById('aic-max-btn');
-  const minBtn      = document.getElementById('aic-min-btn');
   const tokensEl    = document.getElementById('aic-tokens');
   const personaBtn  = document.getElementById('aic-persona-btn');
 
@@ -113,17 +110,11 @@ function setupAiChatScreen() {
   document.addEventListener('ai-persona-changed', syncPersonaBtn);
 
   // ── screenController wiring ──────────────────────────────────────────────
-  function syncMaxBtn(state) {
-    if (maxBtn) maxBtn.textContent = state === 'maximized' ? '⤡' : '⤢';
-  }
-
   requestAnimationFrame(() => {
     const sc = window.screenController;
-    sc?.register(SCREEN_ID, screen, { onStateChange: syncMaxBtn, label: 'Chat' });
+    sc?.register(SCREEN_ID, screen, { label: 'Chat' });
     // Start closed; opens only when ai_chat mode is active
     if (getCurrentMode() !== 'ai_chat') sc?.close(SCREEN_ID);
-    maxBtn?.addEventListener('click', () => sc?.toggle(SCREEN_ID));
-    minBtn?.addEventListener('click', () => sc?.minimize(SCREEN_ID));
   });
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -155,7 +146,7 @@ function setupAiChatScreen() {
     inputEl.blur(); // dismiss iOS keyboard so viewport restores before messages scroll
     inputEl.value = '';
     sendBtn.disabled = true;
-    sendBtn.textContent = '…';
+    sendBtn.innerHTML = '…';
 
     messagesEl.appendChild(makeBubble('user', text));
 
@@ -188,7 +179,7 @@ function setupAiChatScreen() {
     refreshTokens();
     scrollBottom();
     sendBtn.disabled = false;
-    sendBtn.textContent = '->';
+    sendBtn.innerHTML = _SEND_ICON;
   }
 
   sendBtn.addEventListener('click', () => doSend(inputEl.value));
@@ -206,20 +197,16 @@ function setupAiChatScreen() {
   document.addEventListener('compiler-mode-change', ({ detail: { mode } }) => {
     const sc = window.screenController;
     if (mode === 'ai_chat') {
-      sc?.close('compiling');
       sc?.open(SCREEN_ID);
       inputEl?.focus();
     } else {
       sc?.close(SCREEN_ID);
-      sc?.open('compiling');
     }
   });
 
   // ── ai_header.js routes conversational prompts here ──────────────────────
   document.addEventListener('ai-chat-send', ({ detail: { text } }) => {
-    const sc = window.screenController;
-    sc?.close('compiling');
-    sc?.open(SCREEN_ID);
+    window.screenController?.open(SCREEN_ID);
     doSend(text);
   });
 }
@@ -246,7 +233,7 @@ function setupEmbeddedChat() {
                 autocomplete="off" spellcheck="false"
                 placeholder="Ask anything… (Enter to send, Shift+Enter for new line)">
             </div>
-            <button class="ai-header-submit" id="cs-aic-send">-></button>
+            <button class="ai-header-submit" id="cs-aic-send" aria-label="Send">${_SEND_ICON}</button>
           </div>
         </div>
       </div>
@@ -281,7 +268,7 @@ function setupEmbeddedChat() {
       _inputEl.blur();
       _inputEl.value = '';
       _sendEl.disabled = true;
-      _sendEl.textContent = '…';
+      _sendEl.innerHTML = '…';
 
       _messagesEl.appendChild(makeBubble('user', text));
 
@@ -309,7 +296,7 @@ function setupEmbeddedChat() {
       refreshTokens();
       scrollBottom();
       _sendEl.disabled = false;
-      _sendEl.textContent = '->';
+      _sendEl.innerHTML = _SEND_ICON;
     }
 
     _sendEl.addEventListener('click', () => doSend(_inputEl.value));

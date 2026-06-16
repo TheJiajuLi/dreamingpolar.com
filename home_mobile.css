@@ -60,7 +60,7 @@
   /* start-coding btn: navigation is via the 4 bottom tabs */
   /* max/min btns: conflict with mob-visible tab logic */
   #start-coding-btn,
-  .page-header #ai-header-btn,
+  .page-header #ai-chat-btn,
   .dp-fullscreen-btn,
   .content-screen-header .sc-toolbar,
   .compiling-screen-header .sc-toolbar,

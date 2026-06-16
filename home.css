@@ -6,46 +6,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-}
-
-/* ── Header ───────────────────────────────────────────── */
-.page-header {
-  position: sticky;
-  top: 0;
-  overflow: visible;
-  z-index: 30;
-  height: var(--header-height);
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 16px;
-  padding: 0 24px 0 3px;
-  background: #ffffffee;
-  backdrop-filter: blur(8px);
-  user-select: none;
-  flex-shrink: 0;
-}
-
-.app-logo {
-  height: 38px;
-  width: auto;
-  max-width: 200px;
-  object-fit: contain;
-  user-select: none;
-  transition: filter 0.3s ease;
-}
-
-[data-theme="dark"]   .app-logo,
-[data-theme="aurora"] .app-logo,
-[data-theme="grey"]   .app-logo {
-  filter: drop-shadow(0 0 6px rgba(120, 200, 255, 1))
-          drop-shadow(0 0 16px rgba(80, 160, 255, 0.85))
-          drop-shadow(0 0 32px rgba(60, 130, 255, 0.5));
-}
-
-.menu-button:focus:not(:focus-visible) {
-  outline: none;
+  overflow-x: clip;
 }
 
 /* ── Page layout row (sidebar + main) ─────────────────── */
@@ -87,28 +48,8 @@ main.hero {
 
 .hero-screen:last-child { border-right: none; }
 
-.page-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: var(--vt-w, 44px);
-  right: 0;
-  height: 1px;
-  background: #d7e1eb;
-  pointer-events: none;
-}
-
-[data-theme="dark"] .page-header { background: rgba(1,4,9,0.88); backdrop-filter: blur(12px); }
-[data-theme="grey"] .page-header { background: rgba(13,17,23,0.88); backdrop-filter: blur(12px); }
-[data-theme="dark"] .page-header::after { background: #30363d; }
-[data-theme="grey"] .page-header::after { background: #444c56; }
-
 [data-theme="dark"] .hero-screen { background: var(--bg); border-right-color: rgba(255,255,255,0.05); }
 [data-theme="grey"] .hero-screen { background: var(--bg); border-right-color: rgba(255,255,255,0.05); }
-[data-theme="grey"] .app-logo {
-  filter: drop-shadow(0 0 6px rgba(87,171,90,0.55))
-          drop-shadow(0 0 16px rgba(87,171,90,0.35));
-}
 
 .hero-copy {
   max-width: 760px;
@@ -159,14 +100,6 @@ p {
   margin: 0;
 }
 
-/* ── Mobile ───────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .page-header {
-    padding: 0 12px;
-    gap: 8px;
-  }
-}
-
 @media (max-width: 640px) {
   .card,
   .math-block {
@@ -205,177 +138,20 @@ p {
   --vt-w: 44px;
 }
 
-/* ── Fullscreen toggle button ─────────────────────────── */
-/* ── Fullscreen toggle button (lives in .page-header) ─── */
-.dp-fullscreen-btn {
-  margin-left: 4px;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 20px;
-  background: transparent;
-  color: var(--hdr-btn-fg, #3d4451);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.15s;
-}
-.dp-fullscreen-btn:hover  { background: rgba(0,0,0,0.055); color: var(--text, #102040); transform: scale(1.08); }
-
-
-/* ── Fullscreen exit hint toast ───────────────────────── */
-.dp-fs-toast {
-  position: fixed;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%) translateY(0);
-  z-index: 9999;
-  background: rgba(18, 18, 22, 0.78);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: rgba(230, 230, 240, 0.92);
-  font-size: 0.72rem;
-  font-family: var(--code-font, "JetBrains Mono", monospace);
-  letter-spacing: 0.02em;
-  padding: 7px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
-  pointer-events: none;
-  white-space: nowrap;
-  animation: dp-toast-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-.dp-fs-toast kbd {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 6px;
-  padding: 1px 7px;
-  border: 1.5px solid rgba(255,255,255,0.35);
-  border-bottom-width: 2.5px;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.08);
-  font-family: inherit;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: 0.04em;
-}
-.dp-fs-toast--out {
-  animation: dp-toast-out 0.38s ease forwards;
-}
-@keyframes dp-toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-@keyframes dp-toast-out {
-  from { opacity: 1; transform: translateX(-50%) translateY(0); }
-  to   { opacity: 0; transform: translateX(-50%) translateY(-6px); }
-}
-
-/* ── Fullscreen mode ──────────────────────────────────── */
-body.dp-fullscreen { --header-height: 0px; }
-body.dp-fullscreen .page-header {
-  height: 0;
-  padding: 0;
-  border: none;
-  overflow: hidden;
-  pointer-events: none;
-  backdrop-filter: none;           /* iOS Safari: backdrop-filter traps position:fixed children inside this container */
-  -webkit-backdrop-filter: none;   /* removing it lets the floating exit button escape to the viewport */
-}
 body.dp-fullscreen .nav-sidebar {
   width: 0 !important;
   opacity: 0;
   pointer-events: none;
 }
 
-/* ── Fullscreen: float exit button at top-center ─────────── */
-body.dp-fullscreen .dp-fullscreen-btn {
-  position: fixed;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
-  z-index: 9998;
-  opacity: 0.28;
-  background: rgba(0, 0, 0, 0.38);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  pointer-events: auto;
-  transition: opacity 0.2s, background 0.2s, transform 0.18s;
-}
-body.dp-fullscreen .dp-fullscreen-btn:hover {
-  opacity: 1 !important;
-  background: rgba(0, 0, 0, 0.62) !important;
-  color: #fff !important;
-  transform: translateX(-50%) scale(1.1);
-}
-
-/* ── Fullscreen exit — touch devices (no hover, no Esc key) ─── */
-@media (pointer: coarse) {
-  body.dp-fullscreen .dp-fullscreen-btn {
-    top: auto;
-    bottom: 24px;
-    right: 16px;
-    left: auto;
-    transform: none;
-    opacity: 1;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.58);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
-  }
-  body.dp-fullscreen .dp-fullscreen-btn:hover {
-    transform: none;
-  }
-  /* Toast appears near the button on touch */
-  .dp-fs-toast {
-    top: auto;
-    bottom: 84px;
-    right: 10px;
-    left: auto;
-    transform: none;
-  }
-  @keyframes dp-toast-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes dp-toast-out {
-    from { opacity: 1; transform: translateY(0); }
-    to   { opacity: 0; transform: translateY(4px); }
-  }
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    FUTURISTIC PANEL SYSTEM — dark / grey / aurora themes
    ═══════════════════════════════════════════════════════════════════════════ */
-
 
 /* Panel borders: subtle neon glow */
 [data-theme="dark"]   .hero-screen { border-right-color: rgba(99,102,241,0.14); }
 [data-theme="grey"]   .hero-screen { border-right-color: rgba(99,102,241,0.14); }
 [data-theme="aurora"] .hero-screen { border-right-color: rgba(99,102,241,0.22); }
-
-/* Aurora header */
-[data-theme="aurora"] .page-header {
-  background: rgba(7,7,26,0.92);
-  backdrop-filter: blur(14px);
-}
-[data-theme="aurora"] .page-header::after { background: rgba(99,102,241,0.22); }
-
-/* Aurora logo: purple/magenta glow */
-[data-theme="aurora"] .app-logo {
-  filter:
-    drop-shadow(0 0 6px rgba(192,132,252,0.9))
-    drop-shadow(0 0 16px rgba(99,102,241,0.7))
-    drop-shadow(0 0 32px rgba(99,102,241,0.35));
-}
 
 /* Screen header accent line — top neon stripe in aurora/dark */
 [data-theme="aurora"] .compiling-screen-header,
@@ -414,3 +190,4 @@ body.dp-fullscreen .dp-fullscreen-btn:hover {
 [data-theme="aurora"] .aic-messages {
   scrollbar-color: rgba(99,102,241,0.35) transparent;
 }
+

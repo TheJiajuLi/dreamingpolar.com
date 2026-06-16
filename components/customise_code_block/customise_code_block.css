@@ -256,6 +256,27 @@
 }
 .nb-add-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; border-style: solid; }
 
+/* ── Inline output section inside each notebook cell ───── */
+.nb-cell .nb-output-section {
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  border-bottom: none;
+  background: #f7f9fc;
+}
+.nb-cell .nb-output-section .nb-output-section-label {
+  background: transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+  height: 26px;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  color: var(--text-muted, #94a3b8);
+}
+.nb-cell .nb-output-section .nb-output-section-body { background: transparent; box-shadow: none; }
+.nb-cell .nb-output-section .output-block { background: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.04) !important; }
+.nb-cell .nb-output-section .output-block:last-child { border-bottom: none !important; }
+.nb-cell .nb-output-section .output-error { background: transparent !important; border-left: 2px solid #f87171; color: #b91c1c; }
+.nb-cell .nb-output-section .output-image { padding: 0; }
+.nb-cell .nb-output-section .output-image img { width: 100%; display: block; border-radius: 0; }
+
 /* ── Per-cell output sections (in the Output panel) ───── */
 .nb-output-section {
   border: none;

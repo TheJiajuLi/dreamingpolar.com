@@ -77,6 +77,7 @@ export function attachCellHooks({
   delBtn.addEventListener('click', () => {
     const cells = getCells();
     if (cells.length === 1) return;
+    cell._outputAC?.abort();
     document.dispatchEvent(new CustomEvent('notebook-cell-deleted', { detail: { cellId: cell.id } }));
     setCells(cells.filter(c => c !== cell));
     rebuildCells();

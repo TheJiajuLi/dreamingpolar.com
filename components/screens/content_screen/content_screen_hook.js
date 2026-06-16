@@ -5,7 +5,7 @@ export const CONTENT_PATH_KEY  = 'dreaming-polar-content-path';
 export const CONTENT_TITLE_KEY = 'dreaming-polar-content-title';
 export const CONTENT_CHAT_KEY  = 'dp-cs-chat-open';
 
-export function attachContentScreenHooks(hero, maximizeBtn, getBody) {
+export function attachContentScreenHooks(hero, getBody) {
   const onPlotRun = createPlotRunHandler(getBody, compile);
 
   hero.addEventListener('click', async e => {
@@ -13,13 +13,22 @@ export function attachContentScreenHooks(hero, maximizeBtn, getBody) {
     await onPlotRun(e);
   });
 
-  function syncBtn(state) {
-    maximizeBtn.textContent = state === 'maximized' ? '⤡' : '⤢';
-  }
-
   requestAnimationFrame(() => {
-    window.screenController?.register('content', hero, { onStateChange: syncBtn, label: 'Content', persisted: true });
-    maximizeBtn.addEventListener('click', () => window.screenController?.toggle('content'));
+    window.screenController?.register('content', hero, { label: 'Content', persisted: true, defaultOpen: true });
+  });
+
+  document.addEventListener('screen-opened', ({ detail }) => {
+    if (detail.id === 'content') {
+      const s = window.screenController?.getState('coding');
+      if (s && s !== 'closed') window.screenController?.close('coding');
+    }
+  });
+
+  document.addEventListener('screen-closed', ({ detail }) => {
+    if (detail.id === 'coding') {
+      const s = window.screenController?.getState('content');
+      if (!s || s === 'closed' || s === 'minimized') window.screenController?.open('content');
+    }
   });
 }
 

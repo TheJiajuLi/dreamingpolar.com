@@ -2,6 +2,9 @@ import { getCurrentMode, mountModeSwitcher } from '../../compiler/compiler_mode_
 import { init as initNotebook } from '../../customise_code_block/customise_code_block.js';
 import { compile } from '../../compiler/compiler.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
+import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
+import { ask, systemExplainForLang } from '../../ai/ai_client.js';
+import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
 import { isEnabled as icmEnabled, onChange as icmOnChange, mount as mountICM } from './intelligent_coding_mode/intelligent_coding_mode.js';
 import * as SyntaxHL from './coding_screen_python/python_syntax_highlight/python_syntax_highlight.js';
 import * as TextHL   from './coding_screen_python/python_text_highlight/python_text_highlight.js';
@@ -52,18 +55,6 @@ function setupCodingScreen() {
   if (!screen) return;
 
   screen.innerHTML = `
-    <div class="coding-screen-header">
-      <div class="cds-header-top">
-        <div class="cds-header-left">
-          <span class="coding-screen-label">Code</span>
-          <div id="cds-runall-slot" class="cds-runall-slot" style="display:none"></div>
-        </div>
-        <div class="sc-toolbar">
-          <button class="sc-btn" id="cds-max-btn" title="Maximize">⤢</button>
-          <button class="sc-btn" id="cds-min-btn" title="Minimize">−</button>
-        </div>
-      </div>
-    </div>
     <div class="coding-screen-body" id="coding-screen-body">
       <div id="cds-single-view"></div>
       <div id="cds-notebook-view"></div>
@@ -71,37 +62,8 @@ function setupCodingScreen() {
   `;
 
   // ── Screen controller ─────────────────────────────────
-  const headerToolbar = document.querySelector('#coding-screen .sc-toolbar');
-  const clearCellsBtn = createClearCellsBtn();
-  headerToolbar?.prepend(clearCellsBtn);
-
-  // Import btn in sc-toolbar (header) — always visible in all modes
-  const headerImportBtn = createImportBtn({
-    getMode: getCurrentMode,
-    onImport(content) {
-      if (_editorRef) {
-        _editorRef.value = content;
-        _editorRef.dispatchEvent(new Event('input'));
-        localStorage.setItem(CODE_KEY, content);
-      }
-    },
-    onNotebookImport(content, lang) {
-      addImportedCell(lang, content);
-    },
-  });
-  headerToolbar?.prepend(headerImportBtn);
-
-  const maxBtn = document.getElementById('cds-max-btn');
-  const minBtn = document.getElementById('cds-min-btn');
-
-  function syncBtn(state) {
-    if (maxBtn) maxBtn.textContent = state === 'maximized' ? '⤡' : '⤢';
-  }
-
   requestAnimationFrame(() => {
-    window.screenController?.register('coding', screen, { onStateChange: syncBtn, label: 'Code', persisted: true });
-    maxBtn?.addEventListener('click', () => window.screenController?.toggle('coding'));
-    minBtn?.addEventListener('click', () => window.screenController?.close('coding'));
+    window.screenController?.register('coding', screen, { label: 'Code', persisted: true });
   });
 
 const singleView   = document.getElementById('cds-single-view');
@@ -109,8 +71,8 @@ const singleView   = document.getElementById('cds-single-view');
 
   // ── Single-cell view ──────────────────────────────────
   const runBtn = document.createElement('button');
-  runBtn.className = 'run-btn';
-  runBtn.innerHTML = '&#9654; Run';
+  runBtn.className = 'nb-btn nb-run';
+  runBtn.innerHTML = '&#9654;';
   runBtn.title = 'Run (Ctrl+Enter)';
 
   const toolbar = document.createElement('div');
@@ -144,8 +106,23 @@ const singleView   = document.getElementById('cds-single-view');
   const toolbarClearBtn = createClearCellsBtn();
   toolbarClearBtn.id = 'cds-toolbar-clear-btn';
 
+  const importBtn = createImportBtn({
+    getMode: getCurrentMode,
+    onImport(content) {
+      if (_editorRef) {
+        _editorRef.value = content;
+        _editorRef.dispatchEvent(new Event('input'));
+        localStorage.setItem(CODE_KEY, content);
+      }
+    },
+    onNotebookImport(content, lang) {
+      addImportedCell(lang, content);
+    },
+  });
+
   toolbar.appendChild(modeSlot);
   toolbar.appendChild(icmSlot);
+  toolbar.appendChild(importBtn);
   toolbar.appendChild(copyBtn);
   toolbar.appendChild(toolbarClearBtn);
   toolbar.appendChild(runBtn);
@@ -170,7 +147,186 @@ const singleView   = document.getElementById('cds-single-view');
   statusBar.className   = 'compiler-status-bar';
   statusBar.textContent = 'Idle — Python loads on first run.';
 
-  singleView.append(toolbar, editorWrap, statusBar);
+  // ── Code panel (left) ─────────────────────────────────
+  const codePanel = document.createElement('div');
+  codePanel.className = 'cds-code-panel';
+  codePanel.append(toolbar, editorWrap, statusBar);
+
+  // ── Output panel (right) ──────────────────────────────
+  const outputPanel = document.createElement('div');
+  outputPanel.className = 'cds-output-panel';
+
+  const outputPanelHdr = document.createElement('div');
+  outputPanelHdr.className = 'cds-output-panel-hdr';
+
+  const outputHdrLabel = document.createElement('span');
+  outputHdrLabel.className = 'cds-output-panel-label';
+  outputHdrLabel.textContent = 'Output';
+
+  const outClearBtn = document.createElement('button');
+  outClearBtn.className = 'sc-btn';
+  outClearBtn.title = 'Clear output';
+  outClearBtn.textContent = '⊘';
+
+  const outMaxBtn = document.createElement('button');
+  outMaxBtn.className = 'sc-btn';
+  outMaxBtn.title = 'Maximize';
+  outMaxBtn.textContent = '⤢';
+
+  const outMinBtn = document.createElement('button');
+  outMinBtn.className = 'sc-btn';
+  outMinBtn.title = 'Minimize';
+  outMinBtn.textContent = '−';
+
+  const outToolbar = document.createElement('div');
+  outToolbar.className = 'sc-toolbar';
+  outToolbar.append(outClearBtn, outMaxBtn, outMinBtn);
+
+  outputPanelHdr.append(outputHdrLabel, outToolbar);
+
+  const outputPlaceholder = document.createElement('div');
+  outputPlaceholder.className = 'cds-output-placeholder';
+  outputPlaceholder.textContent = 'Run to see output';
+
+  const singleOutputBody = document.createElement('div');
+  singleOutputBody.className = 'cds-output-body';
+
+  outputPanel.append(outputPanelHdr, outputPlaceholder, singleOutputBody);
+
+  // ── Resizer (absolutely positioned on left edge of outputPanel) ──
+  const CDS_OUT_W_KEY = 'dp-cds-output-w';
+  const CDS_OUT_MIN_W = 160;
+
+  const savedOutW = parseFloat(localStorage.getItem(CDS_OUT_W_KEY))
+                 || parseFloat(localStorage.getItem('dp-cs-width'))
+                 || 280;
+  outputPanel.style.width = savedOutW + 'px';
+  outputPanel.style.flex  = 'none';
+
+  const resizer = document.createElement('div');
+  resizer.className = 'cds-resizer';
+  resizer.title = 'Drag to resize · Double-click to reset';
+  outputPanel.appendChild(resizer);
+
+  function _startResize(startX) {
+    document.body.classList.add('cs-resizing');
+
+    function onMove(clientX) {
+      const viewRect = singleView.getBoundingClientRect();
+      const maxW = viewRect.width * 0.75;
+      const newW = Math.min(maxW, Math.max(CDS_OUT_MIN_W, viewRect.right - clientX));
+      outputPanel.style.width = newW + 'px';
+      outputPanel.style.flex = 'none';
+    }
+    function onUp(clientX) {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup',   onMouseUp);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend',  onTouchEnd);
+      document.body.classList.remove('cs-resizing');
+      onMove(clientX);
+      localStorage.setItem(CDS_OUT_W_KEY, parseFloat(outputPanel.style.width));
+    }
+    const onMouseMove = e => onMove(e.clientX);
+    const onMouseUp   = e => onUp(e.clientX);
+    const onTouchMove = e => { e.preventDefault(); onMove(e.touches[0].clientX); };
+    const onTouchEnd  = e => onUp(e.changedTouches[0].clientX);
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup',   onMouseUp);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend',  onTouchEnd);
+  }
+
+  resizer.addEventListener('mousedown',  e => { e.preventDefault(); _startResize(e.clientX); });
+  resizer.addEventListener('touchstart', e => { e.preventDefault(); _startResize(e.touches[0].clientX); }, { passive: false });
+  resizer.addEventListener('dblclick',   () => {
+    outputPanel.style.width = '';
+    outputPanel.style.flex  = '';
+    localStorage.removeItem(CDS_OUT_W_KEY);
+  });
+
+  singleView.append(codePanel, outputPanel);
+
+  // ── Output panel toolbar buttons ──────────────────────
+  outClearBtn.addEventListener('click', () => {
+    singleOutputBody.innerHTML = '';
+    outputPlaceholder.style.display = '';
+  });
+
+  outMaxBtn.addEventListener('click', () => {
+    const isMax = outputPanel.dataset.expanded === '1';
+    if (isMax) {
+      outputPanel.style.width = outputPanel.dataset.prevWidth || (savedOutW + 'px');
+      outputPanel.style.flex  = 'none';
+      delete outputPanel.dataset.expanded;
+      outMaxBtn.textContent = '⤢';
+      outMaxBtn.title = 'Maximize';
+    } else {
+      outputPanel.dataset.prevWidth = outputPanel.style.width;
+      outputPanel.dataset.expanded  = '1';
+      const maxW = singleView.getBoundingClientRect().width * 0.75;
+      outputPanel.style.width = Math.round(maxW) + 'px';
+      outputPanel.style.flex  = 'none';
+      outMaxBtn.textContent = '⤡';
+      outMaxBtn.title = 'Restore';
+    }
+  });
+
+  outMinBtn.addEventListener('click', () => {
+    outputPanel.style.display = 'none';
+  });
+
+  // Restore output panel when code is run (in case it was hidden)
+  document.addEventListener('compile-result', ({ detail }) => {
+    outputPanel.style.display = '';
+  });
+
+  document.addEventListener('compile-result', ({ detail }) => {
+    if (detail.cellId) return;
+    const mode = getCurrentMode();
+    if (mode === 'customise' || mode === 'ai_chat') return;
+    const { outputs, sourceCode, sourceLang } = detail;
+    singleOutputBody.innerHTML = '';
+    renderBlocks(outputs, singleOutputBody, {
+      onAskAI: async (errorText, block, btn) => {
+        btn.disabled = true;
+        btn.textContent = 'Thinking…';
+        try {
+          const context = sourceCode
+            ? `Code (${sourceLang ?? 'unknown'}):\n${sourceCode}\n\nError:\n${errorText}`
+            : errorText;
+          const explanation = await ask(context, systemExplainForLang(sourceLang), 512);
+          const explDiv = document.createElement('div');
+          explDiv.className = 'output-ai-explanation';
+          const lbl = document.createElement('div');
+          lbl.className = 'ai-explanation-label';
+          const lblText = document.createElement('span');
+          lblText.className = 'ai-explanation-label-text';
+          lblText.textContent = 'AI suggestion';
+          lbl.appendChild(lblText);
+          if (sourceCode) {
+            lbl.appendChild(createRefactorBtn({ sourceCode, sourceLang, cellId: '__standalone__', explanation }));
+          }
+          const bodyEl = document.createElement('div');
+          bodyEl.className = 'ai-explanation-body';
+          renderBlocks(parseAIResponse(explanation), bodyEl);
+          explDiv.append(lbl, bodyEl);
+          block.appendChild(explDiv);
+          btn.remove();
+        } catch (e) {
+          btn.textContent = `Error: ${e.message}`;
+          btn.disabled = false;
+        }
+      },
+    });
+    outputPlaceholder.style.display = 'none';
+  });
+
+  document.addEventListener('clear-active-code', () => {
+    singleOutputBody.innerHTML = '';
+    outputPlaceholder.style.display = '';
+  });
 
   // ── Python ICM features ───────────────────────────────────
   function icmActivate() {
@@ -193,7 +349,14 @@ const singleView   = document.getElementById('cds-single-view');
   icmOnChange(() => syncICM(getCurrentMode()));
 
   // ── Notebook view ─────────────────────────────────────
-  const runAllSlot = document.getElementById('cds-runall-slot');
+  const nbToolbar = document.createElement('div');
+  nbToolbar.className = 'cds-notebook-toolbar';
+  const runAllSlot = document.createElement('div');
+  runAllSlot.id = 'cds-runall-slot';
+  runAllSlot.className = 'cds-runall-slot';
+  const clearCellsBtn = createClearCellsBtn();
+  nbToolbar.append(runAllSlot, clearCellsBtn);
+  notebookView.appendChild(nbToolbar);
   initNotebook(notebookView, runAllSlot);
 
   // ── Chat-mode placeholder ─────────────────────────────
@@ -208,11 +371,9 @@ const singleView   = document.getElementById('cds-single-view');
   function applyMode(mode) {
     const isCustomise = mode === 'customise';
     const isChat      = mode === 'ai_chat';
-    singleView.style.display        = (isCustomise || isChat) ? 'none'  : 'flex';
-    notebookView.style.display      = isCustomise             ? 'flex'  : 'none';
-    runAllSlot.style.display        = isCustomise             ? 'flex'  : 'none';
-    clearCellsBtn.style.display     = isCustomise             ? ''      : 'none';
-    chatPlaceholder.style.display   = isChat                  ? 'flex'  : 'none';
+    singleView.style.display      = (isCustomise || isChat) ? 'none' : 'flex';
+    notebookView.style.display    = isCustomise             ? 'flex' : 'none';
+    chatPlaceholder.style.display = isChat                  ? 'flex' : 'none';
     if (!isChat) editor.placeholder = PLACEHOLDERS[mode] ?? PLACEHOLDERS.python;
   }
 

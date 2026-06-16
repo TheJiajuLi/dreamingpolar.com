@@ -24,7 +24,7 @@ function showRestoreChip(id) {
   chip.innerHTML       = `${ICON_RESTORE}<span>${label}</span>`;
   chip.addEventListener('click', () => screenController.restore(id));
 
-  const menuBtn = header.querySelector('#menu-button');
+  const menuBtn = header.querySelector('#navigation-button');
   menuBtn
     ? header.insertBefore(chip, menuBtn.nextSibling)
     : header.appendChild(chip);
@@ -40,13 +40,16 @@ function _persist(id, openOrClosed) {
 
 const screenController = {
 
-  // persisted: true → reads localStorage to restore open/closed across refreshes.
+  // persisted: true  → reads localStorage to restore open/closed across refreshes.
+  // defaultOpen: true → falls back to open when no saved state exists.
   // Screens without persisted:true always start as 'normal'.
-  register(id, el, { onStateChange, label, persisted = false } = {}) {
-    let initialState = 'normal';
+  register(id, el, { onStateChange, label, persisted = false, defaultOpen = false } = {}) {
+    let initialState = defaultOpen ? 'normal' : 'closed';
     if (persisted) {
       const saved = localStorage.getItem(PERSIST_PREFIX + id);
-      initialState = saved === 'open' ? 'normal' : 'closed';
+      if (saved === 'open')   initialState = 'normal';
+      else if (saved === 'closed') initialState = 'closed';
+      // else: no saved state → use defaultOpen
     }
     screens.set(id, { el, state: initialState, onStateChange, label: label || id });
     el.dataset.screenId    = id;

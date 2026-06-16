@@ -8,9 +8,10 @@ const SVG_COLLAPSE = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none
         stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
-let _active   = false;
-let _btn      = null;
-let _toastOut = null;   // setTimeout handle for removing toast
+let _active        = false;
+let _btn           = null;
+let _toastOut      = null;   // setTimeout handle for removing toast
+let _fsMaximizedId = null;   // screen we maximized on fullscreen enter
 
 // ── Toast hint ───────────────────────────────────────────
 const _isTouch = () => window.matchMedia('(pointer: coarse)').matches;
@@ -42,6 +43,21 @@ function setFullscreen(on) {
   if (_btn) {
     _btn.innerHTML = on ? SVG_COLLAPSE : SVG_EXPAND;
     _btn.title     = on ? 'Exit fullscreen' : 'Fullscreen';
+  }
+
+  const sc = window.screenController;
+  if (on && sc) {
+    // Maximize the first open screen so it fills the viewport
+    for (const id of ['ai-chat', 'coding', 'content']) {
+      if (sc.getState(id) === 'normal') {
+        _fsMaximizedId = id;
+        sc.maximize(id);
+        break;
+      }
+    }
+  } else if (!on && sc && _fsMaximizedId) {
+    sc.restore(_fsMaximizedId);
+    _fsMaximizedId = null;
   }
 
   if (on) {

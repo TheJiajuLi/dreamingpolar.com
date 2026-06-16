@@ -23,8 +23,8 @@ export function init() {
   toolbar.appendChild(modeSwitcherSlot);
 
   const runBtn = document.createElement('button');
-  runBtn.className  = 'run-btn';
-  runBtn.innerHTML  = '&#9654; Run';
+  runBtn.className  = 'nb-btn nb-run';
+  runBtn.innerHTML  = '&#9654;';
   runBtn.title      = 'Run (Ctrl+Enter)';
   toolbar.appendChild(runBtn);
 

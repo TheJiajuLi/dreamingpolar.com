@@ -26,7 +26,7 @@ function buildTree(pages, depth = 0) {
 
 // ── Main setup ─────────────────────────────────────────
 function setupNavigationScreen() {
-  const menuBtn = document.getElementById('menu-button');
+  const menuBtn = document.getElementById('navigation-button');
   if (!menuBtn) return;
 
   window.renderPages    = PAGES;
@@ -64,23 +64,45 @@ function setupNavigationScreen() {
   }
 
   function close() {
-    window.contentScreen?.hideNav();
-    _isOpen = false;
-    menuBtn.classList.remove('active');
-    menuBtn.setAttribute('aria-expanded', 'false');
+    const sc    = window.screenController;
+    const state = sc?.getState('content');
+    if (state === 'closed' || state === 'minimized') {
+      sc?.ensureVisible('content');
+    } else {
+      window.contentScreen?.hideNav();
+    }
+    _setMenuOpen(false);
   }
 
   menuBtn.addEventListener('click', () => (_isOpen ? close() : open()));
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && _isOpen) close(); });
 
-  // Sync when AI chat or a content link takes over the view
-  document.addEventListener('content-nav-closed', () => {
+  function _setMenuOpen(val) {
+    _isOpen = val;
+    menuBtn.classList.toggle('active', val);
+    menuBtn.setAttribute('aria-expanded', String(val));
+  }
+
+  // Sync when AI chat or a content link takes over the view inside content screen
+  document.addEventListener('content-nav-closed', () => { if (_isOpen) _setMenuOpen(false); });
+
+  // Content screen hidden by user action (minimize/close button): deactivate menu.
+  // Skip if: menu already closed, content is in chat mode, or coding just opened
+  // (coding opening means start-coding triggered the minimize — menu state unchanged).
+  const _onContentHidden = e => {
+    if (e.detail?.id !== 'content') return;
     if (!_isOpen) return;
-    _isOpen = false;
-    menuBtn.classList.remove('active');
-    menuBtn.setAttribute('aria-expanded', 'false');
-  });
+    const inChat = document.getElementById('content-screen')?.classList.contains('cs-chat-mode');
+    if (inChat) return;
+    requestAnimationFrame(() => {
+      const codingState = window.screenController?.getState('coding');
+      if (codingState && codingState !== 'closed') return;
+      _setMenuOpen(false);
+    });
+  };
+  document.addEventListener('screen-closed',    _onContentHidden);
+  document.addEventListener('screen-minimized', _onContentHidden);
 
   document.addEventListener('open-ai-in-content', () => {
     if (_isOpen) {

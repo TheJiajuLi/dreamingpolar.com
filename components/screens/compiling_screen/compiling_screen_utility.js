@@ -11,6 +11,27 @@ function looksLikeLatex(s) {
   return /\\(frac|sqrt|sum|int|prod|lim|alpha|beta|gamma|delta|sigma|mu|pi|tau|theta|phi|psi|omega|partial|nabla|infty|cdot|times|text|mathbb|mathbf|mathrm)\b/.test(t);
 }
 
+export function parseAIResponse(text) {
+  const blocks = [];
+  const parts = text.split(/(```[\w]*\n[\s\S]*?```)/g);
+  for (const part of parts) {
+    const fenceMatch = part.match(/^```([\w]*)\n([\s\S]*?)```$/);
+    if (fenceMatch) {
+      const lang = fenceMatch[1].toLowerCase();
+      const code = fenceMatch[2].trimEnd();
+      blocks.push(lang === 'latex' || lang === 'mathjax'
+        ? { type: 'latex', content: code }
+        : { type: 'text',  content: code });
+    } else if (part.trim()) {
+      const html = escHtml(part.trim()).replace(/\n/g, '<br>');
+      blocks.push({ type: 'html', content: `<span class="ai-prose">${html}</span>` });
+    }
+  }
+  return blocks.length
+    ? blocks
+    : [{ type: 'html', content: `<span class="ai-prose">${escHtml(text).replace(/\n/g, '<br>')}</span>` }];
+}
+
 export function renderBlocks(outputs, container, { onAskAI } = {}) {
   const mathBlocks = [];
 

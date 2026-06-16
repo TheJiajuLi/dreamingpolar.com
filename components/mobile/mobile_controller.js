@@ -6,7 +6,6 @@
 const TABS = [
   { id: 'content',   screenId: 'content-screen',   icon: '◈',  label: 'Content' },
   { id: 'coding',    screenId: 'coding-screen',     icon: '⌨',  label: 'Code'    },
-  { id: 'compiling', screenId: 'compiling-screen',  icon: '⚡', label: 'Output'  },
   { id: 'ai-chat',   screenId: 'ai-chat-screen',    icon: '✦',  label: 'AI'      },
 ];
 
@@ -41,7 +40,7 @@ function init() {
     btn = document.createElement('button');
     if (id === 'ai-chat') {
       btn.className = 'mob-tab';
-      btn.id        = 'ai-header-btn';
+      btn.id        = 'ai-chat-btn';
       btn.setAttribute('aria-label', 'AI Chat');
       btn.innerHTML = `<span class="mob-tab-icon"><img src="/assets/buttons/ai.png" alt="" class="ai-header-icon"></span><span>AI Chat</span>`;
     } else {

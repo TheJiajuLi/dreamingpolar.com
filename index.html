@@ -9,6 +9,8 @@
   <meta name="keywords" content="Python, AI, 科学计算, 交互式编程, Pyodide, 在线编程, 数据分析, 机器学习">
   <meta name="author" content="Dreaming Polar">
 
+  <script src="components/seo/structured_data.js" type="module"></script>
+
   <!-- Open Graph / Facebook -->
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://dreamingpolar.com/">
@@ -40,6 +42,7 @@
   <meta name="apple-mobile-web-app-title" content="Dreaming Polar">
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
   <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="components/page_header/page_header.css">
   <link rel="stylesheet" href="components/screens/navigation_screen/navigation_screen.css">
   <link rel="stylesheet" href="components/search_bar/search_bar.css">
   <link rel="stylesheet" href="components/theme_controller/theme_controller.css">
@@ -93,8 +96,18 @@
 
   <div id="dp-veil"></div>
 
+  <!-- Semantic nav for search-engine crawlers (visually hidden) -->
+  <nav aria-label="Dreaming Polar 主要功能" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
+    <a href="/#coding">Python 科学计算环境 — 在浏览器中运行 Python，支持 SymPy、Pandas、Matplotlib</a>
+    <a href="/#ai-chat">AI 研究助手 — 与 AI 实时协作，辅助代码解释与科研探索</a>
+    <a href="/#sympy">SymPy 符号计算教程 — 代数化简、微积分与方程求解</a>
+    <a href="/#pandas">Pandas 数据分析教程 — 数据清洗、聚合与分析</a>
+    <a href="/#matplotlib">Matplotlib 数据可视化教程 — 在浏览器中直接预览图表</a>
+    <a href="/#about">关于 Dreaming Polar — 专为探索与研究设计的交互式科学计算平台</a>
+  </nav>
+
   <header class="page-header">
-    <button id="menu-button" class="menu-button" aria-label="Open navigation" aria-expanded="false">
+    <button id="navigation-button" class="navigation-button" aria-label="Open navigation" aria-expanded="false">
       <span class="bar"></span>
       <span class="bar"></span>
       <span class="bar"></span>
@@ -111,13 +124,13 @@
       <div class="hero-screens-row">
         <section id="content-screen"   class="hero-screen"></section>
         <section id="coding-screen"    class="hero-screen"></section>
-        <section id="compiling-screen" class="hero-screen"></section>
         <section id="ai-chat-screen"   class="hero-screen"></section>
       </div>
       <section id="terminal-panel"></section>
     </main>
   </div>
 
+  <script src="components/page_header/page_header.js" type="module"></script>
   <script src="components/screen_controller/screen_controller.js" type="module"></script>
   <script src="components/screens/navigation_screen/navigation_screen.js" type="module"></script>
   <script src="hooks/theme_controller_hook.js" type="module"></script>
@@ -127,7 +140,6 @@
   <script src="components/mobile/mobile_page_header_buttons_wrapper/mobile_page_header_buttons_wrapper.js" type="module"></script>
   <script src="components/screens/content_screen/content_screen.js" type="module"></script>
   <script src="components/screens/coding_screen/coding_screen.js" type="module"></script>
-  <script src="components/screens/compiling_screen/compiling_screen.js" type="module"></script>
   <script src="components/screens/navigation_screen/navigation_screen_hook.js" type="module"></script>
   <script src="components/fullscreen_toggle/fullscreen_toggle.js" type="module"></script>
   <script src="components/start_coding/start_coding.js" type="module"></script>

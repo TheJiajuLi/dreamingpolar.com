@@ -1,15 +1,9 @@
 .content-screen {
-  display: none;
   flex-direction: column;
   place-items: unset;
   padding: 0 !important;
   overflow: hidden;
   position: relative;
-}
-
-.content-screen.cs-active {
-  display: flex;
-  animation: cs-fadein 0.2s ease;
 }
 
 @keyframes cs-fadein {
@@ -282,7 +276,7 @@
 /* Input bar stays anchored at bottom */
 .cs-chat-slot .aic-input-bar {
   flex-shrink: 0;
-  border-top: 1px solid var(--border, #e2e8f0);
+  border-top: none;
 }
 
 /* ── Back-to-nav button ───────────────────────────────────────────────────── */
@@ -291,8 +285,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   padding: 0;
   flex-shrink: 0;
   color: var(--text-muted, #64748b);
@@ -327,52 +322,42 @@ body.cs-resizing * {
   user-select: none !important;
 }
 
-/* ── Content-screen persona switcher ─────────────────────────────────────── */
+/* ── Persona + clear buttons embedded inside ai-input-wrap ──────────────────── */
 
-.cs-persona-btn.aic-persona-btn {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
-  margin: 0 auto 0 0;
-  border-radius: 20px;
-  border: 1px solid var(--border, #e2e8f0);
-  background: var(--bg, #f8fafc);
-  color: var(--text-muted, #64748b);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
-  white-space: nowrap;
-}
-
-.cs-persona-btn.aic-persona-btn svg {
-  opacity: 0.55;
+/* Strip the animated gradient border — the dialog-wrap already provides one */
+.ai-input-wrap .aic-persona-btn {
+  animation: none;
+  border: none;
+  background: none;
+  padding: 2px 8px 2px 0;
+  border-radius: 0;
+  border-right: 1px solid var(--border, #e2e8f0);
+  font-size: 0.58rem;
+  opacity: 0.72;
   flex-shrink: 0;
-  transition: opacity 0.2s, transform 0.35s;
 }
+.ai-input-wrap .aic-persona-btn:hover { opacity: 1; background: none; }
+.ai-input-wrap .aic-persona-btn svg   { width: 9px; height: 9px; }
 
-.cs-persona-btn.aic-persona-btn:hover {
-  border-color: #6366f1;
-  background: rgba(99,102,241,0.07);
-  color: #6366f1;
+/* Clear-chat icon button */
+.cs-clear-chat-btn {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.45;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
 }
-
-.cs-persona-btn.aic-persona-btn:hover svg {
+.cs-clear-chat-btn:hover {
   opacity: 1;
-  transform: rotate(180deg);
-}
-
-.cs-persona-btn.aic-persona-btn[data-persona-id="boby"] {
-  border-color: rgba(14,165,233,0.35);
-  color: #0ea5e9;
-  background: rgba(14,165,233,0.08);
-}
-
-.cs-persona-btn.aic-persona-btn[data-persona-id="boby"]:hover {
-  border-color: #0ea5e9;
-  background: rgba(14,165,233,0.14);
-  color: #38bdf8;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
 }

@@ -9,6 +9,7 @@
   justify-content: space-between;
   height: calc(100dvh - var(--header-height, 76px));
   background: var(--surface, #ffffff);
+  border-top: 1px solid var(--border, #e2e8f0);
   border-right: 1px solid var(--border, #e2e8f0);
   box-sizing: border-box;
   overflow: visible;
@@ -113,8 +114,8 @@
 
 /* ── Hosted buttons: normalize sizing & centering ────────────────────────── */
 
-/* menu-button: same size as other vt-btn icons */
-#vertical-toolbar .menu-button {
+/* navigation-button: same size as other vt-btn icons */
+#vertical-toolbar .navigation-button {
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -199,7 +200,7 @@
   opacity: 0;
 }
 
-#vertical-toolbar .ai-header-btn {
+#vertical-toolbar .ai-chat-btn {
   width: 36px;
   height: 36px;
   padding: 6px;
@@ -207,21 +208,20 @@
 }
 
 /* suppress the header-scale hover; use the same glow as start-coding-btn */
-#vertical-toolbar .ai-header-btn:hover {
+#vertical-toolbar .ai-chat-btn:hover {
   transform: none;
   background: var(--sc-glow-c);
   border-color: var(--sc-glow-b);
 }
 
-#vertical-toolbar .menu-button:hover {
-  background: var(--bg, #f1f5f9);
+#vertical-toolbar .navigation-button:hover {
+  background: transparent;
 }
 
 #vertical-toolbar .start-coding-btn:hover,
 #vertical-toolbar .dp-terminal-toolbar-btn:hover {
   border-color: var(--sc-glow-b);
   background: var(--sc-glow-c);
-  box-shadow: 0 0 8px var(--sc-glow-b), 0 0 18px var(--sc-glow-c);
 }
 
 #vertical-toolbar .start-coding-btn:not(.active):hover::before,
@@ -235,7 +235,7 @@
   animation: sc-shimmer 0.55s ease forwards;
 }
 
-#vertical-toolbar .menu-button.active {
+#vertical-toolbar .navigation-button.active {
   background: transparent;
   transform: scale(0.72);
 }
@@ -252,12 +252,8 @@ body.dp-ready #vertical-toolbar .dp-terminal-toolbar-btn.active::before {
 }
 
 /* Theme overrides for hosted buttons */
-[data-theme="dark"]  #vertical-toolbar .menu-button:hover,
-[data-theme="grey"]  #vertical-toolbar .menu-button:hover {
-  background: rgba(255,255,255,0.06);
-}
 
-/* ── Mobile: hide toolbar, menu-button lives in header ───────────────────── */
+/* ── Mobile: hide toolbar, navigation-button lives in header ───────────────────── */
 
 @media (max-width: 768px) {
   #vertical-toolbar {

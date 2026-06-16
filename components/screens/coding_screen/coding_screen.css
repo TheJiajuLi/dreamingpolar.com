@@ -1,44 +1,4 @@
 /* ── Coding screen shell ───────────────────────────────── */
-.coding-screen-header {
-  display: flex;
-  flex-direction: column;
-  height: var(--screen-header-h, 65px);
-  border-bottom: 1px solid var(--border, #e2e8f0);
-  flex-shrink: 0;
-  user-select: none;
-  box-sizing: border-box;
-}
-
-.cds-header-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 8px 0 12px;
-  flex: 1;
-  gap: 8px;
-}
-
-
-.cds-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.coding-screen-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted, #94a3b8);
-}
-
-.cds-runall-slot {
-  align-items: center;
-  gap: 8px;
-}
-
 .cds-icm-slot {
   display: flex;
   align-items: center;
@@ -53,12 +13,165 @@
   min-height: 0;
 }
 
+/* ── Notebook toolbar (run-all + clear, shown in customise mode) ── */
+.cds-notebook-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  height: 38px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.cds-runall-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 #cds-single-view {
-  display: flex;       /* visible by default (Python/LaTeX/etc. modes) */
+  display: flex;
   flex: 1;
+  flex-direction: row;   /* side-by-side: code left, output right */
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Code panel ────────────────────────────────────────── */
+.cds-code-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border, #cbd5e1) transparent;
+}
+
+/* ── Resizer (absolutely positioned on left edge of output panel) ── */
+.cds-resizer {
+  position: absolute;
+  left: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 10;
+  cursor: col-resize;
+  background: transparent !important;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body.cs-resizing,
+body.cs-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* ── Output panel ──────────────────────────────────────── */
+.cds-output-panel {
+  flex-shrink: 0;
+  display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  background: var(--surface, #ffffff);
+  position: relative;
+}
+
+.cds-output-panel-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px 0 14px;
+  height: 38px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  background: var(--surface, #ffffff);
+  user-select: none;
+}
+
+.cds-output-panel-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+
+.cds-output-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.72rem;
+  font-style: italic;
+  pointer-events: none;
+  opacity: 0.5;
+  letter-spacing: 0.02em;
+}
+
+.cds-output-body {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--surface, #ffffff);
+  border-left: 1px solid var(--border, #d7e1eb);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+/* Clean output blocks inside the output panel — override compiling_screen.css defaults */
+.cds-output-body .output-block {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.045) !important;
+  padding: 0;
+}
+.cds-output-body .output-block:last-child { border-bottom: none !important; }
+.cds-output-body .output-text  {
+  padding: 10px 16px;
+  font-size: 0.8rem;
+  border-left: none;
+}
+.cds-output-body .output-error {
+  background: transparent !important;
+  border-left: 2px solid #f87171;
+  padding: 9px 16px;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+.cds-output-body .output-info  { padding: 8px 16px; font-size: 0.78rem; background: transparent !important; }
+.cds-output-body .output-html  { padding: 10px 16px; }
+.cds-output-body .output-latex { padding: 10px 16px; }
+.cds-output-body .output-image { padding: 0; }
+.cds-output-body .output-image img { width: 100%; height: auto; display: block; border-radius: 0; }
+
+/* Dark / grey / aurora: match code editor background */
+[data-theme="dark"]   .cds-output-panel,
+[data-theme="dark"]   .cds-output-panel-hdr,
+[data-theme="dark"]   .cds-output-body     { background: var(--surface); }
+[data-theme="grey"]   .cds-output-panel,
+[data-theme="grey"]   .cds-output-panel-hdr,
+[data-theme="grey"]   .cds-output-body     { background: var(--surface); }
+[data-theme="aurora"] .cds-output-panel,
+[data-theme="aurora"] .cds-output-panel-hdr,
+[data-theme="aurora"] .cds-output-body     { background: var(--surface); }
+[data-theme="dark"]   .cds-output-body { border-left-color: rgba(255,255,255,0.06); }
+[data-theme="grey"]   .cds-output-body { border-left-color: rgba(255,255,255,0.06); }
+[data-theme="aurora"] .cds-output-body { border-left-color: rgba(192,132,252,0.15); }
+[data-theme="dark"]   .cds-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
+[data-theme="grey"]   .cds-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
+
+/* Mobile: stack vertically */
+@media (max-width: 768px) {
+  #cds-single-view    { flex-direction: column; }
+  .cds-resizer        { display: none; }
+  .cds-output-panel   { width: 100% !important; flex: none; border-top: 1px solid rgba(0,0,0,0.06); max-height: 45vh; }
 }
 
 #cds-notebook-view {
@@ -81,11 +194,6 @@
 
 [data-theme="aurora"] .sc-btn--danger       { color: rgba(248,113,113,0.7); }
 [data-theme="aurora"] .sc-btn--danger:hover { background: rgba(248,81,73,0.12); color: #f85149; }
-
-[data-theme="dark"] .coding-screen-header  { border-bottom-color: rgba(255, 255, 255, 0.06); }
-[data-theme="dark"] .coding-screen-label   { color: #3fb950; }
-
-[data-theme="grey"] .coding-screen-header  { border-bottom-color: rgba(255, 255, 255, 0.06); }
 
 
 /* ── Chat-mode placeholder (shown when mode = ai_chat) ───── */

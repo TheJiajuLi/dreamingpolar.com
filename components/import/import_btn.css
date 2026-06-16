@@ -2,7 +2,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  color: #64748b;
 }
+
+.import-btn:hover {
+  color: #334155;
+}
+
+[data-theme="dark"]   .import-btn       { color: #8b949e; }
+[data-theme="dark"]   .import-btn:hover { color: #c9d1d9; }
+[data-theme="grey"]   .import-btn       { color: #adbac7; }
+[data-theme="grey"]   .import-btn:hover { color: #cdd9e5; }
+[data-theme="aurora"] .import-btn       { color: rgba(192,132,252,0.7); }
+[data-theme="aurora"] .import-btn:hover { color: #c084fc; }
 
 /* ── Import toast ──────────────────────────────────────── */
 .import-toast {

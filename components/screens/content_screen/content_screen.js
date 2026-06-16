@@ -1,5 +1,4 @@
-import { escapeHtml, renderJson,
-         createMaximizeBtn }                                from './content_screen_utility.js';
+import { escapeHtml, renderJson }                           from './content_screen_utility.js';
 import { CONTENT_PATH_KEY, CONTENT_TITLE_KEY, CONTENT_CHAT_KEY,
          attachContentScreenHooks, restoreLastContent }     from './content_screen_hook.js';
 import { getActivePersona, cyclePersona, PERSONAS }         from '../../ai/ai_persona_switch.js';
@@ -9,19 +8,16 @@ function setupContentScreen() {
   const hero = document.getElementById('content-screen');
   if (!hero) return;
 
-  const maximizeBtn = createMaximizeBtn();
+  const _CLEAR_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/></svg>`;
+
   const clearChatBtn = document.createElement('button');
-  clearChatBtn.className = 'sc-btn cs-clear-chat-btn';
+  clearChatBtn.className = 'cs-clear-chat-btn';
   clearChatBtn.title = 'Clear chat';
-  clearChatBtn.textContent = '⊘';
+  clearChatBtn.innerHTML = _CLEAR_ICON;
   clearChatBtn.style.display = 'none';
   clearChatBtn.addEventListener('click', () => {
     document.dispatchEvent(new CustomEvent('cs-chat-clear'));
   });
-
-  const toolbar = document.createElement('div');
-  toolbar.className = 'sc-toolbar';
-  toolbar.append(clearChatBtn, maximizeBtn);
 
   const backBtn = document.createElement('button');
   backBtn.className = 'cs-back-btn sc-btn';
@@ -55,19 +51,19 @@ function setupContentScreen() {
 
   const header = document.createElement('div');
   header.className = 'content-screen-header';
-  header.append(backBtn, labelEl, personaBtn, toolbar);
+  header.append(backBtn, labelEl);
 
   const body = document.createElement('div');
   body.className = 'content-screen-body';
   body.id        = 'content-screen-body';
-  body.innerHTML = '<p class="content-loading">Select a topic from the navigation panel.</p>';
+  body.innerHTML = '<p class="content-loading"></p>';
 
   hero.classList.add('content-screen');
   hero.append(header, body);
 
   const getBody = () => document.getElementById('content-screen-body');
 
-  attachContentScreenHooks(hero, maximizeBtn, getBody);
+  attachContentScreenHooks(hero, getBody);
 
   // ── Width resizer ──────────────────────────────────────
   const CS_WIDTH_KEY = 'dp-cs-width';
@@ -87,7 +83,7 @@ function setupContentScreen() {
     document.body.classList.add('cs-resizing');
 
     function onMove(ex) {
-      const maxW = hero.parentElement.getBoundingClientRect().width * 0.65;
+      const maxW = hero.parentElement.getBoundingClientRect().width * 1;
       const w    = Math.min(maxW, Math.max(CS_MIN_W, startW + ex - startX));
       hero.style.width = w + 'px';
       hero.style.flex  = 'none';
@@ -135,9 +131,20 @@ function setupContentScreen() {
     if (_navSlot)  _navSlot.style.display  = name === 'nav'     ? '' : 'none';
     hero.classList.toggle('cs-chat-mode', name === 'chat');
     hero.classList.toggle('cs-nav-mode',  name === 'nav');
-    clearChatBtn.style.display = name === 'chat' ? '' : 'none';
-    personaBtn.style.display   = name === 'chat' ? '' : 'none';
-    backBtn.style.display      = (name === 'content' && _navUsed) ? '' : 'none';
+    backBtn.style.display = (name === 'content' && _navUsed) ? '' : 'none';
+    if (name === 'chat' && _chatSlot) {
+      const inputWrap = _chatSlot.querySelector('.ai-input-wrap');
+      if (inputWrap) {
+        if (!inputWrap.contains(personaBtn)) {
+          personaBtn.style.display = '';
+          inputWrap.prepend(personaBtn);
+        }
+        if (!inputWrap.contains(clearChatBtn)) {
+          clearChatBtn.style.display = '';
+          inputWrap.append(clearChatBtn);
+        }
+      }
+    }
     const showLabel = name !== 'chat' && (name !== 'content' || !!_currentPageTitle);
     labelEl.style.display = showLabel ? '' : 'none';
     labelEl.textContent   = name === 'content'

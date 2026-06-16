@@ -1,7 +1,7 @@
 const MQ = window.matchMedia('(max-width: 768px)');
 
 function placeMenuBtn() {
-  const btn = document.getElementById('menu-button');
+  const btn = document.getElementById('navigation-button');
   if (!btn) return;
 
   if (MQ.matches) {

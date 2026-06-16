@@ -5,6 +5,9 @@ import { create as createSyntaxHL } from '../screens/coding_screen/coding_screen
 import { create as createTextHL }   from '../screens/coding_screen/coding_screen_python/python_text_highlight/python_text_highlight.js';
 import { create as createCompletion } from '../screens/coding_screen/coding_screen_python/python_code-completion/python_code_completion.js';
 import { getCurrentMode } from '../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
+import { renderBlocks, parseAIResponse } from '../screens/compiling_screen/compiling_screen_utility.js';
+import { ask, systemExplainForLang } from '../ai/ai_client.js';
+import { createRefactorBtn } from '../screens/compiling_screen/refactorization_button/refactorization_button.js';
 
 const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -143,8 +146,76 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   const lowerRow = document.createElement('div');
   lowerRow.className = 'nb-cell-lower';
   lowerRow.append(gutter, body);
-  el.append(toolbar, lowerRow);
+
+  const outputSection = document.createElement('div');
+  outputSection.className = 'nb-output-section';
+  outputSection.style.display = 'none';
+
+  const outputLabel = document.createElement('div');
+  outputLabel.className = 'nb-output-section-label';
+  const outputLabelText = document.createElement('span');
+  outputLabelText.className = 'nb-output-section-label-text';
+  outputLabelText.textContent = 'Output';
+  const outputClose = document.createElement('button');
+  outputClose.className = 'nb-output-section-close';
+  outputClose.title = 'Hide output';
+  outputClose.textContent = '✕';
+  outputClose.addEventListener('click', () => { outputSection.style.display = 'none'; });
+  outputLabel.append(outputLabelText, outputClose);
+
+  const outputBody = document.createElement('div');
+  outputBody.className = 'nb-output-section-body';
+  outputSection.append(outputLabel, outputBody);
+
+  el.append(toolbar, lowerRow, outputSection);
   cell.el = el;
+
+  const outputAC = new AbortController();
+  cell._outputAC = outputAC;
+
+  document.addEventListener('compile-result', ({ detail }) => {
+    if (detail.cellId !== id) return;
+    const { outputs, sourceCode, sourceLang } = detail;
+    outputBody.innerHTML = '';
+    renderBlocks(outputs, outputBody, {
+      onAskAI: async (errorText, block, btn) => {
+        btn.disabled = true;
+        btn.textContent = 'Thinking…';
+        try {
+          const context = sourceCode
+            ? `Code (${sourceLang ?? 'unknown'}):\n${sourceCode}\n\nError:\n${errorText}`
+            : errorText;
+          const explanation = await ask(context, systemExplainForLang(sourceLang), 512);
+          const explDiv = document.createElement('div');
+          explDiv.className = 'output-ai-explanation';
+          const lbl = document.createElement('div');
+          lbl.className = 'ai-explanation-label';
+          const lblText = document.createElement('span');
+          lblText.className = 'ai-explanation-label-text';
+          lblText.textContent = 'AI suggestion';
+          lbl.appendChild(lblText);
+          if (sourceCode) {
+            lbl.appendChild(createRefactorBtn({ sourceCode, sourceLang, cellId: id, explanation }));
+          }
+          const bodyEl = document.createElement('div');
+          bodyEl.className = 'ai-explanation-body';
+          renderBlocks(parseAIResponse(explanation), bodyEl);
+          explDiv.append(lbl, bodyEl);
+          block.appendChild(explDiv);
+          btn.remove();
+        } catch (e) {
+          btn.textContent = `Error: ${e.message}`;
+          btn.disabled = false;
+        }
+      },
+    });
+    outputSection.style.display = '';
+  }, { signal: outputAC.signal });
+
+  document.addEventListener('notebook-clear-output', () => {
+    outputSection.style.display = 'none';
+    outputBody.innerHTML = '';
+  }, { signal: outputAC.signal });
 
   attachCellHooks({
     sel, editor, runBtn, upBtn, downBtn, delBtn, copyBtn,
