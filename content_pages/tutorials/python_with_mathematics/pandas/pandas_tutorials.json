@@ -1,5 +1,4 @@
 {
-  "title": "Pandas",
   "setup": "import pandas as pd\nimport numpy as np\nimport io",
 
   "blocks": [

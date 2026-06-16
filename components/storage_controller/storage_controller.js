@@ -11,7 +11,6 @@ const DP_LS_KEYS = [
   'dreaming-polar-nav-width',     // nav sidebar width
   'dreaming-polar-lang',          // language preference
   'dreaming-polar-mode',          // compiler mode (python / js / etc.)
-  'dp-pwa-dismissed',             // PWA install banner dismissed
   'dp-ai-chat',                   // AI chat history + daily token usage
   'dp-ai-persona',                // AI persona selection (小梦 / 波比)
   'dp-icm-enabled',               // intelligent coding mode toggle

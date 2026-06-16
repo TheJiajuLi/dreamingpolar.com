@@ -1,5 +1,4 @@
 {
-  "title": "Matplotlib",
   "setup": "import matplotlib.pyplot as plt\nimport numpy as np",
   "blocks": [
 

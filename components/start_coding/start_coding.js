@@ -24,9 +24,10 @@ function setupStartCodingBtn() {
 
   function syncActiveState() {
     const state = window.screenController?.getState('coding');
-    const isOpen = state === 'normal' || state === 'maximized' || state === 'minimized';
+    const isOpen = state === 'normal' || state === 'maximized';
     btn.classList.toggle('active', isOpen);
     btn.title = isOpen ? 'Close code editor' : 'Open code editor';
+    if (isOpen) document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'coding' } }));
   }
 
   let _preloaded = false;
@@ -36,7 +37,7 @@ function setupStartCodingBtn() {
       preloadPython();
     }
     const state = window.screenController?.getState('coding');
-    if (!state || state === 'closed') {
+    if (!state || state === 'closed' || state === 'minimized') {
       window.screenController?.minimize('content');
       window.screenController?.open('coding');
     } else {
@@ -44,11 +45,13 @@ function setupStartCodingBtn() {
     }
   });
 
-  document.addEventListener('screen-opened', ({ detail }) => {
-    if (detail.id === 'coding') syncActiveState();
-  });
-  document.addEventListener('screen-closed', ({ detail }) => {
-    if (detail.id === 'coding') syncActiveState();
+  document.addEventListener('screen-opened',   ({ detail }) => { if (detail.id === 'coding') syncActiveState(); });
+  document.addEventListener('screen-closed',    ({ detail }) => { if (detail.id === 'coding') syncActiveState(); });
+  document.addEventListener('screen-minimized', ({ detail }) => { if (detail.id === 'coding') syncActiveState(); });
+
+  // Deactivate when another VT button claims the active slot
+  document.addEventListener('vt-btn-activated', ({ detail: { id } }) => {
+    if (id !== 'coding') btn.classList.remove('active');
   });
 
   // Sync after coding screen has had a chance to register (it uses rAF internally)

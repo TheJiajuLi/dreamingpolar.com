@@ -21,6 +21,12 @@ function setup() {
     btn.classList.toggle('active', open);
     btn.title = open ? 'Close AI chat' : 'Open AI chat';
     if (open) {
+      document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'ai-chat' } }));
+      const sc = window.screenController;
+      if (sc) {
+        const cs = sc.getState('coding');
+        if (cs && cs !== 'closed' && cs !== 'minimized') sc.minimize('coding');
+      }
       window.screenController?.ensureVisible('content');
       document.dispatchEvent(new CustomEvent('open-ai-in-content'));
     } else {
@@ -42,6 +48,11 @@ function setup() {
   // Deactivate when content screen is minimized or closed via sc-btn
   document.addEventListener('screen-minimized', e => { if (e.detail?.id === 'content') _deactivate(); });
   document.addEventListener('screen-closed',    e => { if (e.detail?.id === 'content') _deactivate(); });
+
+  // Deactivate when another VT button claims the active slot
+  document.addEventListener('vt-btn-activated', ({ detail: { id } }) => {
+    if (id !== 'ai-chat') _deactivate();
+  });
 
   // Restore chat-open state after all module listeners are registered
   if (localStorage.getItem(CONTENT_CHAT_KEY) === 'open') {

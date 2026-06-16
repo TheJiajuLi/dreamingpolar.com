@@ -1,0 +1,50 @@
+#bottom-data-bar {
+  position: fixed;
+  bottom: 0;
+  left: var(--vt-w, 44px);
+  right: 0;
+  height: var(--bottom-bar-h, 44px);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: var(--surface, #ffffff);
+  border-top: 1px solid var(--border, #e2e8f0);
+  box-sizing: border-box;
+  user-select: none;
+  z-index: 10;
+  gap: 16px;
+}
+
+/* ── Shared slot base ─────────────────────────────────── */
+
+.bdb-slot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6rem;
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.04em;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  white-space: nowrap;
+}
+
+/* ── AI token slot ────────────────────────────────────── */
+
+.bdb-ai-slot { gap: 4px; }
+
+/* ── Compiler slot overrides ─────────────────────────── */
+
+.bdb-compiler-slot {
+  /* inherits compiler-status-bar positioning — reset non-applicable rules */
+  position: static;
+  padding: 0;
+  min-height: unset;
+  flex: 1;
+  max-width: 480px;
+}
+
+/* Fullscreen: hide bar */
+body.dp-fullscreen #bottom-data-bar { display: none; }
+
+/* Mobile: hide */
+@media (max-width: 768px) { #bottom-data-bar { display: none; } }

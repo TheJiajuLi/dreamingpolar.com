@@ -66,9 +66,6 @@ function setupAiChatScreen() {
     </div>
     <div class="aic-messages" id="aic-messages"></div>
     <div class="aic-input-bar">
-      <div class="aic-token-row">
-        Daily quota remains：<span id="aic-tokens">—</span> tokens
-      </div>
       <div class="aic-dialog-wrap">
         <div class="ai-dialog-main">
           <div class="ai-input-wrap">
@@ -91,7 +88,7 @@ function setupAiChatScreen() {
   const inputEl       = document.getElementById('aic-input');
   const sendBtn       = document.getElementById('aic-send');
   const clearBtn      = document.getElementById('aic-clear-btn');
-  const tokensEl    = document.getElementById('aic-tokens');
+  const tokensEl    = document.getElementById('bdb-ai-tokens');
   const personaBtn  = document.getElementById('aic-persona-btn');
 
   // ── Persona selector ──────────────────────────────────────────────────────
@@ -223,9 +220,6 @@ function setupEmbeddedChat() {
     slot.innerHTML = `
       <div class="aic-messages cs-aic-messages" id="cs-aic-messages"></div>
       <div class="aic-input-bar">
-        <div class="aic-token-row">
-          Daily quota remains：<span id="cs-aic-tokens">—</span> tokens
-        </div>
         <div class="aic-dialog-wrap">
           <div class="ai-dialog-main">
             <div class="ai-input-wrap">
@@ -242,7 +236,7 @@ function setupEmbeddedChat() {
     _messagesEl = slot.querySelector('#cs-aic-messages');
     _inputEl    = slot.querySelector('#cs-aic-input');
     _sendEl     = slot.querySelector('#cs-aic-send');
-    _tokensEl   = slot.querySelector('#cs-aic-tokens');
+    _tokensEl   = document.getElementById('bdb-ai-tokens');
 
     function refreshTokens() {
       if (_tokensEl) _tokensEl.textContent = getRemainingTokens().toLocaleString();

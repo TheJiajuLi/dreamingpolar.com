@@ -41,14 +41,8 @@ export function init() {
   editor.value        = loadCode();
   editorWrap.appendChild(editor);
 
-  // ── Status bar ────────────────────────────────────────
-  const statusBar = document.createElement('div');
-  statusBar.className = 'compiler-status-bar';
-  statusBar.textContent = 'Idle — Python loads on first run.';
-
   body.appendChild(toolbar);
   body.appendChild(editorWrap);
-  body.appendChild(statusBar);
 
   // ── Tab key ───────────────────────────────────────────
   editor.addEventListener('keydown', e => {
@@ -65,18 +59,6 @@ export function init() {
   editor.addEventListener('input', () => {
     clearTimeout(_saveTimer);
     _saveTimer = setTimeout(() => saveCode(editor.value), 400);
-  });
-
-  // ── Compiler status → status bar ─────────────────────
-  document.addEventListener('compiler-status', ({ detail }) => {
-    const spinning = detail.status === 'loading' || detail.status === 'running';
-    statusBar.className = `compiler-status-bar ${detail.status}`;
-    if (detail.percent != null) statusBar.style.setProperty('--pct', `${detail.percent}%`);
-    const pctLabel = (detail.percent != null && detail.status === 'loading')
-      ? `<span class="status-pct">${detail.percent}%</span>` : '';
-    statusBar.innerHTML = spinning
-      ? `<span class="status-spinner"><i></i><i></i><i></i></span>${detail.message}${pctLabel}`
-      : detail.message;
   });
 
   // ── Run ───────────────────────────────────────────────

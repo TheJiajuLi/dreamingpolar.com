@@ -143,14 +143,10 @@ const singleView   = document.getElementById('cds-single-view');
   _editorRef = editor;
   editorWrap.appendChild(editor);
 
-  const statusBar = document.createElement('div');
-  statusBar.className   = 'compiler-status-bar';
-  statusBar.textContent = 'Idle — Python loads on first run.';
-
   // ── Code panel (left) ─────────────────────────────────
   const codePanel = document.createElement('div');
   codePanel.className = 'cds-code-panel';
-  codePanel.append(toolbar, editorWrap, statusBar);
+  codePanel.append(toolbar, editorWrap);
 
   // ── Output panel (right) ──────────────────────────────
   const outputPanel = document.createElement('div');
@@ -396,18 +392,6 @@ const singleView   = document.getElementById('cds-single-view');
   editor.addEventListener('input', () => {
     clearTimeout(_saveTimer);
     _saveTimer = setTimeout(() => localStorage.setItem(CODE_KEY, editor.value), 400);
-  });
-
-  document.addEventListener('compiler-status', ({ detail }) => {
-    if (getCurrentMode() === 'customise') return;
-    const spinning = detail.status === 'loading' || detail.status === 'running';
-    statusBar.className = `compiler-status-bar ${detail.status}`;
-    if (detail.percent != null) statusBar.style.setProperty('--pct', `${detail.percent}%`);
-    const pctLabel = (detail.percent != null && detail.status === 'loading')
-      ? `<span class="status-pct">${detail.percent}%</span>` : '';
-    statusBar.innerHTML = spinning
-      ? `<span class="status-spinner"><i></i><i></i><i></i></span>${detail.message}${pctLabel}`
-      : detail.message;
   });
 
   async function run() {

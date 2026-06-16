@@ -224,7 +224,7 @@
 .aic-token-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 4px;
   font-size: 0.6rem;
   color: var(--text-muted, #94a3b8);
   letter-spacing: 0.04em;

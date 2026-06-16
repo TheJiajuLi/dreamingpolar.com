@@ -268,10 +268,18 @@ function setup() {
   });
 
   document.addEventListener('screen-opened', ({ detail }) => {
-    if (detail.id === 'terminal') { syncToggleBtn(true); if (window.innerWidth > 768) requestAnimationFrame(() => _input?.focus()); }
+    if (detail.id !== 'terminal') return;
+    syncToggleBtn(true);
+    document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'terminal' } }));
+    if (window.innerWidth > 768) requestAnimationFrame(() => _input?.focus());
   });
   document.addEventListener('screen-closed', ({ detail }) => {
     if (detail.id === 'terminal') syncToggleBtn(false);
+  });
+
+  // Deactivate when another VT button claims the active slot
+  document.addEventListener('vt-btn-activated', ({ detail: { id } }) => {
+    if (id !== 'terminal') syncToggleBtn(false);
   });
 }
 
