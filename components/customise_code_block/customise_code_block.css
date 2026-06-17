@@ -1,5 +1,5 @@
 /* ── Notebook container ────────────────────────────────── */
-.nb-notebook {
+.notebook-editor-area {
   display: flex;
   flex-direction: column;
   flex: 1;             /* fills parent flex container — works in Safari unlike height:100% */
@@ -278,15 +278,15 @@
 .nb-cell .nb-output-section .output-image img { width: 100%; display: block; border-radius: 0; }
 
 /* ── Per-cell output sections (in the Output panel) ───── */
-.nb-output-section {
+.cds-output-section {
   border: none;
   border-bottom: 1px solid var(--border, #e2e8f0);
   overflow: hidden;
   margin: 0;
 }
-.nb-output-section:last-child  { border-bottom: none; }
+.cds-output-section:last-child  { border-bottom: none; }
 
-.nb-output-section-label {
+.cds-output-section-label {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -306,13 +306,13 @@
 }
 
 /* Dot badge before label text */
-.nb-output-section-label-text {
+.cds-output-section-label-text {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.nb-output-section-label-text::before {
+.cds-output-section-label-text::before {
   content: '';
   display: inline-block;
   width: 6px;
@@ -323,7 +323,7 @@
   opacity: 0.85;
 }
 
-.nb-output-section-close {
+.cds-output-section-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -340,9 +340,9 @@
   font-family: inherit;
   line-height: 1;
 }
-.nb-output-section-close:hover { background: #fef2f2; color: #ef4444; }
+.cds-output-section-close:hover { background: #fef2f2; color: #ef4444; }
 
-.nb-output-section-body {
+.cds-output-section-body {
   padding: 0;
   display: flex;
   flex-direction: column;

@@ -2,10 +2,7 @@
 // Access Token 存内存，Refresh Token 由后端以 httpOnly Cookie 管理
 import { saveUserCache, loadUserCache, clearUserCache } from './auth_hooks.js';
 
-const BASE = window.location.hostname === 'localhost' ||
-             window.location.hostname === '127.0.0.1'
-  ? 'http://127.0.0.1:3001/auth'
-  : 'https://dp-auth-backend.onrender.com/auth';
+const BASE = 'https://dp-auth-backend.onrender.com/auth';
 
 let _accessToken = null;
 

@@ -276,6 +276,7 @@ function rebuildCells() {
   _cellsEl.innerHTML = '';
   _cells.forEach((cell, i) => {
     cell.numEl.textContent = i + 1;
+    cell.counter.textContent = ' ';
     _cellsEl.appendChild(cell.el);
     requestAnimationFrame(() => { autoResize(cell.editor); cell._icmSync?.(); });
     _cellsEl.appendChild(makeAddBtn(i + 1));
@@ -336,7 +337,7 @@ export function init(container, externalTopbar) {
   _runSeq = 0;
 
   const nb = document.createElement('div');
-  nb.className = 'nb-notebook';
+  nb.className = 'notebook-editor-area';
 
   const runAllBtn = document.createElement('button');
   runAllBtn.className = 'nb-run-all-btn';
@@ -400,8 +401,20 @@ export function init(container, externalTopbar) {
 
   // When AI generates code while the Customise tab is active, the notebook
   // owns this event — no other component needs to know about it.
-  document.addEventListener('ai-insert-and-run', ({ detail: { code, lang } }) => {
+  document.addEventListener('ai-insert-and-run', ({ detail: { code, lang, cellId } }) => {
     if (getCurrentMode() !== 'customise') return;
+    if (cellId) {
+      // Update existing cell and re-run it
+      const cell = _cells.find(c => c.id === cellId);
+      if (cell) {
+        cell.editor.value = code;
+        autoResize(cell.editor);
+        cell.editor.dispatchEvent(new Event('input'));
+        saveAll();
+        cell.el.querySelector('.nb-run')?.click();
+      }
+      return;
+    }
     addImportedCell(lang ?? 'python', code, { autoRun: true });
   });
 

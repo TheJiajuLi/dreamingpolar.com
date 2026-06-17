@@ -35,6 +35,7 @@
   flex: 1;
   flex-direction: row;   /* side-by-side: code left, output right */
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -169,7 +170,8 @@ body.cs-resizing * {
 
 /* Mobile: stack vertically */
 @media (max-width: 768px) {
-  #cds-single-view    { flex-direction: column; }
+  #cds-single-view,
+  #cds-notebook-view  { flex-direction: column; }
   .cds-resizer        { display: none; }
   .cds-output-panel   { width: 100% !important; flex: none; border-top: 1px solid rgba(0,0,0,0.06); max-height: 45vh; }
 }
@@ -177,10 +179,25 @@ body.cs-resizing * {
 #cds-notebook-view {
   display: none;       /* hidden by default; JS sets display:flex in Customise mode */
   flex: 1;
-  flex-direction: column;
+  flex-direction: row;   /* side-by-side: cells left, output right */
   min-height: 0;
   overflow: hidden;
 }
+
+/* Left panel: toolbar + notebook-editor-area — mirrors .cds-code-panel */
+.cds-notebook-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border, #cbd5e1) transparent;
+}
+
+/* Cell inline output is suppressed — output renders in the right cds-output-panel */
+.nb-output-section { display: none !important; }
 
 /* ── Danger toolbar button (clear all cells) ────────────── */
 .sc-btn--danger                { color: #ef4444; }

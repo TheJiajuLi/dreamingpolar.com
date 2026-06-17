@@ -11,6 +11,37 @@
   border-top: 1px solid var(--border, #e2e8f0);
 }
 
+/* ── Terminal content wrapper (terminal's own DOM) ────────── */
+/* In column/notebook mode it fills the panel; in single mode it's the left strip. */
+.terminal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Single-view mode: terminal-panel expands to full height, row layout ── */
+#coding-screen.mode-single #terminal-panel {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  flex-direction: row;
+  border-top: none;
+}
+#coding-screen.mode-single .coding-screen-body {
+  flex: 0 0 0;
+  overflow: hidden;
+}
+#coding-screen.mode-single .terminal-content {
+  flex: 0 0 var(--terminal-w, 300px);
+  border-right: 1px solid var(--border, #e2e8f0);
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+#coding-screen.mode-single .terminal-resize-handle { display: none; }
+
 /* ── Resize handle ───────────────────────────────────────── */
 .terminal-resize-handle {
   position: absolute;
@@ -22,7 +53,7 @@
 }
 .terminal-resize-handle:hover,
 .terminal-resize-handle.dragging {
-  background: rgba(87, 171, 90, 0.22);
+  background: transparent;
 }
 
 /* ── Header — compact, matches app design language ────────── */
@@ -170,8 +201,8 @@
 }
 
 /* ── Terminal maximize state ─────────────────────────────── */
-/* #terminal-panel is a sibling of .hero-screens-row (both direct children of main.hero).
-   Collapsing the row to 0 lets the terminal take the full hero height. */
+/* #terminal-panel is now inside #coding-screen (a flex column).
+   Collapsing .coding-screen-body lets the terminal fill the coding screen. */
 #terminal-panel.terminal--max {
   flex: 1;
   height: auto;
@@ -179,7 +210,7 @@
   max-height: none !important;  /* overrides both desktop 45vh and mobile 52vh */
 }
 
-body:has(#terminal-panel.terminal--max) .hero-screens-row {
+body:has(#terminal-panel.terminal--max) .coding-screen-body {
   flex: 0 0 0 !important;
   overflow: hidden !important;
 }

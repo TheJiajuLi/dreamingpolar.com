@@ -5,11 +5,15 @@ import cors from 'cors';
 const app  = express();
 const PORT = process.env.PORT ?? 3001;
 
-// ── 配置 ──────────────────────────────────────────────────────
+// ── Profile selection ─────────────────────────────────────────
+// Set ACTIVE=1 or ACTIVE=2 in .env to switch providers
+const n = process.env.ACTIVE_AI_INDEX || 1;
+
 const CONFIG = {
-  model:  process.env.AI_MODEL ?? 'claude-haiku-4-5',
-  apiUrl: 'https://api.anthropic.com/v1/messages',
-  apiKey: process.env[process.env.ACTIVE_KEY] ?? process.env.AI_API_KEY,
+  format: process.env[`AI_API_FORMAT_${n}`] ?? 'anthropic',
+  apiUrl: process.env[`AI_API_URL_${n}`],
+  apiKey: process.env[`AI_API_KEY_${n}`],
+  model:  process.env[`AI_MODEL_${n}`] ?? 'claude-haiku-4-5',
 };
 
 const SYSTEM_PROMPT = `You are 小梦, a polar bear AI assistant built into Dreaming Polar (极梦) — an interactive mathematics and Python learning platform. You help students learn math, generate Python code for visualization and computation, explain errors, and answer questions about mathematics. You are friendly, encouraging, and precise. When asked to generate code, return ONLY the Python code with no markdown fences and no explanation unless the user asks for one.`;
@@ -31,12 +35,25 @@ app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json({ limit: '2mb' }));
 
 // ── 路由 ──────────────────────────────────────────────────────
-app.get('/health', (_, res) => res.json({ ok: true, model: CONFIG.model }));
+app.get('/health', (_, res) => res.json({
+  ok:        true,
+  active:    n,
+  format:    CONFIG.format,
+  model:     CONFIG.model,
+  apiUrl:    CONFIG.apiUrl,
+  keyLoaded: !!CONFIG.apiKey,
+  keyPrefix: CONFIG.apiKey ? CONFIG.apiKey.slice(0, 18) + '…' : 'MISSING',
+}));
 
 app.post('/api/ai', async (req, res) => {
   if (!CONFIG.apiKey) {
     return res.status(500).json({
-      error: 'No API key — check ACTIVE_KEY + AI_API_KEY_1/2 in backend/.env'
+      error: `No API key — set AI_API_KEY_${n} in backend/.env`
+    });
+  }
+  if (!CONFIG.apiUrl) {
+    return res.status(500).json({
+      error: `No API URL — set AI_API_URL_${n} in backend/.env`
     });
   }
 
@@ -51,29 +68,26 @@ app.post('/api/ai', async (req, res) => {
     return res.status(400).json({ error: 'messages array is required' });
   }
 
-  // OpenAI格式 — system作为第一条messages
-  const fullMessages = [
-    { role: 'system', content: system },
-    ...messages,
-  ];
-
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), 60_000);
 
+  // ── Build request per format ───────────────────────────────
+  const isOpenAI = CONFIG.format === 'openai';
+
+  const reqHeaders = isOpenAI
+    ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.apiKey}` }
+    : { 'Content-Type': 'application/json', 'x-api-key': CONFIG.apiKey, 'anthropic-version': '2023-06-01' };
+
+  const reqBody = isOpenAI
+    ? { model: CONFIG.model, messages: [{ role: 'system', content: system }, ...messages], max_tokens, stream }
+    : { model: CONFIG.model, system, messages, max_tokens, stream };
+
   try {
     const upstream = await fetch(CONFIG.apiUrl, {
-      method: 'POST',
-      signal: abort.signal,
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${CONFIG.apiKey}`,
-      },
-      body: JSON.stringify({
-        model:      CONFIG.model,
-        messages:   fullMessages,
-        max_tokens,
-        stream,
-      }),
+      method:  'POST',
+      signal:  abort.signal,
+      headers: reqHeaders,
+      body:    JSON.stringify(reqBody),
     });
     clearTimeout(timer);
 
@@ -94,10 +108,12 @@ app.post('/api/ai', async (req, res) => {
       return res.end();
     }
 
-    // ── Non-streaming — OpenAI格式解析 ────────────────────────
+    // ── Non-streaming — parse per format ──────────────────────
     const data    = await upstream.json();
     console.log(`[ai] ${upstream.status}`, JSON.stringify(data).slice(0, 200));
-    const content = data.choices?.[0]?.message?.content?.trim() ?? '';
+    const content = isOpenAI
+      ? (data.choices?.[0]?.message?.content?.trim() ?? '')
+      : (data.content?.[0]?.text?.trim() ?? '');
     res.json({ content });
 
   } catch (e) {
@@ -109,6 +125,6 @@ app.post('/api/ai', async (req, res) => {
 
 // ── 启动 ──────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🐻‍❄️ 小梦 proxy running on http://localhost:${PORT}`);
-  if (!CONFIG.apiKey) console.warn('⚠️  No API key found — check backend/.env');
+  console.log(`🐻‍❄️ 小梦 proxy [profile ${n}] running on http://localhost:${PORT} [${CONFIG.format} / ${CONFIG.model}]`);
+  if (!CONFIG.apiKey) console.warn(`⚠️  No API key — set AI_API_KEY_${n} in backend/.env`);
 });

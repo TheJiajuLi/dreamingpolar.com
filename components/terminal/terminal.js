@@ -145,7 +145,9 @@ function setup() {
   const panel = document.getElementById('terminal-panel');
   if (!panel) return;
 
-  panel.innerHTML = `
+  const content = document.createElement('div');
+  content.className = 'terminal-content';
+  content.innerHTML = `
     <div class="terminal-resize-handle"></div>
     <div class="terminal-header">
       <span class="terminal-label">
@@ -167,6 +169,7 @@ function setup() {
       </div>
     </div>
   `;
+  panel.prepend(content);
 
   _output = document.getElementById('terminal-output');
   _input  = document.getElementById('terminal-input');

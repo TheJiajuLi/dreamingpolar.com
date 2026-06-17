@@ -1,5 +1,6 @@
 /* ── Auth UI — Dreaming Polar ─────────────────────────────────────────────── */
 
+
 /* ── Header button ───────────────────────────────────────────────────────── */
 .au-hdr-btn {
   flex-shrink: 0;
@@ -21,8 +22,16 @@
   border-color: var(--border, #cbd5e1);
 }
 .au-hdr-btn.au-logged-in {
-  color: #6366f1;
-  border-color: rgba(99,102,241,0.35);
+  border-color: rgba(99,102,241,0.3);
+  background: transparent;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.au-hdr-btn.au-logged-in:hover {
+  border-color: rgba(99,102,241,0.65);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 2px 8px rgba(99,102,241,0.25);
+  background: transparent;
 }
 
 @media (max-width: 768px) {
@@ -33,14 +42,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #06b6d4);
-  font-size: 0.58rem;
+  background: linear-gradient(140deg, #6366f1 0%, #06b6d4 100%);
+  font-size: 0.52rem;
   font-weight: 700;
   color: #fff;
   letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
   pointer-events: none;
 }
 
@@ -235,11 +250,16 @@
   gap: 9px;
 }
 .au-profile-avatar {
-  width: 32px; height: 32px;
+  width: 38px; height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  background: linear-gradient(140deg, #6366f1 0%, #06b6d4 100%);
+  box-shadow:
+    0 0 0 2.5px var(--surface, #fff),
+    0 0 0 4px rgba(99,102,241,0.45),
+    0 4px 14px rgba(99,102,241,0.25);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.67rem; font-weight: 700; color: #fff;
+  font-size: 0.76rem; font-weight: 700; color: #fff;
+  line-height: 1;
   flex-shrink: 0;
 }
 .au-profile-name { font-size: 0.82rem; font-weight: 700; color: var(--text, #1e293b); }
@@ -292,6 +312,13 @@
   background: rgba(255,255,255,0.07);
   color: rgba(220,235,255,0.88);
 }
+[data-theme="dark"] .au-profile-avatar,
+[data-theme="grey"] .au-profile-avatar {
+  box-shadow:
+    0 0 0 2.5px var(--surface, #0d1117),
+    0 0 0 4px rgba(99,102,241,0.5),
+    0 4px 14px rgba(99,102,241,0.25);
+}
 
 [data-theme="dark"] .au-input,
 [data-theme="grey"] .au-input {
@@ -337,7 +364,7 @@
 [data-theme="aurora"] .au-hdr-btn.au-logged-in { color: #a78bfa; border-color: rgba(167,139,250,0.4); }
 [data-theme="aurora"] .au-vt-avatar,
 [data-theme="aurora"] .au-profile-avatar {
-  background: linear-gradient(135deg, #8b5cf6, #c084fc);
+  background: linear-gradient(140deg, #8b5cf6, #c084fc);
 }
 [data-theme="aurora"] .au-phase-badge {
   background: rgba(192,132,252,0.12);

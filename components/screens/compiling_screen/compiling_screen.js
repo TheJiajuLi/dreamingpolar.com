@@ -54,14 +54,14 @@ export function getOrCreateSection(area, cellId, cellLabel) {
   area.querySelector('.output-placeholder')?.remove();
 
   const sectionEl = document.createElement('div');
-  sectionEl.className = 'nb-output-section';
+  sectionEl.className = 'cds-output-section';
   sectionEl.dataset.cellId = cellId;
 
   const labelEl = document.createElement('div');
-  labelEl.className = 'nb-output-section-label';
+  labelEl.className = 'cds-output-section-label';
 
   const labelInner = document.createElement('div');
-  labelInner.className = 'nb-output-section-label-text';
+  labelInner.className = 'cds-output-section-label-text';
 
   const labelText = document.createElement('span');
   labelText.textContent = cellLabel ?? '';
@@ -72,7 +72,7 @@ export function getOrCreateSection(area, cellId, cellLabel) {
   labelEl.appendChild(labelInner);
 
   const closeBtn = document.createElement('button');
-  closeBtn.className = 'nb-output-section-close';
+  closeBtn.className = 'cds-output-section-close';
   closeBtn.title = 'Dismiss (re-run cell to restore)';
   closeBtn.textContent = '✕';
   closeBtn.addEventListener('click', () => {
@@ -86,7 +86,7 @@ export function getOrCreateSection(area, cellId, cellLabel) {
   labelEl.appendChild(closeBtn);
 
   const bodyEl = document.createElement('div');
-  bodyEl.className = 'nb-output-section-body';
+  bodyEl.className = 'cds-output-section-body';
 
   sectionEl.append(labelEl, bodyEl);
 

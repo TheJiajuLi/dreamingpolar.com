@@ -10,7 +10,7 @@ import * as SyntaxHL from './coding_screen_python/python_syntax_highlight/python
 import * as TextHL   from './coding_screen_python/python_text_highlight/python_text_highlight.js';
 import * as Completion from './coding_screen_python/python_code-completion/python_code_completion.js';
 import { createImportBtn } from '../../import/import_btn.js';
-import { addImportedCell } from '../../customise_code_block/customise_code_block.js';
+import { addImportedCell, setCellCode } from '../../customise_code_block/customise_code_block.js';
 
 const CODE_KEY = 'dreaming-polar-code';
 
@@ -54,19 +54,27 @@ function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
   if (!screen) return;
 
+  const terminalPanel = document.getElementById('terminal-panel');
+
   screen.innerHTML = `
     <div class="coding-screen-body" id="coding-screen-body">
-      <div id="cds-single-view"></div>
       <div id="cds-notebook-view"></div>
     </div>
   `;
 
+  if (terminalPanel) screen.appendChild(terminalPanel);
+
+  // cds-single-view lives inside terminal-panel (RIGHT side in single mode).
+  // terminal.js runs after us and uses prepend(), so this stays as the last child.
+  const singleView = document.createElement('div');
+  singleView.id = 'cds-single-view';
+  if (terminalPanel) terminalPanel.appendChild(singleView);
+
   // ── Screen controller ─────────────────────────────────
   requestAnimationFrame(() => {
-    window.screenController?.register('coding', screen, { label: 'Code', persisted: true });
+    window.screenController?.register('coding', screen, { label: 'Code', persisted: true, noChip: true });
   });
 
-const singleView   = document.getElementById('cds-single-view');
   const notebookView = document.getElementById('cds-notebook-view');
 
   // ── Single-cell view ──────────────────────────────────
@@ -345,6 +353,9 @@ const singleView   = document.getElementById('cds-single-view');
   icmOnChange(() => syncICM(getCurrentMode()));
 
   // ── Notebook view ─────────────────────────────────────
+  const nbLeft = document.createElement('div');
+  nbLeft.className = 'cds-notebook-panel';
+
   const nbToolbar = document.createElement('div');
   nbToolbar.className = 'cds-notebook-toolbar';
   const runAllSlot = document.createElement('div');
@@ -352,8 +363,231 @@ const singleView   = document.getElementById('cds-single-view');
   runAllSlot.className = 'cds-runall-slot';
   const clearCellsBtn = createClearCellsBtn();
   nbToolbar.append(runAllSlot, clearCellsBtn);
-  notebookView.appendChild(nbToolbar);
-  initNotebook(notebookView, runAllSlot);
+  nbLeft.appendChild(nbToolbar);
+  notebookView.appendChild(nbLeft);
+  initNotebook(nbLeft, runAllSlot);
+
+  // ── Notebook output panel (right, same design as single view) ──
+  const NB_OUT_W_KEY = 'dp-nb-output-w';
+  const NB_OUT_MIN_W = 160;
+  const savedNbOutW  = parseFloat(localStorage.getItem(NB_OUT_W_KEY)) || 280;
+
+  const nbOutputPanel = document.createElement('div');
+  nbOutputPanel.className = 'cds-output-panel';
+  nbOutputPanel.style.width = savedNbOutW + 'px';
+  nbOutputPanel.style.flex  = 'none';
+
+  const nbOutputPanelHdr = document.createElement('div');
+  nbOutputPanelHdr.className = 'cds-output-panel-hdr';
+
+  const nbOutputHdrLabel = document.createElement('span');
+  nbOutputHdrLabel.className = 'cds-output-panel-label';
+  nbOutputHdrLabel.textContent = 'Output';
+
+  const nbOutClearBtn = document.createElement('button');
+  nbOutClearBtn.className = 'sc-btn';
+  nbOutClearBtn.title = 'Clear output';
+  nbOutClearBtn.textContent = '⊘';
+
+  const nbOutMaxBtn = document.createElement('button');
+  nbOutMaxBtn.className = 'sc-btn';
+  nbOutMaxBtn.title = 'Maximize';
+  nbOutMaxBtn.textContent = '⤢';
+
+  const nbOutMinBtn = document.createElement('button');
+  nbOutMinBtn.className = 'sc-btn';
+  nbOutMinBtn.title = 'Minimize';
+  nbOutMinBtn.textContent = '−';
+
+  const nbOutToolbar = document.createElement('div');
+  nbOutToolbar.className = 'sc-toolbar';
+  nbOutToolbar.append(nbOutClearBtn, nbOutMaxBtn, nbOutMinBtn);
+
+  nbOutputPanelHdr.append(nbOutputHdrLabel, nbOutToolbar);
+
+  const nbOutputPlaceholder = document.createElement('div');
+  nbOutputPlaceholder.className = 'cds-output-placeholder';
+  nbOutputPlaceholder.textContent = 'Run to see output';
+
+  const nbOutputBody = document.createElement('div');
+  nbOutputBody.className = 'cds-output-body';
+
+  nbOutputPanel.append(nbOutputPanelHdr, nbOutputPlaceholder, nbOutputBody);
+
+  const nbResizer = document.createElement('div');
+  nbResizer.className = 'cds-resizer';
+  nbResizer.title = 'Drag to resize · Double-click to reset';
+  nbOutputPanel.appendChild(nbResizer);
+
+  function _startNbResize(startX) {
+    document.body.classList.add('cs-resizing');
+    function onMove(clientX) {
+      const viewRect = notebookView.getBoundingClientRect();
+      const maxW = viewRect.width * 0.75;
+      const newW = Math.min(maxW, Math.max(NB_OUT_MIN_W, viewRect.right - clientX));
+      nbOutputPanel.style.width = newW + 'px';
+      nbOutputPanel.style.flex  = 'none';
+    }
+    function onUp(clientX) {
+      document.removeEventListener('mousemove', onNbMouseMove);
+      document.removeEventListener('mouseup',   onNbMouseUp);
+      document.removeEventListener('touchmove', onNbTouchMove);
+      document.removeEventListener('touchend',  onNbTouchEnd);
+      document.body.classList.remove('cs-resizing');
+      onMove(clientX);
+      localStorage.setItem(NB_OUT_W_KEY, parseFloat(nbOutputPanel.style.width));
+    }
+    const onNbMouseMove = e => onMove(e.clientX);
+    const onNbMouseUp   = e => onUp(e.clientX);
+    const onNbTouchMove = e => { e.preventDefault(); onMove(e.touches[0].clientX); };
+    const onNbTouchEnd  = e => onUp(e.changedTouches[0].clientX);
+    document.addEventListener('mousemove', onNbMouseMove);
+    document.addEventListener('mouseup',   onNbMouseUp);
+    document.addEventListener('touchmove', onNbTouchMove, { passive: false });
+    document.addEventListener('touchend',  onNbTouchEnd);
+  }
+
+  nbResizer.addEventListener('mousedown',  e => { e.preventDefault(); _startNbResize(e.clientX); });
+  nbResizer.addEventListener('touchstart', e => { e.preventDefault(); _startNbResize(e.touches[0].clientX); }, { passive: false });
+  nbResizer.addEventListener('dblclick',   () => {
+    nbOutputPanel.style.width = '';
+    nbOutputPanel.style.flex  = '';
+    localStorage.removeItem(NB_OUT_W_KEY);
+  });
+
+  notebookView.appendChild(nbOutputPanel);
+
+  const nbSections = new Map();
+
+  function getOrCreateNbSection(cellId, cellLabel, lang) {
+    if (nbSections.has(cellId)) {
+      const sec = nbSections.get(cellId);
+      const spanEl = sec.labelEl.querySelector('span');
+      if (spanEl && cellLabel) spanEl.textContent = cellLabel;
+      if (lang) sec.lang = lang;
+      sec.bodyEl.innerHTML = '';
+      return sec;
+    }
+    nbOutputPlaceholder.style.display = 'none';
+
+    const sectionEl = document.createElement('div');
+    sectionEl.className = 'cds-output-section';
+    sectionEl.dataset.cellId = cellId;
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'cds-output-section-label';
+
+    const labelInner = document.createElement('div');
+    labelInner.className = 'cds-output-section-label-text';
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = cellLabel ?? '';
+    labelInner.appendChild(labelSpan);
+    labelEl.appendChild(labelInner);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'cds-output-section-close';
+    closeBtn.title = 'Dismiss';
+    closeBtn.textContent = '✕';
+    closeBtn.addEventListener('click', () => {
+      sectionEl.remove();
+      nbSections.delete(cellId);
+      if (nbSections.size === 0) nbOutputPlaceholder.style.display = '';
+    });
+    labelEl.appendChild(closeBtn);
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'cds-output-section-body';
+
+    sectionEl.append(labelEl, bodyEl);
+    nbOutputBody.appendChild(sectionEl);
+
+    const sec = { sectionEl, labelEl, bodyEl, lang: lang ?? '' };
+    nbSections.set(cellId, sec);
+    return sec;
+  }
+
+  document.addEventListener('notebook-cells-reordered', ({ detail: { order } }) => {
+    if (!Array.isArray(order)) return;
+    order.forEach((cellId, idx) => {
+      const sec = nbSections.get(cellId);
+      if (!sec) return;
+      nbOutputBody.appendChild(sec.sectionEl);
+      const spanEl = sec.labelEl.querySelector('span');
+      if (spanEl && sec.lang) spanEl.textContent = `Cell ${idx + 1} · ${sec.lang}`;
+    });
+  });
+
+  nbOutClearBtn.addEventListener('click', () => {
+    nbOutputBody.innerHTML = '';
+    nbSections.clear();
+    nbOutputPlaceholder.style.display = '';
+  });
+
+  document.addEventListener('notebook-clear-output', () => {
+    nbOutputBody.innerHTML = '';
+    nbSections.clear();
+    nbOutputPlaceholder.style.display = '';
+  });
+
+  nbOutMaxBtn.addEventListener('click', () => {
+    const isMax = nbOutputPanel.dataset.expanded === '1';
+    if (isMax) {
+      nbOutputPanel.style.width = nbOutputPanel.dataset.prevWidth || (savedNbOutW + 'px');
+      nbOutputPanel.style.flex  = 'none';
+      delete nbOutputPanel.dataset.expanded;
+      nbOutMaxBtn.textContent = '⤢';
+      nbOutMaxBtn.title = 'Maximize';
+    } else {
+      nbOutputPanel.dataset.prevWidth = nbOutputPanel.style.width;
+      nbOutputPanel.dataset.expanded  = '1';
+      const maxW = notebookView.getBoundingClientRect().width * 0.75;
+      nbOutputPanel.style.width = Math.round(maxW) + 'px';
+      nbOutputPanel.style.flex  = 'none';
+      nbOutMaxBtn.textContent = '⤡';
+      nbOutMaxBtn.title = 'Restore';
+    }
+  });
+
+  nbOutMinBtn.addEventListener('click', () => {
+    nbOutputPanel.style.display = 'none';
+  });
+
+  document.addEventListener('compile-result', ({ detail }) => {
+    nbOutputPanel.style.display = '';
+  });
+
+  document.addEventListener('compile-result', ({ detail }) => {
+    if (!detail.cellId) return;
+    const { outputs, cellId, cellLabel, sourceCode, sourceLang } = detail;
+    const sec = getOrCreateNbSection(cellId, cellLabel, sourceLang);
+    renderBlocks(outputs, sec.bodyEl, {
+      onAskAI: async (errorText, block, btn) => {
+        btn.disabled = true;
+        btn.textContent = 'Thinking…';
+        try {
+          const context = sourceCode
+            ? `Code (${sourceLang ?? 'unknown'}):\n${sourceCode}\n\nError:\n${errorText}`
+            : errorText;
+          const explanation = await ask(context, systemExplainForLang(sourceLang), 512);
+          const explDiv = document.createElement('div');
+          explDiv.className = 'output-ai-explanation';
+          const lbl = document.createElement('div');
+          lbl.className = 'ai-explanation-label';
+          lbl.textContent = '小梦 suggests:';
+          const bodyEl = document.createElement('div');
+          bodyEl.className = 'ai-explanation-body';
+          explDiv.append(lbl, bodyEl);
+          block.after(explDiv);
+          lbl.appendChild(createRefactorBtn({ sourceCode, sourceLang, cellId, explanation }));
+          renderBlocks(parseAIResponse(explanation), bodyEl);
+        } catch { /* ignore */ }
+        finally { btn.disabled = false; btn.textContent = 'Ask AI'; }
+      },
+    });
+    requestAnimationFrame(() =>
+      sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    );
+  });
 
   // ── Chat-mode placeholder ─────────────────────────────
   const chatPlaceholder = document.createElement('div');
@@ -367,9 +601,11 @@ const singleView   = document.getElementById('cds-single-view');
   function applyMode(mode) {
     const isCustomise = mode === 'customise';
     const isChat      = mode === 'ai_chat';
-    singleView.style.display      = (isCustomise || isChat) ? 'none' : 'flex';
-    notebookView.style.display    = isCustomise             ? 'flex' : 'none';
-    chatPlaceholder.style.display = isChat                  ? 'flex' : 'none';
+    const isSingle    = !isCustomise && !isChat;
+    singleView.style.display      = isSingle    ? 'flex' : 'none';
+    notebookView.style.display    = isCustomise ? 'flex' : 'none';
+    chatPlaceholder.style.display = isChat      ? 'flex' : 'none';
+    screen.classList.toggle('mode-single', isSingle);
     if (!isChat) editor.placeholder = PLACEHOLDERS[mode] ?? PLACEHOLDERS.python;
   }
 
@@ -436,23 +672,25 @@ const singleView   = document.getElementById('cds-single-view');
     localStorage.removeItem(CODE_KEY);
   });
 
-  // Handle ai-insert-and-run for single-cell modes only
+  // Handle ai-insert-and-run (single-view only; notebook handled by customise_code_block)
   document.addEventListener('ai-insert-and-run', ({ detail: { code } }) => {
     const m = getCurrentMode();
-    if (m === 'customise') return; // notebook handles its own
-    if (m === 'ai_chat')   return; // chat screen handles its own
+    if (m === 'ai_chat' || m === 'customise') return;
     editor.value = code;
     localStorage.setItem(CODE_KEY, code);
     editor.dispatchEvent(new Event('input'));
     run();
   });
 
-  // Handle refactor-code for standalone cell only
+  // Handle refactor-code
   document.addEventListener('refactor-code', ({ detail: { code, cellId } }) => {
-    if (cellId !== '__standalone__') return;
-    editor.value = code;
-    localStorage.setItem(CODE_KEY, code);
-    editor.dispatchEvent(new Event('input'));
+    if (cellId === '__standalone__') {
+      editor.value = code;
+      localStorage.setItem(CODE_KEY, code);
+      editor.dispatchEvent(new Event('input'));
+    } else {
+      setCellCode(cellId, code);
+    }
   });
 
 }

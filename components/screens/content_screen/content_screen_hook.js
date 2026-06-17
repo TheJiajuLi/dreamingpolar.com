@@ -14,7 +14,7 @@ export function attachContentScreenHooks(hero, getBody) {
   });
 
   requestAnimationFrame(() => {
-    window.screenController?.register('content', hero, { label: 'Content', persisted: true, defaultOpen: true });
+    window.screenController?.register('content', hero, { label: 'Content', persisted: true, defaultOpen: true, noChip: true });
   });
 
   document.addEventListener('screen-opened', ({ detail }) => {

@@ -43,7 +43,7 @@ const screenController = {
   // persisted: true  → reads localStorage to restore open/closed across refreshes.
   // defaultOpen: true → falls back to open when no saved state exists.
   // Screens without persisted:true always start as 'normal'.
-  register(id, el, { onStateChange, label, persisted = false, defaultOpen = false } = {}) {
+  register(id, el, { onStateChange, label, persisted = false, defaultOpen = false, noChip = false } = {}) {
     let initialState = defaultOpen ? 'normal' : 'closed';
     if (persisted) {
       const saved = localStorage.getItem(PERSIST_PREFIX + id);
@@ -51,7 +51,7 @@ const screenController = {
       else if (saved === 'closed') initialState = 'closed';
       // else: no saved state → use defaultOpen
     }
-    screens.set(id, { el, state: initialState, onStateChange, label: label || id });
+    screens.set(id, { el, state: initialState, onStateChange, label: label || id, noChip });
     el.dataset.screenId    = id;
     el.dataset.screenState = initialState;
     onStateChange?.(initialState);
@@ -79,7 +79,7 @@ const screenController = {
     entry.state = 'minimized';
     applyState(id);
     if (wasMaximized) screenController._clearMax(id);
-    showRestoreChip(id);
+    if (!entry.noChip) showRestoreChip(id);
     _persist(id, 'closed');
     document.dispatchEvent(new CustomEvent('screen-minimized', { detail: { id } }));
   },
