@@ -302,6 +302,14 @@ function setupGenerativeScreen() {
   const screen = document.getElementById('generative-screen');
   if (!screen) return;
 
+  // ── One-time migration: clear old matplotlib demo code from editor localStorage ─
+  // If the saved editor content is the circle-drawing demo from a past session,
+  // clear it so the editor starts blank for the current user.
+  (() => {
+    const saved = localStorage.getItem(CODE_KEY);
+    if (saved?.includes('plt.Circle')) localStorage.removeItem(CODE_KEY);
+  })();
+
   // ── Build the four views ──────────────────────────────────────────────────
   // ── 1. Terminal view ─────────────────────────────────────────────────────
   const terminalView = document.createElement('div');

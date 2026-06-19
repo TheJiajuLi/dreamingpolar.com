@@ -494,7 +494,10 @@
   color: var(--text-muted, #64748b);
   opacity: 0.7;
   user-select: none;
-  margin-right: 6px;
+  margin-left: auto;    /* push to right edge */
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding-right: 4px;
 }
 
 .cds-jump-btn {

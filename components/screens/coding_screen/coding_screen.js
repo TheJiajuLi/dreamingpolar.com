@@ -68,7 +68,7 @@ function setupCodingScreen() {
   nbToolbar.appendChild(cdsModeLabel);
 
   const cdsJumpBtn = document.createElement('button');
-  cdsJumpBtn.className   = 'sc-btn cds-jump-btn';
+  cdsJumpBtn.className   = 'cds-jump-btn';
   cdsJumpBtn.textContent = '← Quick Analysis';
   cdsJumpBtn.title       = 'Switch to Quick Analysis (same kernel — data stays)';
   cdsJumpBtn.addEventListener('click', () => {
