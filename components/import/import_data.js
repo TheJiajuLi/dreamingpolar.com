@@ -5,6 +5,7 @@
 // Excel support: dynamically loads SheetJS from CDN on first .xlsx/.xls file.
 
 import { injectDataFrame } from '../compiler/compiler.js';
+import { renderKernelStatus } from '../right_bar/right_bar.js';
 
 const XLSX_CDN = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
 
@@ -80,7 +81,7 @@ export function createLoadDataBtn({ varName = 'df', onLoad } = {}) {
   const btn = document.createElement('button');
   btn.className   = 'sc-btn load-data-btn';
   btn.title       = 'Load CSV / Excel as DataFrame — available as  df  in all cells';
-  btn.textContent = '📂 Load Data';
+  btn.textContent = '📂';
 
   btn.addEventListener('click', () => {
     const input    = document.createElement('input');
@@ -101,13 +102,15 @@ export function createLoadDataBtn({ varName = 'df', onLoad } = {}) {
         const csv    = await _fileToCsv(file);
         const result = await injectDataFrame(varName, csv);
         _toast(`✓ "${file.name}" loaded → ${varName}  (${result.rows} rows)  — try: ${varName}.head()`);
+        // Refresh right-bar kernel status with real numbers
+        renderKernelStatus(varName).catch(() => {});
         onLoad?.(varName, result.rows, file.name);
       } catch (e) {
         _toast(`✗ Load failed: ${e.message}`);
         console.error('[import_data]', e);
       } finally {
         btn.disabled    = false;
-        btn.textContent = '📂 Load Data';
+        btn.textContent = '📂';
       }
     });
 

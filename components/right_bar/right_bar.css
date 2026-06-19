@@ -32,6 +32,112 @@
   padding: 6px 0;
 }
 
+/* ── Base icon button ────────────────────────────────────────────────────── */
+
+.rb-btn {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+  padding: 0;
+}
+.rb-btn:hover {
+  background: rgba(0,0,0,0.06);
+  color: var(--text, #102040);
+}
+[data-theme="dark"]   .rb-btn:hover,
+[data-theme="grey"]   .rb-btn:hover,
+[data-theme="aurora"] .rb-btn:hover {
+  background: rgba(255,255,255,0.07);
+  color: #ffffffcc;
+}
+
+/* ── DataFrame stats button ──────────────────────────────────────────────── */
+
+.rb-stats-btn { }   /* inherits .rb-btn */
+
+/* Status indicator dot */
+.rb-stats-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.3s;
+  pointer-events: none;
+}
+.rb-stats-dot--active { background: #4ade80; }
+
+/* ── Floating stats panel ────────────────────────────────────────────────── */
+
+.rb-stats-panel {
+  position: fixed;
+  z-index: 9000;
+  width: 200px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #d7e1eb);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+}
+
+/* Dark themes: override surface/border for the panel */
+[data-theme="dark"]   .rb-stats-panel { background: #0f1015; border-color: #1e2028; box-shadow: 0 8px 28px rgba(0,0,0,0.5); }
+[data-theme="grey"]   .rb-stats-panel { background: #1c2128; border-color: #30363d; box-shadow: 0 8px 28px rgba(0,0,0,0.4); }
+[data-theme="aurora"] .rb-stats-panel { background: #0a0b18; border-color: #2a2a5a; box-shadow: 0 8px 28px rgba(0,0,0,0.5); }
+
+.rb-stats-header {
+  padding: 8px 12px;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  border-bottom: 1px solid var(--border, #d7e1eb);
+}
+[data-theme="dark"]   .rb-stats-header { border-bottom-color: #1e2028; }
+[data-theme="grey"]   .rb-stats-header { border-bottom-color: #30363d; }
+[data-theme="aurora"] .rb-stats-header { border-bottom-color: #2a2a5a; }
+
+.rb-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border, #d7e1eb);
+}
+.rb-stats-row:last-child { border-bottom: none; }
+[data-theme="dark"]   .rb-stats-row { border-bottom-color: rgba(255,255,255,0.04); }
+[data-theme="grey"]   .rb-stats-row { border-bottom-color: rgba(255,255,255,0.04); }
+[data-theme="aurora"] .rb-stats-row { border-bottom-color: rgba(255,255,255,0.04); }
+
+.rb-stats-label {
+  font-size: 0.7rem;
+  color: var(--text-muted, #64748b);
+}
+
+.rb-stats-val {
+  font-size: 0.72rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  font-weight: 600;
+  color: var(--text, #102040);
+}
+
+/* Value colour tokens */
+.rb-val-blue  { color: #818cf8; }
+.rb-val-green { color: #4ade80; }
+
 /* ── Mobile: hide bar, zero CSS var (bottom data bar uses it) ────────────── */
 
 @media (max-width: 768px) {
