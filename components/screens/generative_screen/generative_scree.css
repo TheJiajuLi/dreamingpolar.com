@@ -680,6 +680,12 @@
   line-height: 1.72;
   color: var(--text, #102040);
   background: var(--surface, #ffffff);
+  /* Cap height so long answers don't consume the full viewport.
+     Users can scroll within the card to read more. */
+  max-height: 42vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border, #e2e8f0) transparent;
 }
 
 .aria-chat-card-body strong { font-weight: 700; color: var(--text, #102040); }

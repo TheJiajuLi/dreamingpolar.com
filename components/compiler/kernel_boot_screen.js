@@ -14,6 +14,8 @@ let _log     = null;
 let _bar     = null;
 let _cursor  = null;
 let _active  = false;   // true once the overlay has been mounted this session
+let _done    = false;   // true after the first full boot cycle completes
+                        // prevents re-triggering when compile() dispatches 'ready' later
 
 // ── DOM builder ───────────────────────────────────────────────────────────────
 function _mount() {
@@ -96,6 +98,11 @@ function _dismiss() {
 
 // ── compiler-status listener ──────────────────────────────────────────────────
 document.addEventListener('compiler-status', ({ detail: { status, message, percent } }) => {
+  // Once the first boot cycle is complete, ignore ALL subsequent events.
+  // Every compile() call dispatches 'ready', which would otherwise re-trigger
+  // dismiss/animation logic during the 550ms overlay fade-out window.
+  if (_done) return;
+
   // Mount on first 'loading' event; ignore everything before that
   if (!_active && status !== 'loading') return;
 
@@ -112,7 +119,7 @@ document.addEventListener('compiler-status', ({ detail: { status, message, perce
     case 'ready':
       _addLine('Python ready');
       _setProgress(100);
-      // Short pause so the user can register "done" before the overlay fades
+      _done = true;  // mark done BEFORE scheduling dismiss
       setTimeout(_dismiss, 700);
       break;
 
