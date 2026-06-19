@@ -195,6 +195,10 @@ async function _runPython(code) {
     }
 
     if (!out.length) out.push({ type: 'info', content: 'Executed (no output).' });
+
+    // Notify listeners that the kernel namespace may have changed
+    if (!d.error) afterKernelMutation('df', 'run');
+
     return out;
   } catch (e) {
     _dispatch('error', e.message);
@@ -389,6 +393,17 @@ function _runMathJax(code) {
   return [{ type: 'html', content: html || `<p class="latex-para">${normalized}</p>` }];
 }
 
+// ── Kernel mutation hook ─────────────────────────────────────────────────────
+// Dispatches 'kernel-mutation' so UI components (right_bar, generative_screen)
+// can react without creating circular imports between compiler and UI modules.
+// source: 'run'    — user code executed successfully
+//         'inject' — a DataFrame was injected via injectDataFrame()
+function afterKernelMutation(varName = 'df', source = 'run') {
+  document.dispatchEvent(new CustomEvent('kernel-mutation', {
+    detail: { varName, source },
+  }));
+}
+
 // ── Public API ────────────────────────────────────────────
 
 export async function compile(code, mode) {
@@ -442,6 +457,10 @@ del _pd_inj, _io_inj
 
   const rows = csvString.split('\n').length - 1;
   _dispatch('ready', `"${varName}" ready — ${rows} rows`);
+
+  // Notify listeners: a new DataFrame was injected
+  afterKernelMutation(varName, 'inject');
+
   return { varName, rows };
 }
 

@@ -398,14 +398,18 @@ function setupGenerativeScreen() {
   screen.appendChild(viewContainer);
 
   // ── Active view state ─────────────────────────────────────────────────────
-  let _activeView = 'gen-terminal';
+  let _activeView  = 'gen-terminal';
   let _chartsRendered = false;
+  let _vtBtns = {};   // populated after _addVtButtons; switchView reads it
 
   function switchView(id) {
     _activeView = id;
     viewContainer.querySelectorAll('.gen-view').forEach(v => {
       v.classList.toggle('gen-view--active', v.dataset.view === id);
     });
+    // Keep VT buttons in sync when switchView is called programmatically
+    Object.values(_vtBtns).forEach(b => b.classList.remove('active'));
+    if (_vtBtns[id]) _vtBtns[id].classList.add('active');
     // Auto-render chart on first open
     if (id === 'gen-charts' && !_chartsRendered && chartsView._autoRender) {
       _chartsRendered = true;
@@ -420,6 +424,7 @@ function setupGenerativeScreen() {
 
   // ── VT buttons ────────────────────────────────────────────────────────────
   const vtBtns = _addVtButtons(switchView, () => _activeView, isScreenOpen);
+  _vtBtns = vtBtns ?? {};
 
   // ── Register with screen controller ──────────────────────────────────────
   requestAnimationFrame(() => {
@@ -506,6 +511,28 @@ function setupGenerativeScreen() {
     outputBody.innerHTML = '';
     try {
       const outputs = await compile(code, 'python');
+      renderBlocks(outputs, outputBody);
+    } catch (e) {
+      const d = document.createElement('div');
+      d.className = 'output-block output-error';
+      d.innerHTML = `<div class="output-text">${String(e)}</div>`;
+      outputBody.appendChild(d);
+    }
+  });
+
+  // ── Auto-preview: when a DataFrame is injected, run df.head() immediately ──
+  // Switches to the Terminal view and renders the preview in the output panel
+  // so the user sees their data without having to type anything manually.
+  document.addEventListener('kernel-mutation', async ({ detail: { varName, source } }) => {
+    if (source !== 'inject') return;
+    // Make sure the generative screen is open
+    window.screenController?.open('terminal');
+    // Switch to Terminal view so output is visible
+    switchView('gen-terminal');
+    outputPanel.style.display = '';
+    outputBody.innerHTML      = '';
+    try {
+      const outputs = await compile(`${varName}.head()`, 'python');
       renderBlocks(outputs, outputBody);
     } catch (e) {
       const d = document.createElement('div');

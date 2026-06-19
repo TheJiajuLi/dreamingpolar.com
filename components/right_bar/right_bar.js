@@ -171,3 +171,9 @@ if (document.readyState === 'loading') {
 } else {
   initRightBar();
 }
+
+// ── React to kernel mutations dispatched by compiler.js ───────────────────────
+// Refreshes the stats panel whenever user code runs or a DataFrame is injected.
+document.addEventListener('kernel-mutation', ({ detail: { varName = 'df' } }) => {
+  renderKernelStatus(varName).catch(() => {});
+});
