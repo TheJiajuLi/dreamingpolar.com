@@ -1,25 +1,10 @@
 import { compile } from '../../compiler/compiler.js';
-import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
-import { ask, systemExplainForLang } from '../../ai/ai_client.js';
-import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
-import { setCodeBlockRendererFn } from '../../terminal/terminal_ai.js';
-import { createAiCodeBlock } from '../../terminal/terminal_ai_code_block.js';
+import { renderBlocks } from '../compiling_screen/compiling_screen_utility.js';
 import { createLoadDataBtn } from '../../import/import_data.js';
+import { createAriaChat } from './aria_chat.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
-const CODE_KEY      = 'dp-gen-code';
-const CHART_JS_CDN  = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
-
-const PLACEHOLDER = `# Example — try running this:
-from sympy import symbols, expand, latex
-x = symbols('x')
-expand((x + 1)**4)
-
-# SymPy, matplotlib, pandas & numpy are preloaded.
-# Ctrl/Cmd+Enter to run.`;
-
-const COPY_ICON  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-const CLEAR_ICON = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4h8v2"/></svg>`;
+const CHART_JS_CDN = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
 
 // ── VT button definitions ────────────────────────────────────────────────────
 // id must be unique across ALL vt-btn-activated events in the app.
@@ -292,32 +277,17 @@ function _addVtButtons(switchView, getActiveView, isScreenOpen) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
-// Main setup
+// Main setup — Quick Analysis screen
 // ════════════════════════════════════════════════════════════════════════════════
 function setupGenerativeScreen() {
   const screen = document.getElementById('generative-screen');
   if (!screen) return;
 
-  // ── One-time migration: clear old matplotlib demo code from editor localStorage ─
-  // If the saved editor content is the circle-drawing demo from a past session,
-  // clear it so the editor starts blank for the current user.
-  (() => {
-    const saved = localStorage.getItem(CODE_KEY);
-    if (saved?.includes('plt.Circle')) localStorage.removeItem(CODE_KEY);
-  })();
-
-  // ── Build the four views ──────────────────────────────────────────────────
-  // ── 1. Terminal view ─────────────────────────────────────────────────────
+  // ── 1. Terminal view — ARIA chat (new design, no terminal.js) ─────────────
   const terminalView = document.createElement('div');
   terminalView.className    = 'gen-view gen-terminal-view gen-view--active';
   terminalView.dataset.view = 'gen-terminal';
 
-  // Terminal panel (terminal.js looks for id="terminal-panel")
-  const terminalPanel = document.createElement('section');
-  terminalPanel.id        = 'terminal-panel';
-  terminalPanel.className = 'gen-terminal-strip';
-
-  // ── Toolbar (run / copy / clear + mode label + Notebook jump) ─────────────
   const toolbar = document.createElement('div');
   toolbar.className = 'gen-toolbar';
 
@@ -326,89 +296,15 @@ function setupGenerativeScreen() {
   modeLabel.textContent = 'Quick Analysis';
   toolbar.appendChild(modeLabel);
 
-  const jumpToNotebook = document.createElement('button');
-  jumpToNotebook.className   = 'gen-jump-btn';
-  jumpToNotebook.textContent = 'Notebook ↗';
-  jumpToNotebook.title       = 'Open in Advanced Notebook (same kernel — data stays)';
-  jumpToNotebook.addEventListener('click', () => {
-    window.screenController?.open('coding');
-  });
-  toolbar.appendChild(jumpToNotebook);
+  const jumpBtn = document.createElement('button');
+  jumpBtn.className   = 'gen-jump-btn';
+  jumpBtn.textContent = 'Notebook ↗';
+  jumpBtn.title       = 'Open in Advanced Notebook (same kernel — data stays)';
+  jumpBtn.addEventListener('click', () => window.screenController?.open('coding'));
+  toolbar.appendChild(jumpBtn);
 
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'lus-copy-btn gen-toolbar-btn';
-  copyBtn.title     = 'Copy source';
-  copyBtn.innerHTML = COPY_ICON;
-
-  const clearEditorBtn = document.createElement('button');
-  clearEditorBtn.className = 'sc-btn gen-toolbar-btn';
-  clearEditorBtn.title     = 'Clear editor';
-  clearEditorBtn.innerHTML = CLEAR_ICON;
-
-  const runBtn = document.createElement('button');
-  runBtn.className = 'nb-btn nb-run gen-run-btn';
-  runBtn.innerHTML = '&#9654;';
-  runBtn.title     = 'Run (Ctrl+Enter)';
-
-  const toolbarRight = document.createElement('div');
-  toolbarRight.className = 'gen-toolbar-right';
-  toolbarRight.append(copyBtn, clearEditorBtn, runBtn);
-  toolbar.append(toolbarRight);
-
-  // Code panel (editor + resize handle + output + terminal-output)
-  const codePanel = document.createElement('div');
-  codePanel.className = 'gen-code-panel';
-
-  // Editor element kept in memory for onInsert / keyboard shortcuts,
-  // but NOT added to the DOM — the terminal output fills the panel instead.
-  const editorWrap = document.createElement('div');
-  editorWrap.className = 'code-editor-area gen-editor-wrap';
-
-  const editor = document.createElement('textarea');
-  editor.className    = 'code-editor';
-  editor.spellcheck   = false;
-  editor.autocorrect  = 'off';
-  editor.autocomplete = 'off';
-  editor.setAttribute('autocapitalize', 'none');
-  editor.setAttribute('inputmode', 'text');
-  editor.placeholder  = PLACEHOLDER;
-  editor.value        = localStorage.getItem(CODE_KEY) ?? '';
-  editorWrap.appendChild(editor);
-  // editorWrap is intentionally NOT added to codePanel
-  // — the terminal output fills the full panel.
-
-  const outputPanel = document.createElement('div');
-  outputPanel.className     = 'gen-output-panel';
-  outputPanel.style.display = 'none';
-
-  const outputHdr = document.createElement('div');
-  outputHdr.className = 'gen-output-panel-hdr';
-
-  const outputLabel = document.createElement('span');
-  outputLabel.className   = 'gen-output-panel-label';
-  outputLabel.textContent = 'OUTPUT';
-
-  const outClearBtn = document.createElement('button');
-  outClearBtn.className   = 'sc-btn';
-  outClearBtn.title       = 'Clear output';
-  outClearBtn.textContent = '⊘';
-
-  const outMinBtn = document.createElement('button');
-  outMinBtn.className   = 'sc-btn';
-  outMinBtn.title       = 'Hide';
-  outMinBtn.textContent = '−';
-
-  const outToolbarEl = document.createElement('div');
-  outToolbarEl.className = 'sc-toolbar';
-  outToolbarEl.append(outClearBtn, outMinBtn);
-  outputHdr.append(outputLabel, outToolbarEl);
-
-  const outputBody = document.createElement('div');
-  outputBody.className = 'gen-output-body';
-  outputPanel.append(outputHdr, outputBody);
-
-  // Assemble terminal view
-  terminalView.append(toolbar, terminalPanel);
+  const ariaChat = createAriaChat();
+  terminalView.append(toolbar, ariaChat);
 
   // ── 2-4. Other views ─────────────────────────────────────────────────────
   const importView = _buildImportView();
@@ -422,19 +318,17 @@ function setupGenerativeScreen() {
   screen.appendChild(viewContainer);
 
   // ── Active view state ─────────────────────────────────────────────────────
-  let _activeView  = 'gen-terminal';
+  let _activeView     = 'gen-terminal';
   let _chartsRendered = false;
-  let _vtBtns = {};   // populated after _addVtButtons; switchView reads it
+  let _vtBtns         = {};
 
   function switchView(id) {
     _activeView = id;
     viewContainer.querySelectorAll('.gen-view').forEach(v => {
       v.classList.toggle('gen-view--active', v.dataset.view === id);
     });
-    // Keep VT buttons in sync when switchView is called programmatically
     Object.values(_vtBtns).forEach(b => b.classList.remove('active'));
     if (_vtBtns[id]) _vtBtns[id].classList.add('active');
-    // Auto-render chart on first open
     if (id === 'gen-charts' && !_chartsRendered && chartsView._autoRender) {
       _chartsRendered = true;
       chartsView._autoRender();
@@ -455,65 +349,12 @@ function setupGenerativeScreen() {
     window.screenController?.register('terminal', screen, {
       label: 'Terminal', persisted: true, defaultOpen: true, noChip: true, group: 'hero',
     });
-    // Keep first VT button in sync with initial screen state
     if (isScreenOpen() && vtBtns) {
-      vtBtns['gen-terminal']?.classList.add('active');
-    }
-  });
-
-  // ── Inject after terminal.js initialises ─────────────────────────────────
-  function _tryInject() {
-    const termOutput   = document.getElementById('terminal-output');
-    const termBody     = terminalPanel.querySelector('.terminal-body');
-    const termInputRow = termBody?.querySelector('.terminal-input-row');
-    if (!termBody || !termInputRow || !termOutput) { requestAnimationFrame(_tryInject); return; }
-    _doInject(termOutput, termBody, termInputRow);
-  }
-
-  function _doInject(termOutput, termBody, termInputRow) {
-    // outputPanel and termOutput fill the code panel — no editor/resize handle
-    codePanel.append(outputPanel, termOutput);
-
-    termBody.insertBefore(codePanel, termInputRow);
-
-    new MutationObserver(() => {
-      window.MathJax?.typesetPromise?.([termOutput]).catch(() => {});
-    }).observe(termOutput, { childList: true, subtree: true });
-
-    setCodeBlockRendererFn((lang, code) => {
-      const card = createAiCodeBlock(lang, code, {
-        onInsert: (src) => {
-          editor.value = src;
-          editor.dispatchEvent(new Event('input'));
-          editor.classList.add('aria-inserted');
-          setTimeout(() => editor.classList.remove('aria-inserted'), 600);
-        },
-      });
-      termOutput.appendChild(card);
-      termOutput.scrollTop = termOutput.scrollHeight;
-    });
-  }
-  requestAnimationFrame(_tryInject);
-
-  // ── Events ────────────────────────────────────────────────────────────────
-  document.addEventListener('aria-run-editor-code', async ({ detail: { code } }) => {
-    const st = window.screenController?.getState('terminal');
-    if (st !== 'normal' && st !== 'maximized') return;
-    outputPanel.style.display = '';
-    outputBody.innerHTML = '';
-    try {
-      const outputs = await compile(code, 'python');
-      renderBlocks(outputs, outputBody);
-    } catch (e) {
-      const d = document.createElement('div');
-      d.className = 'output-block output-error';
-      d.innerHTML = `<div class="output-text">${String(e)}</div>`;
-      outputBody.appendChild(d);
+      vtBtns['gen-import']?.classList.add('active');
     }
   });
 
   // ── Auto-refresh charts only when new data is injected ─────────────────
-  // (kernel-mutation now only fires from injectDataFrame, not every code run)
   document.addEventListener('kernel-mutation', ({ detail: { source } }) => {
     if (source !== 'inject') return;
     if (_activeView === 'gen-charts') {
@@ -524,121 +365,17 @@ function setupGenerativeScreen() {
     }
   });
 
-  // ── Auto-preview: when a DataFrame is injected, run df.head() immediately ──
-  // Switches to the Terminal view and renders the preview in the output panel
-  // so the user sees their data without having to type anything manually.
-  document.addEventListener('kernel-mutation', async ({ detail: { varName, source } }) => {
+  // ── Bug fix: only jump to terminal view & notify chat when
+  //    generative_screen is actually the active hero screen.
+  //    If the user is in Power Notebook, don't redirect them.
+  document.addEventListener('kernel-mutation', ({ detail: { varName, source } }) => {
     if (source !== 'inject') return;
-    // Make sure the generative screen is open
-    window.screenController?.open('terminal');
-    // Switch to Terminal view so output is visible
+    const state = window.screenController?.getState('terminal');
+    if (state !== 'normal' && state !== 'maximized') return;
+
+    // Switch to terminal (chat) view and notify ARIA chat
     switchView('gen-terminal');
-    outputPanel.style.display = '';
-    outputBody.innerHTML      = '';
-    try {
-      const outputs = await compile(`${varName}.head()`, 'python');
-      renderBlocks(outputs, outputBody);
-    } catch (e) {
-      const d = document.createElement('div');
-      d.className = 'output-block output-error';
-      d.innerHTML = `<div class="output-text">${String(e)}</div>`;
-      outputBody.appendChild(d);
-    }
-  });
-
-  editor.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'a') {
-      e.preventDefault();
-      const ti = document.getElementById('terminal-input');
-      if (!ti) return;
-      const code = editor.value.trim();
-      ti.value = code
-        ? `ai Explain or improve this code: \`\`\`python\n${code.slice(0, 400)}\n\`\`\``
-        : 'ai ';
-      ti.focus();
-      ti.setSelectionRange(ti.value.length, ti.value.length);
-    }
-  });
-
-  copyBtn.addEventListener('click', async () => {
-    const code = editor.value;
-    if (!code) return;
-    try {
-      await navigator.clipboard.writeText(code);
-      copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-      copyBtn.classList.add('lus-copy-btn--done');
-      setTimeout(() => { copyBtn.innerHTML = COPY_ICON; copyBtn.classList.remove('lus-copy-btn--done'); }, 1600);
-    } catch (_) {}
-  });
-
-  clearEditorBtn.addEventListener('click', () => {
-    editor.value = '';
-    localStorage.removeItem(CODE_KEY);
-    editor.focus();
-  });
-
-  outClearBtn.addEventListener('click', () => { outputBody.innerHTML = ''; });
-  outMinBtn.addEventListener('click',   () => { outputPanel.style.display = 'none'; });
-  document.addEventListener('compile-result', () => { outputPanel.style.display = ''; });
-
-  async function run() {
-    const code = editor.value.trim();
-    if (!code) return;
-    localStorage.setItem(CODE_KEY, editor.value);
-    runBtn.disabled           = true;
-    outputPanel.style.display = '';
-    outputBody.innerHTML      = '';
-
-    try {
-      const outputs = await compile(code, 'python');
-      renderBlocks(outputs, outputBody, {
-        onAskAI: async (errorText, block, btn) => {
-          btn.disabled = true; btn.textContent = 'Thinking…';
-          try {
-            const ctx = `Code (python):\n${code}\n\nError:\n${errorText}`;
-            const explanation = await ask(ctx, systemExplainForLang('python'), 512);
-            const explDiv = document.createElement('div');
-            explDiv.className = 'output-ai-explanation';
-            const lbl  = document.createElement('div');
-            lbl.className = 'ai-explanation-label'; lbl.textContent = '小梦 suggests:';
-            const body = document.createElement('div');
-            body.className = 'ai-explanation-body';
-            explDiv.append(lbl, body);
-            block.after(explDiv);
-            lbl.appendChild(createRefactorBtn({ sourceCode: code, sourceLang: 'python', explanation }));
-            renderBlocks(parseAIResponse(explanation), body);
-          } catch { /* ignore */ }
-          finally { btn.disabled = false; btn.textContent = 'Ask AI'; }
-        },
-      });
-    } catch (e) {
-      const d = document.createElement('div');
-      d.className = 'output-block output-error';
-      d.innerHTML = `<div class="output-text">${String(e)}</div>`;
-      outputBody.appendChild(d);
-    }
-    runBtn.disabled = false;
-  }
-
-  runBtn.addEventListener('click', run);
-  editor.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
-  });
-  editor.addEventListener('input', () => localStorage.setItem(CODE_KEY, editor.value));
-
-  document.addEventListener('ai-insert-and-run', ({ detail: { code, lang } }) => {
-    const st = window.screenController?.getState('terminal');
-    if (st !== 'normal' && st !== 'maximized') return;
-    outputPanel.style.display = '';
-    if (lang === 'python') {
-      editor.value = code;
-      localStorage.setItem(CODE_KEY, code);
-      run();
-      return;
-    }
-    outputBody.innerHTML = '';
-    const type = (lang === 'mathjax' || lang === 'latex') ? 'latex' : lang === 'html' ? 'html' : 'text';
-    renderBlocks([{ type, content: code }], outputBody);
+    ariaChat._onDataLoaded?.(varName ?? 'df');
   });
 }
 
