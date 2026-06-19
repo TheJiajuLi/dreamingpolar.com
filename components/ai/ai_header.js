@@ -1,5 +1,6 @@
-import { getCurrentMode } from '../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
-import { CONTENT_CHAT_KEY } from '../screens/content_screen/content_screen_hook.js';
+// ── AI Chat button in the vertical toolbar ────────────────────────────────────
+// Opens / closes the #ai-chat-screen panel via screenController,
+// matching the same open↔close toggle pattern used by start_coding.js.
 
 function setup() {
   const vtTop = document.querySelector('#vertical-toolbar .vt-top');
@@ -14,46 +15,40 @@ function setup() {
 
   vtTop.appendChild(btn);
 
-  let _chatOpen = false;
+  // ── Sync active state from screenController truth ─────────────────────────
+  function _syncActive() {
+    const state = window.screenController?.getState('ai-chat');
+    const isOpen = state === 'normal' || state === 'maximized';
+    btn.classList.toggle('active', isOpen);
+    btn.title = isOpen ? 'Close AI chat' : 'Open AI chat';
+    if (isOpen) document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'ai-chat' } }));
+  }
 
-  function setOpen(open) {
-    _chatOpen = open;
-    btn.classList.toggle('active', open);
-    btn.title = open ? 'Close AI chat' : 'Open AI chat';
-    if (open) {
-      document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'ai-chat' } }));
-      window.screenController?.closeOthers('content');
-      window.screenController?.ensureVisible('content');
-      document.dispatchEvent(new CustomEvent('open-ai-in-content'));
+  // ── Toggle: open if closed/minimized, close if open ──────────────────────
+  btn.addEventListener('click', () => {
+    const state = window.screenController?.getState('ai-chat');
+    if (!state || state === 'closed' || state === 'minimized') {
+      window.screenController?.open('ai-chat');
     } else {
-      document.dispatchEvent(new CustomEvent('close-ai-in-content'));
+      window.screenController?.close('ai-chat');
     }
-  }
-
-  btn.addEventListener('click', () => setOpen(!_chatOpen));
-
-  function _deactivate() {
-    _chatOpen = false;
-    btn.classList.remove('active');
-    btn.title = 'Open AI chat';
-  }
-
-  // Deactivate when chat view is replaced by content/nav view
-  document.addEventListener('content-chat-closed-externally', _deactivate);
-
-  // Deactivate when content screen is minimized or closed via sc-btn
-  document.addEventListener('screen-minimized', e => { if (e.detail?.id === 'content') _deactivate(); });
-  document.addEventListener('screen-closed',    e => { if (e.detail?.id === 'content') _deactivate(); });
-
-  // Deactivate when another VT button claims the active slot
-  document.addEventListener('vt-btn-activated', ({ detail: { id } }) => {
-    if (id !== 'ai-chat') _deactivate();
   });
 
-  // Restore chat-open state after all module listeners are registered
-  if (localStorage.getItem(CONTENT_CHAT_KEY) === 'open') {
-    requestAnimationFrame(() => setOpen(true));
-  }
+  // ── Keep button in sync with screenController state changes ──────────────
+  document.addEventListener('screen-opened',    e => { if (e.detail?.id === 'ai-chat') _syncActive(); });
+  document.addEventListener('screen-closed',    e => { if (e.detail?.id === 'ai-chat') _syncActive(); });
+  document.addEventListener('screen-minimized', e => { if (e.detail?.id === 'ai-chat') _syncActive(); });
+
+  // ── Deactivate when another VT button claims the active slot ─────────────
+  document.addEventListener('vt-btn-activated', ({ detail: { id } }) => {
+    if (id !== 'ai-chat') {
+      btn.classList.remove('active');
+      btn.title = 'Open AI chat';
+    }
+  });
+
+  // ── Sync initial state after ai_chat_screen.js has registered ────────────
+  requestAnimationFrame(() => requestAnimationFrame(_syncActive));
 }
 
 if (document.readyState === 'loading') {
