@@ -10,10 +10,6 @@ const CHART_JS_CDN = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd
 // id must be unique across ALL vt-btn-activated events in the app.
 const VT_DEFS = [
   {
-    id: 'gen-import', label: 'Import Data',
-    icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
-  },
-  {
     id: 'gen-charts', label: 'Charts',
     icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
   },
@@ -260,7 +256,7 @@ function _addVtButtons(switchView, getActiveView, isScreenOpen) {
     });
 
     // Deactivate when another VT button wins
-    document.addEventListener('vt-btn-activated', ({ detail: { activatedId } }) => {
+    document.addEventListener('vt-btn-activated', ({ detail: { id: activatedId } }) => {
       if (activatedId !== id) btn.classList.remove('active');
     });
 
@@ -296,6 +292,11 @@ function setupGenerativeScreen() {
   modeLabel.textContent = 'Quick Analysis';
   toolbar.appendChild(modeLabel);
 
+  // Import Dataset button — directly opens file picker (no view switch needed)
+  const importBtn = createLoadDataBtn({ varName: 'df' });
+  importBtn.title = 'Import CSV / Excel as df';
+  toolbar.appendChild(importBtn);
+
   const jumpBtn = document.createElement('button');
   jumpBtn.className   = 'gen-jump-btn';
   jumpBtn.textContent = 'Notebook ↗';
@@ -307,14 +308,13 @@ function setupGenerativeScreen() {
   terminalView.append(toolbar, ariaChat);
 
   // ── 2-4. Other views ─────────────────────────────────────────────────────
-  const importView = _buildImportView();
   const chartsView = _buildChartsView();
   const modelsView = _buildModelsView();
 
   // ── View container ────────────────────────────────────────────────────────
   const viewContainer = document.createElement('div');
   viewContainer.className = 'gen-view-container';
-  viewContainer.append(terminalView, importView, chartsView, modelsView);
+  viewContainer.append(terminalView, chartsView, modelsView);
   screen.appendChild(viewContainer);
 
   // ── Active view state ─────────────────────────────────────────────────────
@@ -349,9 +349,11 @@ function setupGenerativeScreen() {
     window.screenController?.register('terminal', screen, {
       label: 'Terminal', persisted: true, defaultOpen: true, noChip: true, group: 'hero',
     });
-    if (isScreenOpen() && vtBtns) {
-      vtBtns['gen-import']?.classList.add('active');
-    }
+  });
+
+  // Reset to chat view whenever the generative screen is re-opened
+  document.addEventListener('screen-opened', ({ detail }) => {
+    if (detail?.id === 'terminal') switchView('gen-terminal');
   });
 
   // ── Auto-refresh charts only when new data is injected ─────────────────
