@@ -196,8 +196,11 @@ async function _runPython(code) {
 
     if (!out.length) out.push({ type: 'info', content: 'Executed (no output).' });
 
-    // Notify listeners that the kernel namespace may have changed
-    if (!d.error) afterKernelMutation('df', 'run');
+    // Note: afterKernelMutation is intentionally NOT called here.
+    // Firing kernel-mutation on every Python execution (including stats queries,
+    // notebook cells, etc.) causes cascading re-renders and visible flicker.
+    // kernel-mutation is only dispatched by injectDataFrame() when data actually
+    // changes — UI components refresh on-demand after that.
 
     return out;
   } catch (e) {

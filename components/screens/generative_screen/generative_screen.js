@@ -512,13 +512,13 @@ function setupGenerativeScreen() {
     }
   });
 
-  // ── Auto-refresh charts when kernel data changes ────────────────────────
-  document.addEventListener('kernel-mutation', () => {
+  // ── Auto-refresh charts only when new data is injected ─────────────────
+  // (kernel-mutation now only fires from injectDataFrame, not every code run)
+  document.addEventListener('kernel-mutation', ({ detail: { source } }) => {
+    if (source !== 'inject') return;
     if (_activeView === 'gen-charts') {
-      // View is visible — render immediately
       chartsView._autoRender?.();
     } else {
-      // View is hidden — mark stale so it renders when next activated
       _chartsRendered = false;
       chartsView._markStale?.();
     }
