@@ -217,6 +217,9 @@ function _buildChartsView() {
 
   // Auto-render when the view becomes visible for the first time
   div._autoRender = renderChart;
+  // Allow external code to force a refresh (e.g. when kernel-mutation fires
+  // while this view is inactive — on next activation it will re-render)
+  div._markStale  = () => { div._autoRender = renderChart; };
   canvasWrap.style.display = 'none';
 
   return div;
@@ -310,9 +313,23 @@ function setupGenerativeScreen() {
   terminalPanel.id        = 'terminal-panel';
   terminalPanel.className = 'gen-terminal-strip';
 
-  // Toolbar (run / copy / clear)
+  // ── Toolbar (run / copy / clear + mode label + Notebook jump) ─────────────
   const toolbar = document.createElement('div');
   toolbar.className = 'gen-toolbar';
+
+  const modeLabel = document.createElement('span');
+  modeLabel.className   = 'gen-mode-label';
+  modeLabel.textContent = 'Quick Analysis';
+  toolbar.appendChild(modeLabel);
+
+  const jumpToNotebook = document.createElement('button');
+  jumpToNotebook.className   = 'gen-jump-btn';
+  jumpToNotebook.textContent = 'Notebook ↗';
+  jumpToNotebook.title       = 'Open in Advanced Notebook (same kernel — data stays)';
+  jumpToNotebook.addEventListener('click', () => {
+    window.screenController?.open('coding');
+  });
+  toolbar.appendChild(jumpToNotebook);
 
   const copyBtn = document.createElement('button');
   copyBtn.className = 'lus-copy-btn gen-toolbar-btn';
@@ -429,7 +446,7 @@ function setupGenerativeScreen() {
   // ── Register with screen controller ──────────────────────────────────────
   requestAnimationFrame(() => {
     window.screenController?.register('terminal', screen, {
-      label: 'Terminal', persisted: true, noChip: true, group: 'hero',
+      label: 'Terminal', persisted: true, defaultOpen: true, noChip: true, group: 'hero',
     });
     // Keep first VT button in sync with initial screen state
     if (isScreenOpen() && vtBtns) {
@@ -517,6 +534,18 @@ function setupGenerativeScreen() {
       d.className = 'output-block output-error';
       d.innerHTML = `<div class="output-text">${String(e)}</div>`;
       outputBody.appendChild(d);
+    }
+  });
+
+  // ── Auto-refresh charts when kernel data changes ────────────────────────
+  document.addEventListener('kernel-mutation', () => {
+    if (_activeView === 'gen-charts') {
+      // View is visible — render immediately
+      chartsView._autoRender?.();
+    } else {
+      // View is hidden — mark stale so it renders when next activated
+      _chartsRendered = false;
+      chartsView._markStale?.();
     }
   });
 
