@@ -39,6 +39,7 @@
   background: #ffffff;
   scrollbar-width: thin;
   scrollbar-color: var(--border, #cbd5e1) transparent;
+  scrollbar-gutter: stable;
 }
 
 /* ── Panel-scoped card layout ─────────────────────────────
@@ -57,7 +58,7 @@
 .content-screen-body .card,
 .content-screen-body .math-block {
   max-width: none;
-  width: 100%;
+  width: 97%;
   margin: 0 0 10px;
   padding: 14px 16px;
   border-radius: 12px;
@@ -273,11 +274,7 @@
   scrollbar-color: var(--border, #cbd5e1) transparent;
 }
 
-/* Input bar stays anchored at bottom */
-.cs-chat-slot .aic-input-bar {
-  flex-shrink: 0;
-  border-top: none;
-}
+
 
 /* ── Back-to-nav button ───────────────────────────────────────────────────── */
 

@@ -1,7 +1,7 @@
 import { executeCommand, consumeAiPending } from './terminal_commands.js';
 import { consumeAiChat, isAiChatActive, exitAiChat, setConfirmFn, setStreamLineFn } from './terminal_ai.js';
 
-const ICON_TERMINAL = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`;
+const ICON_TERMINAL = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5V6"/><path d="M5 10v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-4"/><path d="M5 14v3c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-3"/></svg>`;
 const ICON_CLEAR    = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4h8v2"/></svg>`;
 const ICON_CLOSE    = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
 
@@ -103,11 +103,15 @@ async function handleEnter() {
 function injectToggleBtn() {
   _toggleBtn = document.createElement('button');
   _toggleBtn.className = 'dp-terminal-toolbar-btn';
-  _toggleBtn.title     = 'Toggle terminal  (>_)';
+  _toggleBtn.title     = 'Toggle ARIA';
   _toggleBtn.innerHTML = ICON_TERMINAL;
   _toggleBtn.addEventListener('click', () => {
     const state = window.screenController?.getState('terminal');
-    (state === 'closed' || !state) ? openTerminal() : closeTerminal();
+    if (state === 'closed' || !state) {
+      openTerminal();
+    } else {
+      closeTerminal();
+    }
   });
 
   const vtTop = document.querySelector('#vertical-toolbar .vt-top');
@@ -152,12 +156,11 @@ function setup() {
     <div class="terminal-header">
       <span class="terminal-label">
         <span class="terminal-status-dot" id="term-status-dot"></span>
-        Terminal
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" class="terminal-aria-icon" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><circle cx="5.5" cy="5.5" r="1.4"/><circle cx="18.5" cy="5.5" r="1.4"/><circle cx="5.5" cy="18.5" r="1.4"/><circle cx="18.5" cy="18.5" r="1.4"/><line x1="12" y1="9.8" x2="6.8" y2="6.8"/><line x1="12" y1="9.8" x2="17.2" y2="6.8"/><line x1="12" y1="14.2" x2="6.8" y2="17.2"/><line x1="12" y1="14.2" x2="17.2" y2="17.2"/></svg>
+        ARIA
       </span>
       <div class="sc-toolbar">
-        <button class="sc-btn term-max-btn" title="Expand terminal">⤢</button>
-        <button class="sc-btn term-clear-btn" title="Clear">${ICON_CLEAR}</button>
-        <button class="sc-btn term-close-btn" title="Close">${ICON_CLOSE}</button>
+        <button class="sc-btn term-max-btn" title="Expand">⤢</button>
       </div>
     </div>
     <div class="terminal-body">
@@ -165,7 +168,7 @@ function setup() {
       <div class="terminal-input-row">
         <span class="terminal-prompt">›</span>
         <input class="terminal-input" id="terminal-input" type="text"
-               autocomplete="off" spellcheck="false" placeholder="type a command…">
+               autocomplete="off" spellcheck="false" placeholder="type a command or ask ARIA…">
       </div>
     </div>
   `;
@@ -191,16 +194,12 @@ function setup() {
     print(question);
     if (_input) _input.placeholder = 'y / n';
     _pendingConfirm = (confirmed) => {
-      if (_input) _input.placeholder = isAiChatActive() ? '和小梦聊… (Esc 退出)' : 'type a command…';
+      if (_input) _input.placeholder = isAiChatActive() ? 'chat with ARIA… (Esc to exit)' : 'type a command…';
       resolve(confirmed);
     };
   }));
 
-  if (!document.documentElement.style.getPropertyValue('--terminal-h')) {
-    document.documentElement.style.setProperty('--terminal-h', Math.round(window.innerHeight * 0.15) + 'px');
-  }
-
-  window.screenController?.register('terminal', panel, { label: 'Terminal', persisted: true });
+  // Registration is handled by generative_screen.js (#generative-screen → 'terminal')
 
   const startOpen = window.screenController?.getState('terminal') === 'normal';
   syncToggleBtn(startOpen);
@@ -209,12 +208,12 @@ function setup() {
   injectToggleBtn();
   setupResizeHandle(panel);
 
-  printLine('Dreaming Polar  ›  Terminal');
-  printLine("\x1b[2mType 'help' for available commands.\x1b[0m");
+  printLine('\x1b[36mARIA\x1b[0m  \x1b[2m—  AI-powered interactive terminal\x1b[0m');
+  printLine("\x1b[2mType \x1b[0m'help'\x1b[2m for commands · \x1b[0m'ai <task>'\x1b[2m to generate · \x1b[0m'fix'\x1b[2m to debug\x1b[0m");
   printLine('');
 
   document.addEventListener('terminal-ai-mode', ({ detail: { active } }) => {
-    if (_input) _input.placeholder = active ? '和小梦聊… (Esc 退出)' : 'type a command…';
+    if (_input) _input.placeholder = active ? 'chat with ARIA… (Esc to exit)' : 'type a command…';
   });
 
   _input?.addEventListener('keydown', e => {
@@ -286,8 +285,15 @@ function setup() {
   });
 }
 
+// Retry until #terminal-panel exists — generative_screen.js may create it
+// slightly after terminal.js runs due to module load order.
+function trySetup() {
+  if (document.getElementById('terminal-panel')) { setup(); return; }
+  requestAnimationFrame(trySetup);
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setup);
+  document.addEventListener('DOMContentLoaded', trySetup);
 } else {
-  setup();
+  trySetup();
 }

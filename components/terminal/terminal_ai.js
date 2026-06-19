@@ -14,13 +14,15 @@ import {
   tokenBudget,
 } from './terminal_ai_utils.js';
 
-// ── Injected callbacks (set by terminal.js at setup time) ─────────────────────
+// ── Injected callbacks (set by terminal.js / generative_screen.js) ────────────
 
-let _confirmFn    = null; // (question, print) => Promise<boolean>
-let _streamLineFn = null; // () => { update(text), finalize() }
+let _confirmFn         = null; // (question, print) => Promise<boolean>
+let _streamLineFn      = null; // () => { update(text) }
+let _codeBlockRenderer = null; // (lang, code) => void  — set by generative_screen
 
-export function setConfirmFn(fn)    { _confirmFn    = fn; }
-export function setStreamLineFn(fn) { _streamLineFn = fn; }
+export function setConfirmFn(fn)          { _confirmFn         = fn; }
+export function setStreamLineFn(fn)       { _streamLineFn      = fn; }
+export function setCodeBlockRendererFn(fn){ _codeBlockRenderer = fn; }
 
 export async function askConfirm(question, print) {
   if (!_confirmFn) return false;
@@ -38,7 +40,7 @@ export function exitAiChat(print) {
   _aiChatActive = false;
   _history      = [];
   document.dispatchEvent(new CustomEvent('terminal-ai-mode', { detail: { active: false } }));
-  print?.('\x1b[2m← 已退出 AI 对话\x1b[0m');
+  print?.('\x1b[2m← Exited ARIA chat\x1b[0m');
 }
 
 export async function consumeAiChat(line, print) {
@@ -71,9 +73,19 @@ async function _stream(messages, system, maxTokens) {
   return { reply, update: null };
 }
 
-// ── Code/media panel dispatch (shared by all paths) ───────────────────────────
+// ── Code block dispatch ────────────────────────────────────────────────────────
+//  If a code block renderer is registered (generative screen), render an
+//  interactive card in the terminal. Otherwise fall back to the classic
+//  Y/N + ai-insert-and-run path used in the coding screen's terminal.
 
 async function _dispatchCode(lang, code, print) {
+  if (_codeBlockRenderer) {
+    _codeBlockRenderer(lang, code);
+    print('\x1b[2m— code card above — Run · Insert · Edit\x1b[0m');
+    compressLastAssistant(_history, lang, code.split('\n').length);
+    return true;
+  }
+  // Fallback: classic dispatch with Y/N for coding screen
   if (_confirmFn) {
     const isMedia = lang === 'mathjax' && /<(img|iframe)\b/i.test(code);
     const question = isMedia
@@ -86,8 +98,6 @@ async function _dispatchCode(lang, code, print) {
   setMode(lang);
   document.dispatchEvent(new CustomEvent('ai-insert-and-run', { detail: { code, lang } }));
   print(`\x1b[2m✓ ${lang} → Code panel.\x1b[0m`);
-  // History compression: replace bulky response with a compact receipt so
-  // the next request doesn't pay full token cost for already-dispatched content.
   compressLastAssistant(_history, lang, code.split('\n').length);
   return true;
 }
@@ -124,7 +134,7 @@ export async function runAiPrompt(prompt, print) {
 
     // Stream or wait — either way we get the full reply at the end
     print('');
-    print('\x1b[36m小梦:\x1b[0m');
+    print('\x1b[36mARIA:\x1b[0m');
     const { reply, update } = await _stream(_history, system, tokenBudget(lang));
     _history.push({ role: 'assistant', content: reply });
 
@@ -149,7 +159,7 @@ export async function runAiPrompt(prompt, print) {
       if (!_aiChatActive) {
         _aiChatActive = true;
         document.dispatchEvent(new CustomEvent('terminal-ai-mode', { detail: { active: true } }));
-        print('\x1b[2m— 已进入 AI 对话 · 按 Esc 退出 —\x1b[0m');
+        print('\x1b[2m— ARIA active · Esc to exit —\x1b[0m');
       }
     }
 
@@ -173,7 +183,7 @@ async function _runAiTextReply(prompt, print) {
     trimHistory(_history);
 
     print('');
-    print('\x1b[36m小梦:\x1b[0m');
+    print('\x1b[36mARIA:\x1b[0m');
     // Chat path uses smaller token budget — saves quota on conversational replies
     const { reply, update } = await _stream(_history, system, tokenBudget('ai_chat'));
     _history.push({ role: 'assistant', content: reply });

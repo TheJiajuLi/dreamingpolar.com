@@ -10,23 +10,14 @@
   height: 100%;
   background: var(--surface, #ffffff);
   box-sizing: border-box;
-  overflow: visible;
+  overflow: hidden;
   user-select: none;
   z-index: 10;
   position: relative;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(15,32,64,0.07);
 }
 
-/* Border stops at the top of the bottom data bar so there's no corner stub */
-#vertical-toolbar::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: calc(100% - var(--bottom-bar-h, 44px));
-  width: 1px;
-  background: var(--border, #e2e8f0);
-  pointer-events: none;
-}
 
 /* ── Top and bottom icon groups ──────────────────────────────────────────── */
 
@@ -46,9 +37,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   border: none;
   background: transparent;
   color: var(--text-muted, #94a3b8);
@@ -96,9 +87,6 @@
 
 /* ── Theme overrides ─────────────────────────────────────────────────────── */
 
-[data-theme="dark"]   #vertical-toolbar::after,
-[data-theme="grey"]   #vertical-toolbar::after { background: rgba(255,255,255,0.06); }
-[data-theme="aurora"] #vertical-toolbar::after  { background: rgba(99,102,241,0.2); }
 
 [data-theme="dark"]  .vt-btn:hover,
 [data-theme="grey"]  .vt-btn:hover,
@@ -122,9 +110,11 @@
 
 /* navigation-button: same size as other vt-btn icons */
 #vertical-toolbar .navigation-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -133,6 +123,7 @@
   gap: 5px;
   transition: background 0.15s;
   overflow: visible;
+  background: transparent;
 }
 
 #vertical-toolbar .start-coding-btn,
@@ -140,9 +131,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-muted, #94a3b8);
@@ -161,7 +152,7 @@
   position: absolute;
   inset: -2px;
   padding: 1.5px;
-  border-radius: 10px;
+  border-radius: 14px;
   background: conic-gradient(
     from var(--sc-angle),
     transparent      0%,
@@ -207,10 +198,9 @@
 }
 
 #vertical-toolbar .ai-chat-btn {
-  width: 36px;
-  height: 36px;
-  padding: 6px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
 }
 
 /* suppress the header-scale hover; use the same glow as start-coding-btn */

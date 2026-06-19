@@ -22,11 +22,7 @@ function setup() {
     btn.title = open ? 'Close AI chat' : 'Open AI chat';
     if (open) {
       document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'ai-chat' } }));
-      const sc = window.screenController;
-      if (sc) {
-        const cs = sc.getState('coding');
-        if (cs && cs !== 'closed' && cs !== 'minimized') sc.minimize('coding');
-      }
+      window.screenController?.closeOthers('content');
       window.screenController?.ensureVisible('content');
       document.dispatchEvent(new CustomEvent('open-ai-in-content'));
     } else {

@@ -23,7 +23,6 @@
   background: currentColor;
   opacity: 0.45;
   transition: width 0.35s ease-out;
-  border-radius: 0 1px 1px 0;
   pointer-events: none;
 }
 .compiler-status-bar.ready::after {
@@ -58,7 +57,6 @@
   display: block;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
   background: currentColor;
   font-style: normal;
   animation: dot-wave 1s ease-in-out infinite;

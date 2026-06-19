@@ -183,7 +183,7 @@ const _CHIP_KEYS = { compiling: 'output', coding: 'code', content: 'content', 'a
 
 const SELECTORS = [
   { sel: '.nav-title',              key: 'nav'          },
-  { sel: '.nav-section-label',      key: 'pages'        },
+  // removed: overwrites dynamic section titles from buildTree
   { sel: '.content-screen-label',   key: 'content'      },
   { sel: '.coding-screen-label',    key: 'code'         },
   { sel: '.compiling-screen-label', key: 'output'       },

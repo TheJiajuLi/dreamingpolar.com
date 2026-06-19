@@ -6,10 +6,21 @@
 @media (max-width: 768px) {
 
   /* ── Give room for the tab bar at bottom ──────────────── */
+  #page-layout {
+    gap: 0;
+    padding: 0;
+  }
+
   main.hero {
     /* svh = small viewport height: stays fixed when iOS keyboard appears.
        dvh would shrink with the keyboard, causing the layout to reflow on every keystroke. */
     height: calc(100svh - var(--header-height) - 56px);
+    padding: 0;
+  }
+
+  .hero-screen {
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
   /* ── Panels: only mob-visible is shown ────────────────── */

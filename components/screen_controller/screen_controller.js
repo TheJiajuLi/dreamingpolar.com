@@ -43,7 +43,7 @@ const screenController = {
   // persisted: true  → reads localStorage to restore open/closed across refreshes.
   // defaultOpen: true → falls back to open when no saved state exists.
   // Screens without persisted:true always start as 'normal'.
-  register(id, el, { onStateChange, label, persisted = false, defaultOpen = false, noChip = false } = {}) {
+  register(id, el, { onStateChange, label, persisted = false, defaultOpen = false, noChip = false, group = null } = {}) {
     let initialState = defaultOpen ? 'normal' : 'closed';
     if (persisted) {
       const saved = localStorage.getItem(PERSIST_PREFIX + id);
@@ -51,7 +51,7 @@ const screenController = {
       else if (saved === 'closed') initialState = 'closed';
       // else: no saved state → use defaultOpen
     }
-    screens.set(id, { el, state: initialState, onStateChange, label: label || id, noChip });
+    screens.set(id, { el, state: initialState, onStateChange, label: label || id, noChip, group });
     el.dataset.screenId    = id;
     el.dataset.screenState = initialState;
     onStateChange?.(initialState);
@@ -99,6 +99,7 @@ const screenController = {
   open(id) {
     const entry = screens.get(id);
     if (!entry) return;
+    if (entry.group) screenController._closeGroup(entry.group, id);
     entry.state = 'normal';
     applyState(id);
     hideRestoreChip(id);
@@ -117,6 +118,20 @@ const screenController = {
     hideRestoreChip(id);
     _persist(id, 'closed');
     document.dispatchEvent(new CustomEvent('screen-closed', { detail: { id } }));
+  },
+
+  // Close every screen except id. Used by toggle buttons to give each screen exclusive focus.
+  closeOthers(id) {
+    screens.forEach((entry, eid) => {
+      if (eid === id || entry.state === 'closed') return;
+      const wasMaximized = entry.state === 'maximized';
+      entry.state = 'closed';
+      applyState(eid);
+      if (wasMaximized) screenController._clearMax(eid);
+      hideRestoreChip(eid);
+      _persist(eid, 'closed');
+      document.dispatchEvent(new CustomEvent('screen-closed', { detail: { id: eid } }));
+    });
   },
 
   // Maximize ↔ normal only. Minimize is always a separate action.
@@ -152,6 +167,19 @@ const screenController = {
       }
     });
     LAYOUT()?.removeAttribute('data-has-maximized');
+  },
+
+  _closeGroup(group, exceptId) {
+    screens.forEach((entry, eid) => {
+      if (eid === exceptId || entry.group !== group || entry.state === 'closed') return;
+      const wasMax = entry.state === 'maximized';
+      entry.state = 'closed';
+      applyState(eid);
+      if (wasMax) screenController._clearMax(eid);
+      hideRestoreChip(eid);
+      _persist(eid, 'closed');
+      document.dispatchEvent(new CustomEvent('screen-closed', { detail: { id: eid } }));
+    });
   },
 };
 

@@ -1,14 +1,43 @@
 import { PAGES }          from '../../../content_pages/pages.js';
 import { setupNavSearch } from '../../search_bar/search_bar.js';
 
+const RENDER_SOURCE_TAG = 'buildTree-v2';
+
+// ── Card grid builder (for Docs sections) ─────────────
+function buildCardGrid(cards) {
+  return `<div class="doc-card-grid">${cards.map(({ title, desc, dataFile, icon }) => `
+    <button class="doc-card" data-file="${dataFile || ''}">
+      <div class="doc-card-icon">${icon || ''}</div>
+      <div class="doc-card-title">${title}</div>
+      <div class="doc-card-desc">${desc || ''}</div>
+    </button>`).join('')}</div>`;
+}
+
+// ── Section label resolver ─────────────────────────────
+function resolveSectionLabel(section) {
+  if (!section.title) {
+    console.error('[navigation_screen] 分组缺少 title 字段：', section);
+    return '(未命名分组)';
+  }
+  return section.title;
+}
+
 // ── Tree builder ───────────────────────────────────────
 function buildTree(pages, depth = 0) {
   if (!pages?.length) return '';
 
-  const items = pages.map(({ href, title, children, dataFile }) => {
+  const items = pages.map((section) => {
+    const { href, title, children, dataFile, cardGrid, cards } = section;
+    if (cardGrid && cards?.length) {
+      const label = resolveSectionLabel(section);
+      return `<li class="nav-item nav-item--cards" data-render-source="${RENDER_SOURCE_TAG}">
+        <div class="nav-section-label nav-section-label--docs">${label}</div>
+        ${buildCardGrid(cards)}
+      </li>`;
+    }
     const hasChildren = !!children?.length;
     return `
-      <li class="nav-item">
+      <li class="nav-item" data-render-source="${RENDER_SOURCE_TAG}">
         <div class="nav-row">
           <a class="nav-link" href="${href || '#'}" ${dataFile ? `data-file="${dataFile}"` : ''}>${title}</a>
           ${hasChildren
@@ -21,7 +50,7 @@ function buildTree(pages, depth = 0) {
       </li>`;
   }).join('');
 
-  return `<ul class="nav-list" data-depth="${depth}">${items}</ul>`;
+  return `<ul class="nav-list" data-depth="${depth}" data-render-source="${RENDER_SOURCE_TAG}">${items}</ul>`;
 }
 
 // ── Main setup ─────────────────────────────────────────
@@ -32,95 +61,90 @@ function setupNavigationScreen() {
   window.renderPages    = PAGES;
   window.renderSections = [];
 
-  // ── Nav content (injected once into content screen's nav slot) ──
   const navInner = document.createElement('div');
   navInner.className = 'cs-nav-inner';
   navInner.innerHTML = `
     <div class="nav-search-container" id="nav-search-mount"></div>
     <div class="nav-sections">
-      <p class="nav-section-label">Pages</p>
       <div id="nav-pages-tree"></div>
     </div>
   `;
 
-  let _built  = false;
-  let _isOpen = false;
+  let _built = false;
 
-  function open() {
-    window.screenController?.ensureVisible('content');
+  function _buildNav() {
+    if (_built) return;
+    _built = true;
     const cs = window.contentScreen;
     if (!cs) return;
-    if (!_built) {
-      _built = true;
-      cs.getNavSlot().appendChild(navInner);
-      const searchMount = navInner.querySelector('#nav-search-mount');
-      if (searchMount) setupNavSearch(searchMount, PAGES);
-    }
-    cs.showNav();
-    refreshTree();
-    _isOpen = true;
-    menuBtn.classList.add('active');
-    menuBtn.setAttribute('aria-expanded', 'true');
+    cs.getNavSlot().appendChild(navInner);
+    const searchMount = navInner.querySelector('#nav-search-mount');
+    if (searchMount) setupNavSearch(searchMount, window.renderPages ?? PAGES);
+  }
+
+  function _isContentOpen() {
+    const s = window.screenController?.getState('content');
+    return s === 'normal' || s === 'maximized';
+  }
+
+  function _syncBtn() {
+    const open = _isContentOpen();
+    menuBtn.classList.toggle('active', open);
+    menuBtn.setAttribute('aria-expanded', String(open));
+  }
+
+  function open() {
+    window.screenController?.open('content');
+    requestAnimationFrame(() => {
+      _buildNav();
+      window.contentScreen?.showNav();
+      refreshTree();
+    });
   }
 
   function close() {
-    const sc    = window.screenController;
-    const state = sc?.getState('content');
-    if (state === 'closed' || state === 'minimized') {
-      sc?.ensureVisible('content');
-    } else {
-      window.contentScreen?.hideNav();
-    }
-    _setMenuOpen(false);
+    window.screenController?.close('content');
   }
 
-  menuBtn.addEventListener('click', () => (_isOpen ? close() : open()));
+  menuBtn.addEventListener('click', () => (_isContentOpen() ? close() : open()));
 
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _isOpen) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _isContentOpen()) close(); });
 
-  function _setMenuOpen(val) {
-    _isOpen = val;
-    menuBtn.classList.toggle('active', val);
-    menuBtn.setAttribute('aria-expanded', String(val));
+  for (const evt of ['screen-opened', 'screen-closed', 'screen-minimized']) {
+    document.addEventListener(evt, e => { if (e.detail?.id === 'content') _syncBtn(); });
   }
 
-  // Sync when AI chat or a content link takes over the view inside content screen
-  document.addEventListener('content-nav-closed', () => { if (_isOpen) _setMenuOpen(false); });
-
-  // Content screen hidden by user action (minimize/close button): deactivate menu.
-  // Skip if: menu already closed, content is in chat mode, or coding just opened
-  // (coding opening means start-coding triggered the minimize — menu state unchanged).
-  const _onContentHidden = e => {
-    if (e.detail?.id !== 'content') return;
-    if (!_isOpen) return;
-    const inChat = document.getElementById('content-screen')?.classList.contains('cs-chat-mode');
-    if (inChat) return;
-    requestAnimationFrame(() => {
-      const codingState = window.screenController?.getState('coding');
-      if (codingState && codingState !== 'closed') return;
-      _setMenuOpen(false);
+  const contentEl = document.getElementById('content-screen');
+  if (contentEl) {
+    new MutationObserver(_syncBtn).observe(contentEl, {
+      attributes: true,
+      attributeFilter: ['data-screen-state'],
     });
-  };
-  document.addEventListener('screen-closed',    _onContentHidden);
-  document.addEventListener('screen-minimized', _onContentHidden);
-
-  document.addEventListener('open-ai-in-content', () => {
-    if (_isOpen) {
-      _isOpen = false;
-      menuBtn.classList.remove('active');
-      menuBtn.setAttribute('aria-expanded', 'false');
-    }
-  });
+  }
 
   document.addEventListener('cs-back-to-nav', () => open());
+
+  setTimeout(_syncBtn, 300);
 
   // ── Tree ──────────────────────────────────────────────
   function refreshTree() {
     const tree = navInner.querySelector('#nav-pages-tree');
     if (!tree) return;
-    tree.innerHTML = buildTree(PAGES);
+    const data = window.renderPages ?? PAGES;
+    console.log('[navigation_screen] refreshTree 渲染数据:',
+      data.map(s => ({ title: s.title, cardGrid: s.cardGrid })));
+    tree.innerHTML = data.map(section => `
+  <li class="nav-item nav-item--cards" data-render-source="buildTree-v2">
+    <div class="nav-section-label nav-section-label--docs">${section.title}</div>
+    <div class="doc-card-grid">${(section.cards || []).map(c => `
+      <button class="doc-card" data-file="${c.dataFile || ''}">
+        <div class="doc-card-icon">${c.icon || ''}</div>
+        <div class="doc-card-title">${c.title}</div>
+        <div class="doc-card-desc">${c.desc || ''}</div>
+      </button>`).join('')}
+    </div>
+  </li>`).join('');
 
-    // Active link + auto-expand ancestors
     const path = window.location.pathname;
     tree.querySelectorAll('.nav-link').forEach(a => {
       const active = a.getAttribute('href') === path;
@@ -138,7 +162,6 @@ function setupNavigationScreen() {
       }
     });
 
-    // Parent links toggle on click
     tree.querySelectorAll('.nav-row').forEach(row => {
       const link   = row.querySelector('.nav-link:not([data-file])');
       const toggle = row.querySelector('.nav-toggle');
@@ -147,7 +170,6 @@ function setupNavigationScreen() {
       }
     });
 
-    // Content links → render in content screen (switches to content view)
     tree.querySelectorAll('.nav-link[data-file]').forEach(a => {
       a.addEventListener('click', e => {
         e.preventDefault();
@@ -157,7 +179,16 @@ function setupNavigationScreen() {
       });
     });
 
-    // Toggle click
+    tree.querySelectorAll('.doc-card[data-file]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tree.querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
+        tree.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        btn.classList.add('active');
+        const title = btn.querySelector('.doc-card-title')?.textContent.trim() ?? '';
+        window.contentScreen?.renderFromJson(btn.dataset.file, { title });
+      });
+    });
+
     tree.querySelectorAll('.nav-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         const item     = btn.closest('.nav-item');

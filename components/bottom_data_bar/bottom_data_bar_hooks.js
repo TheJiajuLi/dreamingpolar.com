@@ -2,14 +2,14 @@ function getAiSlot()       { return document.getElementById('bdb-ai-slot'); }
 function getCompilerSlot() { return document.getElementById('bdb-compiler-slot'); }
 
 document.addEventListener('screen-opened', ({ detail: { id } }) => {
-  if (id === 'ai-chat') getAiSlot()?.removeAttribute('hidden');
-  if (id === 'coding')  getCompilerSlot()?.removeAttribute('hidden');
+  if (id === 'ai-chat')                    getAiSlot()?.removeAttribute('hidden');
+  if (id === 'coding' || id === 'terminal') getCompilerSlot()?.removeAttribute('hidden');
 });
 
 ['screen-closed', 'screen-minimized'].forEach(evt => {
   document.addEventListener(evt, ({ detail: { id } }) => {
-    if (id === 'ai-chat') getAiSlot()?.setAttribute('hidden', '');
-    if (id === 'coding')  getCompilerSlot()?.setAttribute('hidden', '');
+    if (id === 'ai-chat')                    getAiSlot()?.setAttribute('hidden', '');
+    if (id === 'coding' || id === 'terminal') getCompilerSlot()?.setAttribute('hidden', '');
   });
 });
 

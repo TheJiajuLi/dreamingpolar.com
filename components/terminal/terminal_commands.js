@@ -40,13 +40,21 @@ export function commandList() {
 // ── Built-in commands ──────────────────────────────────────
 
 registerCommand('help', (args, print) => {
-  const cmds = commandList();
-  print('我是助手小梦 — 您正处于Dreaming Polar的终端');
+  print('\x1b[36mARIA\x1b[0m — AI-powered interactive terminal');
   print('');
-  print('Available commands:');
-  for (const name of cmds) print(`  › ${name}`);
+  print('\x1b[1mCore commands:\x1b[0m');
+  print('  \x1b[36mai <task>\x1b[0m      — ask ARIA anything; generates code cards you can run/edit/insert');
+  print('  \x1b[36mfix\x1b[0m            — ARIA analyses + fixes bugs in your editor code');
+  print('  \x1b[36mexplain\x1b[0m        — ARIA explains your editor code line by line');
+  print('  \x1b[36mrun\x1b[0m            — run the current editor code, show output here');
   print('');
-  print("Tip: type 'ai' then Enter, or 'ai <task>' — I will writes and runs the code for you.");
+  print('\x1b[1mNavigation:\x1b[0m');
+  print('  open / close / fullscreen <screen>   screens: content · code · compiling');
+  print('  screens   — list all screen states');
+  print('  clear     — clear terminal output');
+  print('  cache     — list · export · reset cached data');
+  print('');
+  print('\x1b[2mTip: press Esc to exit AI chat mode.\x1b[0m');
 });
 
 registerCommand('clear', () => {
@@ -64,12 +72,48 @@ let _aiPendingPrompt = false;
 registerCommand('ai', async (args, print) => {
   if (!args.length) {
     _aiPendingPrompt = true;
-    print('\x1b[36m小梦 — type your task and press Enter:\x1b[0m');
+    print('\x1b[36mARIA — type your task and press Enter:\x1b[0m');
     return;
   }
 
   _aiPendingPrompt = false;
   await runAiPrompt(args.join(' '), print);
+});
+
+// ── fix — ARIA debugs & rewrites editor code ───────────────
+
+registerCommand('fix', async (args, print) => {
+  const ed = document.querySelector('#generative-screen .code-editor');
+  const code = ed?.value?.trim();
+  if (!code) { print('\x1b[33m⚠ Editor is empty — write some code first.\x1b[0m'); return; }
+  print('\x1b[2m⚙ Sending code to ARIA for debugging…\x1b[0m');
+  await runAiPrompt(
+    `Please find and fix all bugs and issues in this Python code. Provide the corrected version:\n\`\`\`python\n${code}\n\`\`\``,
+    print
+  );
+});
+
+// ── explain — ARIA explains editor code ────────────────────
+
+registerCommand('explain', async (args, print) => {
+  const ed = document.querySelector('#generative-screen .code-editor');
+  const code = ed?.value?.trim();
+  if (!code) { print('\x1b[33m⚠ Editor is empty — write some code first.\x1b[0m'); return; }
+  print('\x1b[2m⚙ ARIA is analysing your code…\x1b[0m');
+  await runAiPrompt(
+    `Explain this Python code clearly and concisely — what it does, how it works, and any important patterns:\n\`\`\`python\n${code}\n\`\`\``,
+    print
+  );
+});
+
+// ── run — compile + run editor code, output in terminal ────
+
+registerCommand('run', (args, print) => {
+  const ed = document.querySelector('#generative-screen .code-editor');
+  const code = ed?.value?.trim();
+  if (!code) { print('\x1b[33m⚠ Editor is empty.\x1b[0m'); return; }
+  document.dispatchEvent(new CustomEvent('aria-run-editor-code', { detail: { code } }));
+  print('\x1b[2m▶ Running editor code…\x1b[0m');
 });
 
 export function consumeAiPending(line, print) {

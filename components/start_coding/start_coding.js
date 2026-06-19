@@ -1,4 +1,4 @@
-import { preloadPython } from '../compiler/compiler.js';
+import { setMode } from '../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
 
 function setupStartCodingBtn() {
   const vtTop = document.querySelector('#vertical-toolbar .vt-top');
@@ -11,13 +11,18 @@ function setupStartCodingBtn() {
   btn.setAttribute('aria-label', 'Toggle code editor');
   btn.innerHTML = `
     <svg class="start-coding-icon" xmlns="http://www.w3.org/2000/svg"
-         width="20" height="20" viewBox="0 0 20 20"
+         width="20" height="20" viewBox="0 0 24 24"
          fill="none" stroke="currentColor"
-         stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
          aria-hidden="true">
-      <path d="M7 5.5L2.5 10 7 14.5"/>
-      <path d="M13 5.5L17.5 10 13 14.5"/>
-      <line x1="11.5" y1="4.5" x2="8.5" y2="15.5"/>
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+      <line x1="10" y1="6.5" x2="14" y2="6.5"/>
+      <line x1="6.5" y1="10" x2="6.5" y2="14"/>
+      <line x1="17.5" y1="10" x2="17.5" y2="14"/>
+      <line x1="10" y1="17.5" x2="14" y2="17.5"/>
     </svg>`;
 
   vtTop.appendChild(btn);
@@ -30,16 +35,11 @@ function setupStartCodingBtn() {
     if (isOpen) document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'coding' } }));
   }
 
-  let _preloaded = false;
   btn.addEventListener('click', () => {
-    if (!_preloaded) {
-      _preloaded = true;
-      preloadPython();
-    }
     const state = window.screenController?.getState('coding');
     if (!state || state === 'closed' || state === 'minimized') {
-      window.screenController?.minimize('content');
       window.screenController?.open('coding');
+      setMode('customise');
     } else {
       window.screenController?.close('coding');
     }

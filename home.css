@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f3f5f8;
+  background: var(--outer-bg, #dde3ea);
   color: #102040;
   display: flex;
   flex-direction: column;
@@ -16,6 +16,9 @@ body {
   display: flex;
   flex-direction: row;
   align-items: stretch;
+  gap: 4px;
+  padding: 4px 4px calc(var(--bottom-bar-h, 44px) + 4px) 4px;
+  box-sizing: border-box;
 }
 
 main.hero {
@@ -24,22 +27,17 @@ main.hero {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  border-top: 1px solid var(--border, #e2e8f0);
-  padding-bottom: var(--bottom-bar-h, 44px);
+  padding: 0;
   box-sizing: border-box;
+  background: var(--outer-bg, #dde3ea);
 }
-
-[data-theme="dark"]   main.hero { border-top-color: rgba(255,255,255,0.06); }
-[data-theme="grey"]   main.hero { border-top-color: rgba(255,255,255,0.06); }
-[data-theme="aurora"] main.hero { border-top-color: rgba(99,102,241,0.18); }
 
 .hero-screens-row {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: row;
-  overflow: hidden;
+  gap: 4px;
 }
 
 /* ── Hero screens ─────────────────────────────────────── */
@@ -49,14 +47,10 @@ main.hero {
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
-  border-right: 1px solid var(--border, #e2e8f0);
   background: var(--surface, #ffffff);
+  border-radius: 14px;
+  box-shadow: none;
 }
-
-.hero-screen:last-child { border-right: none; }
-
-[data-theme="dark"] .hero-screen { background: var(--bg); border-right-color: rgba(255,255,255,0.05); }
-[data-theme="grey"] .hero-screen { background: var(--bg); border-right-color: rgba(255,255,255,0.05); }
 
 .hero-copy {
   max-width: 760px;
@@ -139,11 +133,11 @@ p {
 }
 
 :root {
-  --vt-w: 44px;
-  --header-height: var(--vt-w);
-  --bottom-bar-h: var(--vt-w);
-  --screen-header-h: 35px;
-  --status-bar-h: 26px;
+  --vt-w: 33px;
+  --header-height: 38px;    /* slimmer page header */
+  --bottom-bar-h:  30px;    /* slimmer status bar */
+  --screen-header-h: 32px;  /* slimmer panel headers */
+  --status-bar-h: 22px;
 }
 
 body.dp-fullscreen .nav-sidebar {
@@ -152,54 +146,16 @@ body.dp-fullscreen .nav-sidebar {
   pointer-events: none;
 }
 
+body.dp-fullscreen #page-layout {
+  gap: 0;
+  padding: 0;
+}
 body.dp-fullscreen main.hero {
-  padding-bottom: 0;
+  padding: 0;
+}
+body.dp-fullscreen .hero-screen {
+  border-radius: 0;
+  box-shadow: none;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   FUTURISTIC PANEL SYSTEM — dark / grey / aurora themes
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Panel borders: subtle neon glow */
-[data-theme="dark"]   .hero-screen { border-right-color: rgba(99,102,241,0.14); }
-[data-theme="grey"]   .hero-screen { border-right-color: rgba(99,102,241,0.14); }
-[data-theme="aurora"] .hero-screen { border-right-color: rgba(99,102,241,0.22); }
-
-/* Screen header accent line — top neon stripe in aurora/dark */
-[data-theme="aurora"] .compiling-screen-header,
-[data-theme="aurora"] .aic-header {
-  border-top: 1px solid rgba(99,102,241,0.25);
-  border-bottom-color: rgba(99,102,241,0.18);
-}
-[data-theme="dark"]   .compiling-screen-header,
-[data-theme="dark"]   .aic-header,
-[data-theme="grey"]   .compiling-screen-header,
-[data-theme="grey"]   .aic-header {
-  border-top: 1px solid rgba(255,255,255,0.04);
-}
-
-/* Output blocks: terminal-dark feel */
-[data-theme="dark"]   .output-block,
-[data-theme="grey"]   .output-block,
-[data-theme="aurora"] .output-block {
-  background: transparent;
-  border-bottom-color: rgba(255,255,255,0.05);
-}
-
-[data-theme="dark"]   .output-text,
-[data-theme="grey"]   .output-text,
-[data-theme="aurora"] .output-text {
-  color: rgba(220,235,255,0.82);
-}
-
-[data-theme="aurora"] .output-text  { color: rgba(225,220,255,0.85); }
-[data-theme="aurora"] .output-error { background: rgba(239,68,68,0.08); color: #f87171; }
-
-/* Scrollbar: neon tint in aurora */
-[data-theme="aurora"] .compiling-screen-body {
-  scrollbar-color: rgba(99,102,241,0.35) transparent;
-}
-[data-theme="aurora"] .aic-messages {
-  scrollbar-color: rgba(99,102,241,0.35) transparent;
-}
 

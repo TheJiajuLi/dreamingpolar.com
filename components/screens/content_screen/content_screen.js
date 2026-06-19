@@ -29,8 +29,9 @@ function setupContentScreen() {
   });
 
   const labelEl = document.createElement('span');
-  labelEl.className = 'content-screen-label';
-  labelEl.textContent = 'Content';
+  labelEl.className   = 'content-screen-label';
+  labelEl.textContent = '';
+  labelEl.style.display = 'none';
 
   const _CYCLE_SVG = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`;
 
@@ -70,7 +71,17 @@ function setupContentScreen() {
   const CS_MIN_W     = 220;
 
   const savedW = parseFloat(localStorage.getItem(CS_WIDTH_KEY));
-  if (savedW) { hero.style.width = savedW + 'px'; hero.style.flex = 'none'; }
+  if (savedW) {
+    requestAnimationFrame(() => {
+      const maxW = hero.parentElement?.getBoundingClientRect().width ?? Infinity;
+      if (savedW <= maxW) {
+        hero.style.width = savedW + 'px';
+        hero.style.flex  = 'none';
+      } else {
+        localStorage.removeItem(CS_WIDTH_KEY);
+      }
+    });
+  }
 
   const resizer = document.createElement('div');
   resizer.className = 'cs-resizer';

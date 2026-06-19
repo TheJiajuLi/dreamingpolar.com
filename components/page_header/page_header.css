@@ -11,7 +11,8 @@
   align-items: center;
   justify-content: flex-start;
   gap: 16px;
-  padding: 0 24px 0 3px;
+  /* Right padding = right-bar width + layout gap + layout padding = stops at right-bar left edge */
+  padding: 0 calc(var(--rb-w, 33px) + 12px) 0 3px;
   background: #ffffffee;
   backdrop-filter: blur(8px);
   user-select: none;
@@ -31,40 +32,11 @@
   transition: filter 0.3s ease;
 }
 
-/* Base glow for all dark themes (overridden per-theme below) */
-[data-theme="dark"]   .app-logo,
-[data-theme="aurora"] .app-logo,
-[data-theme="grey"]   .app-logo {
-  filter: drop-shadow(0 0 6px rgba(120, 200, 255, 1))
-          drop-shadow(0 0 16px rgba(80, 160, 255, 0.85))
-          drop-shadow(0 0 32px rgba(60, 130, 255, 0.5));
-}
-
 /* ── Navigation button ───────────────────────────────────────────────────── */
 
 .navigation-button:focus:not(:focus-visible) { outline: none; }
 
-/* ── Theme overrides ─────────────────────────────────────────────────────── */
-
-[data-theme="dark"] .page-header { background: rgba(1,4,9,0.88);   backdrop-filter: blur(12px); }
-[data-theme="grey"] .page-header { background: rgba(13,17,23,0.88); backdrop-filter: blur(12px); }
-
-[data-theme="grey"] .app-logo {
-  filter: drop-shadow(0 0 6px rgba(87,171,90,0.55))
-          drop-shadow(0 0 16px rgba(87,171,90,0.35));
-}
-
-[data-theme="aurora"] .page-header {
-  background: rgba(7,7,26,0.92);
-  backdrop-filter: blur(14px);
-}
-
-[data-theme="aurora"] .app-logo {
-  filter:
-    drop-shadow(0 0 6px rgba(192,132,252,0.9))
-    drop-shadow(0 0 16px rgba(99,102,241,0.7))
-    drop-shadow(0 0 32px rgba(99,102,241,0.35));
-}
+/* Theme overrides → theme_controller.css */
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 

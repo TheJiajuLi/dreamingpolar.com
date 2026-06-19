@@ -1,0 +1,49 @@
+/* ── Right Bar ───────────────────────────────────────────────────────────── */
+
+:root { --rb-w: 33px; }
+
+#right-bar {
+  width: var(--rb-w, 44px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  background: var(--surface, #ffffff);
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: none;
+  z-index: 10;
+  position: relative;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(15,32,64,0.07);
+}
+
+/* ── Top and bottom slot groups ──────────────────────────────────────────── */
+
+.rb-top,
+.rb-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 0;
+}
+
+/* ── Mobile: hide bar, zero CSS var (bottom data bar uses it) ────────────── */
+
+@media (max-width: 768px) {
+  :root { --rb-w: 0px; }
+  #right-bar { display: none; }
+}
+
+/* ── Fullscreen: collapse bar, zero CSS var ──────────────────────────────── */
+
+body.dp-fullscreen { --rb-w: 0px; }
+body.dp-fullscreen #right-bar {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+}

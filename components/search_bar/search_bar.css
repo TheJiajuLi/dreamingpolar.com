@@ -6,7 +6,7 @@
 .nav-search-container {
   flex-shrink: 0;
   padding: 8px 10px 6px;
-  border-bottom: 1px solid var(--border, #e2e8f0);
+  border-bottom: none;
   position: relative;
 }
 

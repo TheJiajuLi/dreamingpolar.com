@@ -1,0 +1,230 @@
+/* ── Generative Screen (ARIA) ────────────────────────────── */
+#generative-screen {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+  background: var(--code-bg, #f8fafc);
+}
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+.gen-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 10px;
+  height: 34px;
+  flex-shrink: 0;
+  background: var(--code-bg, #0d1117);
+  user-select: none;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.gen-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.gen-toolbar-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+}
+
+.gen-run-btn {
+  margin-left: 6px;
+  color: #4ade80;
+}
+
+/* ── Terminal strip: fills all remaining space ───────────── */
+.gen-terminal-strip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* terminal-body: flex-column so gen-code-panel + input row stack */
+.gen-terminal-strip .terminal-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Code panel: fills terminal-body above input row ─────── */
+.gen-code-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Editor wrap: code writing zone ─────────────────────── */
+.gen-editor-wrap {
+  flex-shrink: 0;
+  height: 220px;
+  min-height: 56px;
+  max-height: 68%;
+  overflow: hidden;
+  position: relative;
+}
+
+.gen-editor-wrap .code-editor {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  resize: none;
+  padding: 14px 18px;
+  font-size: 0.83rem;
+  line-height: 1.72;
+}
+
+/* ── Resize handle: sci-fi drag rail ─────────────────────── */
+.gen-editor-resize-handle {
+  flex-shrink: 0;
+  height: 6px;
+  cursor: row-resize;
+  position: relative;
+  background: rgba(255,255,255,0.03);
+  transition: background 0.2s;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gen-editor-resize-handle::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.1);
+  transition: width 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.gen-editor-resize-handle:hover {
+  background: rgba(96,165,250,0.08);
+}
+.gen-editor-resize-handle:hover::before {
+  width: 64px;
+  background: rgba(96,165,250,0.6);
+  box-shadow: 0 0 8px rgba(96,165,250,0.4);
+}
+
+/* ── Output panel: shown below editor when code runs ─────── */
+.gen-output-panel {
+  flex-shrink: 0;
+  max-height: 42%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.gen-output-panel-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 16px;
+  height: 32px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  background: var(--surface, #ffffff);
+  user-select: none;
+}
+
+.gen-output-panel-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+
+.gen-output-body {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--surface, #ffffff);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.1) transparent;
+}
+
+/* Output block styles */
+.gen-output-body .output-block  { background: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.045) !important; padding: 0; }
+.gen-output-body .output-block:last-child { border-bottom: none !important; }
+.gen-output-body .output-text   { padding: 10px 18px; font-size: 0.82rem; line-height: 1.65; border-left: none; }
+.gen-output-body .output-error  { background: transparent !important; border-left: 2px solid #f87171; padding: 9px 18px; font-size: 0.82rem; color: #b91c1c; }
+.gen-output-body .output-info   { padding: 8px 18px; font-size: 0.8rem; background: transparent !important; }
+.gen-output-body .output-html   { padding: 10px 18px; }
+.gen-output-body .output-latex  { padding: 10px 18px; }
+.gen-output-body .output-image  { padding: 0; }
+.gen-output-body .output-image img { width: 100%; height: auto; display: block; border-radius: 0; }
+
+/* ── #terminal-output inside gen-code-panel ─────────────── */
+.gen-code-panel #terminal-output {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px 8px;
+  font-size: 0.81rem;
+  line-height: 1.75;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96,165,250,0.15) transparent;
+}
+
+/* Sci-fi: subtle gradient at the top of the ARIA output area */
+.gen-code-panel #terminal-output::before {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 0 0 10px;
+  background: linear-gradient(90deg, transparent, rgba(96,165,250,0.25) 30%, rgba(129,140,248,0.3) 60%, transparent);
+  flex-shrink: 0;
+}
+
+/* ── Terminal input row: stays at bottom of terminal-body ── */
+.gen-terminal-strip .terminal-input-row {
+  flex-shrink: 0;
+  padding: 9px 14px 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  min-height: 42px;
+}
+
+.gen-terminal-strip .terminal-input {
+  font-size: 0.81rem;
+}
+
+/* ── Dark / grey / aurora output panel overrides ─────────── */
+[data-theme="dark"]   .gen-output-panel,
+[data-theme="dark"]   .gen-output-panel-hdr,
+[data-theme="dark"]   .gen-output-body     { background: var(--code-bg, #010409); }
+[data-theme="grey"]   .gen-output-panel,
+[data-theme="grey"]   .gen-output-panel-hdr,
+[data-theme="grey"]   .gen-output-body     { background: var(--code-bg, #1c2128); }
+[data-theme="aurora"] .gen-output-panel,
+[data-theme="aurora"] .gen-output-panel-hdr,
+[data-theme="aurora"] .gen-output-body     { background: var(--code-bg, #050518); }
+
+[data-theme="dark"]   .gen-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
+[data-theme="grey"]   .gen-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
+
+[data-theme="dark"]   .gen-output-body .output-text,
+[data-theme="grey"]   .gen-output-body .output-text,
+[data-theme="aurora"] .gen-output-body .output-text  { color: rgba(220,235,255,0.82); }
+
+/* ── Resize handle per theme ─────────────────────────────── */
+[data-theme="dark"]   .gen-term-resize-handle:hover { background: rgba(63,185,80,0.3); }
+[data-theme="grey"]   .gen-term-resize-handle:hover { background: rgba(87,171,90,0.3); }
+[data-theme="aurora"] .gen-term-resize-handle:hover { background: rgba(192,132,252,0.3); }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .gen-editor-wrap { height: 150px; }
+  .gen-editor-wrap .code-editor { font-size: 0.82rem; }
+}

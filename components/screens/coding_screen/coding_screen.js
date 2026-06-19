@@ -1,60 +1,16 @@
-import { getCurrentMode, mountModeSwitcher } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
+import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
 import { init as initNotebook } from '../../customise_code_block/customise_code_block.js';
-import { compile } from '../../compiler/compiler.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
 import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
 import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
-import { isEnabled as icmEnabled, onChange as icmOnChange, mount as mountICM } from './intelligent_coding_mode/intelligent_coding_mode.js';
-import * as SyntaxHL from './coding_screen_python/python_syntax_highlight/python_syntax_highlight.js';
-import * as TextHL   from './coding_screen_python/python_text_highlight/python_text_highlight.js';
-import * as Completion from './coding_screen_python/python_code-completion/python_code_completion.js';
-import { createImportBtn } from '../../import/import_btn.js';
-import { addImportedCell, setCellCode } from '../../customise_code_block/customise_code_block.js';
-
-const CODE_KEY = 'dreaming-polar-code';
-
-const PLACEHOLDERS = {
-  python: `# Example — try running this:
-from sympy import symbols, expand, latex
-x = symbols('x')
-expand((x + 1)**4)
-
-# SymPy, matplotlib, pandas & numpy are preloaded.
-# Ctrl/Cmd+Enter to run.`,
-
-  latex: `\\documentclass{article}
-\\begin{document}
-
-The Pythagorean theorem: \\(a^2 + b^2 = c^2\\)
-
-\\[
-  \\int_0^\\infty e^{-x^2}\\,dx = \\frac{\\sqrt{\\pi}}{2}
-\\]
-
-\\end{document}`,
-
-  mathjax: `Mixed text and math:
-
-The equation \\(E = mc^2\\) changed physics.
-
-$$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}$$`,
-
-  markdown: `## Heading
-
-Write **bold**, *italic*, or \`inline code\`.
-
-- Item one
-- Item two
-
-> A blockquote.`,
-};
+import { createSourceWidget } from '../../look_up_source/look_up_source.js';
+import { resetKernel } from '../../compiler/compiler.js';
+import { createLoadDataBtn } from '../../import/import_data.js';
 
 function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
   if (!screen) return;
-
-  const terminalPanel = document.getElementById('terminal-panel');
 
   screen.innerHTML = `
     <div class="coding-screen-body" id="coding-screen-body">
@@ -62,295 +18,12 @@ function setupCodingScreen() {
     </div>
   `;
 
-  if (terminalPanel) screen.appendChild(terminalPanel);
-
-  // cds-single-view lives inside terminal-panel (RIGHT side in single mode).
-  // terminal.js runs after us and uses prepend(), so this stays as the last child.
-  const singleView = document.createElement('div');
-  singleView.id = 'cds-single-view';
-  if (terminalPanel) terminalPanel.appendChild(singleView);
-
   // ── Screen controller ─────────────────────────────────
   requestAnimationFrame(() => {
-    window.screenController?.register('coding', screen, { label: 'Code', persisted: true, noChip: true });
+    window.screenController?.register('coding', screen, { label: 'Code', persisted: true, noChip: true, group: 'hero' });
   });
 
   const notebookView = document.getElementById('cds-notebook-view');
-
-  // ── Single-cell view ──────────────────────────────────
-  const runBtn = document.createElement('button');
-  runBtn.className = 'nb-btn nb-run';
-  runBtn.innerHTML = '&#9654;';
-  runBtn.title = 'Run (Ctrl+Enter)';
-
-  const toolbar = document.createElement('div');
-  toolbar.className = 'coding-toolbar';
-
-  const modeSlot = document.createElement('div');
-  modeSlot.className = 'cds-mode-slot';
-  mountModeSwitcher(modeSlot);
-
-  const icmSlot = document.createElement('div');
-  icmSlot.className = 'cds-icm-slot';
-  mountICM(icmSlot);
-
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'lus-copy-btn cds-copy-btn';
-  copyBtn.title     = 'Copy source';
-  copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-  copyBtn.addEventListener('click', () => {
-    const code = editor.value;
-    if (!code) return;
-    navigator.clipboard?.writeText(code).then(() => {
-      copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-      copyBtn.classList.add('lus-copy-btn--done');
-      setTimeout(() => {
-        copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-        copyBtn.classList.remove('lus-copy-btn--done');
-      }, 1600);
-    });
-  });
-
-  const toolbarClearBtn = createClearCellsBtn();
-  toolbarClearBtn.id = 'cds-toolbar-clear-btn';
-
-  const importBtn = createImportBtn({
-    getMode: getCurrentMode,
-    onImport(content) {
-      if (_editorRef) {
-        _editorRef.value = content;
-        _editorRef.dispatchEvent(new Event('input'));
-        localStorage.setItem(CODE_KEY, content);
-      }
-    },
-    onNotebookImport(content, lang) {
-      addImportedCell(lang, content);
-    },
-  });
-
-  toolbar.appendChild(modeSlot);
-  toolbar.appendChild(icmSlot);
-  toolbar.appendChild(importBtn);
-  toolbar.appendChild(copyBtn);
-  toolbar.appendChild(toolbarClearBtn);
-  toolbar.appendChild(runBtn);
-
-  const editorWrap = document.createElement('div');
-  editorWrap.className = 'code-editor-area';
-
-  let _editorRef = null;
-  const editor = document.createElement('textarea');
-  editor.className    = 'code-editor';
-  editor.spellcheck   = false;
-  editor.autocorrect  = 'off';
-  editor.autocomplete = 'off';
-  editor.setAttribute('autocapitalize', 'none');
-  editor.setAttribute('inputmode', 'text');
-  editor.placeholder  = PLACEHOLDERS[getCurrentMode()] ?? PLACEHOLDERS.python;
-  editor.value        = localStorage.getItem(CODE_KEY) ?? '';
-  _editorRef = editor;
-  editorWrap.appendChild(editor);
-
-  // ── Code panel (left) ─────────────────────────────────
-  const codePanel = document.createElement('div');
-  codePanel.className = 'cds-code-panel';
-  codePanel.append(toolbar, editorWrap);
-
-  // ── Output panel (right) ──────────────────────────────
-  const outputPanel = document.createElement('div');
-  outputPanel.className = 'cds-output-panel';
-
-  const outputPanelHdr = document.createElement('div');
-  outputPanelHdr.className = 'cds-output-panel-hdr';
-
-  const outputHdrLabel = document.createElement('span');
-  outputHdrLabel.className = 'cds-output-panel-label';
-  outputHdrLabel.textContent = 'Output';
-
-  const outClearBtn = document.createElement('button');
-  outClearBtn.className = 'sc-btn';
-  outClearBtn.title = 'Clear output';
-  outClearBtn.textContent = '⊘';
-
-  const outMaxBtn = document.createElement('button');
-  outMaxBtn.className = 'sc-btn';
-  outMaxBtn.title = 'Maximize';
-  outMaxBtn.textContent = '⤢';
-
-  const outMinBtn = document.createElement('button');
-  outMinBtn.className = 'sc-btn';
-  outMinBtn.title = 'Minimize';
-  outMinBtn.textContent = '−';
-
-  const outToolbar = document.createElement('div');
-  outToolbar.className = 'sc-toolbar';
-  outToolbar.append(outClearBtn, outMaxBtn, outMinBtn);
-
-  outputPanelHdr.append(outputHdrLabel, outToolbar);
-
-  const outputPlaceholder = document.createElement('div');
-  outputPlaceholder.className = 'cds-output-placeholder';
-  outputPlaceholder.textContent = 'Run to see output';
-
-  const singleOutputBody = document.createElement('div');
-  singleOutputBody.className = 'cds-output-body';
-
-  outputPanel.append(outputPanelHdr, outputPlaceholder, singleOutputBody);
-
-  // ── Resizer (absolutely positioned on left edge of outputPanel) ──
-  const CDS_OUT_W_KEY = 'dp-cds-output-w';
-  const CDS_OUT_MIN_W = 160;
-
-  const savedOutW = parseFloat(localStorage.getItem(CDS_OUT_W_KEY))
-                 || parseFloat(localStorage.getItem('dp-cs-width'))
-                 || 280;
-  outputPanel.style.width = savedOutW + 'px';
-  outputPanel.style.flex  = 'none';
-
-  const resizer = document.createElement('div');
-  resizer.className = 'cds-resizer';
-  resizer.title = 'Drag to resize · Double-click to reset';
-  outputPanel.appendChild(resizer);
-
-  function _startResize(startX) {
-    document.body.classList.add('cs-resizing');
-
-    function onMove(clientX) {
-      const viewRect = singleView.getBoundingClientRect();
-      const maxW = viewRect.width * 0.75;
-      const newW = Math.min(maxW, Math.max(CDS_OUT_MIN_W, viewRect.right - clientX));
-      outputPanel.style.width = newW + 'px';
-      outputPanel.style.flex = 'none';
-    }
-    function onUp(clientX) {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup',   onMouseUp);
-      document.removeEventListener('touchmove', onTouchMove);
-      document.removeEventListener('touchend',  onTouchEnd);
-      document.body.classList.remove('cs-resizing');
-      onMove(clientX);
-      localStorage.setItem(CDS_OUT_W_KEY, parseFloat(outputPanel.style.width));
-    }
-    const onMouseMove = e => onMove(e.clientX);
-    const onMouseUp   = e => onUp(e.clientX);
-    const onTouchMove = e => { e.preventDefault(); onMove(e.touches[0].clientX); };
-    const onTouchEnd  = e => onUp(e.changedTouches[0].clientX);
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup',   onMouseUp);
-    document.addEventListener('touchmove', onTouchMove, { passive: false });
-    document.addEventListener('touchend',  onTouchEnd);
-  }
-
-  resizer.addEventListener('mousedown',  e => { e.preventDefault(); _startResize(e.clientX); });
-  resizer.addEventListener('touchstart', e => { e.preventDefault(); _startResize(e.touches[0].clientX); }, { passive: false });
-  resizer.addEventListener('dblclick',   () => {
-    outputPanel.style.width = '';
-    outputPanel.style.flex  = '';
-    localStorage.removeItem(CDS_OUT_W_KEY);
-  });
-
-  singleView.append(codePanel, outputPanel);
-
-  // ── Output panel toolbar buttons ──────────────────────
-  outClearBtn.addEventListener('click', () => {
-    singleOutputBody.innerHTML = '';
-    outputPlaceholder.style.display = '';
-  });
-
-  outMaxBtn.addEventListener('click', () => {
-    const isMax = outputPanel.dataset.expanded === '1';
-    if (isMax) {
-      outputPanel.style.width = outputPanel.dataset.prevWidth || (savedOutW + 'px');
-      outputPanel.style.flex  = 'none';
-      delete outputPanel.dataset.expanded;
-      outMaxBtn.textContent = '⤢';
-      outMaxBtn.title = 'Maximize';
-    } else {
-      outputPanel.dataset.prevWidth = outputPanel.style.width;
-      outputPanel.dataset.expanded  = '1';
-      const maxW = singleView.getBoundingClientRect().width * 0.75;
-      outputPanel.style.width = Math.round(maxW) + 'px';
-      outputPanel.style.flex  = 'none';
-      outMaxBtn.textContent = '⤡';
-      outMaxBtn.title = 'Restore';
-    }
-  });
-
-  outMinBtn.addEventListener('click', () => {
-    outputPanel.style.display = 'none';
-  });
-
-  // Restore output panel when code is run (in case it was hidden)
-  document.addEventListener('compile-result', ({ detail }) => {
-    outputPanel.style.display = '';
-  });
-
-  document.addEventListener('compile-result', ({ detail }) => {
-    if (detail.cellId) return;
-    const mode = getCurrentMode();
-    if (mode === 'customise' || mode === 'ai_chat') return;
-    const { outputs, sourceCode, sourceLang } = detail;
-    singleOutputBody.innerHTML = '';
-    renderBlocks(outputs, singleOutputBody, {
-      onAskAI: async (errorText, block, btn) => {
-        btn.disabled = true;
-        btn.textContent = 'Thinking…';
-        try {
-          const context = sourceCode
-            ? `Code (${sourceLang ?? 'unknown'}):\n${sourceCode}\n\nError:\n${errorText}`
-            : errorText;
-          const explanation = await ask(context, systemExplainForLang(sourceLang), 512);
-          const explDiv = document.createElement('div');
-          explDiv.className = 'output-ai-explanation';
-          const lbl = document.createElement('div');
-          lbl.className = 'ai-explanation-label';
-          const lblText = document.createElement('span');
-          lblText.className = 'ai-explanation-label-text';
-          lblText.textContent = 'AI suggestion';
-          lbl.appendChild(lblText);
-          if (sourceCode) {
-            lbl.appendChild(createRefactorBtn({ sourceCode, sourceLang, cellId: '__standalone__', explanation }));
-          }
-          const bodyEl = document.createElement('div');
-          bodyEl.className = 'ai-explanation-body';
-          renderBlocks(parseAIResponse(explanation), bodyEl);
-          explDiv.append(lbl, bodyEl);
-          block.appendChild(explDiv);
-          btn.remove();
-        } catch (e) {
-          btn.textContent = `Error: ${e.message}`;
-          btn.disabled = false;
-        }
-      },
-    });
-    outputPlaceholder.style.display = 'none';
-  });
-
-  document.addEventListener('clear-active-code', () => {
-    singleOutputBody.innerHTML = '';
-    outputPlaceholder.style.display = '';
-  });
-
-  // ── Python ICM features ───────────────────────────────────
-  function icmActivate() {
-    SyntaxHL.init(editor, editorWrap);
-    TextHL.init(editor, editorWrap);
-    Completion.init(editor, editorWrap);
-  }
-  function icmDeactivate() {
-    SyntaxHL.destroy();
-    TextHL.destroy();
-    Completion.destroy();
-  }
-  function syncICM(mode) {
-    if (mode !== 'python') return; // features only apply to Python
-    if (icmEnabled()) { if (!SyntaxHL.isActive()) icmActivate(); }
-    else              { if (SyntaxHL.isActive())  icmDeactivate(); }
-  }
-
-  syncICM(getCurrentMode());
-  icmOnChange(() => syncICM(getCurrentMode()));
 
   // ── Notebook view ─────────────────────────────────────
   const nbLeft = document.createElement('div');
@@ -362,12 +35,36 @@ function setupCodingScreen() {
   runAllSlot.id = 'cds-runall-slot';
   runAllSlot.className = 'cds-runall-slot';
   const clearCellsBtn = createClearCellsBtn();
-  nbToolbar.append(runAllSlot, clearCellsBtn);
+
+  const restartKernelBtn = document.createElement('button');
+  restartKernelBtn.className   = 'sc-btn sc-btn--danger';
+  restartKernelBtn.title       = 'Restart kernel — clears all variables';
+  restartKernelBtn.textContent = '↺';
+  restartKernelBtn.addEventListener('click', async () => {
+    restartKernelBtn.disabled    = true;
+    restartKernelBtn.textContent = '↺ Restarting…';
+    await resetKernel();
+    restartKernelBtn.disabled    = false;
+    restartKernelBtn.textContent = '↺ Restart';
+  });
+
+  const loadDataBtn = createLoadDataBtn({
+    onLoad: (varName, rows, filename) => {
+      // Print a hint into any visible cell as a comment
+      const firstEditor = nbLeft.querySelector('.nb-editor');
+      if (firstEditor && !firstEditor.value.trim()) {
+        firstEditor.value = `# "${filename}" loaded as ${varName} (${rows} rows)\nprint(${varName}.shape)\n${varName}.head()`;
+        firstEditor.dispatchEvent(new Event('input'));
+      }
+    },
+  });
+
+  nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn, loadDataBtn);
   nbLeft.appendChild(nbToolbar);
   notebookView.appendChild(nbLeft);
   initNotebook(nbLeft, runAllSlot);
 
-  // ── Notebook output panel (right, same design as single view) ──
+  // ── Notebook output panel ─────────────────────────────
   const NB_OUT_W_KEY = 'dp-nb-output-w';
   const NB_OUT_MIN_W = 160;
   const savedNbOutW  = parseFloat(localStorage.getItem(NB_OUT_W_KEY)) || 280;
@@ -457,6 +154,7 @@ function setupCodingScreen() {
 
   notebookView.appendChild(nbOutputPanel);
 
+  // ── Per-cell output sections ──────────────────────────
   const nbSections = new Map();
 
   function getOrCreateNbSection(cellId, cellLabel, lang) {
@@ -484,6 +182,9 @@ function setupCodingScreen() {
     labelInner.appendChild(labelSpan);
     labelEl.appendChild(labelInner);
 
+    const sourceWidget = createSourceWidget();
+    labelEl.appendChild(sourceWidget.element);
+
     const closeBtn = document.createElement('button');
     closeBtn.className = 'cds-output-section-close';
     closeBtn.title = 'Dismiss';
@@ -501,7 +202,7 @@ function setupCodingScreen() {
     sectionEl.append(labelEl, bodyEl);
     nbOutputBody.appendChild(sectionEl);
 
-    const sec = { sectionEl, labelEl, bodyEl, lang: lang ?? '' };
+    const sec = { sectionEl, labelEl, bodyEl, lang: lang ?? '', sourceWidget };
     nbSections.set(cellId, sec);
     return sec;
   }
@@ -552,7 +253,7 @@ function setupCodingScreen() {
     nbOutputPanel.style.display = 'none';
   });
 
-  document.addEventListener('compile-result', ({ detail }) => {
+  document.addEventListener('compile-result', () => {
     nbOutputPanel.style.display = '';
   });
 
@@ -560,6 +261,7 @@ function setupCodingScreen() {
     if (!detail.cellId) return;
     const { outputs, cellId, cellLabel, sourceCode, sourceLang } = detail;
     const sec = getOrCreateNbSection(cellId, cellLabel, sourceLang);
+    sec.sourceWidget?.setSource(sourceCode ?? null, sourceLang ?? null);
     renderBlocks(outputs, sec.bodyEl, {
       onAskAI: async (errorText, block, btn) => {
         btn.disabled = true;
@@ -597,102 +299,15 @@ function setupCodingScreen() {
     '<span class="cds-chat-placeholder-text">Chat 模式 — 小梦在右侧面板等你~</span>';
   document.getElementById('coding-screen-body').appendChild(chatPlaceholder);
 
-  // ── Switch between views ──────────────────────────────
+  // ── Show notebook vs. chat placeholder ───────────────
   function applyMode(mode) {
-    const isCustomise = mode === 'customise';
-    const isChat      = mode === 'ai_chat';
-    const isSingle    = !isCustomise && !isChat;
-    singleView.style.display      = isSingle    ? 'flex' : 'none';
-    notebookView.style.display    = isCustomise ? 'flex' : 'none';
-    chatPlaceholder.style.display = isChat      ? 'flex' : 'none';
-    screen.classList.toggle('mode-single', isSingle);
-    if (!isChat) editor.placeholder = PLACEHOLDERS[mode] ?? PLACEHOLDERS.python;
+    const isChat = mode === 'ai_chat';
+    notebookView.style.display    = isChat ? 'none' : 'flex';
+    chatPlaceholder.style.display = isChat ? 'flex' : 'none';
   }
 
   applyMode(getCurrentMode());
-  document.addEventListener('compiler-mode-change', ({ detail }) => {
-    applyMode(detail.mode);
-    syncICM(detail.mode);
-  });
-
-  // ── Single-cell events ────────────────────────────────
-  editor.addEventListener('keydown', e => {
-    if (e.key !== 'Tab') return;
-    e.preventDefault();
-    const s = editor.selectionStart;
-    editor.value = editor.value.slice(0, s) + '    ' + editor.value.slice(editor.selectionEnd);
-    editor.selectionStart = editor.selectionEnd = s + 4;
-  });
-
-  let _saveTimer = null;
-  editor.addEventListener('input', () => {
-    clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => localStorage.setItem(CODE_KEY, editor.value), 400);
-  });
-
-  async function run() {
-    const code = editor.value.trim();
-    if (!code) return;
-    editor.blur(); // dismiss iOS keyboard before running so the tap registers cleanly
-    const mode = getCurrentMode();
-
-    if (mode === 'python' && /\binput\s*\(/.test(code)) {
-      document.dispatchEvent(new CustomEvent('run-in-terminal', { detail: { code } }));
-      return;
-    }
-
-    runBtn.disabled = true;
-    try {
-      const outputs = await compile(code, mode);
-      document.dispatchEvent(new CustomEvent('compile-result', { detail: { outputs, sourceCode: code, sourceLang: mode } }));
-    } catch (err) {
-      const errText = err instanceof Error ? err.message : String(err);
-      document.dispatchEvent(new CustomEvent('compile-result', { detail: {
-        outputs: [{ type: 'error', text: errText }],
-        sourceCode: code,
-        sourceLang: mode,
-      }}));
-    } finally {
-      runBtn.disabled = false;
-    }
-  }
-
-  runBtn.addEventListener('click', run);
-
-  editor.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
-  });
-
-  // Clear single-cell editor when clear-active-code fires in a non-notebook mode
-  document.addEventListener('clear-active-code', () => {
-    const m = getCurrentMode();
-    if (m === 'customise' || m === 'ai_chat') return;
-    editor.value = '';
-    editor.dispatchEvent(new Event('input'));
-    localStorage.removeItem(CODE_KEY);
-  });
-
-  // Handle ai-insert-and-run (single-view only; notebook handled by customise_code_block)
-  document.addEventListener('ai-insert-and-run', ({ detail: { code } }) => {
-    const m = getCurrentMode();
-    if (m === 'ai_chat' || m === 'customise') return;
-    editor.value = code;
-    localStorage.setItem(CODE_KEY, code);
-    editor.dispatchEvent(new Event('input'));
-    run();
-  });
-
-  // Handle refactor-code
-  document.addEventListener('refactor-code', ({ detail: { code, cellId } }) => {
-    if (cellId === '__standalone__') {
-      editor.value = code;
-      localStorage.setItem(CODE_KEY, code);
-      editor.dispatchEvent(new Event('input'));
-    } else {
-      setCellCode(cellId, code);
-    }
-  });
-
+  document.addEventListener('compiler-mode-change', ({ detail }) => applyMode(detail.mode));
 }
 
 if (document.readyState === 'loading') {

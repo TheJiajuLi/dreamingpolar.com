@@ -10,11 +10,20 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--border, #e2e8f0);
+  border: none;
   background: transparent;
   color: var(--text-muted, #64748b);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+/* Pinned to viewport: horizontally centred in right-bar, vertically centred in page-header */
+#au-vt-btn {
+  position: fixed;
+  right: calc(var(--rb-w, 33px) / 2 + 4px - 15px);
+  top:   calc(var(--header-height, 38px) / 2 - 15px);
+  z-index: 35;
+  margin: 0;
 }
 .au-hdr-btn:hover {
   background: var(--bg-2, rgba(0,0,0,0.05));
@@ -22,16 +31,12 @@
   border-color: var(--border, #cbd5e1);
 }
 .au-hdr-btn.au-logged-in {
-  border-color: rgba(99,102,241,0.3);
   background: transparent;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.25);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 0 1.5px rgba(99,102,241,0.35), 0 2px 8px rgba(99,102,241,0.18);
 }
 .au-hdr-btn.au-logged-in:hover {
-  border-color: rgba(99,102,241,0.65);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 2px 8px rgba(99,102,241,0.25);
-  background: transparent;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.65), 0 3px 12px rgba(99,102,241,0.3);
 }
 
 @media (max-width: 768px) {
@@ -301,77 +306,4 @@
 }
 .au-logout:hover { background: rgba(239,68,68,0.07); }
 
-/* ══ Dark / Grey ════════════════════════════════════════════════════════════ */
-[data-theme="dark"] .au-hdr-btn,
-[data-theme="grey"] .au-hdr-btn {
-  color: rgba(200,220,255,0.55);
-  border-color: rgba(255,255,255,0.1);
-}
-[data-theme="dark"] .au-hdr-btn:hover,
-[data-theme="grey"] .au-hdr-btn:hover {
-  background: rgba(255,255,255,0.07);
-  color: rgba(220,235,255,0.88);
-}
-[data-theme="dark"] .au-profile-avatar,
-[data-theme="grey"] .au-profile-avatar {
-  box-shadow:
-    0 0 0 2.5px var(--surface, #0d1117),
-    0 0 0 4px rgba(99,102,241,0.5),
-    0 4px 14px rgba(99,102,241,0.25);
-}
-
-[data-theme="dark"] .au-input,
-[data-theme="grey"] .au-input {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.08);
-  color: rgba(220,235,255,0.88);
-}
-[data-theme="dark"] .au-input:focus,
-[data-theme="grey"] .au-input:focus {
-  border-color: rgba(99,102,241,0.5);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
-}
-[data-theme="dark"] .au-modal,
-[data-theme="grey"] .au-modal,
-[data-theme="dark"] .au-profile,
-[data-theme="grey"] .au-profile {
-  border-color: rgba(255,255,255,0.08);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.45);
-}
-[data-theme="dark"] .au-x-btn:hover,
-[data-theme="grey"] .au-x-btn:hover {
-  background: rgba(255,255,255,0.08);
-  color: rgba(220,235,255,0.9);
-}
-
-/* ══ Aurora ═════════════════════════════════════════════════════════════════ */
-[data-theme="aurora"] .au-input {
-  background: rgba(99,102,241,0.06);
-  border-color: rgba(192,132,252,0.2);
-  color: rgba(230,220,255,0.9);
-}
-[data-theme="aurora"] .au-input:focus {
-  border-color: rgba(192,132,252,0.5);
-  box-shadow: 0 0 0 3px rgba(192,132,252,0.12);
-}
-[data-theme="aurora"] .au-submit {
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  box-shadow: 0 4px 14px rgba(139,92,246,0.45);
-}
-[data-theme="aurora"] .au-submit:hover { box-shadow: 0 6px 20px rgba(139,92,246,0.55); }
-[data-theme="aurora"] .au-tab.active { color: #c084fc; border-bottom-color: #c084fc; }
-[data-theme="aurora"] .au-footer-link button { color: #c084fc; }
-[data-theme="aurora"] .au-hdr-btn.au-logged-in { color: #a78bfa; border-color: rgba(167,139,250,0.4); }
-[data-theme="aurora"] .au-vt-avatar,
-[data-theme="aurora"] .au-profile-avatar {
-  background: linear-gradient(140deg, #8b5cf6, #c084fc);
-}
-[data-theme="aurora"] .au-phase-badge {
-  background: rgba(192,132,252,0.12);
-  color: #c084fc;
-}
-[data-theme="aurora"] .au-modal,
-[data-theme="aurora"] .au-profile {
-  border-color: rgba(99,102,241,0.2);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-}
+/* Theme overrides → theme_controller.css */

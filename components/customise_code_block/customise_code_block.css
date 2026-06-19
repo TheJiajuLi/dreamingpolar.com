@@ -35,7 +35,7 @@
   cursor: pointer;
   transition: background 0.13s, border-color 0.13s, color 0.13s;
 }
-.nb-run-all-btn:hover    { background: #f0fdf4; border-color: #22c55e; color: #16a34a; }
+.nb-run-all-btn:hover    { background: var(--accent-soft, #e0e3ff); border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
 .nb-run-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .nb-cell-count {
@@ -51,7 +51,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 0 20px;
+  padding: 12px 12px 24px;
   min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--border, #cbd5e1) transparent;
@@ -59,17 +59,21 @@
 .nb-cells::-webkit-scrollbar       { width: 4px; }
 .nb-cells::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); border-radius: 4px; }
 
-/* ── Single cell ───────────────────────────────────────── */
+/* ── Single cell — card style matching home page cards ─── */
 .nb-cell {
   display: flex;
   flex-direction: column;
-  border: none;
-  border-bottom: 1px solid var(--border, #e2e8f0);
-  margin: 0;
+  border: 1px solid var(--border, #dcdfe8);
+  border-radius: 10px;
+  margin-bottom: 10px;
   background: var(--surface, #ffffff);
-  transition: border-color 0.15s;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.nb-cell:focus-within { border-bottom-color: #6366f1; }
+.nb-cell:focus-within {
+  border-color: var(--accent, #6366f1);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.1);
+}
 
 /* ── Lower row (gutter + body) ─────────────────────────── */
 .nb-cell-lower {
@@ -121,8 +125,8 @@
 .nb-cell:focus-within .nb-body::before {
   top: 6px;
   bottom: 6px;
-  background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 0 18px rgba(99,102,241,0.3);
+  background: var(--accent, #6366f1);
+  box-shadow: 0 0 0 3px var(--accent-soft, rgba(99,102,241,0.12));
 }
 
 /* ── Per-cell toolbar ──────────────────────────────────── */
@@ -182,17 +186,23 @@
 .nb-btn:hover    { background: var(--bg, #f1f5f9); color: var(--text, #0f172a); }
 .nb-btn:disabled { opacity: 0.38; cursor: not-allowed; }
 
-.nb-run       { color: #22c55e; font-size: 0.6rem; }
-.nb-run:hover { background: #f0fdf4; color: #16a34a; }
-.nb-del:hover { background: #fef2f2; color: #ef4444; }
+.nb-run       { color: var(--status-running, #6366f1); font-size: 0.6rem; }
+.nb-run:hover { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); }
+.nb-del:hover { background: #fef2f2; color: var(--status-error, #dc2626); }
 
 .nb-cell-num {
-  font-size: 0.62rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--accent-soft, #e0e3ff);
+  color: var(--accent, #6366f1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
   font-weight: 700;
   font-family: var(--code-font, "JetBrains Mono", monospace);
-  color: var(--text-muted, #94a3b8);
-  min-width: 14px;
-  text-align: center;
   flex-shrink: 0;
   user-select: none;
 }
@@ -254,7 +264,7 @@
   margin: 0 5px;
   font-family: inherit;
 }
-.nb-add-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; border-style: solid; }
+.nb-add-btn:hover { border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); background: var(--accent-soft, #eef2ff); border-style: solid; }
 
 /* ── Inline output section inside each notebook cell ───── */
 .nb-cell .nb-output-section {
@@ -295,7 +305,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #22c55e;
+  color: var(--status-running, #6366f1);
   padding: 0 8px 0 12px;
   height: 30px;
   box-sizing: border-box;

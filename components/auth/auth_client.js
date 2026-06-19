@@ -123,7 +123,7 @@ function _initUI() {
 // ── Header button ─────────────────────────────────────────────
 function _buildVtBtn() {
   const target = document.querySelector('.mob-hdr-btns-dropdown') ||
-                 document.querySelector('.page-header');
+                 document.body;
   if (!target) return;
   const btn = document.createElement('button');
   btn.className = 'au-hdr-btn';

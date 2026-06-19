@@ -8,6 +8,8 @@ import { getCurrentMode } from '../compiler/compiler_mode_switcher/compiler_mode
 import { renderBlocks, parseAIResponse } from '../screens/compiling_screen/compiling_screen_utility.js';
 import { ask, systemExplainForLang } from '../ai/ai_client.js';
 import { createRefactorBtn } from '../screens/compiling_screen/refactorization_button/refactorization_button.js';
+import { createSourceWidget } from '../look_up_source/look_up_source.js';
+import { createImportBtn } from '../import/import_btn.js';
 
 const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -131,7 +133,17 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   numEl.textContent = '1';
   cell.numEl = numEl;
 
-  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn);
+  const importBtn = createImportBtn({
+    getMode: () => 'customise',
+    onNotebookImport: (content) => {
+      editor.value = content;
+      editor.dispatchEvent(new Event('input'));
+    },
+  });
+  importBtn.title = 'Import file into this cell';
+  importBtn.className = 'nb-btn';
+
+  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, importBtn);
 
   const editor = document.createElement('textarea');
   editor.className    = 'nb-editor';
@@ -156,12 +168,15 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   const outputLabelText = document.createElement('span');
   outputLabelText.className = 'nb-output-section-label-text';
   outputLabelText.textContent = 'Output';
+
+  const cellSourceWidget = createSourceWidget();
+
   const outputClose = document.createElement('button');
   outputClose.className = 'nb-output-section-close';
   outputClose.title = 'Hide output';
   outputClose.textContent = '✕';
   outputClose.addEventListener('click', () => { outputSection.style.display = 'none'; });
-  outputLabel.append(outputLabelText, outputClose);
+  outputLabel.append(outputLabelText, cellSourceWidget.element, outputClose);
 
   const outputBody = document.createElement('div');
   outputBody.className = 'nb-output-section-body';
@@ -176,6 +191,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   document.addEventListener('compile-result', ({ detail }) => {
     if (detail.cellId !== id) return;
     const { outputs, sourceCode, sourceLang } = detail;
+    cellSourceWidget.setSource(sourceCode ?? null, sourceLang ?? null);
     outputBody.innerHTML = '';
     renderBlocks(outputs, outputBody, {
       onAskAI: async (errorText, block, btn) => {
@@ -392,17 +408,13 @@ export function init(container, externalTopbar) {
     }
   }).observe(cellsEl);
 
-  const statusBar = document.createElement('div');
-  statusBar.className = 'compiler-status-bar';
-  statusBar.textContent = 'Idle — Python loads on first run.';
-  nb.appendChild(statusBar);
-
-  attachNotebookHooks({ runAllBtn, statusBar, runAll, getCells, autoResize, saveAll });
+  attachNotebookHooks({ runAllBtn, runAll, getCells, autoResize, saveAll });
 
   // When AI generates code while the Customise tab is active, the notebook
   // owns this event — no other component needs to know about it.
   document.addEventListener('ai-insert-and-run', ({ detail: { code, lang, cellId } }) => {
-    if (getCurrentMode() !== 'customise') return;
+    const st = window.screenController?.getState('coding');
+    if (st !== 'normal' && st !== 'maximized') return;
     if (cellId) {
       // Update existing cell and re-run it
       const cell = _cells.find(c => c.id === cellId);

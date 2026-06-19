@@ -1,0 +1,237 @@
+/* ── ARIA Analytics Panel ────────────────────────────────────────────────────── */
+
+.aria-analytics {
+  background: #0a0b0f;
+  border-top: 1px solid #ffffff10;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+  max-height: 420px;
+  min-height: 280px;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff10 transparent;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+.aa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  height: 40px;
+  background: #0f1117;
+  border-bottom: 1px solid #ffffff10;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  gap: 12px;
+}
+
+.aa-df-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.aa-ar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.aa-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ffffffcc;
+  white-space: nowrap;
+}
+
+.aa-dot-live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+  animation: aa-pulse 2s ease-in-out infinite;
+}
+@keyframes aa-pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+.aa-df-badge {
+  font-size: 0.62rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #6366f118;
+  border: 1px solid #6366f130;
+  color: #818cf8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────────── */
+.aa-tabs {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.aa-tab {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #ffffff35;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s;
+}
+.aa-tab:hover { background: #ffffff08; color: #ffffff66; }
+.aa-tab--active {
+  background: #6366f118;
+  border-color: #6366f140;
+  color: #818cf8;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────────── */
+.aa-body {
+  padding: 12px 14px 16px;
+}
+
+/* ── Layout grids ────────────────────────────────────────────────────────────── */
+.aa-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.aa-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.aa-mt     { margin-top: 10px; }
+.aa-mt-sm  { margin-top: 6px; }
+
+/* ── Card ────────────────────────────────────────────────────────────────────── */
+.aa-card {
+  background: #0f1117;
+  border: 1px solid #ffffff0c;
+  border-radius: 8px;
+  padding: 12px 12px 10px;
+}
+
+.aa-card-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #ffffff30;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+
+.aa-card-main {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #ffffffcc;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  margin-bottom: 3px;
+}
+
+.aa-card-sub {
+  font-size: 0.68rem;
+  color: #ffffff40;
+  margin-bottom: 8px;
+}
+
+/* ── Colour tokens ───────────────────────────────────────────────────────────── */
+.aa-green  { color: #4ade80 !important; }
+.aa-blue   { color: #818cf8 !important; }
+.aa-cyan   { color: #67e8f9 !important; }
+.aa-amber  { color: #fbbf24 !important; }
+.aa-red    { color: #f87171 !important; }
+
+/* ── Badges ──────────────────────────────────────────────────────────────────── */
+.aa-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+.aa-badge {
+  font-size: 0.58rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+.aa-badge-green { background: #4ade8015; border-color: #4ade8030; color: #4ade80; }
+.aa-badge-muted { background: #ffffff08; border-color: #ffffff15; color: #ffffff40; }
+
+/* ── Chart ───────────────────────────────────────────────────────────────────── */
+.aa-chart { margin: 6px 0 4px; line-height: 0; }
+
+/* ── Anomaly list ────────────────────────────────────────────────────────────── */
+.aa-anomaly-list { margin-top: 6px; }
+.aa-anomaly-row  { display: flex; align-items: center; gap: 6px; font-size: 0.65rem; color: #ffffff55; padding: 2px 0; }
+.aa-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.aa-dot-red   { background: #f87171; }
+.aa-dot-amber { background: #fbbf24; }
+
+/* ── Bar list (top values) ───────────────────────────────────────────────────── */
+.aa-bar-list { margin-top: 8px; }
+.aa-bar-row  { display: grid; grid-template-columns: 6em 1fr 2.5em; align-items: center; gap: 6px; padding: 3px 0; font-size: 0.65rem; color: #ffffff50; }
+.aa-bar-track { height: 4px; background: #ffffff08; border-radius: 2px; overflow: hidden; position: relative; }
+.aa-bar-fill  { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.aa-bar-q1    { position: absolute; top: 0; left: 0; height: 100%; }
+.aa-fill-blue  { background: #6366f1; }
+.aa-fill-green { background: #4ade80; }
+.aa-fill-red   { background: #f87171; }
+.aa-fill-amber { background: #fbbf24; }
+
+/* ── Insights ────────────────────────────────────────────────────────────────── */
+.aa-insights { display: flex; flex-direction: column; gap: 5px; }
+.aa-insight  { display: flex; gap: 8px; align-items: flex-start; font-size: 0.67rem; color: #ffffff60; line-height: 1.4; }
+.aa-insight-n {
+  width: 16px; height: 16px; border-radius: 4px;
+  background: #6366f120; border: 1px solid #6366f130;
+  color: #818cf8; font-size: 0.58rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* ── Stock tab specifics ─────────────────────────────────────────────────────── */
+.aa-two-stat { display: flex; gap: 14px; padding: 4px 0; }
+.aa-stat-big { font-size: 1.1rem; font-weight: 700; font-family: var(--code-font, "JetBrains Mono", monospace); }
+.aa-stat-lbl { font-size: 0.6rem; color: #ffffff30; margin-top: 1px; }
+
+.aa-col-row  { display: grid; grid-template-columns: 7em 1fr 5.5em; align-items: center; gap: 6px; padding: 3px 0; }
+.aa-col-name { font-size: 0.65rem; color: #ffffff50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--code-font, "JetBrains Mono", monospace); }
+.aa-col-stat { font-size: 0.62rem; text-align: right; font-family: var(--code-font, "JetBrains Mono", monospace); }
+.aa-stat-row { display: grid; grid-template-columns: 7em 4em 1fr 6em; align-items: center; gap: 6px; padding: 3px 0; }
+.aa-stat-val { font-size: 0.65rem; color: #ffffff70; text-align: right; font-family: var(--code-font, "JetBrains Mono", monospace); }
+.aa-stat-range { font-size: 0.58rem; color: #ffffff30; text-align: right; font-family: var(--code-font, "JetBrains Mono", monospace); white-space: nowrap; }
+
+/* ── Trends tab ──────────────────────────────────────────────────────────────── */
+.aa-scenario-row { display: grid; grid-template-columns: 6em 1fr 5em; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.68rem; }
+.aa-sce-label { color: #ffffff60; }
+.aa-sce-val   { text-align: right; font-family: var(--code-font, "JetBrains Mono", monospace); font-size: 0.68rem; color: #ffffff70; }
+
+.aa-spark-row { display: grid; grid-template-columns: 7em 1fr 6em; align-items: center; gap: 8px; padding: 3px 0; }
+
+.aa-corr-wrap { margin-top: 6px; }
+.aa-corr-legend { font-size: 0.6rem; color: #ffffff30; margin-top: 6px; }
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+.aa-empty { font-size: 0.7rem; color: #ffffff25; padding: 8px 0; font-style: italic; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .aa-grid-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .aa-grid-3, .aa-grid-2 { grid-template-columns: 1fr; }
+}

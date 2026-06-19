@@ -111,16 +111,8 @@ export function attachAddBtnHook({ btn, insertIdx, makeCell, getCells, rebuildCe
 
 // ── Notebook-level hooks ───────────────────────────────────
 // Called once from init(): wires the topbar and document events.
-export function attachNotebookHooks({ runAllBtn, statusBar, runAll, getCells, autoResize, saveAll }) {
+export function attachNotebookHooks({ runAllBtn, runAll, getCells, autoResize, saveAll }) {
   runAllBtn.addEventListener('click', () => runAll(runAllBtn));
-
-  document.addEventListener('compiler-status', ({ detail }) => {
-    const spin = detail.status === 'loading' || detail.status === 'running';
-    statusBar.className = `compiler-status-bar ${detail.status}`;
-    statusBar.innerHTML = spin
-      ? `<span class="status-spinner"><i></i><i></i><i></i></span>${detail.message}`
-      : detail.message;
-  });
 
   document.addEventListener('clear-active-code', () => {
     if (getCurrentMode() !== 'customise') return;

@@ -26,7 +26,7 @@ function makeBubble(role, content) {
   const wrap  = document.createElement('div');
   wrap.className = `aic-bubble aic-bubble--${role}`;
   const inner = document.createElement('div');
-  inner.className = 'aic-bubble-inner';
+  inner.className = 'ai-bubble-inner';
 
   const textSpan = document.createElement('span');
   textSpan.className = 'aic-bubble-text';
@@ -65,21 +65,19 @@ function setupAiChatScreen() {
       </div>
     </div>
     <div class="aic-messages" id="aic-messages"></div>
-    <div class="aic-input-bar">
-      <div class="aic-dialog-wrap">
-        <div class="ai-dialog-main">
-          <div class="ai-input-wrap">
-            <input
-              id="aic-input"
-              class="ai-header-input"
-              type="text"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
-            >
-          </div>
-          <button class="ai-header-submit" id="aic-send" aria-label="Send">${_SEND_ICON}</button>
+    <div class="aic-dialog-wrap">
+      <div class="ai-dialog-main">
+        <div class="ai-input-wrap">
+          <input
+            id="aic-input"
+            class="ai-header-input"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
+          >
         </div>
+        <button class="ai-header-submit" id="aic-send" aria-label="Send">${_SEND_ICON}</button>
       </div>
     </div>
   `;
@@ -109,9 +107,8 @@ function setupAiChatScreen() {
   // ── screenController wiring ──────────────────────────────────────────────
   requestAnimationFrame(() => {
     const sc = window.screenController;
-    sc?.register(SCREEN_ID, screen, { label: 'Chat' });
-    // Start closed; opens only when ai_chat mode is active
-    if (getCurrentMode() !== 'ai_chat') sc?.close(SCREEN_ID);
+    sc?.register(SCREEN_ID, screen, { label: 'Chat', group: 'hero' });
+    sc?.close(SCREEN_ID); // always start closed; mode change event opens it
   });
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -149,7 +146,7 @@ function setupAiChatScreen() {
 
     // Cursor visible immediately while waiting for first chunk
     const replyBubble = makeBubble('assistant', '');
-    const replyInner  = replyBubble.querySelector('.aic-bubble-inner');
+    const replyInner  = replyBubble.querySelector('.ai-bubble-inner');
     const textNode    = replyBubble.querySelector('.aic-bubble-text');
     const cursor      = document.createElement('span');
     cursor.className  = 'aic-typing';
@@ -219,16 +216,14 @@ function setupEmbeddedChat() {
 
     slot.innerHTML = `
       <div class="aic-messages cs-aic-messages" id="cs-aic-messages"></div>
-      <div class="aic-input-bar">
-        <div class="aic-dialog-wrap">
-          <div class="ai-dialog-main">
-            <div class="ai-input-wrap">
-              <input id="cs-aic-input" class="ai-header-input" type="text"
-                autocomplete="off" spellcheck="false"
-                placeholder="Ask anything… (Enter to send, Shift+Enter for new line)">
-            </div>
-            <button class="ai-header-submit" id="cs-aic-send" aria-label="Send">${_SEND_ICON}</button>
+      <div class="aic-dialog-wrap">
+        <div class="ai-dialog-main">
+          <div class="ai-input-wrap">
+            <input id="cs-aic-input" class="ai-header-input" type="text"
+              autocomplete="off" spellcheck="false"
+              placeholder="Ask anything… (Enter to send, Shift+Enter for new line)">
           </div>
+          <button class="ai-header-submit" id="cs-aic-send" aria-label="Send">${_SEND_ICON}</button>
         </div>
       </div>
     `;

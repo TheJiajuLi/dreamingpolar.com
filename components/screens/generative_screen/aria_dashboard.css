@@ -1,0 +1,104 @@
+/* ── ARIA Live Dashboard ─────────────────────────────────────────── */
+
+.gen-dashboard {
+  width: 220px;
+  flex-shrink: 0;
+  background: #0c0d11;
+  border-left: 1px solid #1e2028;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff10 transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-section {
+  padding: 12px 14px 10px;
+}
+
+.dash-sep {
+  height: 1px;
+  background: #ffffff08;
+  flex-shrink: 0;
+}
+
+.dash-title {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff30;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+
+.dash-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  font-size: 0.72rem;
+  color: #ffffff55;
+}
+
+.dash-val {
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  font-size: 0.7rem;
+  color: #ffffff88;
+  text-align: right;
+}
+
+.dash-val.dash-mono { font-size: 0.62rem; }
+
+/* Value colours */
+.dash-green  { color: #4ade80; }
+.dash-blue   { color: #818cf8; }
+.dash-cyan   { color: #67e8f9; }
+.dash-amber  { color: #fbbf24; }
+.dash-orange { color: #f97316; }
+
+/* Progress bar */
+.dash-bar-wrap {
+  height: 3px;
+  background: #ffffff08;
+  border-radius: 2px;
+  margin: 6px 0 4px;
+  overflow: hidden;
+}
+.dash-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+/* Sparkline */
+.dash-sparkline {
+  margin: 4px 0 6px;
+  line-height: 0;
+}
+
+/* Token chips */
+.dash-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.dash-chip {
+  font-size: 0.6rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 2px 5px;
+  border-radius: 3px;
+  border: 1px solid #ffffff12;
+  color: #ffffff30;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+  cursor: default;
+}
+
+.dash-chip--on {
+  background: #f9731618;
+  border-color: #f9731635;
+  color: #fb923c;
+}

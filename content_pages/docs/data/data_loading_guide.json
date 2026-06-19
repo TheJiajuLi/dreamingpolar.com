@@ -1,0 +1,115 @@
+{
+  "blocks": [
+    {
+      "label": "Load Data button — CSV and Excel to DataFrame",
+      "code": "# Click  📂 Load Data  in the notebook toolbar.\n# Supported formats: .csv  |  .xlsx  |  .xls\n#\n# What happens:\n# 1. A file picker opens in your browser\n# 2. You select a CSV or Excel file\n# 3. CSV files are read directly\n#    Excel files are converted to CSV via SheetJS (loaded on demand)\n# 4. The data is injected into the kernel as the variable  df\n# 5. A status toast confirms:  ✓ \"filename.csv\" loaded → df  (N rows)\n#\n# After loading, df is immediately available in ALL cells.",
+      "result": "df is a pandas DataFrame living in the shared kernel namespace — no re-import, no re-load between cells.",
+      "resultType": "text"
+    },
+    {
+      "label": "Using df after loading",
+      "examples": [
+        {
+          "code": "# These all work immediately after clicking Load Data:\nprint(df.shape)          # (rows, columns)\nprint(df.dtypes)         # column types\ndf.head()                # first 5 rows (auto-renders as text)",
+          "result": "(1000, 8)\ndtype: object, float64, int64...\n[First 5 rows displayed]",
+          "resultType": "text"
+        },
+        {
+          "code": "# Cell 2: descriptive statistics\ndf.describe()",
+          "result": "Statistical summary: count, mean, std, min, 25%, 50%, 75%, max for each numeric column.",
+          "resultType": "text"
+        },
+        {
+          "code": "# Cell 3: check for missing values\nnull_counts = df.isnull().sum()\nnull_pct = (null_counts / len(df) * 100).round(2)\npd.DataFrame({'missing': null_counts, '%': null_pct})",
+          "result": "A table showing missing value counts and percentages per column.",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
+      "label": "Inspect and clean data",
+      "examples": [
+        {
+          "code": "import pandas as pd\nimport numpy as np\n\n# Check column names and types\nprint(df.columns.tolist())\nprint(df.dtypes)\nprint(f'Shape: {df.shape}')",
+          "result": "Prints all column names, their dtypes, and the DataFrame dimensions.",
+          "resultType": "text"
+        },
+        {
+          "code": "# Drop rows with any missing values\ndf_clean = df.dropna()\nprint(f'Before: {len(df)} rows')\nprint(f'After dropna: {len(df_clean)} rows')",
+          "result": "Before: 1000 rows\nAfter dropna: 947 rows",
+          "resultType": "text"
+        },
+        {
+          "code": "# Fill missing numeric values with column medians\ndf_filled = df.fillna(df.median(numeric_only=True))\nprint(f'Missing after fill: {df_filled.isnull().sum().sum()}')",
+          "result": "Missing after fill: 0",
+          "resultType": "text"
+        },
+        {
+          "code": "# Convert a string column to datetime\ndf['date'] = pd.to_datetime(df['date_column'], errors='coerce')\ndf['year'] = df['date'].dt.year\ndf['month'] = df['date'].dt.month\ndf[['date', 'year', 'month']].head()",
+          "result": "The date column is parsed and year/month are extracted as new integer columns.",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
+      "label": "Visualise loaded data with matplotlib",
+      "examples": [
+        {
+          "code": "import matplotlib.pyplot as plt\nimport pandas as pd\n\n# Replace 'value' with an actual numeric column name from your df\ncol = df.select_dtypes(include='number').columns[0]\n\nplt.figure(figsize=(8, 4))\nplt.hist(df[col].dropna(), bins=30, color='#6366f1', edgecolor='white', alpha=0.85)\nplt.title(f'Distribution of {col}')\nplt.xlabel(col)\nplt.ylabel('Count')\nplt.tight_layout()\nplt.show()",
+          "result": "A histogram of the first numeric column in your dataset.",
+          "resultType": "plot"
+        },
+        {
+          "code": "import matplotlib.pyplot as plt\n\n# Correlation heatmap for numeric columns\nnumeric_df = df.select_dtypes(include='number')\ncorr = numeric_df.corr()\n\nfig, ax = plt.subplots(figsize=(6, 5))\nim = ax.imshow(corr, cmap='coolwarm', vmin=-1, vmax=1)\nplt.colorbar(im)\nax.set_xticks(range(len(corr.columns)))\nax.set_yticks(range(len(corr.columns)))\nax.set_xticklabels(corr.columns, rotation=45, ha='right', fontsize=8)\nax.set_yticklabels(corr.columns, fontsize=8)\nax.set_title('Correlation Matrix')\nplt.tight_layout()\nplt.show()",
+          "result": "A colour-coded correlation matrix. Deep red = +1 (perfect positive), deep blue = −1 (perfect negative).",
+          "resultType": "plot"
+        }
+      ]
+    },
+    {
+      "label": "Loading multiple datasets",
+      "examples": [
+        {
+          "code": "# Load Data always injects as  df  by default.\n# To load a second file without overwriting df,\n# rename df first:\ndf_sales = df.copy()   # save the first file\n\n# Then click  📂 Load Data  again for the second file\n# df now holds the second dataset\n# df_sales still holds the first",
+          "result": "You can hold multiple DataFrames in the shared kernel simultaneously. Variable names are just Python assignments.",
+          "resultType": "text"
+        },
+        {
+          "code": "# Merge two DataFrames on a common key\ndf_merged = pd.merge(\n    df_sales,          # first dataset\n    df,                # second dataset\n    on='product_id',   # common key column\n    how='left'\n)\nprint(df_merged.shape)",
+          "result": "Merged DataFrame with rows from df_sales, enriched by matching rows from the second dataset.",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
+      "label": "Supported file formats",
+      "examples": [
+        {
+          "code": "# CSV (.csv)\n# ─────────────────────────────────────────────────────\n# Read directly — no external library needed.\n# Encoding: UTF-8 (including Chinese characters).\n# Delimiter: comma (,) by default.\n# The first row is treated as the header.\n#\n# Excel (.xlsx / .xls)\n# ─────────────────────────────────────────────────────\n# Processed by SheetJS (loaded from CDN on first Excel load).\n# Only the FIRST sheet is imported.\n# Merged cells are expanded.\n# After conversion to CSV, pandas reads it normally.",
+          "result": "For Excel files with multiple sheets, export the target sheet as CSV before loading for the most reliable results.",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
+      "label": "Quick data analysis template",
+      "examples": [
+        {
+          "code": "# ── Cell 1: Load and inspect ────────────────────────────────\n# 1. Click  📂 Load Data  in the toolbar\n# 2. Select your file\n# df is now in memory\n\nprint('=== Shape ===')\nprint(df.shape)\n\nprint('\\n=== Data Types ===')\nprint(df.dtypes)\n\nprint('\\n=== First 3 Rows ===')\ndf.head(3)",
+          "result": "Quick overview of your data before any processing.",
+          "resultType": "text"
+        },
+        {
+          "code": "# ── Cell 2: Missing values report ───────────────────────────\nnull_report = pd.DataFrame({\n    'missing':  df.isnull().sum(),\n    'pct':     (df.isnull().mean() * 100).round(1),\n    'dtype':    df.dtypes\n}).sort_values('pct', ascending=False)\n\nnull_report[null_report['missing'] > 0]",
+          "result": "Shows only columns that have missing values, sorted by percentage.",
+          "resultType": "text"
+        },
+        {
+          "code": "# ── Cell 3: Numeric summary ──────────────────────────────────\nimport matplotlib.pyplot as plt\nimport numpy as np\n\nnums = df.select_dtypes(include='number')\nn_cols = len(nums.columns)\n\nfig, axes = plt.subplots(1, min(n_cols, 4), figsize=(4 * min(n_cols, 4), 3))\nif n_cols == 1: axes = [axes]\nfor ax, col in zip(axes, nums.columns[:4]):\n    ax.hist(nums[col].dropna(), bins=20, color='#6366f1', alpha=0.8)\n    ax.set_title(col, fontsize=9)\nplt.suptitle('Numeric distributions', fontsize=10)\nplt.tight_layout()\nplt.show()",
+          "result": "Histograms for up to 4 numeric columns — immediate visual overview of distributions.",
+          "resultType": "plot"
+        }
+      ]
+    }
+  ]
+}

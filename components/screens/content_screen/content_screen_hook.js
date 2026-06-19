@@ -14,21 +14,7 @@ export function attachContentScreenHooks(hero, getBody) {
   });
 
   requestAnimationFrame(() => {
-    window.screenController?.register('content', hero, { label: 'Content', persisted: true, defaultOpen: true, noChip: true });
-  });
-
-  document.addEventListener('screen-opened', ({ detail }) => {
-    if (detail.id === 'content') {
-      const s = window.screenController?.getState('coding');
-      if (s && s !== 'closed') window.screenController?.close('coding');
-    }
-  });
-
-  document.addEventListener('screen-closed', ({ detail }) => {
-    if (detail.id === 'coding') {
-      const s = window.screenController?.getState('content');
-      if (!s || s === 'closed' || s === 'minimized') window.screenController?.open('content');
-    }
+    window.screenController?.register('content', hero, { label: 'Content', defaultOpen: false, persisted: true, noChip: true, group: 'hero' });
   });
 }
 

@@ -6,6 +6,7 @@
   overflow: hidden;
   min-height: 0;
   background: var(--surface, #ffffff);
+  border-radius: 8px 8px 0 0;
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
@@ -105,7 +106,7 @@
 .aic-bubble--user      { align-self: flex-end;   justify-content: flex-end; }
 .aic-bubble--assistant { align-self: flex-start;  justify-content: flex-start; }
 
-.aic-bubble-inner {
+.ai-bubble-inner {
   padding: 10px 14px;
   border-radius: 16px;
   font-size: 0.83rem;
@@ -127,18 +128,14 @@
 .aic-bubble:hover .aic-copy-btn { opacity: 1; }
 
 /* ── User bubbles ────────────────────────────────────────── */
-.aic-bubble--user .aic-bubble-inner {
+.aic-bubble--user .ai-bubble-inner {
   background: linear-gradient(145deg, #1a96da 0%, #2563eb 55%, #1d4ed8 100%);
   color: #fff;
   border-bottom-right-radius: 4px;
-  box-shadow:
-    0 4px 18px rgba(37,99,235,0.32),
-    0 1px 4px rgba(0,0,0,0.14),
-    inset 0 1px 0 rgba(255,255,255,0.18);
 }
 
 /* Top-edge shine line */
-.aic-bubble--user .aic-bubble-inner::before {
+.aic-bubble--user .ai-bubble-inner::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -148,22 +145,18 @@
 }
 
 /* ── Assistant bubbles ───────────────────────────────────── */
-.aic-bubble--assistant .aic-bubble-inner {
+.aic-bubble--assistant .ai-bubble-inner {
   background: rgba(255,255,255,0.88);
   color: var(--text, #0f172a);
   border-bottom-left-radius: 4px;
   border: 1px solid rgba(0,0,0,0.07);
   border-left: 3px solid rgba(99,102,241,0.3);
-  box-shadow:
-    0 2px 12px rgba(0,0,0,0.06),
-    0 1px 3px rgba(0,0,0,0.04),
-    inset 0 1px 0 rgba(255,255,255,0.8);
   backdrop-filter: blur(4px);
 }
 
-.aic-thinking .aic-bubble-inner { opacity: 0.45; font-style: italic; }
+.aic-thinking .ai-bubble-inner { opacity: 0.45; font-style: italic; }
 
-.aic-bubble--error .aic-bubble-inner {
+.aic-bubble--error .ai-bubble-inner {
   background: rgba(239,68,68,0.07);
   border: 1px solid rgba(239,68,68,0.25);
   border-left: 3px solid rgba(239,68,68,0.6);
@@ -209,18 +202,6 @@
 
 /* ── Input bar ───────────────────────────────────────────────────────────── */
 
-.aic-input-bar {
-  flex-shrink: 0;
-  border-top: none;
-  padding: 7px 8px 9px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  background: var(--surface, #fff);
-  border-radius: 12px;
-  margin-bottom: 8px;
-}
-
 .aic-token-row {
   display: flex;
   align-items: center;
@@ -232,8 +213,9 @@
   font-family: var(--code-font, "JetBrains Mono", monospace);
 }
 
-/* Animated gradient border — 2px, faster flow for energy */
 .aic-dialog-wrap {
+  flex-shrink: 0;
+  margin: 0 8px 8px;
   border-radius: 12px;
   overflow: hidden;
   background:
@@ -244,94 +226,9 @@
   animation: ai-border-flow 3s linear infinite;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   DARK / GREY OVERRIDES
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-[data-theme="dark"],
-[data-theme="grey"] {
-  --aic-user-gradient: linear-gradient(145deg, #1a76c8 0%, #2563eb 55%, #1d4ed8 100%);
-  --aic-user-shadow:   rgba(37,99,235,0.4);
-  --aic-bot-bg:        rgba(255,255,255,0.055);
-  --aic-bot-border:    rgba(255,255,255,0.08);
-}
-
-[data-theme="dark"]  .aic-bubble--user .aic-bubble-inner,
-[data-theme="grey"]  .aic-bubble--user .aic-bubble-inner {
-  background: var(--aic-user-gradient);
-  box-shadow:
-    0 4px 18px var(--aic-user-shadow),
-    0 1px 4px rgba(0,0,0,0.25),
-    inset 0 1px 0 rgba(255,255,255,0.15);
-}
-
-[data-theme="dark"]  .aic-bubble--assistant .aic-bubble-inner,
-[data-theme="grey"]  .aic-bubble--assistant .aic-bubble-inner {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-left: 3px solid rgba(99,102,241,0.45);
-  color: rgba(220,235,255,0.88);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
-}
-
-[data-theme="dark"]  .aic-input-bar,
-[data-theme="grey"]  .aic-input-bar { background: var(--surface); border-top-color: rgba(255,255,255,0.07); }
-
-[data-theme="dark"]  .aic-dialog-wrap,
-[data-theme="grey"]  .aic-dialog-wrap {
-  background:
-    linear-gradient(var(--surface, rgba(13,17,23,0.96)) 0 100%) padding-box,
-    linear-gradient(90deg, #16a34a 0%, #7c3aed 35%, #06b6d4 65%, #16a34a 100%) border-box;
-  background-size: 100% 100%, 300% 100%;
-}
 
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   AURORA OVERRIDES
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-[data-theme="aurora"] {
-  --aic-user-gradient: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
-  --aic-user-shadow:   rgba(124,58,237,0.45);
-  --aic-bot-bg:        rgba(192,132,252,0.055);
-  --aic-bot-border:    rgba(192,132,252,0.14);
-}
-
-[data-theme="aurora"] .aic-bubble--user .aic-bubble-inner {
-  background: linear-gradient(145deg, #8b5cf6 0%, #6366f1 55%, #4f46e5 100%);
-  box-shadow:
-    0 4px 22px rgba(124,58,237,0.45),
-    0 1px 4px rgba(0,0,0,0.25),
-    inset 0 1px 0 rgba(255,255,255,0.18);
-}
-
-[data-theme="aurora"] .aic-bubble--assistant .aic-bubble-inner {
-  background: rgba(99,102,241,0.07);
-  border: 1px solid rgba(192,132,252,0.15);
-  border-left: 3px solid rgba(192,132,252,0.55);
-  color: rgba(230,220,255,0.9);
-  backdrop-filter: blur(14px);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 2px 12px rgba(99,102,241,0.08);
-}
-
-[data-theme="aurora"] .aic-input-bar {
-  background: var(--surface, rgba(7,7,26,0.96));
-  border-top-color: rgba(99,102,241,0.2);
-}
-
-[data-theme="aurora"] .aic-dialog-wrap {
-  background:
-    linear-gradient(var(--surface, #07071a) 0 100%) padding-box,
-    linear-gradient(90deg, #c084fc 0%, #6366f1 35%, #06b6d4 65%, #c084fc 100%) border-box;
-  background-size: 100% 100%, 300% 100%;
-  border-color: transparent;
-}
-
-
-[data-theme="aurora"] .aic-bubble--error .aic-bubble-inner {
+[data-theme="aurora"] .aic-bubble--error .ai-bubble-inner {
   background: rgba(239,68,68,0.08);
   border-color: rgba(239,68,68,0.3);
   color: #f87171;

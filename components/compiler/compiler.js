@@ -118,7 +118,13 @@ sys.stderr = _err
 
 _rich = []
 _exc  = None
-_ns   = {'__name__': '__main__'}
+
+# ── Shared kernel namespace (Jupyter-like) ─────────────────────────────────
+# First call initialises _dp_kernel_ns in Pyodide's global scope;
+# subsequent calls reuse it so Cell 1 imports are visible in Cell 2.
+if '_dp_kernel_ns' not in dir():
+    _dp_kernel_ns = {'__name__': '__main__'}
+_ns = _dp_kernel_ns
 
 try:
     exec(_user_code, _ns)
@@ -397,6 +403,46 @@ export async function compile(code, mode) {
 
 export function preloadPython() {
   _getPyodide().catch(() => {});
+}
+
+// ── Restart kernel — clears shared namespace, all cell variables reset ────────
+export async function resetKernel() {
+  if (_pyodide) {
+    _pyodide.runPython('_dp_kernel_ns = {"__name__": "__main__"}');
+    _dispatch('ready', 'Kernel restarted — variables cleared');
+  }
+}
+
+// ── Inject DataFrame — load CSV string into the shared kernel as a variable ───
+// Called from the "Load Data" button after parsing CSV/Excel on the JS side.
+export async function injectDataFrame(varName, csvString) {
+  const py = await _getPyodide();
+  _dispatch('running', `Loading "${varName}"…`);
+
+  // Ensure shared namespace exists (mirrors RUNNER logic)
+  py.runPython(`
+if '_dp_kernel_ns' not in dir():
+    _dp_kernel_ns = {'__name__': '__main__'}
+`);
+
+  // Pass data via Pyodide globals (avoids all quoting / escape issues)
+  py.globals.set('_dp_inject_csv',  csvString);
+  py.globals.set('_dp_inject_name', varName);
+
+  try {
+    py.runPython(`
+import pandas as _pd_inj, io as _io_inj
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_csv(_io_inj.StringIO(_dp_inject_csv))
+del _pd_inj, _io_inj
+`);
+  } finally {
+    py.globals.delete('_dp_inject_csv');
+    py.globals.delete('_dp_inject_name');
+  }
+
+  const rows = csvString.split('\n').length - 1;
+  _dispatch('ready', `"${varName}" ready — ${rows} rows`);
+  return { varName, rows };
 }
 
 export async function getPyodide() {

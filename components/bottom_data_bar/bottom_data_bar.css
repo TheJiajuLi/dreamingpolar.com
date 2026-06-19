@@ -1,14 +1,13 @@
 #bottom-data-bar {
   position: fixed;
   bottom: 0;
-  left: var(--vt-w, 44px);
+  left: 0;
   right: 0;
   height: var(--bottom-bar-h, 44px);
   display: flex;
   align-items: center;
   padding: 0 16px;
-  background: var(--surface, #ffffff);
-  border-top: 1px solid var(--border, #e2e8f0);
+  background: var(--outer-bg, var(--surface, #c8d0da));
   box-sizing: border-box;
   user-select: none;
   z-index: 10;
@@ -27,6 +26,7 @@
   font-family: var(--code-font, "JetBrains Mono", monospace);
   white-space: nowrap;
 }
+.bdb-slot[hidden] { display: none; }
 
 /* ── AI token slot ────────────────────────────────────── */
 
@@ -35,13 +35,16 @@
 /* ── Compiler slot overrides ─────────────────────────── */
 
 .bdb-compiler-slot {
-  /* inherits compiler-status-bar positioning — reset non-applicable rules */
   position: static;
   padding: 0;
   min-height: unset;
   flex: 1;
-  max-width: 480px;
+  max-width: 380px;
+  overflow: hidden;
 }
+
+/* Keep pct label visible but don't let it push past the bar */
+.bdb-compiler-slot .status-pct { margin-left: 8px; }
 
 /* Fullscreen: hide bar */
 body.dp-fullscreen #bottom-data-bar { display: none; }
