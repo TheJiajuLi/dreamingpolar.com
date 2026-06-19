@@ -25,10 +25,6 @@ const CLEAR_ICON = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" 
 // id must be unique across ALL vt-btn-activated events in the app.
 const VT_DEFS = [
   {
-    id: 'gen-terminal', label: 'ARIA Terminal',
-    icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
-  },
-  {
     id: 'gen-import', label: 'Import Data',
     icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
   },
@@ -363,6 +359,8 @@ function setupGenerativeScreen() {
   const codePanel = document.createElement('div');
   codePanel.className = 'gen-code-panel';
 
+  // Editor element kept in memory for onInsert / keyboard shortcuts,
+  // but NOT added to the DOM — the terminal output fills the panel instead.
   const editorWrap = document.createElement('div');
   editorWrap.className = 'code-editor-area gen-editor-wrap';
 
@@ -376,7 +374,8 @@ function setupGenerativeScreen() {
   editor.placeholder  = PLACEHOLDER;
   editor.value        = localStorage.getItem(CODE_KEY) ?? '';
   editorWrap.appendChild(editor);
-  codePanel.appendChild(editorWrap);
+  // editorWrap is intentionally NOT added to codePanel
+  // — the terminal output fills the full panel.
 
   const outputPanel = document.createElement('div');
   outputPanel.className     = 'gen-output-panel';
@@ -472,40 +471,8 @@ function setupGenerativeScreen() {
   }
 
   function _doInject(termOutput, termBody, termInputRow) {
-    const editorResizeHandle = document.createElement('div');
-    editorResizeHandle.className = 'gen-editor-resize-handle';
-    codePanel.append(editorResizeHandle, outputPanel, termOutput);
-
-    let _rStartY = 0, _rStartH = 0;
-    const _startResize = (startY) => {
-      _rStartY = startY;
-      _rStartH = editorWrap.getBoundingClientRect().height;
-      document.body.style.cursor     = 'row-resize';
-      document.body.style.userSelect = 'none';
-      const onMove = (clientY) => {
-        const panelH = termBody.getBoundingClientRect().height;
-        const maxH   = Math.max(120, panelH * 0.72);
-        editorWrap.style.height = Math.max(56, Math.min(_rStartH + clientY - _rStartY, maxH)) + 'px';
-      };
-      const onUp = () => {
-        document.body.style.cursor     = '';
-        document.body.style.userSelect = '';
-        document.removeEventListener('mousemove', mm);
-        document.removeEventListener('mouseup',   mu);
-        document.removeEventListener('touchmove', tm);
-        document.removeEventListener('touchend',  tu);
-      };
-      const mm = e => onMove(e.clientY);
-      const mu = () => onUp();
-      const tm = e => { e.preventDefault(); onMove(e.touches[0].clientY); };
-      const tu = () => onUp();
-      document.addEventListener('mousemove', mm);
-      document.addEventListener('mouseup',   mu);
-      document.addEventListener('touchmove', tm, { passive: false });
-      document.addEventListener('touchend',  tu);
-    };
-    editorResizeHandle.addEventListener('mousedown', e => { e.preventDefault(); _startResize(e.clientY); });
-    editorResizeHandle.addEventListener('touchstart', e => { e.preventDefault(); _startResize(e.touches[0].clientY); }, { passive: false });
+    // outputPanel and termOutput fill the code panel — no editor/resize handle
+    codePanel.append(outputPanel, termOutput);
 
     termBody.insertBefore(codePanel, termInputRow);
 
