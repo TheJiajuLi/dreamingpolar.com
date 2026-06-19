@@ -69,4 +69,211 @@
   0%, 60%, 100% { transform: translateY(0);    opacity: 0.3; }
   30%           { transform: translateY(-4px); opacity: 1;   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Kernel Boot Screen  —  Bloomberg Terminal-style initialisation overlay
+   All colours follow the existing CSS-variable system; only the accent
+   (#2563eb, same as .compiler-status-bar.loading) is hard-coded because
+   the rest of the codebase does the same for that particular hue.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.kbs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Dark veil; doesn't obstruct the header / toolbar */
+  background: rgba(0, 0, 0, 0.68);
+  animation: kbs-veil-in 0.18s ease both;
+}
+
+@keyframes kbs-veil-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.kbs-overlay--done {
+  animation: kbs-veil-out 0.5s ease both;
+  pointer-events: none;
+}
+
+@keyframes kbs-veil-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ── Panel ─────────────────────────────────────────────────────────────────── */
+
+.kbs-panel {
+  width: min(480px, 93vw);
+  background: var(--code-bg, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  font-size: 0.75rem;
+  position: relative;
+  overflow: hidden;
+  /* Subtle CRT scan-line texture */
+  --kbs-scan: rgba(0, 0, 0, 0.07);
+}
+
+.kbs-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 3px,
+    var(--kbs-scan) 3px,
+    var(--kbs-scan) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+
+.kbs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 7px;
+  border-bottom: 1px solid var(--border, #30363d);
+  position: relative;
+  z-index: 3;
+}
+
+.kbs-header-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--text-muted, #8b949e);
+  text-transform: uppercase;
+}
+
+.kbs-header-tag {
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.45);
+  padding: 1px 7px;
+  text-transform: uppercase;
+  /* Blink 3× then settle */
+  animation: kbs-tag-blink 1.8s step-start 1 both;
+}
+
+@keyframes kbs-tag-blink {
+  0%,  20%, 40%, 60% { opacity: 1; }
+  10%, 30%, 50%      { opacity: 0; }
+  61%, 100%          { opacity: 1; }
+}
+
+/* ── Log area ──────────────────────────────────────────────────────────────── */
+
+.kbs-log {
+  min-height: 110px;
+  max-height: 220px;
+  padding: 10px 14px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 3;
+}
+
+.kbs-log::-webkit-scrollbar { display: none; }
+
+.kbs-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  animation: kbs-line-in 0.14s ease both;
+}
+
+@keyframes kbs-line-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.kbs-prompt {
+  color: #2563eb;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.kbs-line-text {
+  color: var(--text, #e6edf3);
+  opacity: 0.85;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+/* Blinking block cursor */
+.kbs-cursor {
+  display: inline-block;
+  color: #2563eb;
+  font-size: 0.6rem;
+  vertical-align: middle;
+  margin-left: 3px;
+  animation: kbs-blink 1s step-start infinite;
+  user-select: none;
+}
+
+@keyframes kbs-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* ── Progress bar ──────────────────────────────────────────────────────────── */
+
+.kbs-progress-wrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  position: relative;
+  z-index: 3;
+}
+
+.kbs-progress-bar {
+  height: 100%;
+  background: #2563eb;
+  width: 0%;
+  transition: width 0.38s ease-out;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+
+.kbs-footer {
+  padding: 7px 14px;
+  border-top: 1px solid var(--border, #30363d);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #8b949e);
+  opacity: 0.5;
+  position: relative;
+  z-index: 3;
+  user-select: none;
+}
+
+/* ── Theme overrides ───────────────────────────────────────────────────────── */
+
+/* Light: darken the veil slightly more so the panel pops */
+:root:not([data-theme]) .kbs-overlay,
+[data-theme="light"]    .kbs-overlay {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* Aurora: use its deep-space code background */
+[data-theme="aurora"] .kbs-panel { background: var(--code-bg, #07071a); }
+
+/* Mobile: take more width */
+@media (max-width: 480px) {
+  .kbs-panel { width: 98vw; font-size: 0.7rem; }
+}
 ;
