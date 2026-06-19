@@ -228,3 +228,199 @@
   .gen-editor-wrap { height: 150px; }
   .gen-editor-wrap .code-editor { font-size: 0.82rem; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════════
+   Generative Screen — Multi-view data analysis layout
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── View container fills the screen ────────────────────────────────────────── */
+
+.gen-view-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Every view: hidden by default ──────────────────────────────────────────── */
+
+.gen-view {
+  display: none;
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gen-view--active { display: flex; }
+
+/* ── Terminal view: expose existing terminal-strip layout ────────────────────── */
+
+.gen-terminal-view {
+  flex-direction: column;
+}
+
+/* ══ Import view ════════════════════════════════════════════════════════════════ */
+
+.gen-import-view {
+  align-items: center;
+  justify-content: center;
+  background: var(--surface, #ffffff);
+  padding: 32px 24px;
+}
+
+.gen-import-inner {
+  max-width: 480px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.gen-import-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text, #0f172a);
+}
+
+.gen-import-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.gen-import-btn-wrap {
+  margin: 8px 0;
+}
+
+/* Upsize the load-data-btn in this context */
+.gen-import-btn-wrap .load-data-btn {
+  font-size: 1.1rem;
+  padding: 10px 24px;
+  border-radius: 8px;
+}
+
+.gen-import-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted, #94a3b8);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.gen-import-hint code {
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  font-size: 0.76rem;
+  background: var(--bg, #f1f5f9);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ══ Charts view ════════════════════════════════════════════════════════════════ */
+
+.gen-charts-view {
+  background: var(--surface, #ffffff);
+}
+
+.gen-charts-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  flex-shrink: 0;
+  height: 42px;
+}
+
+.gen-charts-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gen-charts-refresh {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+}
+
+.gen-charts-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gen-charts-canvas-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.gen-charts-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--text-muted, #94a3b8);
+  padding: 32px;
+  text-align: center;
+}
+
+.gen-charts-empty p {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ══ Models view ════════════════════════════════════════════════════════════════ */
+
+.gen-models-view {
+  align-items: center;
+  justify-content: center;
+  background: var(--surface, #ffffff);
+}
+
+.gen-models-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  color: var(--text-muted, #94a3b8);
+  padding: 40px 24px;
+  max-width: 360px;
+}
+
+.gen-models-empty h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text, #0f172a);
+}
+
+.gen-models-empty p {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── VT button active accent colour for gen views (orange, distinct from coding) */
+
+.gen-vt-btn.active::before {
+  background: #f97316 !important;
+}
+
+[data-theme="dark"]  .gen-vt-btn.active,
+[data-theme="grey"]  .gen-vt-btn.active,
+[data-theme="aurora"] .gen-vt-btn.active {
+  color: #fb923c;
+}
