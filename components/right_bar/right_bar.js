@@ -183,7 +183,13 @@ if (document.readyState === 'loading') {
 }
 
 // ── React to kernel mutations dispatched by compiler.js ───────────────────────
-// Refreshes the stats panel whenever user code runs or a DataFrame is injected.
+// Guard against re-entrancy: the stats query itself triggers kernel-mutation
+// (via afterKernelMutation in _runPython), which would cause an infinite loop.
+let _statsRefreshing = false;
 document.addEventListener('kernel-mutation', ({ detail: { varName = 'df' } }) => {
-  renderKernelStatus(varName).catch(() => {});
+  if (_statsRefreshing) return;
+  _statsRefreshing = true;
+  renderKernelStatus(varName)
+    .catch(() => {})
+    .finally(() => { _statsRefreshing = false; });
 });
