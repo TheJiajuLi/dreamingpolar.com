@@ -311,76 +311,6 @@
   border-radius: 2px;
 }
 
-/* ══ Charts view ══════════════════════════════════════════════════════════════ */
-
-.gen-charts-view {
-  background: var(--code-bg, #0d1117);
-}
-
-.gen-charts-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--border, #e2e8f0);
-  flex-shrink: 0;
-  height: 36px;
-  background: var(--code-bg, #0d1117);
-}
-
-.gen-charts-title {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted, #8b949e);
-  font-family: var(--code-font, "JetBrains Mono", monospace);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.gen-charts-refresh {
-  flex-shrink: 0;
-  font-size: 0.65rem;
-  font-family: var(--code-font, "JetBrains Mono", monospace);
-}
-
-.gen-charts-canvas-wrap {
-  flex: 1;
-  min-height: 0;
-  padding: 12px;
-  overflow: hidden;
-  position: relative;
-  background: var(--code-bg, #0d1117);
-}
-
-.gen-charts-canvas-wrap canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.gen-charts-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: var(--text-muted, #8b949e);
-  padding: 40px 24px;
-  text-align: center;
-}
-
-.gen-charts-empty p {
-  font-size: 0.72rem;
-  line-height: 1.6;
-  margin: 0;
-  font-family: var(--code-font, "JetBrains Mono", monospace);
-  max-width: 300px;
-}
-
 /* ══ Models view ══════════════════════════════════════════════════════════════ */
 
 .gen-models-view {
@@ -776,3 +706,22 @@
 [data-theme="dark"]   .aria-chat-card-body code,
 [data-theme="grey"]   .aria-chat-card-body code,
 [data-theme="aurora"] .aria-chat-card-body code { background: rgba(255,255,255,0.06); }
+
+/* ── Embedded chart canvas inside a chat card ─────────────────────────────── */
+
+.aria-chat-card-chart {
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding: 12px;
+  height: 220px;
+  position: relative;
+  background: var(--surface, #ffffff);
+}
+
+.aria-chat-card-chart canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+[data-theme="dark"]   .aria-chat-card-chart,
+[data-theme="grey"]   .aria-chat-card-chart,
+[data-theme="aurora"] .aria-chat-card-chart { background: var(--surface, #161b22); }
