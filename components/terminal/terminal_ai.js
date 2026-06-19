@@ -103,8 +103,10 @@ async function _dispatchCode(lang, code, print) {
 }
 
 // ── Public entry (called by terminal_commands.js 'ai' handler) ─────────────────
+// options.system — override the mode-derived system prompt (used when df context
+//                  is available and SYSTEM_DATA_ANALYSIS should be used instead)
 
-export async function runAiPrompt(prompt, print) {
+export async function runAiPrompt(prompt, print, options = {}) {
   if (!prompt) { print('No prompt given.'); return; }
 
   // Fresh invocation outside chat mode → start clean conversation
@@ -118,7 +120,7 @@ export async function runAiPrompt(prompt, print) {
     return;
   }
 
-  print(`\x1b[2m⚙  ${prompt}\x1b[0m`);
+  print(`\x1b[2m⚙  ${prompt.split('\n').pop()}\x1b[0m`);  // show last line (task, not full context)
 
   try {
     const { SYSTEM_BY_MODE, SYSTEM_TERMINAL } = await import('../ai/ai_client.js');
@@ -126,7 +128,7 @@ export async function runAiPrompt(prompt, print) {
 
     const lang       = detected;
     const persona    = getActivePersona();
-    const modeSystem = SYSTEM_BY_MODE[lang] ?? SYSTEM_TERMINAL;
+    const modeSystem = options.system ?? (SYSTEM_BY_MODE[lang] ?? SYSTEM_TERMINAL);
     const system     = `${persona.buildSystemPrompt()}\n\n${modeSystem}${TERMINAL_PLATFORM_CONTEXT}`;
 
     _history.push({ role: 'user', content: prompt });

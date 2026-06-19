@@ -61,10 +61,70 @@ registerCommand('clear', () => {
   throw '__CLEAR__';
 });
 
+// ── df context helper ──────────────────────────────────────
+// Runs a lightweight Python snippet to pull column names, dtypes,
+// row count, null count and first 3 rows from df in the kernel.
+// Returns null if df doesn't exist or kernel isn't ready.
+
+const _DF_CONTEXT_PY = `
+import json as _j, pandas as _pd
+try:
+    _df = globals().get('df')
+    if isinstance(_df, _pd.DataFrame) and len(_df) > 0:
+        _recs = []
+        for _, _row in _df.head(3).iterrows():
+            _r = {}
+            for _c in _df.columns:
+                _v = _row[_c]
+                try:
+                    import math as _m
+                    _r[str(_c)] = None if (isinstance(_v, float) and _m.isnan(_v)) else (
+                        _v if isinstance(_v, (int, float, str, bool, type(None))) else str(_v))
+                except Exception:
+                    _r[str(_c)] = str(_v)
+            _recs.append(_r)
+        print(_j.dumps({
+            'shape':   [int(_df.shape[0]), int(_df.shape[1])],
+            'columns': list(_df.columns),
+            'dtypes':  {str(c): str(t) for c, t in _df.dtypes.items()},
+            'head3':   _recs,
+            'nulls':   int(_df.isnull().sum().sum()),
+        }))
+    else:
+        print(_j.dumps({}))
+except Exception:
+    print(_j.dumps({}))
+`.trim();
+
+async function _getDfContext() {
+  try {
+    const { compile } = await import('../compiler/compiler.js');
+    const outputs = await compile(_DF_CONTEXT_PY, 'python');
+    const text    = outputs.find(o => o.type === 'text')?.content?.trim() ?? '';
+    if (!text) return null;
+    const info = JSON.parse(text);
+    return info.shape ? info : null;
+  } catch { return null; }
+}
+
+function _formatDfPrompt(info, task) {
+  const colLines = info.columns
+    .map(c => `  ${c}: ${info.dtypes[c]}`)
+    .join('\n');
+  const headJson = JSON.stringify(info.head3, null, 2);
+  return (
+    `[当前 DataFrame 上下文]\n` +
+    `df — ${info.shape[0].toLocaleString()} 行 × ${info.shape[1]} 列，${info.nulls} 个空值\n` +
+    `列名与类型:\n${colLines}\n\n` +
+    `前3行样本:\n${headJson}\n\n` +
+    `用户任务: ${task}`
+  );
+}
+
 // ── AI command ─────────────────────────────────────────────
 //  Usage:
 //    ai                          → show prompt hint
-//    ai <description>            → auto-routes: text reply in terminal or code in panel
+//    ai <description>            → enriched with df context if available
 //    ai<description>             → same, angle-bracket style
 
 let _aiPendingPrompt = false;
@@ -77,7 +137,16 @@ registerCommand('ai', async (args, print) => {
   }
 
   _aiPendingPrompt = false;
-  await runAiPrompt(args.join(' '), print);
+  const task   = args.join(' ');
+  const dfInfo = await _getDfContext();
+
+  if (dfInfo) {
+    print('\x1b[2m⊕ df 上下文已附加 — ARIA 将基于真实数据作答\x1b[0m');
+    const { SYSTEM_DATA_ANALYSIS } = await import('../ai/ai_without_personalities.js');
+    await runAiPrompt(_formatDfPrompt(dfInfo, task), print, { system: SYSTEM_DATA_ANALYSIS });
+  } else {
+    await runAiPrompt(task, print);
+  }
 });
 
 // ── fix — ARIA debugs & rewrites editor code ───────────────
@@ -116,10 +185,17 @@ registerCommand('run', (args, print) => {
   print('\x1b[2m▶ Running editor code…\x1b[0m');
 });
 
-export function consumeAiPending(line, print) {
+export async function consumeAiPending(line, print) {
   if (!_aiPendingPrompt) return false;
   _aiPendingPrompt = false;
-  runAiPrompt(line.trim(), print);
+  const task   = line.trim();
+  const dfInfo = await _getDfContext();
+  if (dfInfo) {
+    const { SYSTEM_DATA_ANALYSIS } = await import('../ai/ai_without_personalities.js');
+    await runAiPrompt(_formatDfPrompt(dfInfo, task), print, { system: SYSTEM_DATA_ANALYSIS });
+  } else {
+    await runAiPrompt(task, print);
+  }
   return true;
 }
 
