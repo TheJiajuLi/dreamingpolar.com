@@ -1,5 +1,5 @@
 import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
-import { init as initNotebook } from '../../customise_code_block/customise_code_block.js';
+import { init as initNotebook, addImportedCell } from '../../customise_code_block/customise_code_block.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
 import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
@@ -50,12 +50,11 @@ function setupCodingScreen() {
 
   const loadDataBtn = createLoadDataBtn({
     onLoad: (varName, rows, filename) => {
-      // Print a hint into any visible cell as a comment
-      const firstEditor = nbLeft.querySelector('.nb-editor');
-      if (firstEditor && !firstEditor.value.trim()) {
-        firstEditor.value = `# "${filename}" loaded as ${varName} (${rows} rows)\nprint(${varName}.shape)\n${varName}.head()`;
-        firstEditor.dispatchEvent(new Event('input'));
-      }
+      // Always insert a new cell with the preview — handles second/third imports correctly
+      const previewCode =
+        `# "${filename}" loaded as ${varName} (${rows} rows)\n` +
+        `print(${varName}.shape)\n${varName}.head()`;
+      addImportedCell('python', previewCode, { autoRun: true });
     },
   });
 

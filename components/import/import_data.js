@@ -3,8 +3,13 @@
 // kernel namespace. After loading, users can type  df.head()  in any cell.
 //
 // Excel support: dynamically loads SheetJS from CDN on first .xlsx/.xls file.
+//
+// TWO export paths:
+//   createLoadDataBtn   — Power Notebook path: injects into Python kernel via Pyodide
+//   createQuickImportBtn — Quick Analysis path: pure JS, stores in dataset_store, no Python
 
 import { injectDataFrame } from '../compiler/compiler.js';
+import { setDataset } from '../shared/dataset_store.js';
 
 const XLSX_CDN = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
 
@@ -105,6 +110,101 @@ export function createLoadDataBtn({ varName = 'df', onLoad } = {}) {
       } catch (e) {
         _toast(`✗ Load failed: ${e.message}`);
         console.error('[import_data]', e);
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = '📂';
+      }
+    });
+
+    input.click();
+  });
+
+  return btn;
+}
+
+// ── CSV/text → { columns, dtypes, rows } ─────────────────────────────────────
+// Pure JS parser — no Pyodide needed.
+
+function _parseToDataset(csvText, filename) {
+  const lines = csvText.trim().split(/\r?\n/);
+  if (lines.length < 1) return null;
+
+  // Parse header
+  const columns = _splitCsvLine(lines[0]);
+
+  // Parse rows
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = _splitCsvLine(lines[i]);
+    if (vals.length === 0) continue;
+    const row = {};
+    columns.forEach((col, j) => { row[col] = vals[j] ?? ''; });
+    rows.push(row);
+  }
+
+  // Infer dtypes from first 20 rows
+  const dtypes = {};
+  for (const col of columns) {
+    const samples = rows.slice(0, 20).map(r => r[col]).filter(v => v !== '');
+    dtypes[col] = samples.length > 0 && samples.every(v => !isNaN(parseFloat(v)) && isFinite(v))
+      ? 'float64' : 'object';
+  }
+
+  return { name: filename, columns, dtypes, rows };
+}
+
+function _splitCsvLine(line) {
+  const fields = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i <= line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if ((c === ',' || c === undefined) && !inQ) {
+      fields.push(cur.replace(/^"|"$/g, '').trim());
+      cur = '';
+    } else { cur += (c ?? ''); }
+  }
+  return fields;
+}
+
+// ── Quick Analysis import button ──────────────────────────────────────────────
+// Pure JS path: parses CSV/Excel client-side, stores in dataset_store.
+// Does NOT touch Pyodide — instant, works even before Python loads.
+//
+// onLoad(dataset) — optional callback with the parsed dataset object
+
+export function createQuickImportBtn({ onLoad } = {}) {
+  const btn = document.createElement('button');
+  btn.className   = 'sc-btn load-data-btn';
+  btn.title       = 'Import CSV / Excel — instant, no Python needed';
+  btn.textContent = '📂';
+
+  btn.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type    = 'file';
+    input.accept  = '.csv,.xlsx,.xls,.txt';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    input.addEventListener('change', async () => {
+      const file = input.files[0];
+      input.remove();
+      if (!file) return;
+
+      btn.disabled    = true;
+      btn.textContent = '⌛ Reading…';
+
+      try {
+        const csvText = await _fileToCsv(file);
+        const dataset = _parseToDataset(csvText, file.name);
+        if (!dataset) throw new Error('Could not parse file');
+
+        setDataset(dataset);   // ← stores + dispatches 'dataset-updated'
+        _toast(`✓ "${file.name}" — ${dataset.rows.length.toLocaleString()} rows · ${dataset.columns.length} cols`);
+        onLoad?.(dataset);
+      } catch (e) {
+        _toast(`✗ Import failed: ${e.message}`);
+        console.error('[import_data quick]', e);
       } finally {
         btn.disabled    = false;
         btn.textContent = '📂';

@@ -1,6 +1,5 @@
-import { compile } from '../../compiler/compiler.js';
-import { renderBlocks } from '../compiling_screen/compiling_screen_utility.js';
-import { createLoadDataBtn } from '../../import/import_data.js';
+import { createQuickImportBtn } from '../../import/import_data.js';
+import { getDataset } from '../../shared/dataset_store.js';
 import { createAriaChat } from './aria_chat.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -34,38 +33,47 @@ function _loadChartJs() {
   return _chartJsPromise;
 }
 
-// ── Python: extract bar chart data from df ───────────────────────────────────
-const CHART_PY = `
-import json as _j, pandas as _pd
-try:
-    _df = _dp_kernel_ns.get('df')
-    if isinstance(_df, _pd.DataFrame) and len(_df) > 0:
-        _num = _df.select_dtypes(include='number').columns.tolist()
-        _cat = _df.select_dtypes(include=['object', 'category']).columns.tolist()
-        if _num and _cat:
-            _cn, _cc = _num[0], _cat[0]
-            _grp = _df.groupby(_cc)[_cn].sum().nlargest(10)
-            print(_j.dumps({'col': _cn, 'groupBy': _cc,
-                'labels': [str(x) for x in _grp.index],
-                'values': [round(float(v), 2) for v in _grp.values]}))
-        elif _num:
-            _cn = _num[0]
-            _s = _df[_cn].dropna().head(15)
-            print(_j.dumps({'col': _cn, 'groupBy': None,
-                'labels': [str(i) for i in range(len(_s))],
-                'values': [round(float(v), 2) for v in _s.tolist()]}))
-        else:
-            print(_j.dumps({}))
-    else:
-        print(_j.dumps({}))
-except Exception:
-    print(_j.dumps({}))
-`.trim();
+// ── Chart data from dataset_store (pure JS, no Python) ──────────────────────
+function _getChartData() {
+  const ds = getDataset();
+  if (!ds || !ds.rows?.length) return null;
 
-async function _fetchChartData() {
-  const outputs = await compile(CHART_PY, 'python');
-  const text    = outputs.find(o => o.type === 'text')?.content?.trim() ?? '';
-  return text ? JSON.parse(text) : null;
+  const { columns, dtypes, rows } = ds;
+  const numCols = columns.filter(c => dtypes[c] === 'float64' || dtypes[c] === 'int64');
+  const catCols = columns.filter(c => dtypes[c] === 'object');
+
+  if (!numCols.length) return null;
+
+  const numCol = numCols[0];
+
+  if (catCols.length) {
+    // Group by first categorical, sum first numeric — top 10
+    const catCol = catCols[0];
+    const grouped = {};
+    for (const row of rows) {
+      const key = String(row[catCol] ?? '(blank)');
+      const val = parseFloat(row[numCol]);
+      if (!isNaN(val)) grouped[key] = (grouped[key] ?? 0) + val;
+    }
+    const sorted = Object.entries(grouped)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+    return {
+      col:     numCol,
+      groupBy: catCol,
+      labels:  sorted.map(([k]) => k),
+      values:  sorted.map(([, v]) => Math.round(v * 100) / 100),
+    };
+  }
+
+  // Numeric only — first 15 rows
+  const slice = rows.slice(0, 15);
+  return {
+    col:     numCol,
+    groupBy: null,
+    labels:  slice.map((_, i) => String(i)),
+    values:  slice.map(r => { const v = parseFloat(r[numCol]); return isNaN(v) ? 0 : Math.round(v * 100) / 100; }),
+  };
 }
 
 // ── Import view ──────────────────────────────────────────────────────────────
@@ -113,7 +121,7 @@ function _buildChartsView() {
 
   const refreshBtn = document.createElement('button');
   refreshBtn.className   = 'sc-btn gen-charts-refresh';
-  refreshBtn.title       = 'Refresh from kernel';
+  refreshBtn.title       = 'Refresh chart';
   refreshBtn.textContent = '↻ Refresh';
 
   toolbar.append(titleEl, refreshBtn);
@@ -126,24 +134,23 @@ function _buildChartsView() {
   canvasWrap.appendChild(canvas);
 
   const emptyMsg = document.createElement('div');
-  emptyMsg.className   = 'gen-charts-empty';
-  emptyMsg.innerHTML   = `
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    <p>No data loaded yet — import a CSV first, then click Refresh.</p>
-  `;
+  emptyMsg.className = 'gen-charts-empty';
+  emptyMsg.innerHTML =
+    `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>` +
+    `<p>Import a CSV or Excel file — chart renders automatically, no Python needed.</p>`;
 
   div.append(toolbar, canvasWrap, emptyMsg);
 
   let _chartInst = null;
 
   async function renderChart() {
-    refreshBtn.disabled   = true;
+    refreshBtn.disabled    = true;
     refreshBtn.textContent = '↻ Loading…';
     emptyMsg.style.display = 'none';
 
     try {
       await _loadChartJs();
-      const data = await _fetchChartData();
+      const data = _getChartData();   // ← pure JS, reads from dataset_store
 
       if (!data || !data.values?.length) {
         canvasWrap.style.display = 'none';
@@ -194,10 +201,19 @@ function _buildChartsView() {
 
   // Auto-render when the view becomes visible for the first time
   div._autoRender = renderChart;
-  // Allow external code to force a refresh (e.g. when kernel-mutation fires
-  // while this view is inactive — on next activation it will re-render)
+  // Allow external code to force a refresh
   div._markStale  = () => { div._autoRender = renderChart; };
   canvasWrap.style.display = 'none';
+
+  // Auto-render when new data is imported (no Python involved)
+  document.addEventListener('dataset-updated', () => {
+    if (div.classList.contains('gen-view--active')) {
+      renderChart();
+    } else {
+      div._markStale();   // render when view is next activated
+      div._autoRender = renderChart;
+    }
+  });
 
   return div;
 }
@@ -292,9 +308,9 @@ function setupGenerativeScreen() {
   modeLabel.textContent = 'Quick Analysis';
   toolbar.appendChild(modeLabel);
 
-  // Import Dataset button — directly opens file picker (no view switch needed)
-  const importBtn = createLoadDataBtn({ varName: 'df' });
-  importBtn.title = 'Import CSV / Excel as df';
+  // Import Dataset button — Quick Analysis lightweight path (no Python)
+  const importBtn = createQuickImportBtn();
+  importBtn.title = 'Import CSV / Excel — instant, no Python needed';
   toolbar.appendChild(importBtn);
 
   const jumpBtn = document.createElement('button');
