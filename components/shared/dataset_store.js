@@ -1,35 +1,57 @@
 // ── Dataset Store — lightweight in-memory dataset registry ───────────────────
-// No Pyodide, no Python. Stores parsed CSV/Excel as plain JS objects.
-// Used by Quick Analysis (generative_screen) so charts and ARIA chat
-// have data without waiting for the Python kernel.
-//
+// Maintains a list of all imported datasets + tracks the active one.
 // Quick Analysis import → setDataset() → 'dataset-updated' event
-// Quick Analysis charts  → getDataset()
-// Quick Analysis ARIA    → getDataset()
-//
-// Power Notebook import  → injectDataFrame() in compiler.js (separate path)
+// Switching active → setActiveDataset(name) → 'dataset-updated' event
 
-/** @type {{ name: string, columns: string[], dtypes: Object, rows: Object[] }|null} */
-let _dataset = null;
+/** @type {Array<{name,columns,dtypes,rows}>} */
+let _datasets = [];
+/** @type {number} index into _datasets */
+let _activeIdx = -1;
 
-/**
- * Store a new dataset and notify listeners.
- * @param {{ name, columns, dtypes, rows }} dataset
- */
-export function setDataset(dataset) {
-  _dataset = dataset ?? null;
+// ── Computed ──────────────────────────────────────────────────────────────────
+function _active() { return _activeIdx >= 0 ? _datasets[_activeIdx] : null; }
+
+function _notify() {
   document.dispatchEvent(new CustomEvent('dataset-updated', {
-    detail: _dataset,
+    detail: { dataset: _active(), all: [..._datasets], activeIdx: _activeIdx },
   }));
 }
 
-/** Return the current dataset, or null if nothing has been imported yet. */
-export function getDataset() {
-  return _dataset;
+// ── Public API ────────────────────────────────────────────────────────────────
+
+/** Add (or replace) a dataset and make it active. */
+export function setDataset(dataset) {
+  if (!dataset) return;
+  // Replace existing dataset with same name, or append new one
+  const existing = _datasets.findIndex(d => d.name === dataset.name);
+  if (existing >= 0) {
+    _datasets[existing] = dataset;
+    _activeIdx = existing;
+  } else {
+    _datasets.push(dataset);
+    _activeIdx = _datasets.length - 1;
+  }
+  _notify();
 }
 
-/** Clear the stored dataset. */
+/** Return the active dataset, or null. */
+export function getDataset() { return _active(); }
+
+/** Return all datasets. */
+export function getAllDatasets() { return [..._datasets]; }
+
+/** Switch the active dataset by name. */
+export function setActiveDataset(name) {
+  const idx = _datasets.findIndex(d => d.name === name);
+  if (idx >= 0 && idx !== _activeIdx) {
+    _activeIdx = idx;
+    _notify();
+  }
+}
+
+/** Remove all datasets. */
 export function clearDataset() {
-  _dataset = null;
-  document.dispatchEvent(new CustomEvent('dataset-updated', { detail: null }));
+  _datasets  = [];
+  _activeIdx = -1;
+  _notify();
 }

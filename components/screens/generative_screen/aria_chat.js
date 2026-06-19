@@ -1,4 +1,4 @@
-import { getDataset } from '../../shared/dataset_store.js';
+import { getDataset, getAllDatasets, setActiveDataset } from '../../shared/dataset_store.js';
 
 // ── Chart.js lazy loader ──────────────────────────────────────────────────────
 const _CHART_JS_CDN = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
@@ -161,6 +161,31 @@ export function createAriaChat() {
     `<span class="aria-chat-header-sub">数据分析助理</span>` +
     `<span class="aria-chat-header-dot" id="aria-chat-dot"></span>`;
 
+  // ── Dataset switcher strip (hidden until ≥1 dataset imported) ─────────────
+  const dsTabs = document.createElement('div');
+  dsTabs.className   = 'aria-ds-tabs';
+  dsTabs.style.display = 'none';   // hidden until first import
+
+  function _rebuildTabs(all, activeIdx) {
+    dsTabs.innerHTML = '';
+    if (!all.length) { dsTabs.style.display = 'none'; return; }
+    dsTabs.style.display = '';
+    all.forEach((ds, i) => {
+      const tab = document.createElement('button');
+      tab.className = 'aria-ds-tab' + (i === activeIdx ? ' aria-ds-tab--active' : '');
+      tab.title     = ds.name;
+      tab.textContent = ds.name.length > 18 ? ds.name.slice(0, 16) + '…' : ds.name;
+      tab.addEventListener('click', () => setActiveDataset(ds.name));
+      dsTabs.appendChild(tab);
+    });
+  }
+
+  // React to dataset changes: rebuild tabs + insert a dataset-switched card
+  document.addEventListener('dataset-updated', ({ detail }) => {
+    if (!detail) return;
+    _rebuildTabs(detail.all ?? [], detail.activeIdx ?? 0);
+  });
+
   const messages = document.createElement('div');
   messages.className = 'aria-chat-messages';
 
@@ -188,7 +213,7 @@ export function createAriaChat() {
   sendBtn.className = 'aria-chat-send'; sendBtn.title = '发送 (Enter)';
   sendBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
   inputRow.append(input, sendBtn);
-  root.append(header, messages, inputRow);
+  root.append(header, dsTabs, messages, inputRow);
 
   let _busy = false;
 
@@ -258,9 +283,28 @@ export function createAriaChat() {
       `<span class="aria-chat-card-time">${_time()}</span>` +
       `</div>` +
       `<div class="aria-chat-card-body" style="opacity:0.75">直接提问即可，ARIA 已读取真实数据（列名、类型、样本行）。</div>`;
-    messages.appendChild(card); messages.scrollTop = messages.scrollHeight;
+    messages.appendChild(card);
+    messages.scrollTop = messages.scrollHeight;
     input.focus();
   };
+
+  // When user switches active dataset via the tab strip, insert a brief note
+  document.addEventListener('dataset-updated', ({ detail }) => {
+    if (!detail?.dataset) return;
+    const ds = detail.dataset;
+    // Only show a switch notice if there are multiple datasets
+    if ((detail.all?.length ?? 0) <= 1) return;
+    const note = document.createElement('div');
+    note.className = 'aria-chat-card aria-chat-card--info';
+    note.innerHTML =
+      `<div class="aria-chat-card-hdr">` +
+      `<span class="aria-chat-card-label" style="color:#f97316">切换</span>` +
+      `<span class="aria-chat-card-q">当前数据集：${_esc(ds.name)} — ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列</span>` +
+      `<span class="aria-chat-card-time">${_time()}</span>` +
+      `</div>`;
+    messages.appendChild(note);
+    messages.scrollTop = messages.scrollHeight;
+  });
 
   return root;
 }

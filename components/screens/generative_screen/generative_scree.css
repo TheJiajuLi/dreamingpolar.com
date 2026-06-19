@@ -443,6 +443,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  overflow: hidden;   /* prevent content escaping flex container */
   font-family: var(--code-font, "JetBrains Mono", monospace);
   background: var(--code-bg, #f8fafc);
 }
@@ -491,6 +492,47 @@
 @keyframes aria-dot-pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.25; }
+}
+
+/* ── Dataset switcher strip ──────────────────────────────────────────────────── */
+
+.aria-ds-tabs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  height: 34px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: var(--code-bg, #f8fafc);
+  scrollbar-width: none;          /* hide horizontal scrollbar */
+}
+.aria-ds-tabs::-webkit-scrollbar { display: none; }
+
+.aria-ds-tab {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 3px 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.aria-ds-tab:hover { border-color: #f97316; color: #f97316; }
+.aria-ds-tab--active {
+  border-color: #f97316;
+  background: rgba(249,115,22,0.08);
+  color: #f97316;
+  font-weight: 700;
 }
 
 /* ── Messages area ───────────────────────────────────────────────────────────── */
