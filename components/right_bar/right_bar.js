@@ -9,13 +9,15 @@
 import { compile } from '../compiler/compiler.js';
 
 // ── Python stats query ────────────────────────────────────────────────────────
-// Looks up `varName` in `_dp_kernel_ns` (the shared compiler namespace).
-// Prints a JSON object with shape/null/memory info, or {} if not found.
+// compile() runs code via exec(_user_code, _ns) where _ns = _dp_kernel_ns.
+// Inside that exec context, globals() returns _ns itself, so we can reach
+// variables by name — but _dp_kernel_ns is NOT a key in _ns, so we must
+// NOT reference it by name. Use globals().get(varName) instead.
 function _buildPython(varName) {
   return `
 import json as _j, pandas as _pd
 try:
-    _df = _dp_kernel_ns.get(${JSON.stringify(varName)})
+    _df = globals().get(${JSON.stringify(varName)})
     if isinstance(_df, _pd.DataFrame) and len(_df) > 0:
         print(_j.dumps({
             'rows':      int(_df.shape[0]),
@@ -25,7 +27,9 @@ try:
         }))
     else:
         print(_j.dumps({}))
-except Exception:
+except Exception as _rb_err:
+    import sys as _sys
+    print(_j.dumps({'__error__': str(_rb_err)}), file=_sys.stderr)
     print(_j.dumps({}))
 `.trim();
 }
@@ -69,8 +73,14 @@ export async function renderKernelStatus(varName = 'df') {
   try {
     const outputs = await compile(_buildPython(varName), 'python');
     const text    = _textOutput(outputs);
+    // Surface any Python-level errors that the snippet reported via stderr
+    const errBlock = outputs.find(o => o.type === 'error');
+    if (errBlock) {
+      console.warn('[right_bar] renderKernelStatus Python error:', errBlock.content);
+    }
     _applyData(text ? JSON.parse(text) : {});
-  } catch {
+  } catch (e) {
+    console.warn('[right_bar] renderKernelStatus failed:', e);
     _applyData({});
   }
 }
