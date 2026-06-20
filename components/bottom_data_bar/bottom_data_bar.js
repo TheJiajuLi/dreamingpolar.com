@@ -7,6 +7,7 @@ bar.innerHTML = `
   <div class="bdb-slot bdb-compiler-slot compiler-status-bar" id="bdb-compiler-slot" hidden>
     Idle — Python loads on first run.
   </div>
+  <div class="bdb-slot bdb-df-slot" id="bdb-df-slot" hidden></div>
 `;
 
 function init() {

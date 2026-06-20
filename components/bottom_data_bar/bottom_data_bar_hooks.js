@@ -1,5 +1,8 @@
+import { getDataset } from '../shared/dataset_store.js';
+
 function getAiSlot()       { return document.getElementById('bdb-ai-slot'); }
 function getCompilerSlot() { return document.getElementById('bdb-compiler-slot'); }
+function getDfSlot()       { return document.getElementById('bdb-df-slot'); }
 
 document.addEventListener('screen-opened', ({ detail: { id } }) => {
   if (id === 'ai-chat')                    getAiSlot()?.removeAttribute('hidden');
@@ -25,3 +28,26 @@ document.addEventListener('compiler-status', ({ detail }) => {
     ? `<span class="status-spinner"><i></i><i></i><i></i></span>${detail.message}${pctLabel}`
     : detail.message;
 });
+
+// ── DataFrame stats slot — pure JS, zero Python ───────────────────────────────
+// Updates on every dataset-updated event. Never touches kernel-mutation.
+function _updateDfSlot() {
+  const slot = getDfSlot();
+  if (!slot) return;
+  const ds = getDataset();
+  if (!ds || !ds.rows.length) { slot.setAttribute('hidden', ''); return; }
+
+  let nulls = 0;
+  for (const row of ds.rows) {
+    for (const col of ds.columns) {
+      const v = row[col];
+      if (v === null || v === undefined || v === '') nulls++;
+    }
+  }
+  const memMB = (new TextEncoder().encode(JSON.stringify(ds.rows)).length / 1048576).toFixed(1);
+
+  slot.removeAttribute('hidden');
+  slot.textContent = `${ds.name}  ${ds.rows.length.toLocaleString()} rows · ${ds.columns.length} cols · ${nulls.toLocaleString()} nulls · ${memMB} MB`;
+}
+
+document.addEventListener('dataset-updated', _updateDfSlot);

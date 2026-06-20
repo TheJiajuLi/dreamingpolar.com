@@ -49,5 +49,13 @@
 /* Fullscreen: hide bar */
 body.dp-fullscreen #bottom-data-bar { display: none; }
 
+/* ── DataFrame stats slot ─────────────────────────────── */
+
+.bdb-df-slot {
+  margin-left: auto;   /* push to the right edge */
+  color: var(--text-muted, #64748b);
+  opacity: 0.8;
+}
+
 /* Mobile: hide */
 @media (max-width: 768px) { #bottom-data-bar { display: none; } }
