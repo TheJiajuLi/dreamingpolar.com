@@ -348,17 +348,50 @@
   font-weight: 700;
 }
 
-.aria-chat-messages {
+/* ── Conversation area: flex:1 wrapper holding per-dataset messages divs ── */
+.aria-chat-conv-area {
   flex: 1;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Each dataset gets its own messages div, absolutely filling the conv-area.
+   Only the --active one is visible; others are display:none. */
+.aria-chat-messages {
+  position: absolute;
+  inset: 0;
+  display: none;
   overflow-y: auto;
   padding: 14px 14px 8px;
-  display: flex;
   flex-direction: column;
   gap: 10px;
   scrollbar-width: thin;
   scrollbar-color: var(--border, #e2e8f0) transparent;
 }
+.aria-chat-messages--active { display: flex; }
+
+/* ── Scroll-to-bottom floating button ─────────────────────────────────────── */
+.aria-chat-scroll-btn {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff);
+  color: var(--text-muted, #64748b);
+  font-size: 0.6rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.aria-chat-scroll-btn:hover { background: var(--bg, #f8fafc); color: var(--text, #0f172a); }
 
 .aria-chat-welcome {
   padding: 8px 0 4px;
@@ -449,40 +482,6 @@
   /* No max-height/overflow here — messages container is the single scroll layer */
 }
 
-/* Collapsed state: shows first 800px with fade gradient */
-.aria-chat-card-body--collapsed {
-  max-height: 800px;
-  overflow: hidden;
-  position: relative;
-}
-.aria-chat-card-body--collapsed::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 80px;
-  background: linear-gradient(to bottom, transparent, var(--surface, #ffffff));
-  pointer-events: none;
-}
-
-/* Expand button — sits directly below the collapsed body */
-.aria-chat-card-expand-btn {
-  display: block;
-  width: 100%;
-  padding: 7px 12px;
-  text-align: center;
-  font-size: 0.6rem;
-  font-family: var(--code-font, "JetBrains Mono", monospace);
-  letter-spacing: 0.05em;
-  background: var(--code-bg, #f8fafc);
-  border: none;
-  border-top: 1px solid var(--border, #e2e8f0);
-  color: #f97316;
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s;
-}
-.aria-chat-card-expand-btn:hover {
-  background: rgba(249,115,22,0.07);
-}
 .aria-chat-card-body strong { font-weight: 700; color: var(--text, #102040); }
 .aria-chat-card-body code {
   font-family: var(--code-font, "JetBrains Mono", monospace);
@@ -561,18 +560,6 @@
 [data-theme="grey"]   .aria-chat-card-body code,
 [data-theme="aurora"] .aria-chat-card-body code { background: rgba(255,255,255,0.06); }
 
-/* Dark theme gradient + expand button adaptation */
-[data-theme="dark"]   .aria-chat-card-body--collapsed::after,
-[data-theme="grey"]   .aria-chat-card-body--collapsed::after,
-[data-theme="aurora"] .aria-chat-card-body--collapsed::after {
-  background: linear-gradient(to bottom, transparent, var(--surface, #161b22));
-}
-[data-theme="dark"]   .aria-chat-card-expand-btn,
-[data-theme="grey"]   .aria-chat-card-expand-btn,
-[data-theme="aurora"] .aria-chat-card-expand-btn {
-  background: var(--code-bg, #0d1117);
-  border-color: var(--border, #30363d);
-}
 
 /* ── Embedded chart canvas inside a chat card ─────────────────────────────── */
 

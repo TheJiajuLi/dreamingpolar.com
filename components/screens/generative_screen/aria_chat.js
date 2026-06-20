@@ -127,24 +127,6 @@ function _fmt(text) {
 }
 function _esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _time() { return new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}); }
-// ── Collapse long card bodies (> 800px) ─────────────────────────────────────
-const _COLLAPSE_PX = 800;
-function _maybeCollapse(card, body) {
-  // Use a rAF so the DOM has painted and scrollHeight is accurate
-  requestAnimationFrame(() => {
-    if (body.scrollHeight <= _COLLAPSE_PX) return;
-    body.classList.add('aria-chat-card-body--collapsed');
-    const btn = document.createElement('button');
-    btn.className   = 'aria-chat-card-expand-btn';
-    btn.textContent = '展开全文 ▾';
-    btn.addEventListener('click', () => {
-      body.classList.remove('aria-chat-card-body--collapsed');
-      btn.remove();
-    });
-    // Insert right after body (before meta badge / chart which come later)
-    body.insertAdjacentElement('afterend', btn);
-  });
-}
 // ── Chat card ─────────────────────────────────────────────────────────────────
 function _makeCard(question, messagesEl) {
   const card = document.createElement('div');
@@ -203,12 +185,17 @@ export function createAriaChat() {
     _rebuildTabs(detail.all ?? [], detail.activeIdx ?? 0);
   });
 
-  const messages = document.createElement('div');
-  messages.className = 'aria-chat-messages';
+  // ── Conversation area — one messages div per dataset ──────────────────────
+  // Each dataset tab gets its own isolated scroll history. Only one div
+  // is visible at a time (.aria-chat-messages--active). The welcome screen
+  // is the initial active div shown before any dataset is imported.
+  const convArea = document.createElement('div');
+  convArea.className = 'aria-chat-conv-area';
 
   const welcome = document.createElement('div');
-  welcome.className = 'aria-chat-welcome';
+  welcome.className = 'aria-chat-messages aria-chat-messages--active';
   welcome.innerHTML =
+    `<div class="aria-chat-welcome">` +
     `<div class="aria-chat-welcome-title">导入数据后开始对话</div>` +
     `<div class="aria-chat-welcome-hint">上传 CSV / Excel 文件，然后用自然语言提问。ARIA 会引用真实的列名、数字，并在需要时直接生成图表。</div>` +
     `<div class="aria-chat-welcome-chips">` +
@@ -216,8 +203,54 @@ export function createAriaChat() {
     `<span class="aria-chat-chip" data-q="帮我做客户分层分析">客户分层分析</span>` +
     `<span class="aria-chat-chip" data-q="哪些列有空值？">空值情况</span>` +
     `<span class="aria-chat-chip" data-q="给我看第一个数值列的分布">列分布图</span>` +
-    `</div>`;
-  messages.appendChild(welcome);
+    `</div></div>`;
+
+  const scrollToBottomBtn = document.createElement('button');
+  scrollToBottomBtn.className = 'aria-chat-scroll-btn';
+  scrollToBottomBtn.title = '回到最新';
+  scrollToBottomBtn.innerHTML = '↓ 最新';
+  scrollToBottomBtn.style.display = 'none';
+
+  convArea.append(welcome, scrollToBottomBtn);
+
+  // ── Per-dataset conversation management ───────────────────────────────────
+  const _convMap = new Map(); // dsName → HTMLElement (messages div)
+  let _activeConvName = null; // null = welcome screen
+  let _activeMessages = welcome;
+
+  function _getOrCreateConv(dsName) {
+    if (_convMap.has(dsName)) return _convMap.get(dsName);
+    const el = document.createElement('div');
+    el.className = 'aria-chat-messages';
+    convArea.insertBefore(el, scrollToBottomBtn);
+    _convMap.set(dsName, el);
+    return el;
+  }
+
+  function _updateScrollBtn() {
+    const el = _activeMessages;
+    const fromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    scrollToBottomBtn.style.display = fromBottom > 180 ? '' : 'none';
+  }
+
+  function _switchToConv(dsName) {
+    if (_activeConvName === dsName) return;
+    _activeMessages.classList.remove('aria-chat-messages--active');
+    _activeConvName = dsName;
+    _activeMessages = dsName ? _getOrCreateConv(dsName) : welcome;
+    _activeMessages.classList.add('aria-chat-messages--active');
+    requestAnimationFrame(() => {
+      _activeMessages.scrollTop = _activeMessages.scrollHeight;
+      _updateScrollBtn();
+    });
+  }
+
+  // Detect scroll on any messages div via capture (event delegation)
+  convArea.addEventListener('scroll', _updateScrollBtn, true);
+
+  scrollToBottomBtn.addEventListener('click', () => {
+    _activeMessages.scrollTo({ top: _activeMessages.scrollHeight, behavior: 'smooth' });
+  });
 
   const inputRow = document.createElement('div');
   inputRow.className = 'aria-chat-input-row';
@@ -230,7 +263,7 @@ export function createAriaChat() {
   sendBtn.className = 'aria-chat-send'; sendBtn.title = '发送 (Enter)';
   sendBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
   inputRow.append(input, sendBtn);
-  root.append(header, dsTabs, messages, inputRow);
+  root.append(header, dsTabs, convArea, inputRow);
 
   let _busy = false;
 
@@ -266,10 +299,10 @@ export function createAriaChat() {
     if (!question || _busy) return;
     _histPush(question);
     _busy = true; input.value = ''; input.disabled = true; sendBtn.disabled = true;
-    welcome.style.display = 'none';
     const dot = root.querySelector('#aria-chat-dot');
     if (dot) dot.classList.add('aria-chat-dot--active');
-    const { card, body } = _makeCard(question, messages);
+    const msgs = _activeMessages;
+    const { card, body } = _makeCard(question, msgs);
     try {
       const prompt = _buildPrompt(question);
       const { streamChat } = await import('../../ai/ai_client.js');
@@ -284,13 +317,11 @@ export function createAriaChat() {
         const c2 = document.createElement('span');
         c2.className = 'aria-chat-card-cursor'; c2.textContent = '▋';
         body.appendChild(c2);
-        messages.scrollTop = messages.scrollHeight;
+        msgs.scrollTop = msgs.scrollHeight;
       }
       body.innerHTML = _fmt(fullReply);
-      // Parse CHART marker — render real chart from actual dataset_store data
       const marker = _parseChartMarker(fullReply);
       if (marker && getDataset()) await _renderChart(card, marker);
-      // Dataset badge — shows WHICH dataset this answer is based on
       const ds = getDataset();
       if (ds) {
         const badge = document.createElement('div');
@@ -298,13 +329,13 @@ export function createAriaChat() {
         badge.innerHTML = `<span style="opacity:.5">基于</span> <strong>${_esc(ds.name)}</strong> · ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列`;
         card.appendChild(badge);
       }
-      _maybeCollapse(card, body);
     } catch (e) {
       body.innerHTML = `<span class="aria-chat-err">⚠ ${_esc(e.message)}</span>`;
     } finally {
       _busy = false; input.disabled = false; sendBtn.disabled = false;
       input.focus(); if (dot) dot.classList.remove('aria-chat-dot--active');
-      messages.scrollTop = messages.scrollHeight;
+      msgs.scrollTop = msgs.scrollHeight;
+      _updateScrollBtn();
     }
   }
 
@@ -316,43 +347,32 @@ export function createAriaChat() {
   // Typing breaks out of history navigation
   input.addEventListener('input', () => { _histIdx = -1; });
   sendBtn.addEventListener('click', _submit);
-  messages.addEventListener('click', e => {
+  convArea.addEventListener('click', e => {
     const chip = e.target.closest('.aria-chat-chip');
     if (chip) { input.value = chip.dataset.q; input.focus(); }
   });
 
   root._onDataLoaded = (name) => {
-    welcome.style.display = 'none';
     const ds = getDataset();
     const displayName = name || ds?.name || 'file';
+    // Switch to (or create) this dataset's conversation
+    _switchToConv(displayName);
+    const msgs = _activeMessages;
     const divider = document.createElement('div');
     divider.className = 'aria-chat-divider aria-chat-divider--import';
     divider.innerHTML =
       `<span class="aria-chat-divider-label">📥 已加载 <strong>${_esc(displayName)}</strong>` +
       ` &nbsp;<span style="opacity:.55;font-weight:400">${(ds?.rows?.length||0).toLocaleString()} 行 × ${ds?.columns?.length||0} 列</span></span>`;
-    messages.appendChild(divider);
-    messages.scrollTop = messages.scrollHeight;
+    msgs.appendChild(divider);
+    msgs.scrollTop = msgs.scrollHeight;
     input.focus();
   };
 
-  // When user switches active dataset via the tab strip, update/insert a divider
-  // Replace the last switch divider (if it's at the bottom) so rapid tab-clicks
-  // don't flood the history.
+  // When user clicks a dataset tab: switch to that dataset's isolated conversation.
+  // No more dividers injected into a shared stream — each dataset owns its history.
   document.addEventListener('dataset-updated', ({ detail }) => {
     if (!detail?.dataset || detail.source !== 'switch') return;
-    const ds = detail.dataset;
-    // Remove the last element if it was a previous switch divider
-    const last = messages.lastElementChild;
-    if (last?.classList.contains('aria-chat-divider') && !last.classList.contains('aria-chat-divider--import')) {
-      last.remove();
-    }
-    const divider = document.createElement('div');
-    divider.className = 'aria-chat-divider';
-    divider.innerHTML =
-      `<span class="aria-chat-divider-label">📂 切换数据集 → <strong>${_esc(ds.name)}</strong>` +
-      ` <span style="opacity:.55;font-weight:400">${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列</span></span>`;
-    messages.appendChild(divider);
-    messages.scrollTop = messages.scrollHeight;
+    _switchToConv(detail.dataset.name);
   });
 
   return root;
