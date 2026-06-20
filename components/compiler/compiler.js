@@ -624,6 +624,123 @@ _jq.dumps(_dfs)
   }
 }
 
+// ── DataFrame cleaning helpers ────────────────────────────────────────────────
+//
+// notifyKernelChanged(varName)
+//   Fires 'kernel-mutation' so downstream UI (bottom bar, etc.) refreshes.
+//
+// previewClean(varName, op)
+//   Runs a read-only Python check and returns info about the pending operation.
+//   op: 'dropna' | 'drop_dup' | 'date_fmt'
+//   Returns: { affected?, total?, candidates?, error? }
+//
+// applyClean(varName, op, extra?)
+//   Applies the operation in-place on _dp_kernel_ns[varName], then calls
+//   notifyKernelChanged. extra is used for 'date_fmt' to pass the column list.
+//   Returns: { before?, after?, applied?, errors? }
+//   On failure throws — caller must handle & display.
+
+export function notifyKernelChanged(varName) {
+  afterKernelMutation(varName, 'inject');
+}
+
+export async function previewClean(varName, op) {
+  if (!_pyodide) throw new Error('Python runtime not loaded');
+  _pyodide.globals.set('_dp_clean_var', varName);
+  try {
+    if (op === 'dropna') {
+      return JSON.parse(_pyodide.runPython(`
+import json as _j
+_df = _dp_kernel_ns.get(_dp_clean_var)
+if _df is None: raise ValueError(f"Variable '{_dp_clean_var}' not found")
+_j.dumps({'affected': int(len(_df) - len(_df.dropna(how='all'))), 'total': int(len(_df))})
+`));
+    }
+    if (op === 'drop_dup') {
+      return JSON.parse(_pyodide.runPython(`
+import json as _j
+_df = _dp_kernel_ns.get(_dp_clean_var)
+if _df is None: raise ValueError(f"Variable '{_dp_clean_var}' not found")
+_j.dumps({'affected': int(_df.duplicated().sum()), 'total': int(len(_df))})
+`));
+    }
+    if (op === 'date_fmt') {
+      return JSON.parse(_pyodide.runPython(`
+import json as _j, pandas as _pd
+_df = _dp_kernel_ns.get(_dp_clean_var)
+if _df is None: raise ValueError(f"Variable '{_dp_clean_var}' not found")
+_cands = []
+for _col in _df.columns:
+    if str(_df[_col].dtype).startswith('datetime64'):
+        _cands.append({'col': _col, 'status': 'datetime'})
+    elif _df[_col].dtype == object:
+        _sample = _df[_col].dropna().head(20)
+        if len(_sample) == 0: continue
+        try:
+            _pd.to_datetime(_sample, errors='raise')
+            _cands.append({'col': _col, 'status': 'parseable'})
+        except Exception: pass
+_j.dumps({'candidates': _cands, 'total': int(len(_df))})
+`));
+    }
+    throw new Error(`Unknown clean op: ${op}`);
+  } finally {
+    _pyodide.globals.delete('_dp_clean_var');
+  }
+}
+
+export async function applyClean(varName, op, extra = null) {
+  if (!_pyodide) throw new Error('Python runtime not loaded');
+  _pyodide.globals.set('_dp_clean_var', varName);
+  try {
+    let result;
+    if (op === 'dropna') {
+      result = JSON.parse(_pyodide.runPython(`
+import json as _j
+_df = _dp_kernel_ns[_dp_clean_var]
+_before = int(len(_df))
+_dp_kernel_ns[_dp_clean_var] = _df.dropna(how='all')
+_j.dumps({'before': _before, 'after': int(len(_dp_kernel_ns[_dp_clean_var]))})
+`));
+    } else if (op === 'drop_dup') {
+      result = JSON.parse(_pyodide.runPython(`
+import json as _j
+_df = _dp_kernel_ns[_dp_clean_var]
+_before = int(len(_df))
+_dp_kernel_ns[_dp_clean_var] = _df.drop_duplicates()
+_j.dumps({'before': _before, 'after': int(len(_dp_kernel_ns[_dp_clean_var]))})
+`));
+    } else if (op === 'date_fmt') {
+      // extra: array of column names to process
+      if (!Array.isArray(extra) || !extra.length) throw new Error('No date columns provided');
+      _pyodide.globals.set('_dp_date_cols', extra);
+      result = JSON.parse(_pyodide.runPython(`
+import json as _j, pandas as _pd
+_df = _dp_kernel_ns[_dp_clean_var].copy()
+_applied = []
+_errors = []
+for _col in _dp_date_cols:
+    try:
+        if not str(_df[_col].dtype).startswith('datetime64'):
+            _df[_col] = _pd.to_datetime(_df[_col], errors='raise')
+        _df[_col] = _df[_col].dt.strftime('%Y-%m-%d')
+        _applied.append(_col)
+    except Exception as _e:
+        _errors.append({'col': _col, 'err': str(_e)[:120]})
+_dp_kernel_ns[_dp_clean_var] = _df
+_j.dumps({'applied': _applied, 'errors': _errors})
+`));
+      _pyodide.globals.delete('_dp_date_cols');
+    } else {
+      throw new Error(`Unknown clean op: ${op}`);
+    }
+    afterKernelMutation(varName, 'inject');
+    return result;
+  } finally {
+    _pyodide.globals.delete('_dp_clean_var');
+  }
+}
+
 // ── Install a missing Python package ─────────────────────────────────────────
 // import name → Pyodide package name (when they differ)
 const _IMPORT_TO_PKG = {

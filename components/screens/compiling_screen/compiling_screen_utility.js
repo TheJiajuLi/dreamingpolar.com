@@ -1,4 +1,4 @@
-import { visualiseVar } from '../../compiler/compiler.js';
+import { visualiseVar, previewClean, applyClean } from '../../compiler/compiler.js';
 
 export function escHtml(s) {
   return String(s)
@@ -93,10 +93,12 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
         break;
       }
       case 'viz-suggestion': {
-        // Build with createElement so the button reference is stable before
-        // addEventListener — avoids any timing issue with innerHTML + querySelector.
         block.className = 'output-block output-viz-suggestion';
         const kindLabel = { dataframe: 'DataFrame', series: 'Series', ndarray: 'ndarray' }[o.kind] ?? o.kind;
+
+        // ── Header row ────────────────────────────────────────────────────────
+        const header = document.createElement('div');
+        header.className = 'viz-suggest-header';
 
         const icon = document.createElement('span');
         icon.className = 'viz-suggest-icon';
@@ -104,20 +106,19 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
 
         const label = document.createElement('span');
         label.className = 'viz-suggest-label';
-        label.textContent = `${o.varName}`;
+        label.textContent = o.varName;
         const meta = document.createElement('span');
         meta.className = 'viz-suggest-meta';
         meta.textContent = ` ${kindLabel}  ${o.shape ?? ''}`;
         label.appendChild(meta);
 
-        const btn = document.createElement('button');
-        btn.className = 'viz-suggest-btn';
-        btn.type = 'button';
-        btn.textContent = '可视化';
-
-        btn.addEventListener('click', async () => {
-          btn.disabled = true;
-          btn.textContent = '生成中…';
+        const vizBtn = document.createElement('button');
+        vizBtn.className = 'viz-suggest-btn';
+        vizBtn.type = 'button';
+        vizBtn.textContent = '可视化';
+        vizBtn.addEventListener('click', async () => {
+          vizBtn.disabled = true;
+          vizBtn.textContent = '生成中…';
           try {
             const img = await visualiseVar(o.varName);
             const imgBlock = document.createElement('div');
@@ -130,12 +131,141 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
             block.style.display = 'none';
           } catch (err) {
             console.warn('[viz-suggestion] chart failed:', err);
-            btn.textContent = '生成失败';
-            btn.disabled = false;
+            vizBtn.textContent = '生成失败';
+            vizBtn.disabled = false;
           }
         });
 
-        block.append(icon, label, btn);
+        header.append(icon, label, vizBtn);
+
+        // ── 清洗 panel (DataFrame only) ───────────────────────────────────────
+        if (o.kind === 'dataframe') {
+          const cleanBtn = document.createElement('button');
+          cleanBtn.className = 'viz-suggest-btn';
+          cleanBtn.type = 'button';
+          cleanBtn.textContent = '清洗';
+
+          const cleanPanel = document.createElement('div');
+          cleanPanel.className = 'viz-clean-panel';
+          cleanPanel.hidden = true;
+
+          // Helper: build one operation row
+          function _makeCleanRow(label, op) {
+            const row = document.createElement('div');
+            row.className = 'viz-clean-row';
+
+            const rowLabel = document.createElement('span');
+            rowLabel.className = 'viz-clean-label';
+            rowLabel.textContent = label;
+
+            const checkBtn = document.createElement('button');
+            checkBtn.className = 'viz-clean-action-btn';
+            checkBtn.textContent = '检查影响';
+
+            const previewEl = document.createElement('span');
+            previewEl.className = 'viz-clean-preview';
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'viz-clean-action-btn viz-clean-confirm-btn';
+            confirmBtn.textContent = '确认执行';
+            confirmBtn.hidden = true;
+
+            let _pendingCols = null; // for date_fmt
+
+            checkBtn.addEventListener('click', async () => {
+              checkBtn.disabled = true;
+              previewEl.textContent = '检查中…';
+              confirmBtn.hidden = true;
+              _pendingCols = null;
+              try {
+                const info = await previewClean(o.varName, op);
+                if (op === 'dropna') {
+                  if (info.affected === 0) {
+                    previewEl.textContent = '无全空行，无需操作';
+                    previewEl.className = 'viz-clean-preview viz-clean-ok';
+                  } else {
+                    previewEl.textContent = `将删除 ${info.affected} 行全空行（共 ${info.total} 行）`;
+                    previewEl.className = 'viz-clean-preview viz-clean-warn';
+                    confirmBtn.hidden = false;
+                  }
+                } else if (op === 'drop_dup') {
+                  if (info.affected === 0) {
+                    previewEl.textContent = '无重复行，无需操作';
+                    previewEl.className = 'viz-clean-preview viz-clean-ok';
+                  } else {
+                    previewEl.textContent = `将删除 ${info.affected} 行重复行（共 ${info.total} 行）`;
+                    previewEl.className = 'viz-clean-preview viz-clean-warn';
+                    confirmBtn.hidden = false;
+                  }
+                } else if (op === 'date_fmt') {
+                  if (!info.candidates?.length) {
+                    previewEl.textContent = '未检测到日期列';
+                    previewEl.className = 'viz-clean-preview viz-clean-ok';
+                  } else {
+                    _pendingCols = info.candidates.map(c => c.col);
+                    previewEl.textContent = `将统一列：${_pendingCols.join('、')}`;
+                    previewEl.className = 'viz-clean-preview viz-clean-warn';
+                    confirmBtn.hidden = false;
+                  }
+                }
+              } catch (e) {
+                previewEl.textContent = `检查失败：${e.message}`;
+                previewEl.className = 'viz-clean-preview viz-clean-err';
+                console.warn('[clean preview]', op, e);
+              } finally {
+                checkBtn.disabled = false;
+              }
+            });
+
+            confirmBtn.addEventListener('click', async () => {
+              confirmBtn.disabled = true;
+              previewEl.textContent = '执行中…';
+              try {
+                const res = await applyClean(o.varName, op, _pendingCols);
+                if (op === 'dropna' || op === 'drop_dup') {
+                  previewEl.textContent = `✓ 完成，${res.before} → ${res.after} 行`;
+                  previewEl.className = 'viz-clean-preview viz-clean-ok';
+                } else if (op === 'date_fmt') {
+                  const okMsg = res.applied?.length ? `✓ 已统一：${res.applied.join('、')}` : '';
+                  const errMsg = res.errors?.map(e => `✗ ${e.col}：${e.err}`).join('；') ?? '';
+                  previewEl.textContent = [okMsg, errMsg].filter(Boolean).join('  ');
+                  previewEl.className = res.errors?.length
+                    ? 'viz-clean-preview viz-clean-warn'
+                    : 'viz-clean-preview viz-clean-ok';
+                }
+                // Refresh shape in meta
+                meta.textContent = ` ${kindLabel}  (已更新)`;
+              } catch (e) {
+                previewEl.textContent = `执行失败：${e.message}`;
+                previewEl.className = 'viz-clean-preview viz-clean-err';
+                console.warn('[clean apply]', op, e);
+              } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.hidden = true;
+              }
+            });
+
+            row.append(rowLabel, checkBtn, previewEl, confirmBtn);
+            return row;
+          }
+
+          cleanPanel.append(
+            _makeCleanRow('删除全空行', 'dropna'),
+            _makeCleanRow('删除重复行', 'drop_dup'),
+            _makeCleanRow('统一日期格式', 'date_fmt'),
+          );
+
+          cleanBtn.addEventListener('click', () => {
+            cleanPanel.hidden = !cleanPanel.hidden;
+            cleanBtn.textContent = cleanPanel.hidden ? '清洗' : '收起';
+          });
+
+          header.append(cleanBtn);
+          block.append(header, cleanPanel);
+        } else {
+          block.append(header);
+        }
+
         break;
       }
       default:

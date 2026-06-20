@@ -85,11 +85,17 @@
 /* ── Viz-suggestion card — aligned with output-info/output-error style ──── */
 .output-viz-suggestion {
   display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-left: 2px solid var(--accent, #6366f1);
+  background: transparent;
+}
+
+.viz-suggest-header {
+  display: flex;
   align-items: center;
   gap: 6px;
   padding: 5px 14px 5px 11px;
-  border-left: 2px solid var(--accent, #6366f1);  /* same pattern as output-error */
-  background: transparent;
 }
 
 .viz-suggest-icon {
@@ -133,6 +139,67 @@
   border-color: var(--accent, #6366f1);
   color: var(--accent, #6366f1);
 }
+
+/* ── Clean panel (DataFrame only) ────────────────────────────────────── */
+.viz-clean-panel {
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding: 4px 14px 6px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.viz-clean-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 24px;
+}
+
+.viz-clean-label {
+  font-size: 0.72rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text, #0f172a);
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+.viz-clean-action-btn {
+  font-size: 0.62rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 1px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--border, #cbd5e1);
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.12s, color 0.12s;
+}
+.viz-clean-action-btn:hover:not(:disabled) {
+  border-color: var(--accent, #6366f1);
+  color: var(--accent, #6366f1);
+}
+.viz-clean-action-btn:disabled { opacity: 0.45; cursor: default; }
+
+.viz-clean-confirm-btn {
+  border-color: #f97316;
+  color: #f97316;
+}
+.viz-clean-confirm-btn:hover:not(:disabled) {
+  border-color: #ea580c;
+  color: #ea580c;
+}
+
+.viz-clean-preview {
+  font-size: 0.68rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  flex: 1;
+}
+.viz-clean-ok   { color: #16a34a; }
+.viz-clean-warn { color: #b45309; }
+.viz-clean-err  { color: #dc2626; }
 
 .output-image {
   flex-shrink: 0;
