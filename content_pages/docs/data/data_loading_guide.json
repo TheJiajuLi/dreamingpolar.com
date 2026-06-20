@@ -17,11 +17,21 @@
       ]
     },
     {
-      "label": "Power Notebook — 自动预览 cell",
+      "label": "Power Notebook — 支持的文件格式",
       "examples": [
         {
-          "code": "# 每次导入文件，自动新增一个 cell 并运行：\n# \"GE.csv\" loaded as df (1258 rows)\nprint(df.shape)\ndf.head()",
-          "result": "第二次、第三次导入时各新增一个 cell，不会覆盖之前的 cell。df 变量始终指向最后一次导入的数据。",
+          "code": "# CSV（默认）\n# 点击 cell 工具栏的 📂 按钮，选择 .csv 文件\n# 自动生成：\n# \"sales.csv\" → df (1000 rows, 5 cols)\nprint(df.shape)\ndf.head()",
+          "result": "CSV 使用 pd.read_csv()，pandas 按需加载，无需手动 import。",
+          "resultType": "text"
+        },
+        {
+          "code": "# JSON（新增）\n# 选择 .json 文件（支持 records、index、columns 等 orient 格式）\n# 自动生成：\n# \"users.json\" → df_users (50 rows, 4 cols)\nprint(df_users.dtypes)\ndf_users.head()",
+          "result": "JSON 使用 pd.read_json()，自动推断 orient。常见格式：[{...}, {...}]（records）或 {\"col\": {\"0\": val, ...}}（index）。",
+          "resultType": "text"
+        },
+        {
+          "code": "# Excel（新增）\n# 选择 .xlsx / .xls 文件\n# openpyxl 自动加载（首次约需几秒）\n# 自动生成：\n# \"report.xlsx\" → df_report (200 rows, 8 cols)\nprint(df_report.columns.tolist())\ndf_report.head()",
+          "result": "Excel 使用 pd.read_excel() + openpyxl，读取第一个 Sheet，保留原始数据类型（日期、数字格式不丢失）。多 Sheet 文件默认取 Sheet1；如需指定，目前需在 cell 里手动写 pd.read_excel('/tmp/...', sheet_name='Sheet2')。",
           "resultType": "text"
         }
       ]

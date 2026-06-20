@@ -158,7 +158,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   const csvBtn = createLoadDataBtn({
     resolveVarName: (filename) => _varNameResolver ? _varNameResolver(filename) : 'df',
     lazyMode: true,
-    onLoad: (varName, rows, filename, csvString, columns) => {
+    onLoad: (varName, rows, filename, injectData, fileType, columns) => {
       const cellNum = _cells.indexOf(cell) + 1;
       const code =
         `# "${filename}" → ${varName} (${rows.toLocaleString()} rows, ${columns} cols)\n` +
@@ -167,7 +167,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
       autoResize(cell.editor);
       cell.editor.dispatchEvent(new Event('input'));
       saveAll();
-      cell._pendingInject  = { varName, csvString };
+      cell._pendingInject  = { varName, data: injectData, fileType };
       cell._datasetInfo    = { varName, rows, columns, filename };
       dsLabel.textContent  = `${varName} · ${rows.toLocaleString()} rows`;
       dsLabel.style.display = '';
@@ -369,7 +369,8 @@ function rebuildCells() {
 async function _flushPendingInjects() {
   for (const c of _cells) {
     if (c._pendingInject) {
-      await injectDataFrame(c._pendingInject.varName, c._pendingInject.csvString);
+      const { varName, data, fileType } = c._pendingInject;
+      await injectDataFrame(varName, data, fileType);
       c._pendingInject = null;
     }
   }

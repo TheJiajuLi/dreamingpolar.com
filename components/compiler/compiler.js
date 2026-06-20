@@ -430,14 +430,26 @@ export async function resetKernel() {
   }
 }
 
-// ── Inject DataFrame — load CSV string into the shared kernel as a variable ───
-// Called from the "Load Data" button after parsing CSV/Excel on the JS side.
-export async function injectDataFrame(varName, csvString) {
+// ── Inject DataFrame — load file data into the shared kernel as a pandas variable ──
+//
+// fileType: 'csv' (default) | 'json' | 'xlsx' | 'xls'
+//   csv / json → data is a text string
+//   xlsx / xls → data is a Uint8Array (raw binary)
+//
+// Dispatches console.warn (not silent) on any load failure.
+export async function injectDataFrame(varName, data, fileType = 'csv') {
   const py = await _getPyodide();
   _dispatch('running', `Loading "${varName}"…`);
 
-  // pandas is required to parse the CSV — load it on demand if not yet present.
-  await py.loadPackage(['pandas'], { messageCallback: () => {} });
+  // Load required packages
+  const pkgs = ['pandas'];
+  if (fileType === 'xlsx' || fileType === 'xls') pkgs.push('openpyxl');
+  try {
+    await py.loadPackage(pkgs, { messageCallback: () => {} });
+  } catch (e) {
+    console.warn(`[injectDataFrame] Failed to load packages ${pkgs}:`, e);
+    throw e;
+  }
 
   // Ensure shared namespace exists (mirrors RUNNER logic)
   py.runPython(`
@@ -445,27 +457,45 @@ if '_dp_kernel_ns' not in dir():
     _dp_kernel_ns = {'__name__': '__main__'}
 `);
 
-  // Pass data via Pyodide globals (avoids all quoting / escape issues)
-  py.globals.set('_dp_inject_csv',  csvString);
+  py.globals.set('_dp_inject_data', data);
   py.globals.set('_dp_inject_name', varName);
 
+  let rows = 0;
   try {
-    py.runPython(`
+    if (fileType === 'csv') {
+      py.runPython(`
 import pandas as _pd_inj, io as _io_inj
-_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_csv(_io_inj.StringIO(_dp_inject_csv))
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_csv(_io_inj.StringIO(_dp_inject_data))
 del _pd_inj, _io_inj
 `);
+    } else if (fileType === 'json') {
+      py.runPython(`
+import pandas as _pd_inj, io as _io_inj
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_json(_io_inj.StringIO(_dp_inject_data))
+del _pd_inj, _io_inj
+`);
+    } else if (fileType === 'xlsx' || fileType === 'xls') {
+      py.runPython(`
+import pandas as _pd_inj, io as _io_inj
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_excel(
+    _io_inj.BytesIO(_dp_inject_data.to_py())
+)
+del _pd_inj, _io_inj
+`);
+    } else {
+      throw new Error(`[injectDataFrame] Unsupported file type: "${fileType}"`);
+    }
+    rows = py.runPython(`len(_dp_kernel_ns[_dp_inject_name])`);
+  } catch (e) {
+    console.warn(`[injectDataFrame] Failed to inject "${varName}" (${fileType}):`, e);
+    throw e;
   } finally {
-    py.globals.delete('_dp_inject_csv');
+    py.globals.delete('_dp_inject_data');
     py.globals.delete('_dp_inject_name');
   }
 
-  const rows = csvString.split('\n').length - 1;
   _dispatch('ready', `"${varName}" ready — ${rows} rows`);
-
-  // Notify listeners: a new DataFrame was injected
   afterKernelMutation(varName, 'inject');
-
   return { varName, rows };
 }
 

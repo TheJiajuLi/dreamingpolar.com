@@ -81,20 +81,33 @@ function _toast(msg) {
 //
 // onLoad(varName, rows) — optional callback fired after successful injection
 
+// ── Raw data reader for DataFrame injection ───────────────────────────────────
+// Returns { data, fileType } where data is the form expected by injectDataFrame:
+//   csv / json → text string   (read once; reused from the csv var for csv)
+//   xlsx / xls → Uint8Array    (binary, for pd.read_excel via openpyxl)
+async function _readInjectData(file, csvText) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'json') return { data: await _fileToText(file), fileType: 'json' };
+  if (ext === 'xlsx' || ext === 'xls')
+    return { data: new Uint8Array(await _fileToBuffer(file)), fileType: ext };
+  return { data: csvText, fileType: 'csv' };   // csv: reuse already-read text
+}
+
+// ── Factory ───────────────────────────────────────────────────────────────────
 // lazyMode: true  → parse in pure JS only; skip injectDataFrame (no Pyodide boot).
-//   onLoad receives (varName, rows, filename, csvString, columns).
+//   onLoad receives (varName, rows, filename, injectData, fileType, columns).
 // lazyMode: false → eager path; calls injectDataFrame immediately.
 //   onLoad receives (varName, rows, filename).
 export function createLoadDataBtn({ varName = 'df', resolveVarName, lazyMode = false, onLoad } = {}) {
   const btn = document.createElement('button');
   btn.className   = 'sc-btn load-data-btn';
-  btn.title       = 'Load CSV / Excel as DataFrame';
+  btn.title       = 'Load CSV / Excel / JSON as DataFrame';
   btn.textContent = '📂';
 
   btn.addEventListener('click', () => {
     const input    = document.createElement('input');
     input.type     = 'file';
-    input.accept   = '.csv,.xlsx,.xls';
+    input.accept   = '.csv,.xlsx,.xls,.json';
     input.style.display = 'none';
     document.body.appendChild(input);
 
@@ -107,18 +120,23 @@ export function createLoadDataBtn({ varName = 'df', resolveVarName, lazyMode = f
       btn.textContent = '⌛ Reading…';
 
       try {
+        // csv is used for JS-side metadata (_parseToDataset, setDataset).
+        // For JSON/Excel the csv conversion is approximate but sufficient for
+        // row/col counts in the bottom bar; actual injection uses raw data.
         const csv           = await _fileToCsv(file);
         const actualVarName = resolveVarName ? resolveVarName(file.name) : varName;
         const dataset       = _parseToDataset(csv, file.name);
         if (dataset) setDataset(dataset);
 
+        const { data: injectData, fileType } = await _readInjectData(file, csv);
+
         if (lazyMode) {
           const rows    = dataset?.rows.length    ?? Math.max(0, csv.split('\n').length - 1);
           const columns = dataset?.columns.length ?? 0;
           _toast(`✓ "${file.name}" → ${actualVarName} (${rows.toLocaleString()} rows, ${columns} cols) — click ▶ to load`);
-          onLoad?.(actualVarName, rows, file.name, csv, columns);
+          onLoad?.(actualVarName, rows, file.name, injectData, fileType, columns);
         } else {
-          const result = await injectDataFrame(actualVarName, csv);
+          const result = await injectDataFrame(actualVarName, injectData, fileType);
           _toast(`✓ "${file.name}" loaded → ${actualVarName}  (${result.rows} rows)  — try: ${actualVarName}.head()`);
           onLoad?.(actualVarName, result.rows, file.name);
         }
