@@ -11,6 +11,7 @@ import { createRefactorBtn } from '../screens/compiling_screen/refactorization_b
 import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
 import { createLoadDataBtn } from '../import/import_data.js';
+import { injectDataFrame } from '../compiler/compiler.js';
 
 const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -156,19 +157,21 @@ function makeCell(lang = 'python', code = '', id = uid()) {
 
   const csvBtn = createLoadDataBtn({
     resolveVarName: (filename) => _varNameResolver ? _varNameResolver(filename) : 'df',
-    onLoad: (varName, rows, filename) => {
+    lazyMode: true,
+    onLoad: (varName, rows, filename, csvString, columns) => {
       const cellNum = _cells.indexOf(cell) + 1;
       const code =
-        `# "${filename}" loaded as ${varName} (${rows} rows)\n` +
+        `# "${filename}" → ${varName} (${rows.toLocaleString()} rows, ${columns} cols)\n` +
         `print(${varName}.shape)\n${varName}.head()`;
       cell.editor.value = code;
       autoResize(cell.editor);
       cell.editor.dispatchEvent(new Event('input'));
       saveAll();
+      cell._pendingInject = { varName, csvString };
       dsLabel.textContent  = `${varName} · ${rows.toLocaleString()} rows`;
       dsLabel.style.display = '';
       _onDataImported?.(varName, rows, filename, cell.id, cellNum);
-      requestAnimationFrame(() => cell.el.querySelector('.nb-run')?.click());
+      // No auto-run: Pyodide only boots when the user clicks ▶
     },
   });
   csvBtn.className = 'nb-btn nb-csv-btn';
@@ -285,6 +288,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     cell, PLACEHOLDER, ICON_COPY, ICON_CHECK,
     autoResize, saveAll, rebuildCells, cellLabel,
     getCells, setCells, getRunSeq, bumpRunSeq,
+    flushPendingInjects: _flushPendingInjects,
   });
 
   // ── Per-cell ICM instances ────────────────────────────
@@ -350,12 +354,30 @@ function rebuildCells() {
   }));
 }
 
+// ── Pending DataFrame inject flush ────────────────────────
+// Injects all CSV data that has been parsed but not yet sent to the kernel.
+// Called before any Python cell runs so data is available for both cell code
+// and AI-generated code that references imported variables.
+
+async function _flushPendingInjects() {
+  for (const c of _cells) {
+    if (c._pendingInject) {
+      await injectDataFrame(c._pendingInject.varName, c._pendingInject.csvString);
+      c._pendingInject = null;
+    }
+  }
+}
+
 // ── Run All ───────────────────────────────────────────────
 
 async function runAll(btn) {
   if (btn) btn.disabled = true;
 
   document.dispatchEvent(new CustomEvent('notebook-clear-output'));
+
+  // Inject any pending DataFrames before any cell runs so every cell can
+  // reference every imported variable, including AI-generated cells.
+  await _flushPendingInjects();
 
   for (let i = 0; i < _cells.length; i++) {
     const cell = _cells[i];
@@ -459,9 +481,12 @@ export function init(container, externalTopbar) {
 
   // When AI generates code while the Customise tab is active, the notebook
   // owns this event — no other component needs to know about it.
-  document.addEventListener('ai-insert-and-run', ({ detail: { code, lang, cellId } }) => {
+  document.addEventListener('ai-insert-and-run', async ({ detail: { code, lang, cellId } }) => {
     const st = window.screenController?.getState('coding');
     if (st !== 'normal' && st !== 'maximized') return;
+    // Flush any pending DataFrame injections so AI-generated code that
+    // references imported variables can find them in the kernel.
+    await _flushPendingInjects();
     if (cellId) {
       // Update existing cell and re-run it
       const cell = _cells.find(c => c.id === cellId);
@@ -498,6 +523,7 @@ export function clearAllDatasetLabels() {
       c.dsLabel.textContent  = '';
       c.dsLabel.style.display = 'none';
     }
+    c._pendingInject = null; // kernel cleared — pending CSV is stale
   });
 }
 

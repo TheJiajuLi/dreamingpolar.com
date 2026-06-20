@@ -81,7 +81,11 @@ function _toast(msg) {
 //
 // onLoad(varName, rows) — optional callback fired after successful injection
 
-export function createLoadDataBtn({ varName = 'df', resolveVarName, onLoad } = {}) {
+// lazyMode: true  → parse in pure JS only; skip injectDataFrame (no Pyodide boot).
+//   onLoad receives (varName, rows, filename, csvString, columns).
+// lazyMode: false → eager path; calls injectDataFrame immediately.
+//   onLoad receives (varName, rows, filename).
+export function createLoadDataBtn({ varName = 'df', resolveVarName, lazyMode = false, onLoad } = {}) {
   const btn = document.createElement('button');
   btn.className   = 'sc-btn load-data-btn';
   btn.title       = 'Load CSV / Excel as DataFrame';
@@ -100,16 +104,24 @@ export function createLoadDataBtn({ varName = 'df', resolveVarName, onLoad } = {
       if (!file) return;
 
       btn.disabled    = true;
-      btn.textContent = '⌛ Loading…';
+      btn.textContent = '⌛ Reading…';
 
       try {
-        const csv          = await _fileToCsv(file);
+        const csv           = await _fileToCsv(file);
         const actualVarName = resolveVarName ? resolveVarName(file.name) : varName;
-        const result       = await injectDataFrame(actualVarName, csv);
-        const dataset      = _parseToDataset(csv, file.name);
+        const dataset       = _parseToDataset(csv, file.name);
         if (dataset) setDataset(dataset);
-        _toast(`✓ "${file.name}" loaded → ${actualVarName}  (${result.rows} rows)  — try: ${actualVarName}.head()`);
-        onLoad?.(actualVarName, result.rows, file.name);
+
+        if (lazyMode) {
+          const rows    = dataset?.rows.length    ?? Math.max(0, csv.split('\n').length - 1);
+          const columns = dataset?.columns.length ?? 0;
+          _toast(`✓ "${file.name}" → ${actualVarName} (${rows.toLocaleString()} rows, ${columns} cols) — click ▶ to load`);
+          onLoad?.(actualVarName, rows, file.name, csv, columns);
+        } else {
+          const result = await injectDataFrame(actualVarName, csv);
+          _toast(`✓ "${file.name}" loaded → ${actualVarName}  (${result.rows} rows)  — try: ${actualVarName}.head()`);
+          onLoad?.(actualVarName, result.rows, file.name);
+        }
       } catch (e) {
         _toast(`✗ Load failed: ${e.message}`);
         console.error('[import_data]', e);

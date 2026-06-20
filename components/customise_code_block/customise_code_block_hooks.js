@@ -8,6 +8,7 @@ export function attachCellHooks({
   cell, PLACEHOLDER, ICON_COPY, ICON_CHECK,
   autoResize, saveAll, rebuildCells, cellLabel,
   getCells, setCells, getRunSeq, bumpRunSeq,
+  flushPendingInjects,
 }) {
   sel.addEventListener('change', () => {
     cell.lang = sel.value;
@@ -45,6 +46,9 @@ export function attachCellHooks({
 
     cell.counter.textContent = '*';
     runBtn.disabled = true;
+    // Flush all pending DataFrame injections before compiling so every
+    // imported variable (this cell's and others') is in the kernel.
+    await flushPendingInjects?.();
     const outputs = await compile(code, cell.lang);
     runBtn.disabled = false;
     bumpRunSeq();
