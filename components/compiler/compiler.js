@@ -426,6 +426,9 @@ export async function injectDataFrame(varName, csvString) {
   const py = await _getPyodide();
   _dispatch('running', `Loading "${varName}"…`);
 
+  // pandas is required to parse the CSV — load it on demand if not yet present.
+  await py.loadPackage(['pandas'], { messageCallback: () => {} });
+
   // Ensure shared namespace exists (mirrors RUNNER logic)
   py.runPython(`
 if '_dp_kernel_ns' not in dir():
