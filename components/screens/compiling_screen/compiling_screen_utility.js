@@ -1,3 +1,5 @@
+import { visualiseVar } from '../../compiler/compiler.js';
+
 export function escHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -113,9 +115,24 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
         btn.type = 'button';
         btn.textContent = '可视化';
 
-        // addEventListener directly on the createElement reference — no module-scope issue
-        btn.addEventListener('click', () => {
-          console.log('[viz-suggestion] visualise:', o.varName, o.kind, o.shape);
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          btn.textContent = '生成中…';
+          try {
+            const img = await visualiseVar(o.varName);
+            const imgBlock = document.createElement('div');
+            imgBlock.className = 'output-block output-image';
+            const image = document.createElement('img');
+            image.src = `data:image/png;base64,${img}`;
+            image.alt = o.varName;
+            imgBlock.appendChild(image);
+            block.insertAdjacentElement('afterend', imgBlock);
+            block.style.display = 'none';
+          } catch (err) {
+            console.warn('[viz-suggestion] chart failed:', err);
+            btn.textContent = '生成失败';
+            btn.disabled = false;
+          }
         });
 
         block.append(icon, label, btn);
