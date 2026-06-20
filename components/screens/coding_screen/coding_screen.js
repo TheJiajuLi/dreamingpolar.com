@@ -223,6 +223,28 @@ function setupCodingScreen() {
     const sourceWidget = createSourceWidget();
     labelEl.appendChild(sourceWidget.element);
 
+    const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+    const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+    const copySourceBtn = document.createElement('button');
+    copySourceBtn.className = 'nb-btn lus-copy-btn cds-copy-source-btn';
+    copySourceBtn.title = 'Copy source code';
+    copySourceBtn.innerHTML = ICON_COPY;
+    copySourceBtn.style.display = 'none';
+    copySourceBtn.addEventListener('click', () => {
+      const code = sec?.sourceCode ?? '';
+      if (!code) return;
+      navigator.clipboard?.writeText(code).then(() => {
+        copySourceBtn.innerHTML = ICON_CHECK;
+        copySourceBtn.classList.add('lus-copy-btn--done');
+        setTimeout(() => {
+          copySourceBtn.innerHTML = ICON_COPY;
+          copySourceBtn.classList.remove('lus-copy-btn--done');
+        }, 1500);
+      });
+    });
+    labelEl.appendChild(copySourceBtn);
+
     const closeBtn = document.createElement('button');
     closeBtn.className = 'cds-output-section-close';
     closeBtn.title = 'Dismiss';
@@ -240,7 +262,7 @@ function setupCodingScreen() {
     sectionEl.append(labelEl, bodyEl);
     nbOutputBody.appendChild(sectionEl);
 
-    const sec = { sectionEl, labelEl, bodyEl, lang: lang ?? '', sourceWidget };
+    const sec = { sectionEl, labelEl, bodyEl, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
     nbSections.set(cellId, sec);
     return sec;
   }
@@ -300,6 +322,8 @@ function setupCodingScreen() {
     const { outputs, cellId, cellLabel, sourceCode, sourceLang } = detail;
     const sec = getOrCreateNbSection(cellId, cellLabel, sourceLang);
     sec.sourceWidget?.setSource(sourceCode ?? null, sourceLang ?? null);
+    sec.sourceCode = sourceCode ?? null;
+    if (sec.copySourceBtn) sec.copySourceBtn.style.display = sourceCode ? '' : 'none';
     renderBlocks(outputs, sec.bodyEl, {
       onAskAI: async (errorText, block, btn) => {
         btn.disabled = true;

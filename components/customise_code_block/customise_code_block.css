@@ -380,6 +380,23 @@
 }
 .cds-output-section-close:hover { background: #fef2f2; color: #ef4444; }
 
+.cds-copy-source-btn {
+  width: 20px;
+  height: 20px;
+  opacity: 0.5;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  transition: opacity 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.cds-copy-source-btn:hover { opacity: 1; background: var(--bg, #f1f5f9); }
+
 .cds-output-section-body {
   padding: 0;
   display: flex;
