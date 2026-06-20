@@ -36,6 +36,8 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
   const mathBlocks = [];
 
   for (const o of outputs) {
+    if (o.type === 'missing-package') continue; // handled by bottom-bar prompt, not rendered here
+
     const block = document.createElement('div');
     block.className = 'output-block';
 

@@ -284,6 +284,12 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     outputBody.innerHTML = '';
   }, { signal: outputAC.signal });
 
+  // After a package is installed, auto re-run this cell if it was the one that triggered it.
+  document.addEventListener('package-installed', ({ detail }) => {
+    if (detail?.cellId !== id) return;
+    cell.el.querySelector('.nb-run')?.click();
+  }, { signal: outputAC.signal });
+
   attachCellHooks({
     sel, editor, runBtn, upBtn, downBtn, delBtn, copyBtn,
     cell, PLACEHOLDER, ICON_COPY, ICON_CHECK,

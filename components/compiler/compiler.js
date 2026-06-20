@@ -190,6 +190,12 @@ async function _runPython(code) {
       let body = parsed.message;
       if (parsed.suggestion) body += `\n\n💡 ${parsed.title}: ${parsed.suggestion}`;
       out.push({ type: 'error', content: body });
+      // Signal missing-package to the UI layer so it can offer to install.
+      // Only fires for import errors on packages not known to be permanently unavailable.
+      if (parsed.id === 'import') {
+        const pkg = d.error.match(/ModuleNotFoundError: No module named '([^']+)'/)?.[1]?.split('.')[0];
+        if (pkg) out.push({ type: 'missing-package', pkg });
+      }
     } else if (d.stderr) {
       out.push({ type: 'error', content: d.stderr });
     }
@@ -469,4 +475,61 @@ del _pd_inj, _io_inj
 
 export async function getPyodide() {
   return _getPyodide();
+}
+
+// ── Install a missing Python package ─────────────────────────────────────────
+// import name → Pyodide package name (when they differ)
+const _IMPORT_TO_PKG = {
+  sklearn:    'scikit-learn',
+  PIL:        'Pillow',
+  yaml:       'PyYAML',
+  bs4:        'beautifulsoup4',
+  dateutil:   'python-dateutil',
+  Crypto:     'pycryptodome',
+  attr:       'attrs',
+  serial:     'pyserial',
+};
+
+/**
+ * Attempts to install a missing package into the running Pyodide kernel.
+ * Strategy:
+ *   1. py.loadPackage()   — fast, works for Pyodide built-in packages
+ *   2. micropip.install() — works for pure-Python PyPI packages
+ *   3. honest failure     — C-extension packages not compiled for WASM return { success: false }
+ *
+ * @param {string} importName  The name as used in `import <name>`
+ * @returns {{ success: boolean, error?: string }}
+ */
+export async function installPackage(importName) {
+  const py = await _getPyodide();
+  const pkgName = _IMPORT_TO_PKG[importName] ?? importName;
+
+  _dispatch('running', `Loading ${importName}…`);
+
+  // Strategy 1: Pyodide built-in package registry
+  try {
+    await py.loadPackage(pkgName, { messageCallback: () => {} });
+    _dispatch('ready', `${importName} ready`);
+    return { success: true };
+  } catch (_) { /* fall through */ }
+
+  // Strategy 2: micropip (pure-Python PyPI packages)
+  try {
+    await py.loadPackage('micropip', { messageCallback: () => {} });
+    py.globals.set('_dp_install_pkg', importName);
+    await py.runPythonAsync(`
+import micropip as _mp
+await _mp.install(_dp_install_pkg)
+del _mp
+`);
+    py.globals.delete('_dp_install_pkg');
+    _dispatch('ready', `${importName} ready`);
+    return { success: true };
+  } catch (e) {
+    _dispatch('ready', 'Done');
+    return {
+      success: false,
+      error:   `${importName} is not available in the browser — it likely requires native C extensions that can't run in WebAssembly.`,
+    };
+  }
 }

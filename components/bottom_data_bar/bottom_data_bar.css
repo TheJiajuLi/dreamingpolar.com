@@ -115,5 +115,63 @@ body.dp-fullscreen #bottom-data-bar { display: none; }
   margin-left: auto;
 }
 
+/* ── Missing-package install prompt ───────────────────────── */
+
+.bdb-pkg-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: 12px;
+  padding: 0 4px;
+  border-left: 1px solid var(--border, #e2e8f0);
+}
+
+.bdb-pkg-icon { font-size: 0.75rem; }
+
+.bdb-pkg-msg {
+  font-size: 0.6rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bdb-pkg-msg strong { color: var(--text, #0f172a); }
+
+.bdb-pkg-load-btn {
+  font-size: 0.58rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--accent, #6366f1);
+  background: var(--accent-soft, #e0e3ff);
+  color: var(--accent, #6366f1);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+}
+.bdb-pkg-load-btn:hover { background: var(--accent, #6366f1); color: #fff; }
+
+.bdb-pkg-dismiss {
+  font-size: 0.6rem;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  border-radius: 3px;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.bdb-pkg-dismiss:hover { background: var(--bg, #f1f5f9); color: var(--text, #0f172a); }
+
 /* Mobile: hide */
 @media (max-width: 768px) { #bottom-data-bar { display: none; } }

@@ -1,5 +1,6 @@
 import { getAllDatasets } from '../shared/dataset_store.js';
 import { getCellDatasetInfo } from '../customise_code_block/customise_code_block.js';
+import { installPackage } from '../compiler/compiler.js';
 
 function getAiSlot()       { return document.getElementById('bdb-ai-slot'); }
 function getCompilerSlot() { return document.getElementById('bdb-compiler-slot'); }
@@ -122,3 +123,75 @@ if (document.readyState === 'loading') {
 } else {
   _initDfSlot();
 }
+
+// ── Missing-package install prompt ────────────────────────────────────────────
+// Created lazily and reused for subsequent requests.
+let _pkgSlot    = null;
+let _pkgBusy    = false;
+let _pkgCellId  = null;
+
+function _getPkgSlot() {
+  if (_pkgSlot) return _pkgSlot;
+  _pkgSlot = document.createElement('div');
+  _pkgSlot.className = 'bdb-slot bdb-pkg-slot';
+  _pkgSlot.setAttribute('hidden', '');
+  const bar = document.getElementById('bottom-data-bar');
+  if (bar) bar.appendChild(_pkgSlot);
+  return _pkgSlot;
+}
+
+function _showPkgPrompt(pkg, cellId) {
+  if (_pkgBusy) return; // don't interrupt an in-progress install
+  _pkgCellId = cellId;
+  const slot = _getPkgSlot();
+  slot.innerHTML =
+    `<span class="bdb-pkg-icon">📦</span>` +
+    `<span class="bdb-pkg-msg"><strong>${pkg}</strong> not loaded</span>` +
+    `<button class="bdb-pkg-load-btn" data-pkg="${pkg}">Load</button>` +
+    `<button class="bdb-pkg-dismiss" title="Dismiss">✕</button>`;
+  slot.removeAttribute('hidden');
+
+  slot.querySelector('.bdb-pkg-load-btn').addEventListener('click', () => _doInstall(pkg, cellId));
+  slot.querySelector('.bdb-pkg-dismiss').addEventListener('click', _dismissPkg);
+}
+
+function _dismissPkg() {
+  if (_pkgBusy) return;
+  _pkgSlot?.setAttribute('hidden', '');
+  _pkgCellId = null;
+}
+
+async function _doInstall(pkg, cellId) {
+  if (_pkgBusy) return;
+  _pkgBusy = true;
+  const slot = _getPkgSlot();
+  slot.innerHTML =
+    `<span class="bdb-pkg-icon">⏳</span>` +
+    `<span class="bdb-pkg-msg">Loading <strong>${pkg}</strong>…</span>`;
+
+  const result = await installPackage(pkg);
+
+  _pkgBusy = false;
+
+  if (result.success) {
+    slot.setAttribute('hidden', '');
+    _pkgCellId = null;
+    // Signal the originating cell to re-run now that the package is available.
+    document.dispatchEvent(new CustomEvent('package-installed', {
+      detail: { pkg, cellId },
+    }));
+  } else {
+    slot.innerHTML =
+      `<span class="bdb-pkg-icon">⚠</span>` +
+      `<span class="bdb-pkg-msg" title="${result.error}">` +
+        `<strong>${pkg}</strong> — not available in browser` +
+      `</span>` +
+      `<button class="bdb-pkg-dismiss" title="Dismiss">✕</button>`;
+    slot.querySelector('.bdb-pkg-dismiss').addEventListener('click', _dismissPkg);
+  }
+}
+
+document.addEventListener('package-missing', ({ detail }) => {
+  if (!detail?.pkg) return;
+  _showPkgPrompt(detail.pkg, detail.cellId ?? null);
+});

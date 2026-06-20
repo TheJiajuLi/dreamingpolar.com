@@ -46,10 +46,17 @@ export function attachCellHooks({
 
     cell.counter.textContent = '*';
     runBtn.disabled = true;
-    // Flush all pending DataFrame injections before compiling so every
-    // imported variable (this cell's and others') is in the kernel.
     await flushPendingInjects?.();
     const outputs = await compile(code, cell.lang);
+    // If a missing-package was detected, signal the bottom bar so it can
+    // offer to install it. The signal carries cellId so the bar can trigger
+    // a re-run after a successful install.
+    const missingPkg = outputs.find(o => o.type === 'missing-package');
+    if (missingPkg) {
+      document.dispatchEvent(new CustomEvent('package-missing', {
+        detail: { pkg: missingPkg.pkg, cellId: cell.id },
+      }));
+    }
     runBtn.disabled = false;
     bumpRunSeq();
     cell.counter.textContent = getRunSeq();
