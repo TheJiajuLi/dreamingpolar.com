@@ -48,9 +48,31 @@ function setupCodingScreen() {
     restartKernelBtn.textContent = '↺ Restart';
   });
 
+  // Track variable names already used in this session so each import gets its own name.
+  // First import always gets 'df'; subsequent imports derive a name from the filename.
+  const _usedVarNames = new Set();
+
+  function _resolveVarName(filename) {
+    if (!_usedVarNames.has('df')) {
+      _usedVarNames.add('df');
+      return 'df';
+    }
+    const base = filename
+      .replace(/\.[^.]+$/, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    let name = base ? `df_${base}` : 'df2';
+    let i = 2;
+    const orig = name;
+    while (_usedVarNames.has(name)) name = `${orig}_${i++}`;
+    _usedVarNames.add(name);
+    return name;
+  }
+
   const loadDataBtn = createLoadDataBtn({
+    resolveVarName: _resolveVarName,
     onLoad: (varName, rows, filename) => {
-      // Always insert a new cell with the preview — handles second/third imports correctly
       const previewCode =
         `# "${filename}" loaded as ${varName} (${rows} rows)\n` +
         `print(${varName}.shape)\n${varName}.head()`;

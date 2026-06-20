@@ -81,10 +81,10 @@ function _toast(msg) {
 //
 // onLoad(varName, rows) — optional callback fired after successful injection
 
-export function createLoadDataBtn({ varName = 'df', onLoad } = {}) {
+export function createLoadDataBtn({ varName = 'df', resolveVarName, onLoad } = {}) {
   const btn = document.createElement('button');
   btn.className   = 'sc-btn load-data-btn';
-  btn.title       = 'Load CSV / Excel as DataFrame — available as  df  in all cells';
+  btn.title       = 'Load CSV / Excel as DataFrame';
   btn.textContent = '📂';
 
   btn.addEventListener('click', () => {
@@ -103,12 +103,13 @@ export function createLoadDataBtn({ varName = 'df', onLoad } = {}) {
       btn.textContent = '⌛ Loading…';
 
       try {
-        const csv    = await _fileToCsv(file);
-        const result = await injectDataFrame(varName, csv);
-        const dataset = _parseToDataset(csv, file.name);
+        const csv          = await _fileToCsv(file);
+        const actualVarName = resolveVarName ? resolveVarName(file.name) : varName;
+        const result       = await injectDataFrame(actualVarName, csv);
+        const dataset      = _parseToDataset(csv, file.name);
         if (dataset) setDataset(dataset);
-        _toast(`✓ "${file.name}" loaded → ${varName}  (${result.rows} rows)  — try: ${varName}.head()`);
-        onLoad?.(varName, result.rows, file.name);
+        _toast(`✓ "${file.name}" loaded → ${actualVarName}  (${result.rows} rows)  — try: ${actualVarName}.head()`);
+        onLoad?.(actualVarName, result.rows, file.name);
       } catch (e) {
         _toast(`✗ Load failed: ${e.message}`);
         console.error('[import_data]', e);
