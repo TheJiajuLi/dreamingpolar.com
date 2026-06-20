@@ -4,7 +4,7 @@ bar.innerHTML = `
   <div class="bdb-slot bdb-ai-slot" id="bdb-ai-slot" hidden>
     Daily quota remains: <span id="bdb-ai-tokens">—</span> tokens
   </div>
-  <div class="bdb-slot bdb-compiler-slot compiler-status-bar" id="bdb-compiler-slot" hidden>
+  <div class="bdb-slot bdb-compiler-slot compiler-status-bar" id="bdb-compiler-slot">
     Idle — Python loads on first run.
   </div>
   <div class="bdb-slot bdb-df-slot" id="bdb-df-slot" hidden></div>

@@ -6,17 +6,10 @@ function getAiSlot()       { return document.getElementById('bdb-ai-slot'); }
 function getCompilerSlot() { return document.getElementById('bdb-compiler-slot'); }
 function getDfSlot()       { return document.getElementById('bdb-df-slot'); }
 
-document.addEventListener('screen-opened', ({ detail: { id } }) => {
-  if (id === 'ai-chat')                    getAiSlot()?.removeAttribute('hidden');
-  if (id === 'coding' || id === 'terminal') getCompilerSlot()?.removeAttribute('hidden');
-});
-
-['screen-closed', 'screen-minimized'].forEach(evt => {
-  document.addEventListener(evt, ({ detail: { id } }) => {
-    if (id === 'ai-chat')                    getAiSlot()?.setAttribute('hidden', '');
-    if (id === 'coding' || id === 'terminal') getCompilerSlot()?.setAttribute('hidden', '');
-  });
-});
+// AI slot: show only when the AI chat screen is open
+document.addEventListener('screen-opened',    ({ detail: { id } }) => { if (id === 'ai-chat') getAiSlot()?.removeAttribute('hidden'); });
+document.addEventListener('screen-closed',    ({ detail: { id } }) => { if (id === 'ai-chat') getAiSlot()?.setAttribute('hidden', ''); });
+document.addEventListener('screen-minimized', ({ detail: { id } }) => { if (id === 'ai-chat') getAiSlot()?.setAttribute('hidden', ''); });
 
 document.addEventListener('compiler-status', ({ detail }) => {
   const slot = getCompilerSlot();
