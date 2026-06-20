@@ -570,21 +570,21 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 [data-theme="light"] .terminal-input   { color: #c9d1d9; }
 [data-theme="light"] .terminal-input-row { border-top-color: rgba(255,255,255,0.07); }
 
-/* Syntax highlighting on dark editor */
-[data-theme="light"] .psh-backdrop                                   { color: #cdd9e5; }
+/* Syntax highlighting for light theme (high-contrast on white/light-grey cells) */
+[data-theme="light"] .psh-backdrop                                   { color: #1e2433; }
 [data-theme="light"] .code-editor.psh-active,
-[data-theme="light"] .nb-editor.psh-active                           { caret-color: #cdd9e5; }
-[data-theme="light"] .psh-keyword    { color: #ff7b72; }
-[data-theme="light"] .psh-builtin    { color: #ffa657; }
-[data-theme="light"] .psh-string     { color: #a5d6ff; }
-[data-theme="light"] .psh-comment    { color: #8b949e; }
-[data-theme="light"] .psh-number     { color: #79c0ff; }
-[data-theme="light"] .psh-decorator  { color: #f0883e; }
-[data-theme="light"] .psh-funcdef    { color: #d2a8ff; font-weight: 600; }
-[data-theme="light"] .psh-classdef   { color: #7ee787; font-weight: 600; }
-[data-theme="light"] .psh-funcall    { color: #d2a8ff; }
-[data-theme="light"] .psh-op         { color: #ff7b72; }
-[data-theme="light"] .psh-punct      { color: #8b949e; }
+[data-theme="light"] .nb-editor.psh-active                           { caret-color: #1e2433; }
+[data-theme="light"] .psh-keyword    { color: #cf222e; }
+[data-theme="light"] .psh-builtin    { color: #0550ae; }
+[data-theme="light"] .psh-string     { color: #0a3069; }
+[data-theme="light"] .psh-comment    { color: #6e7781; font-style: italic; }
+[data-theme="light"] .psh-number     { color: #0550ae; }
+[data-theme="light"] .psh-decorator  { color: #953800; }
+[data-theme="light"] .psh-funcdef    { color: #8250df; font-weight: 600; }
+[data-theme="light"] .psh-classdef   { color: #116329; font-weight: 600; }
+[data-theme="light"] .psh-funcall    { color: #8250df; }
+[data-theme="light"] .psh-op         { color: #cf222e; }
+[data-theme="light"] .psh-punct      { color: #57606a; }
 
 /* ── Generative screen (ARIA): always dark regardless of theme ── */
 /* All ARIA styles live in generative_scree.css — no theme overrides needed */
