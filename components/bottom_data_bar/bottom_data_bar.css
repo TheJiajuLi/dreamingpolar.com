@@ -52,9 +52,67 @@ body.dp-fullscreen #bottom-data-bar { display: none; }
 /* ── DataFrame stats slot ─────────────────────────────── */
 
 .bdb-df-slot {
-  margin-left: auto;   /* push to the right edge */
+  margin-left: auto;
+  position: relative;  /* flyout anchors here */
   color: var(--text-muted, #64748b);
   opacity: 0.8;
+  cursor: default;
+  transition: opacity 0.12s;
+}
+.bdb-df-slot:hover { opacity: 1; }
+
+/* Summary line */
+.bdb-df-summary {
+  white-space: nowrap;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+/* ── Flyout panel ─────────────────────────────────────── */
+.bdb-df-flyout {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 260px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  padding: 4px 0;
+  z-index: 200;
+}
+.bdb-df-slot:hover .bdb-df-flyout { display: block; }
+
+/* Individual row */
+.bdf-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 0.6rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+  border-left: 2px solid transparent;
+  transition: background 0.1s;
+}
+.bdf-row:hover { background: var(--bg, #f8fafc); }
+
+/* Active-cell highlight */
+.bdf-row--active {
+  border-left-color: var(--accent, #6366f1);
+  color: var(--text, #0f172a);
+  font-weight: 600;
+}
+
+.bdf-var  { color: var(--accent, #6366f1); font-weight: 600; }
+.bdf-sep  { opacity: 0.35; }
+.bdf-rows { flex: 1; }
+.bdf-cell-tag {
+  font-size: 0.55rem;
+  opacity: 0.6;
+  margin-left: auto;
 }
 
 /* Mobile: hide */

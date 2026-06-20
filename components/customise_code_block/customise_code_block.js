@@ -87,7 +87,7 @@ function cellLabel(cell) {
 // ── Cell factory ──────────────────────────────────────────
 
 function makeCell(lang = 'python', code = '', id = uid()) {
-  const cell = { id, lang, editor: null, counter: null, numEl: null, el: null, dsLabel: null };
+  const cell = { id, lang, editor: null, counter: null, numEl: null, el: null, dsLabel: null, _datasetInfo: null };
 
   const el = document.createElement('div');
   el.className = 'nb-cell';
@@ -167,7 +167,8 @@ function makeCell(lang = 'python', code = '', id = uid()) {
       autoResize(cell.editor);
       cell.editor.dispatchEvent(new Event('input'));
       saveAll();
-      cell._pendingInject = { varName, csvString };
+      cell._pendingInject  = { varName, csvString };
+      cell._datasetInfo    = { varName, rows, columns, filename };
       dsLabel.textContent  = `${varName} · ${rows.toLocaleString()} rows`;
       dsLabel.style.display = '';
       _onDataImported?.(varName, rows, filename, cell.id, cellNum);
@@ -517,13 +518,28 @@ export function getCellOrder() {
 export function setVarNameResolver(fn) { _varNameResolver = fn; }
 export function setOnDataImported(fn)  { _onDataImported  = fn; }
 
+/** Returns metadata for every cell that has imported a CSV in this session. */
+export function getCellDatasetInfo() {
+  return _cells
+    .filter(c => c._datasetInfo)
+    .map(c => ({
+      varName:  c._datasetInfo.varName,
+      rows:     c._datasetInfo.rows,
+      columns:  c._datasetInfo.columns,
+      filename: c._datasetInfo.filename,
+      cellNum:  _cells.indexOf(c) + 1,
+      cellId:   c.id,
+    }));
+}
+
 export function clearAllDatasetLabels() {
   _cells.forEach(c => {
     if (c.dsLabel) {
       c.dsLabel.textContent  = '';
       c.dsLabel.style.display = 'none';
     }
-    c._pendingInject = null; // kernel cleared — pending CSV is stale
+    c._pendingInject = null;   // kernel cleared — pending CSV is stale
+    c._datasetInfo   = null;
   });
 }
 
