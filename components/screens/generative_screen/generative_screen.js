@@ -1,47 +1,35 @@
 import { createAriaChat } from './aria_chat.js';
 
-// ── Add VT navigation buttons ─────────────────────────────────────────────────
+// ── Add VT navigation button (open / minimize Quick Analysis) ────────────────
 function _addVtButtons(switchView, getActiveView, isScreenOpen) {
   const vtTop = document.querySelector('#vertical-toolbar .vt-top');
-  if (!vtTop) return;
+  if (!vtTop) return {};
 
-  const btns = {};
+  const btn = document.createElement('button');
+  btn.className       = 'vt-btn gen-vt-btn';
+  btn.title           = 'Quick Analysis';
+  btn.dataset.genView = 'gen-terminal';
+  btn.innerHTML       = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`;
 
-  VT_DEFS.forEach(({ id, label, icon }) => {
-    const btn = document.createElement('button');
-    btn.className       = 'vt-btn gen-vt-btn';
-    btn.title           = label;
-    btn.dataset.genView = id;
-    btn.innerHTML       = icon;
-
-    btn.addEventListener('click', () => {
-      if (isScreenOpen()) {
-        // Screen is open → minimize
-        window.screenController?.minimize('terminal');
-        Object.values(btns).forEach(b => b.classList.remove('active'));
-      } else {
-        // Screen is closed/minimized → open (screen-opened fires → resets to ARIA chat)
-        window.screenController?.open('terminal');
-        Object.values(btns).forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id } }));
-      }
-    });
-
-    // Deactivate when another VT button wins
-    document.addEventListener('vt-btn-activated', ({ detail: { id: activatedId } }) => {
-      if (activatedId !== id) btn.classList.remove('active');
-    });
-
-    // Deactivate when screen is closed or minimized by something else
-    document.addEventListener('screen-closed',    ({ detail }) => { if (detail.id === 'terminal') btn.classList.remove('active'); });
-    document.addEventListener('screen-minimized', ({ detail }) => { if (detail.id === 'terminal') btn.classList.remove('active'); });
-
-    vtTop.appendChild(btn);
-    btns[id] = btn;
+  btn.addEventListener('click', () => {
+    if (isScreenOpen()) {
+      window.screenController?.minimize('terminal');
+      btn.classList.remove('active');
+    } else {
+      window.screenController?.open('terminal');
+      btn.classList.add('active');
+      document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'terminal' } }));
+    }
   });
 
-  return btns;
+  document.addEventListener('vt-btn-activated', ({ detail: { id } }) => {
+    if (id !== 'terminal') btn.classList.remove('active');
+  });
+  document.addEventListener('screen-closed',    ({ detail }) => { if (detail.id === 'terminal') btn.classList.remove('active'); });
+  document.addEventListener('screen-minimized', ({ detail }) => { if (detail.id === 'terminal') btn.classList.remove('active'); });
+
+  vtTop.appendChild(btn);
+  return { 'gen-terminal': btn };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
