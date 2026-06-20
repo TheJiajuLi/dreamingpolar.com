@@ -127,7 +127,24 @@ function _fmt(text) {
 }
 function _esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _time() { return new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}); }
-
+// ── Collapse long card bodies (> 800px) ─────────────────────────────────────
+const _COLLAPSE_PX = 800;
+function _maybeCollapse(card, body) {
+  // Use a rAF so the DOM has painted and scrollHeight is accurate
+  requestAnimationFrame(() => {
+    if (body.scrollHeight <= _COLLAPSE_PX) return;
+    body.classList.add('aria-chat-card-body--collapsed');
+    const btn = document.createElement('button');
+    btn.className   = 'aria-chat-card-expand-btn';
+    btn.textContent = '展开全文 ▾';
+    btn.addEventListener('click', () => {
+      body.classList.remove('aria-chat-card-body--collapsed');
+      btn.remove();
+    });
+    // Insert right after body (before meta badge / chart which come later)
+    body.insertAdjacentElement('afterend', btn);
+  });
+}
 // ── Chat card ─────────────────────────────────────────────────────────────────
 function _makeCard(question, messagesEl) {
   const card = document.createElement('div');
@@ -217,9 +234,37 @@ export function createAriaChat() {
 
   let _busy = false;
 
+  // ── Per-dataset input history (↑/↓ navigation) ──────────────────────────
+  const _histMap = {}; // { datasetKey: string[] }
+  let _histIdx   = -1; // -1 = editing fresh input
+  const _histKey = () => getDataset()?.name ?? '__no_dataset__';
+  const _histPush = q => {
+    const key = _histKey();
+    if (!_histMap[key]) _histMap[key] = [];
+    const arr = _histMap[key];
+    // Avoid consecutive duplicates
+    if (arr[arr.length - 1] !== q) arr.push(q);
+    _histIdx = -1;
+  };
+  const _histNav = dir => {
+    const arr = _histMap[_histKey()];
+    if (!arr?.length) return;
+    if (dir < 0) { // ArrowUp → older
+      if (_histIdx === -1) _histIdx = arr.length - 1;
+      else if (_histIdx > 0) _histIdx--;
+    } else {        // ArrowDown → newer
+      if (_histIdx === -1) return;
+      if (_histIdx < arr.length - 1) { _histIdx++; }
+      else { _histIdx = -1; input.value = ''; return; }
+    }
+    input.value = arr[_histIdx];
+    requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = input.value.length; });
+  };
+
   async function _submit() {
     const question = input.value.trim();
     if (!question || _busy) return;
+    _histPush(question);
     _busy = true; input.value = ''; input.disabled = true; sendBtn.disabled = true;
     welcome.style.display = 'none';
     const dot = root.querySelector('#aria-chat-dot');
@@ -253,6 +298,7 @@ export function createAriaChat() {
         badge.innerHTML = `<span style="opacity:.5">基于</span> <strong>${_esc(ds.name)}</strong> · ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列`;
         card.appendChild(badge);
       }
+      _maybeCollapse(card, body);
     } catch (e) {
       body.innerHTML = `<span class="aria-chat-err">⚠ ${_esc(e.message)}</span>`;
     } finally {
@@ -263,8 +309,12 @@ export function createAriaChat() {
   }
 
   input.addEventListener('keydown', e => {
-    if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); _submit(); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _submit(); return; }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); _histNav(-1); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); _histNav(1); }
   });
+  // Typing breaks out of history navigation
+  input.addEventListener('input', () => { _histIdx = -1; });
   sendBtn.addEventListener('click', _submit);
   messages.addEventListener('click', e => {
     const chip = e.target.closest('.aria-chat-chip');
