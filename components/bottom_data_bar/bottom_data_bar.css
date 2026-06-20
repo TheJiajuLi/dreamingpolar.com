@@ -53,36 +53,41 @@ body.dp-fullscreen #bottom-data-bar { display: none; }
 
 .bdb-df-slot {
   margin-left: auto;
-  position: relative;  /* flyout anchors here */
   color: var(--text-muted, #64748b);
   opacity: 0.8;
-  cursor: default;
   transition: opacity 0.12s;
 }
 .bdb-df-slot:hover { opacity: 1; }
 
-/* Summary line */
+/* Summary pill — click to open the popover */
 .bdb-df-summary {
   white-space: nowrap;
   font-size: inherit;
   font-family: inherit;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 4px;
+  transition: background 0.12s;
+}
+.bdb-df-summary:hover {
+  background: var(--bg, #f1f5f9);
+  color: var(--text, #0f172a);
 }
 
-/* ── Flyout panel ─────────────────────────────────────── */
+/* ── Fixed-position popover (mounted on <body>, not inside the bar) ─────── */
+/* Escapes all stacking contexts; positioned via JS getBoundingClientRect.   */
 .bdb-df-flyout {
   display: none;
-  position: absolute;
-  bottom: calc(100% + 6px);
-  right: 0;
-  min-width: 260px;
+  position: fixed;
+  min-width: 240px;
   background: var(--surface, #ffffff);
   border: 1px solid var(--border, #e2e8f0);
-  border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-  padding: 4px 0;
-  z-index: 200;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+  padding: 6px 0;
+  z-index: 9999;
 }
-.bdb-df-slot:hover .bdb-df-flyout { display: block; }
+.bdb-df-flyout--open { display: block; }
 
 /* Individual row */
 .bdf-row {

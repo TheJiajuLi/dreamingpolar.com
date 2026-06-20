@@ -70,29 +70,64 @@ function _updateSummary() {
   _summaryEl.textContent = `${n} dataset${n === 1 ? '' : 's'} · ${totalRows.toLocaleString()} rows · ${totalCols} cols`;
 }
 
-// Rebuild flyout rows, marking the currently-focused cell's row as active.
+// Rebuild popover rows from both import-button datasets and kernel-detected dfs.
 function _refreshFlyout() {
   if (!_flyoutEl) return;
   _flyoutEl.innerHTML = '';
 
-  const items = _cellItems();
-  if (!items.length) return;
+  const importItems = _cellItems();
+  const activeEl    = document.activeElement;
+  const activeCellId = activeEl?.closest?.('.nb-cell')?.dataset?.nbId ?? null;
 
-  // Detect which cell the editor focus is in.
-  const activeEl  = document.activeElement;
-  const cellEl    = activeEl?.closest?.('.nb-cell');
-  const activeCellId = cellEl?.dataset?.nbId ?? null;
+  if (importItems.length) {
+    // Import-button datasets with cell info and active-cell highlight
+    importItems.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'bdf-row' + (activeCellId === item.cellId ? ' bdf-row--active' : '');
+      row.innerHTML =
+        `<span class="bdf-var">${item.varName}</span>` +
+        `<span class="bdf-sep">·</span>` +
+        `<span class="bdf-rows">${item.rows.toLocaleString()} rows, ${item.columns} cols</span>` +
+        `<span class="bdf-cell-tag">cell ${item.cellNum}</span>`;
+      _flyoutEl.appendChild(row);
+    });
+  } else {
+    // Kernel-detected DataFrames (Python code path, no import button used)
+    Object.entries(_kernelDfs).forEach(([name, { rows, cols }]) => {
+      const row = document.createElement('div');
+      row.className = 'bdf-row';
+      row.innerHTML =
+        `<span class="bdf-var">${name}</span>` +
+        `<span class="bdf-sep">·</span>` +
+        `<span class="bdf-rows">${rows.toLocaleString()} rows, ${cols} cols</span>`;
+      _flyoutEl.appendChild(row);
+    });
+  }
+}
 
-  items.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'bdf-row' + (activeCellId === item.cellId ? ' bdf-row--active' : '');
-    row.innerHTML =
-      `<span class="bdf-var">${item.varName}</span>` +
-      `<span class="bdf-sep">·</span>` +
-      `<span class="bdf-rows">${item.rows.toLocaleString()} rows, ${item.columns} cols</span>` +
-      `<span class="bdf-cell-tag">cell ${item.cellNum}</span>`;
-    _flyoutEl.appendChild(row);
-  });
+// ── Click-triggered fixed-position popover ────────────────────────────────────
+// The flyout is a child of <body> with position:fixed, so it escapes every
+// stacking context (opacity layers, z-index hierarchies, overflow:hidden) that
+// would clip a position:absolute child inside the bottom bar.
+
+let _popoverOpen = false;
+
+function _openPopover() {
+  if (!_summaryEl) return;
+  _refreshFlyout();
+  if (!_flyoutEl.children.length) return; // nothing to show
+
+  const rect = _summaryEl.getBoundingClientRect();
+  _flyoutEl.style.right  = `${window.innerWidth - rect.right}px`;
+  _flyoutEl.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+  _flyoutEl.style.top    = '';
+  _flyoutEl.classList.add('bdb-df-flyout--open');
+  _popoverOpen = true;
+}
+
+function _closePopover() {
+  _flyoutEl?.classList.remove('bdb-df-flyout--open');
+  _popoverOpen = false;
 }
 
 function _initDfSlot() {
@@ -104,12 +139,20 @@ function _initDfSlot() {
 
   _flyoutEl = document.createElement('div');
   _flyoutEl.className = 'bdb-df-flyout';
+  document.body.appendChild(_flyoutEl); // mount on body — no stacking context issues
 
   slot.appendChild(_summaryEl);
-  slot.appendChild(_flyoutEl);
 
-  // Refresh active-cell highlight each time the flyout is about to show.
-  slot.addEventListener('mouseenter', _refreshFlyout);
+  // Toggle popover on click
+  _summaryEl.addEventListener('click', e => {
+    e.stopPropagation();
+    _popoverOpen ? _closePopover() : _openPopover();
+  });
+
+  // Close when clicking anywhere outside the popover
+  document.addEventListener('click', e => {
+    if (_popoverOpen && !_flyoutEl.contains(e.target)) _closePopover();
+  });
 }
 
 document.addEventListener('dataset-updated', () => {
@@ -148,19 +191,6 @@ function _updateKernelDfSummary() {
   _summaryEl.textContent =
     `${n} df${n === 1 ? '' : 's'} · ${totalRows.toLocaleString()} rows · ${totalCols} cols`;
 
-  // Rebuild flyout for kernel dfs
-  if (_flyoutEl) {
-    _flyoutEl.innerHTML = '';
-    entries.forEach(([name, { rows, cols }]) => {
-      const row = document.createElement('div');
-      row.className = 'bdf-row';
-      row.innerHTML =
-        `<span class="bdf-var">${name}</span>` +
-        `<span class="bdf-sep">·</span>` +
-        `<span class="bdf-rows">${rows.toLocaleString()} rows, ${cols} cols</span>`;
-      _flyoutEl.appendChild(row);
-    });
-  }
 }
 
 if (document.readyState === 'loading') {
