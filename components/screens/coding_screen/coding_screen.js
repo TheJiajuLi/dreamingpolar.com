@@ -5,7 +5,7 @@ import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_scr
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
 import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../../look_up_source/look_up_source.js';
-import { resetKernel } from '../../compiler/compiler.js';
+import { resetKernel, preloadPython } from '../../compiler/compiler.js';
 
 function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
@@ -20,6 +20,9 @@ function setupCodingScreen() {
   // ── Screen controller ─────────────────────────────────
   requestAnimationFrame(() => {
     window.screenController?.register('coding', screen, { label: 'Code', persisted: true, noChip: true, group: 'hero' });
+    // Warm up the Python interpreter in the background so it's ready before
+    // the user clicks Run. This eliminates the KBS appearing mid-run.
+    preloadPython();
   });
 
   const notebookView = document.getElementById('cds-notebook-view');

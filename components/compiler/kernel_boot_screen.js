@@ -39,7 +39,7 @@ function _mount() {
         <div class="kbs-progress-bar" id="${_BAR_ID}"></div>
       </div>
       <div class="kbs-footer">
-        numpy &nbsp;·&nbsp; pandas &nbsp;·&nbsp; matplotlib &nbsp;·&nbsp; sympy
+        Python runtime &nbsp;·&nbsp; Pyodide
       </div>
     </div>
   `;
