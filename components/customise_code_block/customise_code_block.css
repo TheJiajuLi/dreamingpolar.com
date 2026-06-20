@@ -190,6 +190,9 @@
 .nb-run:hover { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); }
 .nb-del:hover { background: #fef2f2; color: var(--status-error, #dc2626); }
 
+.nb-csv-btn        { font-size: 0.85rem; color: var(--text-muted, #64748b); }
+.nb-csv-btn:hover  { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); }
+
 .nb-cell-num {
   width: 20px;
   height: 20px;

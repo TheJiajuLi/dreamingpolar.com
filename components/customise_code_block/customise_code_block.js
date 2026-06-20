@@ -10,6 +10,7 @@ import { ask, systemExplainForLang } from '../ai/ai_client.js';
 import { createRefactorBtn } from '../screens/compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
+import { createLoadDataBtn } from '../import/import_data.js';
 
 const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -50,6 +51,10 @@ let _cells     = [];
 let _runSeq    = 0;
 let _saveTimer = null;
 let _cellsEl   = null;
+
+// ── Per-cell CSV import — set by coding_screen.js ────────
+let _varNameResolver = null; // (filename) => string
+let _onDataImported  = null; // (varName, rows, filename, cellId, cellNum) => void
 
 // ── State accessors passed into hooks ─────────────────────
 const getCells   = ()    => _cells;
@@ -143,7 +148,26 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   importBtn.title = 'Import file into this cell';
   importBtn.className = 'nb-btn';
 
-  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, importBtn);
+  // ── Per-cell CSV→DataFrame import button ─────────────────
+  const csvBtn = createLoadDataBtn({
+    resolveVarName: (filename) => _varNameResolver ? _varNameResolver(filename) : 'df',
+    onLoad: (varName, rows, filename) => {
+      const cellNum = _cells.indexOf(cell) + 1;
+      const code =
+        `# "${filename}" loaded as ${varName} (${rows} rows)\n` +
+        `print(${varName}.shape)\n${varName}.head()`;
+      cell.editor.value = code;
+      autoResize(cell.editor);
+      cell.editor.dispatchEvent(new Event('input'));
+      saveAll();
+      _onDataImported?.(varName, rows, filename, cell.id, cellNum);
+      requestAnimationFrame(() => cell.el.querySelector('.nb-run')?.click());
+    },
+  });
+  csvBtn.className = 'nb-btn nb-csv-btn';
+  csvBtn.title     = 'Load CSV / Excel as DataFrame into this cell';
+
+  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, csvBtn, importBtn);
 
   const editor = document.createElement('textarea');
   editor.className    = 'nb-editor';
@@ -441,6 +465,9 @@ export function init(container, externalTopbar) {
 export function getCellOrder() {
   return _cells.map(c => c.id);
 }
+
+export function setVarNameResolver(fn) { _varNameResolver = fn; }
+export function setOnDataImported(fn)  { _onDataImported  = fn; }
 
 export function setCellCode(cellId, code) {
   const cell = _cells.find(c => c.id === cellId);

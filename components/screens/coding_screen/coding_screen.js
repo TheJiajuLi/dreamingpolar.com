@@ -1,12 +1,11 @@
 import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
-import { init as initNotebook, addImportedCell } from '../../customise_code_block/customise_code_block.js';
+import { init as initNotebook, addImportedCell, setVarNameResolver, setOnDataImported } from '../../customise_code_block/customise_code_block.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
 import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
 import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../../look_up_source/look_up_source.js';
 import { resetKernel } from '../../compiler/compiler.js';
-import { createLoadDataBtn } from '../../import/import_data.js';
 
 function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
@@ -36,20 +35,20 @@ function setupCodingScreen() {
   runAllSlot.className = 'cds-runall-slot';
   const clearCellsBtn = createClearCellsBtn();
 
+  // ── Restart kernel button (two-step confirm) ──────────────
   const restartKernelBtn = document.createElement('button');
   restartKernelBtn.className   = 'sc-btn sc-btn--danger';
-  restartKernelBtn.title       = 'Restart kernel — clears all variables';
+  restartKernelBtn.title       = 'Restart kernel — clears all variables (click twice to confirm)';
   restartKernelBtn.textContent = '↺';
-  restartKernelBtn.addEventListener('click', async () => {
-    restartKernelBtn.disabled    = true;
-    restartKernelBtn.textContent = '↺ Restarting…';
-    await resetKernel();
-    restartKernelBtn.disabled    = false;
-    restartKernelBtn.textContent = '↺ Restart';
-  });
 
-  // Track variable names already used in this session so each import gets its own name.
-  // First import always gets 'df'; subsequent imports derive a name from the filename.
+  // ── Dataset registry ───────────────────────────────────────
+  const dsRegistry = document.createElement('div');
+  dsRegistry.className  = 'cds-ds-registry';
+  dsRegistry.style.display = 'none';
+
+  nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn, dsRegistry);
+
+  // ── Variable name resolver — shared across all cell import buttons ──
   const _usedVarNames = new Set();
 
   function _resolveVarName(filename) {
@@ -70,17 +69,51 @@ function setupCodingScreen() {
     return name;
   }
 
-  const loadDataBtn = createLoadDataBtn({
-    resolveVarName: _resolveVarName,
-    onLoad: (varName, rows, filename) => {
-      const previewCode =
-        `# "${filename}" loaded as ${varName} (${rows} rows)\n` +
-        `print(${varName}.shape)\n${varName}.head()`;
-      addImportedCell('python', previewCode, { autoRun: true });
-    },
+  setVarNameResolver(_resolveVarName);
+
+  // ── Registry update callback ───────────────────────────────
+  const _registryItems = []; // { varName, rows, cellNum }
+
+  function _rebuildRegistry() {
+    if (!_registryItems.length) { dsRegistry.style.display = 'none'; return; }
+    dsRegistry.style.display = '';
+    dsRegistry.textContent   = _registryItems
+      .map(r => `${r.varName} (cell ${r.cellNum}, ${r.rows.toLocaleString()} rows)`)
+      .join('  ·  ');
+  }
+
+  setOnDataImported((varName, rows, filename, cellId, cellNum) => {
+    _registryItems.push({ varName, rows, cellNum });
+    _rebuildRegistry();
   });
 
-  nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn, loadDataBtn);
+  // ── Restart: two-step confirm, clears all import state ────
+  let _restartArmed = false;
+  restartKernelBtn.addEventListener('click', async () => {
+    if (!_restartArmed) {
+      _restartArmed = true;
+      restartKernelBtn.textContent = 'Sure?';
+      restartKernelBtn.classList.add('sc-btn--danger-armed');
+      setTimeout(() => {
+        if (_restartArmed) {
+          _restartArmed = false;
+          restartKernelBtn.textContent = '↺';
+          restartKernelBtn.classList.remove('sc-btn--danger-armed');
+        }
+      }, 3000);
+      return;
+    }
+    _restartArmed = false;
+    restartKernelBtn.classList.remove('sc-btn--danger-armed');
+    restartKernelBtn.disabled    = true;
+    restartKernelBtn.textContent = '↺…';
+    await resetKernel();
+    _usedVarNames.clear();
+    _registryItems.length = 0;
+    _rebuildRegistry();
+    restartKernelBtn.disabled    = false;
+    restartKernelBtn.textContent = '↺';
+  });
 
   // ── Mode label ────────────────────────────────────────
   const cdsModeLabel = document.createElement('span');

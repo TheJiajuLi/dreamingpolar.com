@@ -196,7 +196,7 @@ body.cs-resizing * {
 /* Cell inline output is suppressed — output renders in the right cds-output-panel */
 .nb-output-section { display: none !important; }
 
-/* ── Danger toolbar button (clear all cells) ────────────── */
+/* ── Danger toolbar button (restart kernel) ─────────────── */
 .sc-btn--danger                { color: #ef4444; }
 .sc-btn--danger:hover          { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
 
@@ -208,6 +208,32 @@ body.cs-resizing * {
 
 [data-theme="aurora"] .sc-btn--danger       { color: rgba(248,113,113,0.7); }
 [data-theme="aurora"] .sc-btn--danger:hover { background: rgba(248,81,73,0.12); color: #f85149; }
+
+/* Armed (first click, awaiting confirm) */
+.sc-btn--danger-armed {
+  background: rgba(239, 68, 68, 0.14) !important;
+  color: #dc2626 !important;
+  font-weight: 600;
+  font-size: 0.6rem;
+  letter-spacing: 0.02em;
+}
+[data-theme="dark"] .sc-btn--danger-armed  { background: rgba(248,113,113,0.16) !important; color: #fca5a5 !important; }
+[data-theme="grey"] .sc-btn--danger-armed  { background: rgba(224, 82, 82,0.16) !important; color: #f87171 !important; }
+[data-theme="aurora"] .sc-btn--danger-armed { background: rgba(248,81,73,0.16)  !important; color: #f85149 !important; }
+
+/* ── Dataset registry strip (right side of global toolbar) ── */
+.cds-ds-registry {
+  flex: 1;
+  text-align: right;
+  font-size: 0.58rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 4px;
+}
 
 
 /* ── Chat-mode placeholder (shown when mode = ai_chat) ───── */
