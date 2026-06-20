@@ -81,8 +81,8 @@ function _addVtButtons(switchView, getActiveView, isScreenOpen) {
       const alreadyThisView = currentView === id;
 
       if (currentlyOpen && alreadyThisView) {
-        // Toggle off: close the generative screen
-        window.screenController?.close('terminal');
+        // Second click: minimize (restore chip appears in header)
+        window.screenController?.minimize('terminal');
         Object.values(btns).forEach(b => b.classList.remove('active'));
       } else {
         // Switch to this view (opens screen if closed)
@@ -99,10 +99,9 @@ function _addVtButtons(switchView, getActiveView, isScreenOpen) {
       if (activatedId !== id) btn.classList.remove('active');
     });
 
-    // Deactivate when screen is closed by something else
-    document.addEventListener('screen-closed', ({ detail }) => {
-      if (detail.id === 'terminal') btn.classList.remove('active');
-    });
+    // Deactivate when screen is closed or minimized by something else
+    document.addEventListener('screen-closed',    ({ detail }) => { if (detail.id === 'terminal') btn.classList.remove('active'); });
+    document.addEventListener('screen-minimized', ({ detail }) => { if (detail.id === 'terminal') btn.classList.remove('active'); });
 
     vtTop.appendChild(btn);
     btns[id] = btn;
