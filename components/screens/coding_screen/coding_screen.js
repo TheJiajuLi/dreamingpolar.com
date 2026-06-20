@@ -104,13 +104,16 @@ function setupCodingScreen() {
 
   // ── Notebook output panel ─────────────────────────────
   const NB_OUT_W_KEY = 'dp-nb-output-w';
-  const NB_OUT_MIN_W = 160;
-  const savedNbOutW  = parseFloat(localStorage.getItem(NB_OUT_W_KEY)) || 280;
+  const NB_OUT_MIN_W = 200;
+  const savedNbOutW  = parseFloat(localStorage.getItem(NB_OUT_W_KEY)) || 0;
 
   const nbOutputPanel = document.createElement('div');
   nbOutputPanel.className = 'cds-output-panel';
-  nbOutputPanel.style.width = savedNbOutW + 'px';
-  nbOutputPanel.style.flex  = 'none';
+  // If no saved width, flex:1 so the panel shares space equally with the cells panel.
+  if (savedNbOutW) {
+    nbOutputPanel.style.width = savedNbOutW + 'px';
+    nbOutputPanel.style.flex  = 'none';
+  }
 
   const nbOutputPanelHdr = document.createElement('div');
   nbOutputPanelHdr.className = 'cds-output-panel-hdr';
@@ -184,9 +187,9 @@ function setupCodingScreen() {
 
   nbResizer.addEventListener('mousedown',  e => { e.preventDefault(); _startNbResize(e.clientX); });
   nbResizer.addEventListener('touchstart', e => { e.preventDefault(); _startNbResize(e.touches[0].clientX); }, { passive: false });
-  nbResizer.addEventListener('dblclick',   () => {
+  nbResizer.addEventListener('dblclick', () => {
     nbOutputPanel.style.width = '';
-    nbOutputPanel.style.flex  = '';
+    nbOutputPanel.style.flex  = '';   // back to flex:1 (CSS default)
     localStorage.removeItem(NB_OUT_W_KEY);
   });
 
@@ -228,13 +231,13 @@ function setupCodingScreen() {
 
     const copySourceBtn = document.createElement('button');
     copySourceBtn.className = 'nb-btn lus-copy-btn cds-copy-source-btn';
-    copySourceBtn.title = 'Copy source code';
+    copySourceBtn.title = 'Copy output';
     copySourceBtn.innerHTML = ICON_COPY;
     copySourceBtn.style.display = 'none';
     copySourceBtn.addEventListener('click', () => {
-      const code = sec?.sourceCode ?? '';
-      if (!code) return;
-      navigator.clipboard?.writeText(code).then(() => {
+      const text = sec?.bodyEl?.innerText ?? '';
+      if (!text.trim()) return;
+      navigator.clipboard?.writeText(text).then(() => {
         copySourceBtn.innerHTML = ICON_CHECK;
         copySourceBtn.classList.add('lus-copy-btn--done');
         setTimeout(() => {
@@ -323,7 +326,8 @@ function setupCodingScreen() {
     const sec = getOrCreateNbSection(cellId, cellLabel, sourceLang);
     sec.sourceWidget?.setSource(sourceCode ?? null, sourceLang ?? null);
     sec.sourceCode = sourceCode ?? null;
-    if (sec.copySourceBtn) sec.copySourceBtn.style.display = sourceCode ? '' : 'none';
+    // Show copy button whenever there's output to copy (not gated on sourceCode).
+    if (sec.copySourceBtn) sec.copySourceBtn.style.display = outputs?.length ? '' : 'none';
     renderBlocks(outputs, sec.bodyEl, {
       onAskAI: async (errorText, block, btn) => {
         btn.disabled = true;

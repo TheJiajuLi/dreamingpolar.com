@@ -74,7 +74,8 @@ body.cs-resizing * {
 
 /* ── Output panel ──────────────────────────────────────── */
 .cds-output-panel {
-  flex-shrink: 0;
+  flex: 1;              /* fills remaining width when no saved px width is applied */
+  min-width: 200px;
   display: flex;
   flex-direction: column;
   min-height: 0;
