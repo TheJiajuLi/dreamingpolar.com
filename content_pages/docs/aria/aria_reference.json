@@ -1,127 +1,53 @@
 {
   "blocks": [
     {
-      "label": "What is ARIA?",
-      "code": "# ARIA — AI-powered interactive terminal\n# Type 'help' in the ARIA terminal to see all commands.\n#\n# ARIA can:\n#   • Generate Python, MathJax, HTML, Markdown code\n#   • Debug your code with the  fix  command\n#   • Explain code with the  explain  command\n#   • Run your editor code with the  run  command\n#   • Hold a multi-turn conversation in its own chat mode\n#\n# All AI-generated code appears as an interactive card.\n# Cards give you:  ▶ Run  |  ↑ Insert  |  ✎ Edit  |  ⊘ Copy",
-      "result": "ARIA lives in the generative screen (click the circuit-board icon in the left toolbar). It combines a code editor with a smart terminal — the editor is for writing, the terminal is for generating and exploring.",
+      "label": "Quick Analysis — AI 数据对话",
+      "code": "# Quick Analysis 是轻量数据分析入口（左侧工具栏第三个图标）\n#\n# 使用流程：\n# 1. 点击工具栏 📂 按钮导入 CSV / Excel（纯 JS，不等 Python）\n# 2. 直接用自然语言提问：\n#    「这些数据有什么特点？」\n#    「帮我看 price 列的分布」\n#    「比较 revenue 和 units 两列的关系」\n#\n# ARIA 会：\n# • 引用真实列名和数字，不说套话\n# • 在需要时自动生成内嵌图表（histogram / scatter）\n# • 每次回答都标注「基于 xxx.csv」，不会串数据\n#\n# 支持同时导入多份文件，顶部标签栏切换当前数据集",
+      "result": "Quick Analysis 走轻量路径（dataset_store，不加载 Python 内核），适合快速浏览数据、对话提问、查看图表。",
       "resultType": "text"
     },
     {
-      "label": "ai — generate code or answer a question",
+      "label": "导入数据（Quick Analysis 路径）",
       "examples": [
         {
-          "code": "# In the ARIA terminal, type:\nai plot the Mandelbrot set with matplotlib",
-          "result": "ARIA generates a Python code card. Click  ▶ Run  to execute inline, or  ↑ Insert  to send it to the editor above.",
-          "resultType": "text"
-        },
-        {
-          "code": "# Ask for a formula — ARIA picks the right output type automatically:\nai write the Euler-Lagrange equation in LaTeX",
-          "result": "ARIA generates a MathJax card. Click  ⟳ Render  to display the equation inline.",
-          "resultType": "text"
-        },
-        {
-          "code": "# Ask for a song card or image card:\nai show me 3 jazz album covers",
-          "result": "ARIA generates an HTML card with LoremFlickr images. Click  ⟳ Preview  to display it inline.",
+          "code": "# 点击顶部工具栏的 📂 按钮（不是左侧VT导航栏）\n# 支持 .csv .xlsx .xls\n# 导入后立刻出现绿色分隔线：\n#   📥 已加载 GE.csv   1,258 行 × 3 列\n#\n# 可以连续导入多份文件，顶部会出现文件名标签，点击切换",
+          "result": "Quick Analysis 导入不需要 Python 加载，导入后直接提问即可。",
           "resultType": "text"
         }
       ]
     },
     {
-      "label": "fix — debug your editor code",
+      "label": "内嵌图表 — AI 自动决定类型",
       "examples": [
         {
-          "code": "# Write code in the editor above, then type in ARIA:\nfix",
-          "result": "ARIA reads the current editor content, identifies bugs, and returns a corrected Python code card. Click  ↑ Insert  to replace the broken code.",
-          "resultType": "text"
-        },
-        {
-          "code": "# Example: editor contains broken code:\nimport numpy a np  # typo: 'a' instead of 'as'\nprint(np.array([1, 2, 3]))\n\n# Then type  fix  in the terminal",
-          "result": "ARIA returns: \"Fixed the import alias typo\" + corrected code card with  import numpy as np.",
+          "code": "# 问题涉及分布时，AI 自动生成直方图：\n「帮我看 close 列的分布」\n\n# 问题涉及两列关系时，AI 自动生成散点图：\n「open 和 close 有没有相关性？」",
+          "result": "图表使用 Chart.js 从真实数据渲染，不是占位图。AI 在回答末尾写 CHART: histogram(列名) 或 CHART: scatter(列名1, 列名2)，前端解析后取 dataset_store 里的真实数值渲染。",
           "resultType": "text"
         }
       ]
     },
     {
-      "label": "explain — understand your code line by line",
+      "label": "Power Notebook — 写代码操作数据",
+      "code": "# Power Notebook 是高级入口（左侧工具栏第二个图标）\n# 支持 Python / LaTeX / MathJax / Markdown 多语言 cell\n#\n# 导入数据后，自动生成预览 cell：\n#   # \"GE.csv\" loaded as df (1258 rows)\n#   print(df.shape)\n#   df.head()\n#\n# 每次导入新文件，新增一个 cell（不覆盖旧的）\n# 数据注入 Pyodide 内核，可以写完整 Python 代码操作 df",
+      "result": "Power Notebook 走 Python 路径（Pyodide 内核），适合写模型、复杂分析、自定义图表。两种入口共享同一个 Python 内核。",
+      "resultType": "text"
+    },
+    {
+      "label": "ARIA 终端命令（Power Notebook 里）",
       "examples": [
         {
-          "code": "# Paste or write complex code in the editor, then type:\nexplain",
-          "result": "ARIA returns a plain-language breakdown of what each section does — useful for understanding code you've imported or generated.",
+          "code": "# 在 Power Notebook 底部的终端输入框：\nai 帮我分析这些客户数据",
+          "result": "ARIA 自动读取当前 df 的列名、类型、前3行样本，连同问题发给 AI。回答会引用真实列名，不是泛泛而谈。如果检测到 customer_id / purchase_date / amount 等字段会主动建议 RFM 分层分析。",
           "resultType": "text"
         },
         {
-          "code": "# Example workflow:\n# 1. Editor contains a NumPy broadcasting example\n# 2. Type  explain  in terminal\n# 3. ARIA explains each operation",
-          "result": "ARIA explains broadcasting rules, axis alignment, and the final output shape — no code card, just text in the terminal.",
-          "resultType": "text"
-        }
-      ]
-    },
-    {
-      "label": "run — execute editor code from the terminal",
-      "examples": [
-        {
-          "code": "# Instead of Ctrl+Enter in the editor, type:\nrun",
-          "result": "Compiles and runs the current editor code. Output appears in the OUTPUT panel above the terminal.",
-          "resultType": "text"
-        }
-      ]
-    },
-    {
-      "label": "Keyboard shortcut: Ctrl+Shift+A",
-      "examples": [
-        {
-          "code": "# While focused in the ARIA editor, press:\n# Ctrl + Shift + A  (Mac: Cmd + Shift + A)\n#\n# This pre-fills the terminal with:\n# ai Explain or improve this code: ```python\\n<your code>\\n```\n#\n# Press Enter to send it to ARIA immediately.",
-          "result": "Fastest way to ask ARIA about the code you're currently writing — no copy-paste needed.",
-          "resultType": "text"
-        }
-      ]
-    },
-    {
-      "label": "Interactive code cards — Run, Insert, Edit, Copy",
-      "examples": [
-        {
-          "code": "# When ARIA generates code, a card appears in the terminal output.\n# The card buttons change based on the language type:\n#\n# Python:            ▶ Run  |  ↑ Insert  |  ✎ Edit  |  ⊘ Copy\n# MathJax / LaTeX:   ⟳ Render  |  ↑ Insert  |  ✎ Edit  |  ⊘ Copy\n# HTML / Markdown:   ⟳ Preview  |  ↑ Insert  |  ✎ Edit  |  ⊘ Copy",
-          "result": "▶ Run / ⟳ Render — executes or renders output inline below the card.\n↑ Insert — sends the code to the editor (replaces current content).\n✎ Edit — makes the card editable as a textarea; click ✓ Done to confirm.\n⊘ Copy — copies source to clipboard.",
+          "code": "fix",
+          "result": "ARIA 读取编辑器里的代码，找 bug 并重写修复版本。",
           "resultType": "text"
         },
         {
-          "code": "# Editing a code card before inserting:\n# 1. Click  ✎ Edit\n# 2. The card becomes a live textarea — modify the code\n# 3. Click  ✓ Done  to lock in the change\n# 4. Click  ↑ Insert  to push modified code to editor\n# 5. Or click  ▶ Run  to test it first",
-          "result": "You can fix small issues (e.g. variable names, parameter values) directly in the card without leaving the terminal context.",
-          "resultType": "text"
-        }
-      ]
-    },
-    {
-      "label": "AI conversation mode",
-      "examples": [
-        {
-          "code": "# After typing  ai  (no arguments), ARIA enters chat mode:\nai\n# Prompt: 小梦 — type your task and press Enter:\nlet's discuss optimization strategies for large NumPy arrays",
-          "result": "ARIA enters multi-turn conversation mode. It remembers what you've said earlier in the session. Press Esc to exit chat mode.",
-          "resultType": "text"
-        },
-        {
-          "code": "# ARIA auto-detects when to code vs. when to chat:\nai what is gradient descent\n# → ARIA gives a text explanation (no code card)\n\nai write gradient descent for linear regression\n# → ARIA generates a Python code card",
-          "result": "The input_filter module routes your request to the right response type — you don't need special syntax to switch between coding and chatting.",
-          "resultType": "text"
-        }
-      ]
-    },
-    {
-      "label": "Other terminal commands",
-      "examples": [
-        {
-          "code": "# Navigation commands:\nopen code       # open the coding screen\nopen content    # open the content/navigation screen\nclose coding    # close the coding screen\nscreens         # list all screen states\nfullscreen code # maximize the coding screen",
-          "result": "Navigate your workspace without touching the mouse.",
-          "resultType": "text"
-        },
-        {
-          "code": "# Cache management:\ncache list      # show all stored DP cache entries\ncache export    # print full cache JSON to terminal\ncache reset     # clear all caches (y/n confirmation)",
-          "result": "Useful for debugging persistence issues or resetting the app to a clean state.",
-          "resultType": "text"
-        },
-        {
-          "code": "help",
-          "result": "Prints the full command list with descriptions.",
+          "code": "explain",
+          "result": "ARIA 逐行解释编辑器里的代码逻辑。",
           "resultType": "text"
         }
       ]

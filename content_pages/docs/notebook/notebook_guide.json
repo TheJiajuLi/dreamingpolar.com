@@ -1,125 +1,33 @@
 {
   "blocks": [
     {
-      "label": "How the Notebook kernel works",
-      "code": "# Dreaming Polar uses a single shared Pyodide kernel for the entire Notebook.\n# This is the same model as Jupyter — imports and variables defined in one\n# cell are visible in every subsequent cell.\n#\n# Under the hood, all cells share one Python dict:\n#   _dp_kernel_ns = {'__name__': '__main__'}\n#\n# Cell 1:  from datetime import datetime  → stored in _dp_kernel_ns\n# Cell 2:  print(datetime.now())          → finds datetime in _dp_kernel_ns  ✓\n#\n# Pyodide itself (numpy, matplotlib, pandas, sympy) is loaded ONCE\n# on first run — subsequent cells reuse the cached interpreter.",
-      "result": "You do NOT need to re-import libraries in every cell. Import once at the top and all cells below can use it.",
+      "label": "Power Notebook 定位",
+      "code": "# Power Notebook = 高级用户 / 建模入口\n# 左侧工具栏第二个图标（四格网格图标）\n#\n# 支持多语言 cell：\n#   Python  — 完整 pandas / numpy / matplotlib / sympy\n#   LaTeX   — 排版公式文档\n#   MathJax — 行内数学公式\n#   Markdown — 富文本说明\n#\n# 所有 Python cell 共享同一个 Pyodide 内核\n# Cell 1 定义的变量，Cell 2 可以直接使用",
+      "result": "Power Notebook 适合需要写代码、建模型、做自定义可视化的高级用户。如果只是想快速提问数据，用左侧第三个图标进入 Quick Analysis 更快。",
       "resultType": "text"
     },
     {
-      "label": "Standard Notebook workflow",
+      "label": "预加载包",
       "examples": [
         {
-          "code": "# Cell 1 — imports (run once)\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport pandas as pd\nfrom datetime import datetime\n\nprint('Libraries ready ✓')",
-          "result": "Libraries ready ✓",
-          "resultType": "text"
-        },
-        {
-          "code": "# Cell 2 — define a reusable function\ndef normalize(arr):\n    return (arr - arr.min()) / (arr.max() - arr.min())\n\nprint('normalize() defined ✓')",
-          "result": "normalize() defined ✓",
-          "resultType": "text"
-        },
-        {
-          "code": "# Cell 3 — use the function defined in Cell 2\n# (numpy imported in Cell 1 is also available)\ndata = np.array([10, 25, 5, 40, 15])\nnormalized = normalize(data)\nprint(normalized)",
-          "result": "[0.         0.57142857 0.         1.         0.28571429]",
+          "code": "# 这些包已预加载，无需 pip install：\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport sympy as sym\n\nprint('All preloaded ✓')",
+          "result": "首次执行 Python 时会下载 Pyodide 内核（约 10-20 秒，显示开机动画）。之后刷新页面前保持常驻，不再重新加载。",
           "resultType": "text"
         }
       ]
     },
     {
-      "label": "Variables accumulate across cells",
-      "examples": [
-        {
-          "code": "# Cell 1: create a list\nfruits = ['apple', 'banana', 'cherry']\nprint(f'Defined fruits: {fruits}')",
-          "result": "Defined fruits: ['apple', 'banana', 'cherry']",
-          "resultType": "text"
-        },
-        {
-          "code": "# Cell 2: add to it\nfruits.append('date')\nprint(f'After append: {fruits}')",
-          "result": "After append: ['apple', 'banana', 'cherry', 'date']",
-          "resultType": "text"
-        },
-        {
-          "code": "# Cell 3: read the updated list\nprint(f'Length: {len(fruits)}')\nprint(f'Sorted: {sorted(fruits)}')",
-          "result": "Length: 4\nSorted: ['apple', 'banana', 'cherry', 'date']",
-          "resultType": "text"
-        }
-      ]
+      "label": "与 Quick Analysis 互跳",
+      "code": "# 在 Power Notebook 工具栏右侧有「← Quick Analysis」按钮\n# 在 Quick Analysis 工具栏右侧有「Notebook ↗」按钮\n#\n# 两者共享 Pyodide 内核：\n# Power Notebook 里 import 的数据（df 变量）\n# 在 Quick Analysis 里可以用 Python 代码继续操作\n#\n# 注意：Quick Analysis 的轻量导入路径（dataset_store）\n# 不自动注入 Pyodide 内核——如需在 Python 里操作，\n# 请用 Power Notebook 的 📂 按钮导入",
+      "result": "互跳不会丢失数据：Python 内核里的变量一直在内存里，直到点「重启内核」或刷新页面。",
+      "resultType": "text"
     },
     {
-      "label": "Restart Kernel — clearing all variables",
+      "label": "运行方式",
       "examples": [
         {
-          "code": "# Click  ↺ Restart  in the notebook toolbar.\n#\n# This clears _dp_kernel_ns:\n#   _dp_kernel_ns = {'__name__': '__main__'}\n#\n# All variables, imports, and function definitions are erased.\n# Pyodide itself stays loaded — you do NOT wait for the 10-second\n# bootstrap again after a restart.",
-          "result": "After restart: typing  x  in a cell returns NameError — x is not defined. Re-run Cell 1 to reload your imports.",
-          "resultType": "text"
-        },
-        {
-          "code": "# Common restart workflow:\n# 1. Click  ↺ Restart\n# 2. Click  ▶▶ Run All  to re-execute every cell top-to-bottom\n# 3. All outputs are reproduced from scratch\n#\n# This is the standard way to verify your Notebook is reproducible.",
-          "result": "Restarting does NOT reset outputs — you need to re-run cells to refresh them. This is intentional: you can compare old output to new.",
-          "resultType": "text"
-        }
-      ]
-    },
-    {
-      "label": "Preloaded libraries — no pip install needed",
-      "examples": [
-        {
-          "code": "# These packages are pre-loaded into the browser at startup:\nimport numpy as np          # numerical computing\nimport pandas as pd         # DataFrames\nimport matplotlib.pyplot as plt  # plotting\nimport sympy as sym         # symbolic math\n\nprint('All preloaded ✓')",
-          "result": "All preloaded ✓\n\nNo internet needed after initial page load. All computation is local in your browser.",
-          "resultType": "text"
-        },
-        {
-          "code": "# Additional packages are loaded on demand via micropip.\n# The compiler automatically calls  loadPackagesFromImports()\n# before running each cell — so this just works:\nimport scipy\nprint(scipy.__version__)",
-          "result": "Scipy is fetched from the Pyodide CDN on first use (~2–5 seconds). Subsequent uses are cached.",
-          "resultType": "text"
-        }
-      ]
-    },
-    {
-      "label": "matplotlib — plots render inline",
-      "examples": [
-        {
-          "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\ntheta = np.linspace(0, 4 * np.pi, 300)\nr = np.sin(3 * theta)\n\nax = plt.subplot(projection='polar')\nax.plot(theta, r, color='#6366f1', linewidth=1.5)\nax.set_title('Rose Curve: r = sin(3θ)', va='bottom')\nplt.tight_layout()\nplt.show()",
-          "result": "A polar rose with 3 petals rendered inline as a PNG image.",
-          "resultType": "plot"
-        },
-        {
-          "code": "# plt.show() is patched — calling it does nothing.\n# Figures are captured automatically after your cell runs\n# and shown as high-resolution PNGs (dpi=150).\n#\n# You can produce multiple figures in one cell:\nfig, axes = plt.subplots(1, 2, figsize=(8, 3))\naxes[0].plot([1, 2, 3], [1, 4, 9], 'b-o')\naxes[0].set_title('Quadratic')\naxes[1].bar(['A','B','C'], [5, 3, 7], color='coral')\naxes[1].set_title('Bar')\nplt.tight_layout()\nplt.show()",
-          "result": "Both subplots appear together as a single figure.",
-          "resultType": "plot"
-        }
-      ]
-    },
-    {
-      "label": "SymPy — symbolic results render as LaTeX",
-      "examples": [
-        {
-          "code": "import sympy as sym\nx = sym.Symbol('x')\n\n# The LAST expression in a cell is auto-rendered as LaTeX\n# if it is a SymPy object:\nintegral = sym.integrate(sym.sin(x)**2, x)\nintegral",
-          "result": "\\frac{x}{2} - \\frac{\\sin\\left(2 x\\right)}{4}"
-        },
-        {
-          "code": "import sympy as sym\nx, y = sym.symbols('x y')\n\n# Solve and display a system:\neqs = [sym.Eq(x**2 + y**2, 1), sym.Eq(x - y, sym.Rational(1, 2))]\nsym.solve(eqs, (x, y))",
-          "result": "\\left[ \\left( \\frac{1}{4} + \\frac{\\sqrt{7}}{4}, \\ - \\frac{1}{4} + \\frac{\\sqrt{7}}{4}\\right), \\  \\left( \\frac{1}{4} - \\frac{\\sqrt{7}}{4}, \\ - \\frac{1}{4} - \\frac{\\sqrt{7}}{4}\\right)\\right]"
-        }
-      ]
-    },
-    {
-      "label": "Cell execution order matters",
-      "examples": [
-        {
-          "code": "# Cells can be run in any order — the shared kernel just remembers\n# the LAST value assigned to each variable.\n#\n# This means running Cell 3 before Cell 2 might fail if Cell 3\n# depends on something defined in Cell 2.\n#\n# Best practice:\n# • Keep imports in Cell 1\n# • Define helpers/classes in Cells 2–3\n# • Do computation in later cells\n# • Use  ▶▶ Run All  to execute top-to-bottom\n#\n# The cell number shown in [1], [2], [3] reflects\n# the ORDER in which they were last executed.",
-          "result": "If you see NameError, it usually means you ran a cell that depends on a variable not yet defined — re-run from Cell 1 or click  ↺ Restart  then  ▶▶ Run All.",
-          "resultType": "text"
-        }
-      ]
-    },
-    {
-      "label": "ICM mode — intelligent multi-cell editing",
-      "examples": [
-        {
-          "code": "# Toggle ICM (Intelligent Coding Mode) with the  * ICM  button.\n#\n# ICM features:\n# • Syntax highlighting with Python token colours\n# • Auto-indent on Enter\n# • Shift+Enter to run the current cell\n# • Ctrl+Enter to run current cell + add a new cell below\n# • Each cell has its own language selector (Python, Markdown, etc.)\n#\n# Cells can be reordered with the ↑ ↓ arrow buttons.\n# Output sections are shown in the OUTPUT panel on the right,\n# labelled by cell number.",
-          "result": "ICM turns the Notebook into a proper development environment. Recommended for all multi-cell workflows.",
+          "code": "# 单个 cell：点 ▶ 按钮，或 Ctrl/Cmd + Enter\n# 全部 cell：工具栏「▶▶ Run All」\n#\n# 输出显示在右侧 OUTPUT 面板\n# 每个 cell 的输出独立显示，带 cell 编号标签",
+          "result": "matplotlib 图表直接显示在输出面板里，无需 plt.show() 参数配置，Dreaming Polar 已自动配置。",
           "resultType": "text"
         }
       ]
