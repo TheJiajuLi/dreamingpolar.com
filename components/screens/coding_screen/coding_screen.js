@@ -1,5 +1,5 @@
 import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
-import { init as initNotebook, addImportedCell, setVarNameResolver, setOnDataImported } from '../../customise_code_block/customise_code_block.js';
+import { init as initNotebook, addImportedCell, setVarNameResolver, clearAllDatasetLabels } from '../../customise_code_block/customise_code_block.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
 import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
@@ -41,12 +41,7 @@ function setupCodingScreen() {
   restartKernelBtn.title       = 'Restart kernel — clears all variables (click twice to confirm)';
   restartKernelBtn.textContent = '↺';
 
-  // ── Dataset registry ───────────────────────────────────────
-  const dsRegistry = document.createElement('div');
-  dsRegistry.className  = 'cds-ds-registry';
-  dsRegistry.style.display = 'none';
-
-  nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn, dsRegistry);
+  nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn);
 
   // ── Variable name resolver — shared across all cell import buttons ──
   const _usedVarNames = new Set();
@@ -71,23 +66,7 @@ function setupCodingScreen() {
 
   setVarNameResolver(_resolveVarName);
 
-  // ── Registry update callback ───────────────────────────────
-  const _registryItems = []; // { varName, rows, cellNum }
-
-  function _rebuildRegistry() {
-    if (!_registryItems.length) { dsRegistry.style.display = 'none'; return; }
-    dsRegistry.style.display = '';
-    dsRegistry.textContent   = _registryItems
-      .map(r => `${r.varName} (cell ${r.cellNum}, ${r.rows.toLocaleString()} rows)`)
-      .join('  ·  ');
-  }
-
-  setOnDataImported((varName, rows, filename, cellId, cellNum) => {
-    _registryItems.push({ varName, rows, cellNum });
-    _rebuildRegistry();
-  });
-
-  // ── Restart: two-step confirm, clears all import state ────
+  // ── Restart: two-step confirm, clears all per-cell import labels ──
   let _restartArmed = false;
   restartKernelBtn.addEventListener('click', async () => {
     if (!_restartArmed) {
@@ -109,8 +88,7 @@ function setupCodingScreen() {
     restartKernelBtn.textContent = '↺…';
     await resetKernel();
     _usedVarNames.clear();
-    _registryItems.length = 0;
-    _rebuildRegistry();
+    clearAllDatasetLabels();
     restartKernelBtn.disabled    = false;
     restartKernelBtn.textContent = '↺';
   });

@@ -193,6 +193,31 @@
 .nb-csv-btn        { font-size: 0.85rem; color: var(--text-muted, #64748b); }
 .nb-csv-btn:hover  { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); }
 
+/* Per-cell dataset badge — shown after CSV import */
+.nb-ds-label {
+  font-size: 0.58rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--accent, #6366f1);
+  background: var(--accent-soft, #e0e3ff);
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+
+/* Output copy button — lives in nb-output-section-label */
+.nb-output-copy-btn {
+  width: 22px;
+  height: 22px;
+  opacity: 0.55;
+  margin-left: auto;
+}
+.nb-output-copy-btn:hover { opacity: 1; background: var(--bg, #f1f5f9); }
+
 .nb-cell-num {
   width: 20px;
   height: 20px;

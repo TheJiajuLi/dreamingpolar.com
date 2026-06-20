@@ -86,7 +86,7 @@ function cellLabel(cell) {
 // ── Cell factory ──────────────────────────────────────────
 
 function makeCell(lang = 'python', code = '', id = uid()) {
-  const cell = { id, lang, editor: null, counter: null, numEl: null, el: null };
+  const cell = { id, lang, editor: null, counter: null, numEl: null, el: null, dsLabel: null };
 
   const el = document.createElement('div');
   el.className = 'nb-cell';
@@ -149,6 +149,11 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   importBtn.className = 'nb-btn';
 
   // ── Per-cell CSV→DataFrame import button ─────────────────
+  const dsLabel = document.createElement('span');
+  dsLabel.className    = 'nb-ds-label';
+  dsLabel.style.display = 'none';
+  cell.dsLabel = dsLabel;
+
   const csvBtn = createLoadDataBtn({
     resolveVarName: (filename) => _varNameResolver ? _varNameResolver(filename) : 'df',
     onLoad: (varName, rows, filename) => {
@@ -160,6 +165,8 @@ function makeCell(lang = 'python', code = '', id = uid()) {
       autoResize(cell.editor);
       cell.editor.dispatchEvent(new Event('input'));
       saveAll();
+      dsLabel.textContent  = `${varName} · ${rows.toLocaleString()} rows`;
+      dsLabel.style.display = '';
       _onDataImported?.(varName, rows, filename, cell.id, cellNum);
       requestAnimationFrame(() => cell.el.querySelector('.nb-run')?.click());
     },
@@ -167,7 +174,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   csvBtn.className = 'nb-btn nb-csv-btn';
   csvBtn.title     = 'Load CSV / Excel as DataFrame into this cell';
 
-  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, csvBtn, importBtn);
+  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, csvBtn, dsLabel, importBtn);
 
   const editor = document.createElement('textarea');
   editor.className    = 'nb-editor';
@@ -195,12 +202,28 @@ function makeCell(lang = 'python', code = '', id = uid()) {
 
   const cellSourceWidget = createSourceWidget();
 
+  const outputCopyBtn = document.createElement('button');
+  outputCopyBtn.className = 'nb-btn lus-copy-btn nb-output-copy-btn';
+  outputCopyBtn.title = 'Copy output';
+  outputCopyBtn.innerHTML = ICON_COPY;
+  outputCopyBtn.addEventListener('click', () => {
+    const text = outputBody.innerText ?? outputBody.textContent ?? '';
+    navigator.clipboard?.writeText(text).then(() => {
+      outputCopyBtn.innerHTML = ICON_CHECK;
+      outputCopyBtn.classList.add('lus-copy-btn--done');
+      setTimeout(() => {
+        outputCopyBtn.innerHTML = ICON_COPY;
+        outputCopyBtn.classList.remove('lus-copy-btn--done');
+      }, 1500);
+    });
+  });
+
   const outputClose = document.createElement('button');
   outputClose.className = 'nb-output-section-close';
   outputClose.title = 'Hide output';
   outputClose.textContent = '✕';
   outputClose.addEventListener('click', () => { outputSection.style.display = 'none'; });
-  outputLabel.append(outputLabelText, cellSourceWidget.element, outputClose);
+  outputLabel.append(outputLabelText, cellSourceWidget.element, outputCopyBtn, outputClose);
 
   const outputBody = document.createElement('div');
   outputBody.className = 'nb-output-section-body';
@@ -468,6 +491,15 @@ export function getCellOrder() {
 
 export function setVarNameResolver(fn) { _varNameResolver = fn; }
 export function setOnDataImported(fn)  { _onDataImported  = fn; }
+
+export function clearAllDatasetLabels() {
+  _cells.forEach(c => {
+    if (c.dsLabel) {
+      c.dsLabel.textContent  = '';
+      c.dsLabel.style.display = 'none';
+    }
+  });
+}
 
 export function setCellCode(cellId, code) {
   const cell = _cells.find(c => c.id === cellId);
