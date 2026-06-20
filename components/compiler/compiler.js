@@ -10,12 +10,16 @@ import {
 const PYODIDE_VERSION = '314.0.0';
 const PYODIDE_INDEX   = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 
-let _pyodide = null;
-let _loading = null;
+let _pyodide     = null;
+let _loading     = null;
+let _suppressKbs = false; // true during silent background preload
 
 // ── Utilities ─────────────────────────────────────────────
 
 function _dispatch(status, message, percent) {
+  // During a silent preload, suppress 'loading' events so the KBS never mounts.
+  // 'running' / 'ready' / 'error' always fire so the bottom status bar stays live.
+  if (_suppressKbs && status === 'loading') return;
   document.dispatchEvent(new CustomEvent('compiler-status', { detail: { status, message, percent } }));
 }
 
@@ -409,7 +413,13 @@ export async function compile(code, mode) {
 }
 
 export function preloadPython() {
-  _getPyodide().catch(() => {});
+  // Silently warm up the interpreter so it's ready before the user clicks Run.
+  // _suppressKbs prevents the boot-screen modal from appearing during this
+  // background phase — the KBS is reserved for user-initiated execution.
+  _suppressKbs = true;
+  _getPyodide()
+    .catch(() => {})
+    .finally(() => { _suppressKbs = false; });
 }
 
 // ── Restart kernel — clears shared namespace, all cell variables reset ────────
