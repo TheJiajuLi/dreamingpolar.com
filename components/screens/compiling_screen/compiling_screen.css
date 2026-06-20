@@ -82,6 +82,42 @@
   font-style: italic;
 }
 
+/* ── Viz-suggestion card ──────────────────────────────────── */
+.output-viz-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: var(--accent-soft, #eff0ff);
+  border-left: 3px solid var(--accent, #6366f1) !important;
+}
+
+.viz-suggest-icon { font-size: 0.9rem; flex-shrink: 0; }
+
+.viz-suggest-label {
+  flex: 1;
+  font-size: 0.78rem;
+  color: var(--text, #0f172a);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+.viz-suggest-label strong { color: var(--accent, #6366f1); }
+
+.viz-suggest-btn {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-family: inherit;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--accent, #6366f1);
+  background: var(--accent, #6366f1);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+.viz-suggest-btn:hover { opacity: 0.85; }
+
 .output-image {
   flex-shrink: 0;
   padding: 10px 12px;

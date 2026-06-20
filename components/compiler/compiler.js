@@ -150,7 +150,41 @@ finally:
     sys.stdout = _orig_out
     sys.stderr = _orig_err
 
-_j.dumps({'stdout': _out.getvalue(), 'stderr': _err.getvalue(), 'error': _exc, 'rich': _rich})
+# ── Post-execution: detect new / changed visualisable objects (diff-based) ──
+# Skips internal names (underscore prefix). Compares shape against
+# _dp_last_shapes to avoid re-reporting unchanged variables on every run.
+_viz_candidates = []
+try:
+    if '_dp_last_shapes' not in _dp_kernel_ns:
+        _dp_kernel_ns['_dp_last_shapes'] = {}
+    _last = _dp_kernel_ns['_dp_last_shapes']
+
+    for _vn, _vo in list(_dp_kernel_ns.items()):
+        if _vn.startswith('_'): continue
+        _kind = type(_vo).__name__
+        if _kind not in ('DataFrame', 'Series', 'ndarray'): continue
+        try:
+            _sh = list(_vo.shape)
+        except Exception:
+            try: _sh = [int(len(_vo))]
+            except Exception: continue
+        if _last.get(_vn) == _sh: continue   # unchanged — skip
+        _last[_vn] = _sh
+        if _kind == 'DataFrame':
+            _shape_str = f'{_sh[0]:,}\\u884c\\u00d7{_sh[1]}\\u5217' if len(_sh) > 1 else f'{_sh[0]:,}'
+        elif _kind == 'Series':
+            _shape_str = f'{_sh[0]:,}\\u5143\\u7d20'
+        else:
+            _shape_str = '\\u00d7'.join(str(d) for d in _sh)
+        _viz_candidates.append({
+            'varName': _vn,
+            'kind': _kind.lower(),
+            'shape': _shape_str,
+        })
+except Exception as _ve:
+    pass   # detection errors must not surface to the user
+
+_j.dumps({'stdout': _out.getvalue(), 'stderr': _err.getvalue(), 'error': _exc, 'rich': _rich, 'viz_candidates': _viz_candidates})
 `;
 
 async function _runPython(code, runningMessage = 'Running…') {
@@ -188,6 +222,13 @@ async function _runPython(code, runningMessage = 'Running…') {
     }
 
     if (!out.length) out.push({ type: 'info', content: 'Executed (no output).' });
+
+    // Append viz-suggestion cards for new / changed visualisable objects.
+    if (Array.isArray(d.viz_candidates)) {
+      for (const vc of d.viz_candidates) {
+        if (vc?.varName && vc?.kind) out.push({ type: 'viz-suggestion', ...vc });
+      }
+    }
 
     // Note: afterKernelMutation is intentionally NOT called here.
     // Firing kernel-mutation on every Python execution (including stats queries,

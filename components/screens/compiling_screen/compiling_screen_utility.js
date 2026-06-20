@@ -90,6 +90,19 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
         mathBlocks.push(block);
         break;
       }
+      case 'viz-suggestion': {
+        block.className = 'output-block output-viz-suggestion';
+        const kindLabel = { dataframe: 'DataFrame', series: 'Series', ndarray: 'ndarray' }[o.kind] ?? o.kind;
+        block.innerHTML =
+          `<span class="viz-suggest-icon">📊</span>` +
+          `<span class="viz-suggest-label">检测到 <strong>${escHtml(o.varName)}</strong>（${kindLabel}，${escHtml(o.shape ?? '')}）</span>` +
+          `<button class="viz-suggest-btn" data-var="${escHtml(o.varName)}">可视化</button>`;
+        block.querySelector('.viz-suggest-btn').addEventListener('click', () => {
+          // Placeholder — real chart rendering in the next phase
+          console.log('[viz-suggestion] visualise:', o.varName, o.kind, o.shape);
+        });
+        break;
+      }
       default:
         block.innerHTML = `<pre class="output-text">${escHtml(String(o.content))}</pre>`;
     }
