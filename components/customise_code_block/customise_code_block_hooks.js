@@ -47,10 +47,12 @@ export function attachCellHooks({
     cell.counter.textContent = '*';
     runBtn.disabled = true;
     await flushPendingInjects?.();
-    const cellNum = cell.numEl?.textContent ?? '';
-    const outputs = await compile(code, cell.lang, {
-      runningMessage: cell.lang === 'python' ? `Running cell ${cellNum}…` : 'Running…',
-    });
+    const cellNum  = cell.numEl?.textContent ?? '';
+    const fileName = cell._datasetInfo?.filename ?? '';
+    const runningMessage = cell.lang === 'python'
+      ? `Running cell ${cellNum}${fileName ? ` · ${fileName}` : ''}…`
+      : 'Running…';
+    const outputs = await compile(code, cell.lang, { runningMessage });
     // After Python execution: query kernel for DataFrames and update bottom bar.
     if (cell.lang === 'python') {
       queryKernelDataframes().then(dfs => {
