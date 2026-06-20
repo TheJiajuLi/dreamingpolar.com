@@ -1,4 +1,4 @@
-import { compile } from '../compiler/compiler.js';
+import { compile, queryKernelDataframes } from '../compiler/compiler.js';
 import { getCurrentMode } from '../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
 
 // ── Per-cell hooks ─────────────────────────────────────────
@@ -47,7 +47,18 @@ export function attachCellHooks({
     cell.counter.textContent = '*';
     runBtn.disabled = true;
     await flushPendingInjects?.();
-    const outputs = await compile(code, cell.lang);
+    const cellNum = cell.numEl?.textContent ?? '';
+    const outputs = await compile(code, cell.lang, {
+      runningMessage: cell.lang === 'python' ? `Running cell ${cellNum}…` : 'Running…',
+    });
+    // After Python execution: query kernel for DataFrames and update bottom bar.
+    if (cell.lang === 'python') {
+      queryKernelDataframes().then(dfs => {
+        if (Object.keys(dfs).length) {
+          document.dispatchEvent(new CustomEvent('kernel-dfs-updated', { detail: { dfs } }));
+        }
+      }).catch(() => {});
+    }
     // If a missing-package was detected, signal the bottom bar so it can
     // offer to install it. The signal carries cellId so the bar can trigger
     // a re-run after a successful install.

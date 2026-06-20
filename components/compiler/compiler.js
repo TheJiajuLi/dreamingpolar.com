@@ -153,9 +153,9 @@ finally:
 _j.dumps({'stdout': _out.getvalue(), 'stderr': _err.getvalue(), 'error': _exc, 'rich': _rich})
 `;
 
-async function _runPython(code) {
+async function _runPython(code, runningMessage = 'Running…') {
   try {
-    _dispatch('running', 'Running…');
+    _dispatch('running', runningMessage);
 
     // Pre-flight: warn about Pyodide-specific pitfalls before execution
     const preflight = preflightWarnings(code);
@@ -402,9 +402,9 @@ function afterKernelMutation(varName = 'df', source = 'run') {
 
 // ── Public API ────────────────────────────────────────────
 
-export async function compile(code, mode) {
+export async function compile(code, mode, { runningMessage } = {}) {
   switch (mode) {
-    case 'python':   return _runPython(code);
+    case 'python':   return _runPython(code, runningMessage);
     case 'markdown': return _runMarkdown(code);
     case 'latex':    return _runLatex(code);
     case 'mathjax':  return _runMathJax(code);
@@ -501,6 +501,30 @@ del _pd_inj, _io_inj
 
 export async function getPyodide() {
   return _getPyodide();
+}
+
+// ── Query kernel for DataFrames ───────────────────────────────────────────────
+// Returns { [varName]: { rows, cols } } for every DataFrame-like object in the
+// shared kernel namespace. Lightweight: no data is copied, just shape lookups.
+// Returns {} if Pyodide is not yet loaded (avoids triggering a boot).
+export async function queryKernelDataframes() {
+  if (!_pyodide) return {};
+  try {
+    const raw = _pyodide.runPython(`
+import json as _jq
+_dfs = {}
+for _n, _v in (_dp_kernel_ns if '_dp_kernel_ns' in dir() else {}).items():
+    if _n.startswith('_'): continue
+    try:
+        if hasattr(_v, 'shape') and hasattr(_v, 'columns'):
+            _dfs[_n] = {'rows': int(_v.shape[0]), 'cols': int(_v.shape[1])}
+    except Exception: pass
+_jq.dumps(_dfs)
+`);
+    return JSON.parse(raw);
+  } catch (_) {
+    return {};
+  }
 }
 
 // ── Install a missing Python package ─────────────────────────────────────────

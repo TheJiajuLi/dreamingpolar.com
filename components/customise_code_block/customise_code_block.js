@@ -11,7 +11,7 @@ import { createRefactorBtn } from '../screens/compiling_screen/refactorization_b
 import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
 import { createLoadDataBtn } from '../import/import_data.js';
-import { injectDataFrame } from '../compiler/compiler.js';
+import { injectDataFrame, queryKernelDataframes } from '../compiler/compiler.js';
 
 const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -401,7 +401,15 @@ async function runAll(btn) {
     const cellRunBtn = cell.el.querySelector('.nb-run');
     if (cellRunBtn) cellRunBtn.disabled = true;
 
-    const outputs = await compile(code, cell.lang);
+    const outputs = await compile(code, cell.lang, {
+      runningMessage: cell.lang === 'python' ? `Running cell ${i + 1}…` : 'Running…',
+    });
+    if (cell.lang === 'python') {
+      queryKernelDataframes().then(dfs => {
+        if (Object.keys(dfs).length)
+          document.dispatchEvent(new CustomEvent('kernel-dfs-updated', { detail: { dfs } }));
+      }).catch(() => {});
+    }
 
     if (cellRunBtn) cellRunBtn.disabled = false;
     _runSeq++;

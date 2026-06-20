@@ -192,6 +192,7 @@ body.cs-resizing * {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border, #cbd5e1) transparent;
+  background: var(--bg, #f3f5f8);  /* fills empty space below last cell */
 }
 
 /* Cell inline output is suppressed — output renders in the right cds-output-panel */

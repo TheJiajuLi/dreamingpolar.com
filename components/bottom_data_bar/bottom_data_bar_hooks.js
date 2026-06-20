@@ -118,6 +118,51 @@ document.addEventListener('dataset-updated', () => {
   _refreshFlyout();
 });
 
+// ── DataFrame detection from Python execution ─────────────────────────────────
+// When Python cells run, queryKernelDataframes() fires kernel-dfs-updated with
+// the current DataFrame namespace. If no import-button datasets exist, we use
+// this to populate the df slot so Python-code DataFrames are visible too.
+let _kernelDfs = {}; // { varName: { rows, cols } }
+
+document.addEventListener('kernel-dfs-updated', ({ detail: { dfs } }) => {
+  _kernelDfs = dfs ?? {};
+  _initDfSlot();
+  _updateKernelDfSummary();
+});
+
+function _updateKernelDfSummary() {
+  // Only take over the slot when the import-button path has no datasets.
+  const slot = getDfSlot();
+  if (!slot || !_summaryEl) return;
+  const importItems = _cellItems();
+  const allDs = getAllDatasets();
+  if (importItems.length || allDs.length) return; // import-button data takes priority
+
+  const entries = Object.entries(_kernelDfs);
+  if (!entries.length) { slot.setAttribute('hidden', ''); return; }
+
+  const totalRows = entries.reduce((s, [, v]) => s + v.rows, 0);
+  const totalCols = entries.reduce((s, [, v]) => s + v.cols, 0);
+  const n = entries.length;
+  slot.removeAttribute('hidden');
+  _summaryEl.textContent =
+    `${n} df${n === 1 ? '' : 's'} · ${totalRows.toLocaleString()} rows · ${totalCols} cols`;
+
+  // Rebuild flyout for kernel dfs
+  if (_flyoutEl) {
+    _flyoutEl.innerHTML = '';
+    entries.forEach(([name, { rows, cols }]) => {
+      const row = document.createElement('div');
+      row.className = 'bdf-row';
+      row.innerHTML =
+        `<span class="bdf-var">${name}</span>` +
+        `<span class="bdf-sep">·</span>` +
+        `<span class="bdf-rows">${rows.toLocaleString()} rows, ${cols} cols</span>`;
+      _flyoutEl.appendChild(row);
+    });
+  }
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', _initDfSlot);
 } else {
