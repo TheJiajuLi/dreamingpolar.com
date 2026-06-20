@@ -434,8 +434,10 @@
   border: 1px solid var(--border, #e2e8f0);
   border-left: 2px solid #f97316;
   overflow: hidden;
+  flex-shrink: 0; 
   animation: aria-card-in 0.22s cubic-bezier(0.16,1,0.3,1) both;
 }
+
 .aria-chat-card--info { border-left-color: #4ade80; }
 @keyframes aria-card-in {
   from { opacity: 0; transform: translateY(8px); }
