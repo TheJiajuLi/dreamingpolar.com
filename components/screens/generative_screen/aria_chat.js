@@ -285,15 +285,22 @@ export function createAriaChat() {
     input.focus();
   };
 
-  // When user switches active dataset via the tab strip, insert a divider
+  // When user switches active dataset via the tab strip, update/insert a divider
+  // Replace the last switch divider (if it's at the bottom) so rapid tab-clicks
+  // don't flood the history.
   document.addEventListener('dataset-updated', ({ detail }) => {
     if (!detail?.dataset || detail.source !== 'switch') return;
     const ds = detail.dataset;
+    // Remove the last element if it was a previous switch divider
+    const last = messages.lastElementChild;
+    if (last?.classList.contains('aria-chat-divider') && !last.classList.contains('aria-chat-divider--import')) {
+      last.remove();
+    }
     const divider = document.createElement('div');
     divider.className = 'aria-chat-divider';
     divider.innerHTML =
-      `<span class="aria-chat-divider-label">📂 切換数据集 &rarr; <strong>${_esc(ds.name)}</strong>` +
-      ` &nbsp;<span style="opacity:.55;font-weight:400">${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列</span></span>`;
+      `<span class="aria-chat-divider-label">📂 切换数据集 → <strong>${_esc(ds.name)}</strong>` +
+      ` <span style="opacity:.55;font-weight:400">${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列</span></span>`;
     messages.appendChild(divider);
     messages.scrollTop = messages.scrollHeight;
   });
