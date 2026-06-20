@@ -119,7 +119,7 @@ function inStringOrComment(editor) {
 export function create() {
   let _editor = null, _popup = null, _items = [], _sel = -1, _active = false;
 
-  function _hide()    { _popup.style.display = 'none'; _items = []; _sel = -1; }
+  function _hide()    { if (!_popup) return; _popup.style.display = 'none'; _items = []; _sel = -1; }
   function _esc(s)    { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function _accept(item) {
@@ -186,7 +186,7 @@ export function create() {
   }
 
   function _onKeydown(e) {
-    if (_popup.style.display === 'none') return;
+    if (!_popup || _popup.style.display === 'none') return;
     if (e.key === 'ArrowDown') { e.preventDefault(); _setSelected(_sel + 1); return; }
     if (e.key === 'ArrowUp')   { e.preventDefault(); _setSelected(_sel - 1); return; }
     if (e.key === 'Tab' || e.key === 'Enter') {
