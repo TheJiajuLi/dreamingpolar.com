@@ -1,5 +1,5 @@
 import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
-import { init as initNotebook, addImportedCell, setVarNameResolver, clearAllDatasetLabels } from '../../customise_code_block/customise_code_block.js';
+import { init as initNotebook, addImportedCell, setVarNameResolver, clearAllDatasetLabels, getPersistedVarNames } from '../../customise_code_block/customise_code_block.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
 import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
@@ -47,7 +47,8 @@ function setupCodingScreen() {
   nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn);
 
   // ── Variable name resolver — shared across all cell import buttons ──
-  const _usedVarNames = new Set();
+  // Seed with persisted varNames so new imports don't collide with restored data.
+  const _usedVarNames = getPersistedVarNames();
 
   function _resolveVarName(filename) {
     if (!_usedVarNames.has('df')) {

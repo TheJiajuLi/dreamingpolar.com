@@ -16,8 +16,97 @@ import { injectDataFrame, queryKernelDataframes } from '../compiler/compiler.js'
 const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
-const CELLS_KEY    = 'dreaming-polar-cells';
-const OLD_CODE_KEY = 'dreaming-polar-code';
+const CELLS_KEY      = 'dreaming-polar-cells';
+const OLD_CODE_KEY   = 'dreaming-polar-code';
+const INJECT_KEY     = 'dreaming-polar-inject-store'; // persists pending inject data across page loads
+
+// ── Inject-store helpers ──────────────────────────────────
+// Stores { [cellId]: { varName, fileType, filename, rows, columns, data, isBase64 } }
+// Binary (xlsx) is base64-encoded so it survives JSON.stringify.
+
+function _serializeData(data) {
+  if (data instanceof Uint8Array) {
+    let bin = '';
+    for (let i = 0; i < data.length; i++) bin += String.fromCharCode(data[i]);
+    return { s: btoa(bin), isBase64: true };
+  }
+  return { s: data, isBase64: false };
+}
+
+function _deserializeData({ s, isBase64 }) {
+  if (!isBase64) return s;
+  const bin = atob(s);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+function _loadInjectStore() {
+  try { return JSON.parse(localStorage.getItem(INJECT_KEY) ?? '{}'); } catch { return {}; }
+}
+
+function _saveInjectStore() {
+  const store = {};
+  _cells.forEach(c => {
+    if (c._pendingInject && c._datasetInfo) {
+      try {
+        const { s, isBase64 } = _serializeData(c._pendingInject.data);
+        store[c.id] = {
+          varName:  c._pendingInject.varName,
+          fileType: c._pendingInject.fileType,
+          filename: c._datasetInfo.filename,
+          rows:     c._datasetInfo.rows,
+          columns:  c._datasetInfo.columns,
+          data:     s,
+          isBase64,
+        };
+      } catch (_) { /* individual cell failure: skip, don't block others */ }
+    }
+  });
+  try {
+    localStorage.setItem(INJECT_KEY, JSON.stringify(store));
+  } catch (e) {
+    // Quota exceeded — warn but don't crash (data just won't persist)
+    console.warn('[inject-store] localStorage quota exceeded; import data will not survive refresh:', e.message);
+  }
+}
+
+function _removeFromInjectStore(cellId) {
+  const store = _loadInjectStore();
+  if (cellId in store) {
+    delete store[cellId];
+    try { localStorage.setItem(INJECT_KEY, JSON.stringify(store)); } catch (_) {}
+  }
+}
+
+/** After init(), restores _pendingInject + _datasetInfo + dsLabel for persisted cells. */
+function _restoreInjectData() {
+  const store = _loadInjectStore();
+  _cells.forEach(c => {
+    const saved = store[c.id];
+    if (!saved) return;
+    try {
+      const data = _deserializeData({ s: saved.data, isBase64: saved.isBase64 });
+      c._pendingInject = { varName: saved.varName, data, fileType: saved.fileType };
+      c._datasetInfo   = {
+        varName: saved.varName, rows: saved.rows,
+        columns: saved.columns, filename: saved.filename,
+      };
+      if (c.dsLabel) {
+        c.dsLabel.textContent  = `${saved.varName} · ${Number(saved.rows).toLocaleString()} rows`;
+        c.dsLabel.style.display = '';
+      }
+    } catch (e) {
+      console.warn(`[inject-store] failed to restore cell ${c.id}:`, e.message);
+    }
+  });
+}
+
+/** Returns the set of varNames that are persisted (used to seed _usedVarNames in coding_screen). */
+export function getPersistedVarNames() {
+  const store = _loadInjectStore();
+  return new Set(Object.values(store).map(v => v.varName));
+}
 
 const LANGS = [
   { id: 'python',   label: 'Python'   },
@@ -172,6 +261,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
       dsLabel.textContent  = `${varName} · ${rows.toLocaleString()} rows`;
       dsLabel.style.display = '';
       _onDataImported?.(varName, rows, filename, cell.id, cellNum);
+      _saveInjectStore(); // persist so data survives page refresh
       // No auto-run: Pyodide only boots when the user clicks ▶
     },
   });
@@ -437,6 +527,14 @@ export function init(container, externalTopbar) {
   _cells  = savedData.map(d => makeCell(d.lang ?? 'python', d.code ?? '', d.id ?? uid()));
   _runSeq = 0;
 
+  // Restore persisted inject data (survive page refresh)
+  _restoreInjectData();
+
+  // Clean up inject store when a cell is deleted
+  document.addEventListener('notebook-cell-deleted', ({ detail: { cellId } }) => {
+    _removeFromInjectStore(cellId);
+  });
+
   const nb = document.createElement('div');
   nb.className = 'notebook-editor-area';
 
@@ -553,9 +651,13 @@ export function clearAllDatasetLabels() {
       c.dsLabel.textContent  = '';
       c.dsLabel.style.display = 'none';
     }
-    c._pendingInject = null;   // kernel cleared — pending CSV is stale
-    c._datasetInfo   = null;
+    c._datasetInfo = null;
+    // Re-arm _pendingInject from the persisted store so the next Run
+    // re-injects data automatically after a kernel restart.
+    c._pendingInject = null;
   });
+  // Restore inject data so subsequent runs re-inject the data
+  _restoreInjectData();
 }
 
 export function setCellCode(cellId, code) {
