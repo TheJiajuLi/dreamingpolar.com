@@ -137,13 +137,6 @@ function setupGenerativeScreen() {
   importBtn.title = 'Import CSV / Excel — instant, no Python needed';
   toolbar.appendChild(importBtn);
 
-  const jumpBtn = document.createElement('button');
-  jumpBtn.className   = 'gen-jump-btn';
-  jumpBtn.textContent = 'Notebook ↗';
-  jumpBtn.title       = 'Open in Advanced Notebook (same kernel — data stays)';
-  jumpBtn.addEventListener('click', () => window.screenController?.open('coding'));
-  toolbar.appendChild(jumpBtn);
-
   const ariaChat = createAriaChat();
   terminalView.append(toolbar, ariaChat);
 
