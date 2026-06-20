@@ -82,41 +82,57 @@
   font-style: italic;
 }
 
-/* ── Viz-suggestion card ──────────────────────────────────── */
+/* ── Viz-suggestion card — aligned with output-info/output-error style ──── */
 .output-viz-suggestion {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  background: var(--accent-soft, #eff0ff);
-  border-left: 3px solid var(--accent, #6366f1) !important;
+  gap: 6px;
+  padding: 5px 14px 5px 11px;
+  border-left: 2px solid var(--accent, #6366f1);  /* same pattern as output-error */
+  background: transparent;
 }
 
-.viz-suggest-icon { font-size: 0.9rem; flex-shrink: 0; }
+.viz-suggest-icon {
+  font-size: 0.7rem;
+  color: var(--accent, #6366f1);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
 
 .viz-suggest-label {
   flex: 1;
-  font-size: 0.78rem;
-  color: var(--text, #0f172a);
+  font-size: 0.8rem;
   font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.viz-suggest-label strong { color: var(--accent, #6366f1); }
 
+.viz-suggest-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+  margin-left: 4px;
+}
+
+/* Outline-only button — matches aria-chat-send ghost style */
 .viz-suggest-btn {
   flex-shrink: 0;
   font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  font-family: inherit;
-  padding: 3px 10px;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
   border-radius: 4px;
-  border: 1px solid var(--accent, #6366f1);
-  background: var(--accent, #6366f1);
-  color: #fff;
+  border: 1px solid var(--border, #cbd5e1);
+  background: transparent;
+  color: var(--text-muted, #64748b);
   cursor: pointer;
-  transition: opacity 0.12s;
+  transition: border-color 0.12s, color 0.12s;
 }
-.viz-suggest-btn:hover { opacity: 0.85; }
+.viz-suggest-btn:hover {
+  border-color: var(--accent, #6366f1);
+  color: var(--accent, #6366f1);
+}
 
 .output-image {
   flex-shrink: 0;
