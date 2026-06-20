@@ -247,6 +247,92 @@ body.dp-ready #vertical-toolbar .dp-terminal-toolbar-btn.active::before {
   animation: sc-comet 3s linear infinite;
 }
 
+/* ── gen-vt-btn active: same comet-border effect as dp-terminal-toolbar-btn ─ */
+
+#vertical-toolbar .gen-vt-btn {
+  border: 1px solid transparent;
+  overflow: visible;
+  will-change: border-color, background;
+  transition: border-color 0.3s, background 0.3s, color 0.3s;
+}
+
+/* Comet border layer — redefines ::before; overrides .vt-btn.active indicator bar */
+#vertical-toolbar .gen-vt-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;          /* overrides left:0 top:6px bottom:6px from .vt-btn.active::before */
+  width: auto;          /* overrides width:3px */
+  padding: 1.5px;
+  border-radius: 8px;   /* overrides 0 3px 3px 0 */
+  background: conic-gradient(
+    from var(--sc-angle),
+    transparent      0%,
+    var(--sc-glow-c) 4%,
+    var(--sc-glow-b) 9%,
+    var(--sc-glow-a) 13%,
+    var(--sc-glow)   14%,
+    var(--sc-glow-a) 15%,
+    var(--sc-glow-b) 19%,
+    var(--sc-glow-c) 24%,
+    transparent      28%,
+    transparent      100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+
+/* Shimmer sweep */
+#vertical-toolbar .gen-vt-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(
+    108deg,
+    transparent 35%,
+    rgba(255,255,255,0.14) 50%,
+    transparent 65%
+  );
+  background-size: 220% 100%;
+  background-position: 220% 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+#vertical-toolbar .gen-vt-btn:hover {
+  border-color: var(--sc-glow-b);
+  background: var(--sc-glow-c);
+  color: var(--sc-glow);
+}
+
+#vertical-toolbar .gen-vt-btn:not(.active):hover::before { opacity: 0.3; }
+
+#vertical-toolbar .gen-vt-btn:hover::after {
+  opacity: 1;
+  animation: sc-shimmer 0.55s ease forwards;
+}
+
+#vertical-toolbar .gen-vt-btn.active {
+  border-color: var(--sc-glow-b);
+  background: var(--sc-glow-c);
+  color: var(--sc-glow);
+  animation: sc-breathe 3s ease-in-out infinite;
+}
+
+body.dp-ready #vertical-toolbar .gen-vt-btn.active::before {
+  opacity: 1;
+  animation: sc-comet 3s linear infinite;
+}
+
 /* Theme overrides for hosted buttons */
 
 /* ── Mobile: hide toolbar, navigation-button lives in header ───────────────────── */
