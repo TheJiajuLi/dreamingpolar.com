@@ -97,9 +97,24 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
           `<span class="viz-suggest-icon">📊</span>` +
           `<span class="viz-suggest-label">检测到 <strong>${escHtml(o.varName)}</strong>（${kindLabel}，${escHtml(o.shape ?? '')}）</span>` +
           `<button class="viz-suggest-btn" data-var="${escHtml(o.varName)}">可视化</button>`;
-        block.querySelector('.viz-suggest-btn').addEventListener('click', () => {
-          // Placeholder — real chart rendering in the next phase
-          console.log('[viz-suggestion] visualise:', o.varName, o.kind, o.shape);
+        block.querySelector('.viz-suggest-btn').addEventListener('click', async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          btn.textContent = '生成中…';
+          try {
+            const { visualiseVar } = await import('../../compiler/compiler.js');
+            const img = await visualiseVar(o.varName);
+            // Insert chart image right after the suggestion card
+            const imgBlock = document.createElement('div');
+            imgBlock.className = 'output-block output-image output-viz-chart';
+            imgBlock.innerHTML = `<img src="data:image/png;base64,${img}" alt="${escHtml(o.varName)} chart">`;
+            block.insertAdjacentElement('afterend', imgBlock);
+            block.style.display = 'none'; // suggestion card collapses once chart renders
+          } catch (err) {
+            console.warn('[viz-suggestion] chart failed:', err);
+            btn.textContent = '生成失败';
+            btn.disabled = false;
+          }
         });
         break;
       }

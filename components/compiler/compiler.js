@@ -544,6 +544,62 @@ export async function getPyodide() {
   return _getPyodide();
 }
 
+// ── Visualise a kernel variable — generates a matplotlib PNG ─────────────────
+// varName: the Python variable name (string, passed via globals, never eval'd)
+// Returns a base64-encoded PNG string, or throws on failure.
+export async function visualiseVar(varName) {
+  const py = await _getPyodide();
+  await py.loadPackage(['matplotlib'], { messageCallback: () => {} });
+
+  py.globals.set('_dp_viz_varname', varName);
+  try {
+    const raw = await py.runPythonAsync(`
+import matplotlib as _mpl_v
+_mpl_v.use('agg')
+if not getattr(_mpl_v, '_dp_font_set', False):
+    try:
+        import os as _os_v, matplotlib.font_manager as _fm_v
+        if _os_v.path.exists('/tmp/NotoSansSC.ttf'):
+            _fm_v.fontManager.addfont('/tmp/NotoSansSC.ttf')
+            _mpl_v.rcParams['font.family'] = 'Noto Sans SC'
+    except Exception: pass
+    _mpl_v._dp_font_set = True
+
+import matplotlib.pyplot as _plt_v, io as _io_v, base64 as _b64_v, json as _jv
+
+_fig_v, _ax_v = _plt_v.subplots(figsize=(7, 3.8))
+_obj_v = _dp_kernel_ns.get(_dp_viz_varname)
+if _obj_v is None:
+    raise ValueError(f"Variable '{_dp_viz_varname}' not found in kernel namespace")
+
+_type_v = type(_obj_v).__name__
+if _type_v == 'DataFrame':
+    _num_v = _obj_v.select_dtypes(include='number')
+    if not _num_v.empty:
+        _num_v.iloc[:, :6].plot(ax=_ax_v, title=_dp_viz_varname)
+    else:
+        _ax_v.text(0.5, 0.5, 'No numeric columns', ha='center', va='center', transform=_ax_v.transAxes)
+        _ax_v.set_title(_dp_viz_varname)
+elif _type_v == 'Series':
+    _obj_v.plot(ax=_ax_v, title=_dp_viz_varname)
+else:
+    _flat_v = _obj_v.flatten()[:2000] if hasattr(_obj_v, 'flatten') else _obj_v
+    _ax_v.plot(_flat_v)
+    _ax_v.set_title(_dp_viz_varname)
+
+_fig_v.tight_layout()
+_buf_v = _io_v.BytesIO()
+_fig_v.savefig(_buf_v, format='png', dpi=130, bbox_inches='tight')
+_buf_v.seek(0)
+_plt_v.close(_fig_v)
+_jv.dumps({'img': _b64_v.b64encode(_buf_v.read()).decode()})
+`);
+    return JSON.parse(raw).img;
+  } finally {
+    py.globals.delete('_dp_viz_varname');
+  }
+}
+
 // ── Query kernel for DataFrames ───────────────────────────────────────────────
 // Returns { [varName]: { rows, cols } } for every DataFrame-like object in the
 // shared kernel namespace. Lightweight: no data is copied, just shape lookups.
