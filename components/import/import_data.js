@@ -105,6 +105,8 @@ export function createLoadDataBtn({ varName = 'df', onLoad } = {}) {
       try {
         const csv    = await _fileToCsv(file);
         const result = await injectDataFrame(varName, csv);
+        const dataset = _parseToDataset(csv, file.name);
+        if (dataset) setDataset(dataset);
         _toast(`✓ "${file.name}" loaded → ${varName}  (${result.rows} rows)  — try: ${varName}.head()`);
         onLoad?.(varName, result.rows, file.name);
       } catch (e) {
