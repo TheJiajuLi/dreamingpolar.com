@@ -1,4 +1,3 @@
-import { createQuickImportBtn } from '../../import/import_data.js';
 import { getDataset } from '../../shared/dataset_store.js';
 import { createAriaChat } from './aria_chat.js';
 
@@ -124,21 +123,8 @@ function setupGenerativeScreen() {
   terminalView.className    = 'gen-view gen-terminal-view gen-view--active';
   terminalView.dataset.view = 'gen-terminal';
 
-  const toolbar = document.createElement('div');
-  toolbar.className = 'gen-toolbar';
-
-  const modeLabel = document.createElement('span');
-  modeLabel.className   = 'gen-mode-label';
-  modeLabel.textContent = 'Quick Analysis';
-  toolbar.appendChild(modeLabel);
-
-  // Import Dataset button — Quick Analysis lightweight path (no Python)
-  const importBtn = createQuickImportBtn();
-  importBtn.title = 'Import CSV / Excel — instant, no Python needed';
-  toolbar.appendChild(importBtn);
-
   const ariaChat = createAriaChat();
-  terminalView.append(toolbar, ariaChat);
+  terminalView.append(ariaChat);
 
   // ── 2-4. Other views ─────────────────────────────────────────────────────
   const modelsView = _buildModelsView();
