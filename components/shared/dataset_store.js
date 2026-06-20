@@ -11,9 +11,9 @@ let _activeIdx = -1;
 // ── Computed ──────────────────────────────────────────────────────────────────
 function _active() { return _activeIdx >= 0 ? _datasets[_activeIdx] : null; }
 
-function _notify() {
+function _notify(source = 'import') {
   document.dispatchEvent(new CustomEvent('dataset-updated', {
-    detail: { dataset: _active(), all: [..._datasets], activeIdx: _activeIdx },
+    detail: { dataset: _active(), all: [..._datasets], activeIdx: _activeIdx, source },
   }));
 }
 
@@ -22,7 +22,6 @@ function _notify() {
 /** Add (or replace) a dataset and make it active. */
 export function setDataset(dataset) {
   if (!dataset) return;
-  // Replace existing dataset with same name, or append new one
   const existing = _datasets.findIndex(d => d.name === dataset.name);
   if (existing >= 0) {
     _datasets[existing] = dataset;
@@ -31,7 +30,7 @@ export function setDataset(dataset) {
     _datasets.push(dataset);
     _activeIdx = _datasets.length - 1;
   }
-  _notify();
+  _notify('import');
 }
 
 /** Return the active dataset, or null. */
@@ -45,7 +44,7 @@ export function setActiveDataset(name) {
   const idx = _datasets.findIndex(d => d.name === name);
   if (idx >= 0 && idx !== _activeIdx) {
     _activeIdx = idx;
-    _notify();
+    _notify('switch');
   }
 }
 
@@ -53,5 +52,5 @@ export function setActiveDataset(name) {
 export function clearDataset() {
   _datasets  = [];
   _activeIdx = -1;
-  _notify();
+  _notify('clear');
 }

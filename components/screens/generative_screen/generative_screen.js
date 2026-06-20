@@ -191,14 +191,14 @@ function setupGenerativeScreen() {
   });
 
   // ── Quick Analysis import (lightweight JS path) ──────────────────────────
-  // Fires when createQuickImportBtn stores data in dataset_store.
-  // Only act if generative_screen is the active hero screen.
+  // source='import' → new file loaded → show DATA card, switch to chat view
+  // source='switch' → user clicked a tab → DO NOT show DATA card again
   document.addEventListener('dataset-updated', ({ detail }) => {
-    if (!detail) return;
+    if (!detail || detail.source !== 'import') return;
     const state = window.screenController?.getState('terminal');
     if (state !== 'normal' && state !== 'maximized') return;
     switchView('gen-terminal');
-    ariaChat._onDataLoaded?.(detail.name ?? 'file');
+    ariaChat._onDataLoaded?.(detail.dataset?.name ?? 'file');
   });
 
   // ── Power Notebook inject (Python kernel path, kept for compatibility) ────

@@ -535,6 +535,31 @@
   font-weight: 700;
 }
 
+/* ── Dataset divider (import / switch separators) ────────────────────────────── */
+
+.aria-chat-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  font-size: 0.58rem;
+  color: var(--text-muted, #64748b);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  user-select: none;
+}
+
+.aria-chat-divider::before,
+.aria-chat-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border, #e2e8f0);
+}
+
+.aria-chat-divider--import .aria-chat-divider-label { color: #4ade80; }
+
+.aria-chat-divider-label strong { font-weight: 700; color: var(--text, #0f172a); }
+
 /* ── Messages area ───────────────────────────────────────────────────────────── */
 
 .aria-chat-messages {

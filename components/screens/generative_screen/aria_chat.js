@@ -180,7 +180,7 @@ export function createAriaChat() {
     });
   }
 
-  // React to dataset changes: rebuild tabs + insert a dataset-switched card
+  // React to dataset changes: always rebuild tabs
   document.addEventListener('dataset-updated', ({ detail }) => {
     if (!detail) return;
     _rebuildTabs(detail.all ?? [], detail.activeIdx ?? 0);
@@ -245,12 +245,12 @@ export function createAriaChat() {
       // Parse CHART marker — render real chart from actual dataset_store data
       const marker = _parseChartMarker(fullReply);
       if (marker && getDataset()) await _renderChart(card, marker);
-      // Dataset badge
+      // Dataset badge — shows WHICH dataset this answer is based on
       const ds = getDataset();
       if (ds) {
         const badge = document.createElement('div');
         badge.className = 'aria-chat-card-meta';
-        badge.textContent = `${ds.name}: ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列`;
+        badge.innerHTML = `<span style="opacity:.5">基于</span> <strong>${_esc(ds.name)}</strong> · ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列`;
         card.appendChild(badge);
       }
     } catch (e) {
@@ -274,35 +274,27 @@ export function createAriaChat() {
   root._onDataLoaded = (name) => {
     welcome.style.display = 'none';
     const ds = getDataset();
-    const card = document.createElement('div');
-    card.className = 'aria-chat-card aria-chat-card--info';
-    card.innerHTML =
-      `<div class="aria-chat-card-hdr">` +
-      `<span class="aria-chat-card-label" style="color:#4ade80">DATA</span>` +
-      `<span class="aria-chat-card-q">${_esc(name||ds?.name||'file')} — ${(ds?.rows?.length||0).toLocaleString()} 行 × ${ds?.columns?.length||0} 列</span>` +
-      `<span class="aria-chat-card-time">${_time()}</span>` +
-      `</div>` +
-      `<div class="aria-chat-card-body" style="opacity:0.75">直接提问即可，ARIA 已读取真实数据（列名、类型、样本行）。</div>`;
-    messages.appendChild(card);
+    const displayName = name || ds?.name || 'file';
+    const divider = document.createElement('div');
+    divider.className = 'aria-chat-divider aria-chat-divider--import';
+    divider.innerHTML =
+      `<span class="aria-chat-divider-label">📥 已加载 <strong>${_esc(displayName)}</strong>` +
+      ` &nbsp;<span style="opacity:.55;font-weight:400">${(ds?.rows?.length||0).toLocaleString()} 行 × ${ds?.columns?.length||0} 列</span></span>`;
+    messages.appendChild(divider);
     messages.scrollTop = messages.scrollHeight;
     input.focus();
   };
 
-  // When user switches active dataset via the tab strip, insert a brief note
+  // When user switches active dataset via the tab strip, insert a divider
   document.addEventListener('dataset-updated', ({ detail }) => {
-    if (!detail?.dataset) return;
+    if (!detail?.dataset || detail.source !== 'switch') return;
     const ds = detail.dataset;
-    // Only show a switch notice if there are multiple datasets
-    if ((detail.all?.length ?? 0) <= 1) return;
-    const note = document.createElement('div');
-    note.className = 'aria-chat-card aria-chat-card--info';
-    note.innerHTML =
-      `<div class="aria-chat-card-hdr">` +
-      `<span class="aria-chat-card-label" style="color:#f97316">切换</span>` +
-      `<span class="aria-chat-card-q">当前数据集：${_esc(ds.name)} — ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列</span>` +
-      `<span class="aria-chat-card-time">${_time()}</span>` +
-      `</div>`;
-    messages.appendChild(note);
+    const divider = document.createElement('div');
+    divider.className = 'aria-chat-divider';
+    divider.innerHTML =
+      `<span class="aria-chat-divider-label">📂 切換数据集 &rarr; <strong>${_esc(ds.name)}</strong>` +
+      ` &nbsp;<span style="opacity:.55;font-weight:400">${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列</span></span>`;
+    messages.appendChild(divider);
     messages.scrollTop = messages.scrollHeight;
   });
 
