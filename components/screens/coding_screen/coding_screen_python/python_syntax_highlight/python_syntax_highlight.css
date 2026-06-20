@@ -20,6 +20,8 @@
 
 /* ── Notebook cell variant (nb-editor has different padding/font) ─ */
 .nb-body .psh-backdrop {
+  left: 3px;   /* nb-body has padding-left:3px for the laser-line accent;
+                  offset the backdrop to match where textarea text starts */
   padding: 10px;
   font-size: 0.84rem;
   line-height: 1.6;
@@ -38,6 +40,15 @@
   background: transparent !important;
 }
 .code-editor.psh-active { position: absolute; } /* single-cell: absolute fill */
+
+/* ── Selection: soft uniform tint so syntax colors show through ── */
+.nb-editor.psh-active::selection,
+.nb-editor.psh-active::-moz-selection,
+.code-editor.psh-active::selection,
+.code-editor.psh-active::-moz-selection {
+  background: rgba(99, 102, 241, 0.18);
+  color: transparent;
+}
 
 /* ── Token colors — default (light) theme ─────────────────── */
 .psh-keyword    { color: #d73a49; font-weight: 600; }
@@ -99,3 +110,18 @@
 [data-theme="aurora"] .psh-funcall   { color: #c084fc; }
 [data-theme="aurora"] .psh-op        { color: #f9a8d4; }
 [data-theme="aurora"] .psh-punct     { color: rgba(160,160,200,0.55); }
+
+/* ── Per-theme selection tint adjustments ─────────────────── */
+[data-theme="dark"] .nb-editor.psh-active::selection,
+[data-theme="dark"] .nb-editor.psh-active::-moz-selection,
+[data-theme="grey"] .nb-editor.psh-active::selection,
+[data-theme="grey"] .nb-editor.psh-active::-moz-selection {
+  background: rgba(99, 102, 241, 0.28);
+  color: transparent;
+}
+
+[data-theme="aurora"] .nb-editor.psh-active::selection,
+[data-theme="aurora"] .nb-editor.psh-active::-moz-selection {
+  background: rgba(192, 132, 252, 0.22);
+  color: transparent;
+}
