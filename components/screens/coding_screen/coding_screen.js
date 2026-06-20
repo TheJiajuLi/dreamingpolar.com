@@ -60,20 +60,10 @@ function setupCodingScreen() {
 
   nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn, loadDataBtn);
 
-  // ── Mode label + jump back to Quick Analysis ──────────
+  // ── Mode label ────────────────────────────────────────
   const cdsModeLabel = document.createElement('span');
   cdsModeLabel.className   = 'cds-mode-label';
-  cdsModeLabel.textContent = 'Power Notebook';
   nbToolbar.appendChild(cdsModeLabel);
-
-  const cdsJumpBtn = document.createElement('button');
-  cdsJumpBtn.className   = 'cds-jump-btn';
-  cdsJumpBtn.textContent = '← Quick Analysis';
-  cdsJumpBtn.title       = 'Switch to Quick Analysis (same kernel — data stays)';
-  cdsJumpBtn.addEventListener('click', () => {
-    window.screenController?.open('terminal');
-  });
-  nbToolbar.appendChild(cdsJumpBtn);
 
   nbLeft.appendChild(nbToolbar);
   notebookView.appendChild(nbLeft);
