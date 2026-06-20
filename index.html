@@ -151,6 +151,10 @@
   <script src="components/theme_controller/theme_controller.js" type="module"></script>
   <script src="components/font_switcher/font_switcher.js" type="module"></script>
   <script src="components/language_selector/language_selector.js" type="module"></script>
+  <script type="module">
+    import { initI18n } from './components/shared/i18n.js';
+    await initI18n();
+  </script>
   <script src="components/mobile/mobile_page_header_buttons_wrapper/mobile_page_header_buttons_wrapper.js" type="module"></script>
   <script src="components/screens/content_screen/content_screen.js" type="module"></script>
   <script src="components/screens/coding_screen/coding_screen.js" type="module"></script>
