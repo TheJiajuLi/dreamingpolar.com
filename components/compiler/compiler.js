@@ -9,7 +9,6 @@ import {
 
 const PYODIDE_VERSION = '314.0.0';
 const PYODIDE_INDEX   = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
-const PACKAGES        = ['numpy', 'sympy', 'matplotlib', 'pandas'];
 
 let _pyodide = null;
 let _loading = null;
@@ -38,53 +37,19 @@ async function _getPyodide() {
   if (_loading)  return _loading;
 
   _loading = (async () => {
-    _dispatch('loading', 'Fetching Python runtime…', 3);
+    _dispatch('loading', 'Fetching Python runtime…', 5);
     await _loadScript(PYODIDE_INDEX + 'pyodide.js');
 
-    _dispatch('loading', 'Starting interpreter…', 12);
+    _dispatch('loading', 'Starting interpreter…', 30);
     const py = await window.loadPyodide({ indexURL: PYODIDE_INDEX, messageCallback: () => {} });
 
-    // ── Per-package progress (25 % → 85 %) ───────────────
-    const total = PACKAGES.length;
-    let done = 0;
-    const _pkgPct = () => Math.round(25 + (done / total) * 60);
-
-    _dispatch('loading', `Loading ${PACKAGES[0]} (1/${total})…`, 25);
-
-    await py.loadPackage(PACKAGES, {
-      messageCallback: msg => {
-        if (!/loaded/i.test(msg)) return;
-        // One message may report several packages ("Loaded numpy, pandas")
-        const newly = PACKAGES.filter(
-          pkg => new RegExp(`\\b${pkg}\\b`, 'i').test(msg)
-        );
-        if (!newly.length) return;
-        done = Math.min(done + newly.length, total);
-        const pct  = _pkgPct();
-        const next = PACKAGES[done];
-        const label = next
-          ? `Loading ${next} (${done + 1}/${total})…`
-          : 'Finalizing packages…';
-        _dispatch('loading', label, pct);
-      },
-    });
-
-    _dispatch('loading', 'Configuring matplotlib…', 88);
-    await py.runPythonAsync(`import matplotlib; matplotlib.use('agg')`);
-
-    // Load a CJK font via JS fetch → Pyodide FS so matplotlib can render Chinese text
-    _dispatch('loading', 'Loading CJK font…', 93);
+    // Write CJK font into Pyodide FS so matplotlib can use it when it is first
+    // imported (pure JS fetch + FS write, no Python execution at boot time).
     try {
       const fontResp = await fetch(`${window.BASE || ''}/assets/fonts/NotoSansSC-Regular.ttf`);
       if (fontResp.ok) {
         const buf = await fontResp.arrayBuffer();
         py.FS.writeFile('/tmp/NotoSansSC.ttf', new Uint8Array(buf));
-        await py.runPythonAsync(`
-import matplotlib.font_manager as _fm
-_fm.fontManager.addfont('/tmp/NotoSansSC.ttf')
-import matplotlib as _mpl
-_mpl.rcParams['font.family'] = 'Noto Sans SC'
-`);
       }
     } catch (_) {}
 
@@ -103,12 +68,29 @@ _mpl.rcParams['font.family'] = 'Noto Sans SC'
 
 const RUNNER = `
 import sys, io, base64, ast, traceback, json as _j
-import matplotlib as _mpl
-_mpl.use('agg')
-import matplotlib.pyplot as _plt
 import warnings as _warnings
 _warnings.filterwarnings('ignore', category=UserWarning)
-_plt.show = lambda *a, **kw: None
+
+# matplotlib is loaded on-demand by loadPackagesFromImports when user code
+# imports it. The RUNNER handles its absence gracefully.
+try:
+    import matplotlib as _mpl
+    _mpl.use('agg')
+    # CJK font — set up once per kernel session; font file written to FS at boot.
+    if not getattr(_mpl, '_dp_font_set', False):
+        try:
+            import os as _os, matplotlib.font_manager as _fm
+            if _os.path.exists('/tmp/NotoSansSC.ttf'):
+                _fm.fontManager.addfont('/tmp/NotoSansSC.ttf')
+                _mpl.rcParams['font.family'] = 'Noto Sans SC'
+        except Exception: pass
+        _mpl._dp_font_set = True
+    import matplotlib.pyplot as _plt
+    _plt.show = lambda *a, **kw: None
+    _HAS_MPL = True
+except ImportError:
+    _plt = None
+    _HAS_MPL = False
 
 _out = io.StringIO()
 _err = io.StringIO()
@@ -129,13 +111,14 @@ _ns = _dp_kernel_ns
 try:
     exec(_user_code, _ns)
 
-    for _n in _plt.get_fignums():
-        _f = _plt.figure(_n)
-        _b = io.BytesIO()
-        _f.savefig(_b, format='png', bbox_inches='tight', dpi=150)
-        _b.seek(0)
-        _rich.append({'type': 'image', 'content': base64.b64encode(_b.read()).decode()})
-    _plt.close('all')
+    if _HAS_MPL:
+        for _n in _plt.get_fignums():
+            _f = _plt.figure(_n)
+            _b = io.BytesIO()
+            _f.savefig(_b, format='png', bbox_inches='tight', dpi=150)
+            _b.seek(0)
+            _rich.append({'type': 'image', 'content': base64.b64encode(_b.read()).decode()})
+        _plt.close('all')
 
     try:
         _tree = ast.parse(_user_code)
