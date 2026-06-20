@@ -310,6 +310,7 @@
 /* ── Dark theme icon — invert to white + green glow ─────── */
 [data-theme="dark"] .ai-header-icon {
   animation: ai-icon-breathe-dark 3.2s ease-in-out infinite;
+  opacity: 0.55;   /* dim to match other vt-btn icons (~text-muted brightness) */
 }
 [data-theme="dark"] .ai-chat-btn:disabled .ai-header-icon {
   animation: ai-icon-working-dark 0.9s ease-in-out infinite;
@@ -339,6 +340,7 @@
 /* ── Grey theme icon ─────────────────────────────────────── */
 [data-theme="grey"] .ai-header-icon {
   animation: ai-icon-breathe-grey 3.2s ease-in-out infinite;
+  opacity: 0.55;
 }
 [data-theme="grey"] .ai-chat-btn:disabled .ai-header-icon {
   animation: ai-icon-working-dark 0.9s ease-in-out infinite; /* reuse dark */
@@ -363,6 +365,7 @@
 /* ── Aurora theme icon — white + purple glow ─────────────── */
 [data-theme="aurora"] .ai-header-icon {
   animation: ai-icon-breathe-aurora 3.2s ease-in-out infinite;
+  opacity: 0.55;
 }
 [data-theme="aurora"] .ai-chat-btn:disabled .ai-header-icon {
   animation: ai-icon-working-aurora 0.9s ease-in-out infinite;
