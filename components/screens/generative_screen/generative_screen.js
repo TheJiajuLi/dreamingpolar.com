@@ -1,65 +1,4 @@
-import { getDataset } from '../../shared/dataset_store.js';
 import { createAriaChat } from './aria_chat.js';
-
-// ── Constants ────────────────────────────────────────────────────────────────
-// ── VT button definitions ────────────────────────────────────────────────────
-// id must be unique across ALL vt-btn-activated events in the app.
-const VT_DEFS = [
-  {
-    id: 'gen-models', label: 'Models',
-    icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
-  },
-];
-
-// ── Import view ──────────────────────────────────────────────────────────────
-function _buildImportView() {
-  const div = document.createElement('div');
-  div.className    = 'gen-view gen-import-view';
-  div.dataset.view = 'gen-import';
-
-  const inner = document.createElement('div');
-  inner.className = 'gen-import-inner';
-
-  const title = document.createElement('h2');
-  title.className   = 'gen-import-title';
-  title.textContent = 'Import Dataset';
-
-  const sub = document.createElement('p');
-  sub.className   = 'gen-import-sub';
-  sub.textContent = 'Load a CSV or Excel file into the Python kernel as df.';
-
-  const btnWrap = document.createElement('div');
-  btnWrap.className = 'gen-import-btn-wrap';
-  btnWrap.appendChild(createLoadDataBtn({ varName: 'df' }));
-
-  const hint = document.createElement('p');
-  hint.className   = 'gen-import-hint';
-  hint.innerHTML   = 'After loading, ask ARIA a question — or run <code>df.head()</code> in Power Notebook.';
-
-  inner.append(title, sub, btnWrap, hint);
-  div.appendChild(inner);
-  return div;
-}
-
-// ── Models view ──────────────────────────────────────────────────────────────
-function _buildModelsView() {
-  const div = document.createElement('div');
-  div.className    = 'gen-view gen-models-view';
-  div.dataset.view = 'gen-models';
-
-  div.innerHTML = `
-    <div class="gen-models-empty">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-        <polyline points="2 17 12 22 22 17"/>
-        <polyline points="2 12 12 17 22 12"/>
-      </svg>
-      <h3>No saved models yet</h3>
-      <p>Train a model in the Terminal, then save it here.</p>
-    </div>
-  `;
-  return div;
-}
 
 // ── Add VT navigation buttons ─────────────────────────────────────────────────
 function _addVtButtons(switchView, getActiveView, isScreenOpen) {
@@ -76,17 +15,12 @@ function _addVtButtons(switchView, getActiveView, isScreenOpen) {
     btn.innerHTML       = icon;
 
     btn.addEventListener('click', () => {
-      const currentlyOpen   = isScreenOpen();
-      const currentView     = getActiveView();
-      const alreadyThisView = currentView === id;
-
-      if (currentlyOpen && alreadyThisView) {
-        // Second click: minimize (restore chip appears in header)
+      if (isScreenOpen()) {
+        // Screen is open → minimize
         window.screenController?.minimize('terminal');
         Object.values(btns).forEach(b => b.classList.remove('active'));
       } else {
-        // Switch to this view (opens screen if closed)
-        switchView(id);
+        // Screen is closed/minimized → open (screen-opened fires → resets to ARIA chat)
         window.screenController?.open('terminal');
         Object.values(btns).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -117,7 +51,7 @@ function setupGenerativeScreen() {
   const screen = document.getElementById('generative-screen');
   if (!screen) return;
 
-  // ── 1. Terminal view — ARIA chat (new design, no terminal.js) ─────────────
+  // ── 1. Terminal view — ARIA chat ──────────────────────────────────────────
   const terminalView = document.createElement('div');
   terminalView.className    = 'gen-view gen-terminal-view gen-view--active';
   terminalView.dataset.view = 'gen-terminal';
@@ -125,13 +59,10 @@ function setupGenerativeScreen() {
   const ariaChat = createAriaChat();
   terminalView.append(ariaChat);
 
-  // ── 2-4. Other views ─────────────────────────────────────────────────────
-  const modelsView = _buildModelsView();
-
   // ── View container ────────────────────────────────────────────────────────
   const viewContainer = document.createElement('div');
   viewContainer.className = 'gen-view-container';
-  viewContainer.append(terminalView, modelsView);
+  viewContainer.append(terminalView);
   screen.appendChild(viewContainer);
 
   // ── Active view state ─────────────────────────────────────────────────────
