@@ -8,6 +8,35 @@
   background: var(--code-bg, #f8fafc);
 }
 
+/* ── View container: fills #generative-screen below the toolbar ── */
+.gen-view-container {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Each view is hidden by default, shown when --active ──────────── */
+.gen-view {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.gen-view--active {
+  display: flex;
+}
+
+/* The terminal view just passes through the flex column ──────────── */
+.gen-terminal-view {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* ── Toolbar ─────────────────────────────────────────────── */
 .gen-toolbar {
   display: flex;
