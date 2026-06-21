@@ -112,6 +112,17 @@ if '_dp_kernel_ns' not in dir():
     _dp_kernel_ns = {'__name__': '__main__'}
 _ns = _dp_kernel_ns
 
+# Snapshot shapes BEFORE exec — diff is per-exec, not per-session.
+# This means viz-suggestion appears whenever THIS cell creates or modifies
+# a DataFrame/Series/ndarray, regardless of what happened in earlier runs.
+_pre_snap = {}
+for _pn, _pv in list(_dp_kernel_ns.items()):
+    if _pn.startswith('_'): continue
+    try:
+        if hasattr(_pv, 'shape'):
+            _pre_snap[_pn] = list(_pv.shape)
+    except Exception: pass
+
 try:
     exec(_user_code, _ns)
 
@@ -150,15 +161,12 @@ finally:
     sys.stdout = _orig_out
     sys.stderr = _orig_err
 
-# ── Post-execution: detect new / changed visualisable objects (diff-based) ──
-# Skips internal names (underscore prefix). Compares shape against
-# _dp_last_shapes to avoid re-reporting unchanged variables on every run.
+# ── Post-execution: detect DataFrames created/modified by THIS exec ──────────
+# Diff against _pre_snap (captured before exec), not a session-wide dict.
+# Result: viz-suggestion appears whenever the current cell creates or changes
+# a visualisable variable — re-running the same cell still shows the card.
 _viz_candidates = []
 try:
-    if '_dp_last_shapes' not in _dp_kernel_ns:
-        _dp_kernel_ns['_dp_last_shapes'] = {}
-    _last = _dp_kernel_ns['_dp_last_shapes']
-
     for _vn, _vo in list(_dp_kernel_ns.items()):
         if _vn.startswith('_'): continue
         _kind = type(_vo).__name__
@@ -168,8 +176,7 @@ try:
         except Exception:
             try: _sh = [int(len(_vo))]
             except Exception: continue
-        if _last.get(_vn) == _sh: continue   # unchanged — skip
-        _last[_vn] = _sh
+        if _pre_snap.get(_vn) == _sh: continue   # pre-existing, unchanged — skip
         if _kind == 'DataFrame':
             _shape_str = f'{_sh[0]:,}\\u884c\\u00d7{_sh[1]}\\u5217' if len(_sh) > 1 else f'{_sh[0]:,}'
         elif _kind == 'Series':
@@ -181,7 +188,7 @@ try:
             'kind': _kind.lower(),
             'shape': _shape_str,
         })
-except Exception as _ve:
+except Exception:
     pass   # detection errors must not surface to the user
 
 _j.dumps({'stdout': _out.getvalue(), 'stderr': _err.getvalue(), 'error': _exc, 'rich': _rich, 'viz_candidates': _viz_candidates})
