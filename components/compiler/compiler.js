@@ -521,6 +521,35 @@ export async function resetKernel() {
   }
 }
 
+// ── Write file to Pyodide virtual FS ─────────────────────────────────────────
+// Pyodide's default cwd is /home/pyodide — files here are accessible via
+// relative paths in Python (pd.read_csv("GE.csv"), open("data.json"), etc.).
+// Overwrites silently if file already exists (latest data wins).
+export function writeToFS(filename, data, fileType) {
+  if (!_pyodide || !filename) return;
+  const path = `/home/pyodide/${filename}`;
+  try {
+    const isExcel = fileType === 'xlsx' || fileType === 'xls';
+    if (isExcel) {
+      let bytes;
+      if (typeof data === 'string') {
+        // base64-encoded binary (from inject-store isBase64 path)
+        const bin = atob(data);
+        bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      } else {
+        bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+      }
+      _pyodide.FS.writeFile(path, bytes);
+    } else {
+      const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
+      _pyodide.FS.writeFile(path, text);
+    }
+  } catch (e) {
+    console.warn(`[writeToFS] Failed to write "${filename}" to Pyodide FS:`, e);
+  }
+}
+
 // ── Inject DataFrame — load file data into the shared kernel as a pandas variable ──
 //
 // fileType: 'csv' (default) | 'json' | 'xlsx' | 'xls'
@@ -549,6 +578,10 @@ export async function injectDataFrame(varName, data, fileType = 'csv', fileName 
 if '_dp_kernel_ns' not in dir():
     _dp_kernel_ns = {'__name__': '__main__'}
 `);
+
+  // Write raw file into Pyodide FS so user code can reference it by filename
+  // (e.g. pd.read_csv("GE.csv") without going through injectDataFrame).
+  if (fileName) writeToFS(fileName, data, fileType);
 
   py.globals.set('_dp_inject_data', data);
   py.globals.set('_dp_inject_name', varName);
