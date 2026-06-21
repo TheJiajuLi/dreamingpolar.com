@@ -9,7 +9,7 @@ import { ask, systemRefactorForLang } from '../../../ai/ai_client.js';
  * @param {string}  opts.cellId       — '__standalone__' or notebook cell UUID
  * @param {string}  opts.explanation  — raw AI explanation text (from the suggestion box)
  */
-export function createRefactorBtn({ sourceCode, sourceLang, cellId, explanation }) {
+export function createRefactorBtn({ sourceCode, sourceLang, cellId, explanation, dfContext = '' }) {
   const btn = document.createElement('button');
   btn.className = 'refactor-btn';
   btn.title = 'Fix and refactor the code based on this AI suggestion';
@@ -23,7 +23,8 @@ export function createRefactorBtn({ sourceCode, sourceLang, cellId, explanation 
     try {
       const prompt =
         `Error / issue:\n${explanation}\n\n` +
-        `Full source code (${sourceLang}):\n${sourceCode}`;
+        `Full source code (${sourceLang}):\n${sourceCode}` +
+        (dfContext ? `\n\n${dfContext.trim()}` : '');
 
       const raw = await ask(prompt, systemRefactorForLang(sourceLang), 4096);
 

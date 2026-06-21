@@ -5,7 +5,7 @@ import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_scr
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
 import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../../look_up_source/look_up_source.js';
-import { resetKernel, preloadPython, getDataFrameSchema } from '../../compiler/compiler.js';
+import { resetKernel, preloadPython, getDataFrameSchema, queryKernelContext } from '../../compiler/compiler.js';
 import { clearDataset } from '../../shared/dataset_store.js';
 
 function setupCodingScreen() {
@@ -351,9 +351,21 @@ function setupCodingScreen() {
         btn.disabled = true;
         btn.textContent = 'Thinking…';
         try {
+          // Fetch kernel DataFrame context (columns, dtypes, shape) for richer suggestions
+          const dfs = await queryKernelContext().catch(() => []);
+          const dfContext = dfs.length
+            ? `\n\nAvailable DataFrames in kernel:\n` + dfs.map(d => {
+                const cols = d.columns.length
+                  ? `columns=[${d.columns.join(', ')}]`
+                  : `dtype=${Object.values(d.dtypes)[0] ?? 'unknown'}`;
+                return `  ${d.varName} (${d.kind}): shape=${d.shape.join('×')}, ${cols}`;
+              }).join('\n')
+            : '';
+
           const context = sourceCode
-            ? `Code (${sourceLang ?? 'unknown'}):\n${sourceCode}\n\nError:\n${errorText}`
-            : errorText;
+            ? `Code (${sourceLang ?? 'unknown'}):\n${sourceCode}\n\nError:\n${errorText}${dfContext}`
+            : errorText + dfContext;
+
           const explanation = await ask(context, systemExplainForLang(sourceLang), 512);
           const explDiv = document.createElement('div');
           explDiv.className = 'output-ai-explanation';
@@ -364,7 +376,12 @@ function setupCodingScreen() {
           bodyEl2.className = 'ai-explanation-body';
           explDiv.append(lbl, bodyEl2);
           block.after(explDiv);
-          lbl.appendChild(createRefactorBtn({ sourceCode, sourceLang, cellId: sec.sectionEl.dataset.cellId, explanation }));
+          lbl.appendChild(createRefactorBtn({
+            sourceCode, sourceLang,
+            cellId: sec.sectionEl.dataset.cellId,
+            explanation,
+            dfContext,   // pass through so Refactor also knows real column names
+          }));
           renderBlocks(parseAIResponse(explanation), bodyEl2);
         } catch { /* ignore */ }
         finally { btn.disabled = false; btn.textContent = 'Ask AI'; }

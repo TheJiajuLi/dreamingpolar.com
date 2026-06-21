@@ -78,6 +78,10 @@ export function systemExplainForLang(lang) {
   return (
     `${IDENTITY} 哪里有难题，哪里就有小梦. ` +
     `The user wrote ${hint} and hit an issue. ` +
+    `If the message includes an "Available DataFrames" section, use it to identify ` +
+    `the exact real column names and variable names — for NameError or KeyError, ` +
+    `check whether the user mistyped a column name or variable that exists in the kernel ` +
+    `and suggest the correct one by name. ` +
     `Explain what went wrong in 2–3 sentences and suggest one specific fix. ` +
     `Be concise and warm. Respond in the same language the user used (Chinese or English).`
   );

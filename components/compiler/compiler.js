@@ -684,6 +684,44 @@ _jq.dumps(_dfs)
   }
 }
 
+// ── Kernel context for AI debug ──────────────────────────────────────────────
+// Returns [{varName, shape, columns, dtypes}] for every DataFrame/Series in
+// the kernel namespace.  Safe to call even before any cell has run (returns []).
+export async function queryKernelContext() {
+  if (!_pyodide) return [];
+  try {
+    const raw = _pyodide.runPython(`
+import json as _jkc
+_ctx = []
+for _kn, _kv in (_dp_kernel_ns if '_dp_kernel_ns' in dir() else {}).items():
+    if _kn.startswith('_'): continue
+    try:
+        _kt = type(_kv).__name__
+        if _kt == 'DataFrame':
+            _ctx.append({
+                'varName': _kn,
+                'kind': 'DataFrame',
+                'shape': list(_kv.shape),
+                'columns': list(_kv.columns.astype(str)),
+                'dtypes': {str(c): str(_kv[c].dtype) for c in _kv.columns},
+            })
+        elif _kt == 'Series':
+            _ctx.append({
+                'varName': _kn,
+                'kind': 'Series',
+                'shape': list(_kv.shape),
+                'columns': [],
+                'dtypes': {'values': str(_kv.dtype)},
+            })
+    except Exception: pass
+_jkc.dumps(_ctx)
+`);
+    return JSON.parse(raw);
+  } catch (_) {
+    return [];
+  }
+}
+
 // ── DataFrame cleaning helpers ────────────────────────────────────────────────
 //
 // notifyKernelChanged(varName)
