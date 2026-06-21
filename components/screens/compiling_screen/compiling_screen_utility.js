@@ -368,7 +368,7 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
                   e?.message === 'KERNEL_NOT_READY' ? '↑ 请先运行 cell 加载数据' : `Error: ${e.message}`,
                   e?.message === 'KERNEL_NOT_READY' ? 'warn' : 'err'
                 );
-                console.warn('[clean preview]', op, e);
+                if (e?.message !== 'KERNEL_NOT_READY') console.warn('[clean preview]', op, e);
               }
             });
             return chip;

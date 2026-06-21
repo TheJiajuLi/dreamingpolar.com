@@ -23,37 +23,55 @@ function _loadStore() {
 
 // Build a merged dataset list with all info we can find
 function _getDatasets() {
-  const items = getCellDatasetInfo();            // inject-button path
-  const store = _loadStore();                    // fileType from inject store
+  const cellItems  = getCellDatasetInfo();   // Notebook import-button path
+  const storeItems = getAllDatasets();        // ARIA Quick Analysis path
+  const store      = _loadStore();           // inject-store → fileType lookup
 
-  // Build varName → fileType map from the store
+  // filename → fileType
   const typeMap = {};
   Object.values(store).forEach(e => {
-    if (e.varName) typeMap[e.varName] = e.fileType ?? 'csv';
+    if (e.filename) typeMap[e.filename] = e.fileType ?? 'csv';
+    if (e.varName)  typeMap[e.varName]  = e.fileType ?? 'csv';
   });
 
-  if (items.length) {
-    return items.map(item => ({
-      varName:  item.varName,
-      filename: item.filename ?? item.varName,
-      rows:     item.rows,
-      columns:  item.columns,
-      cellNum:  item.cellNum,
-      cellId:   item.cellId,
-      fileType: typeMap[item.varName] ?? 'csv',
-    }));
-  }
+  // Start with Notebook cells (richest info: varName, rows count, cellId)
+  const seen = new Set();   // deduplicate by filename
+  const merged = [];
 
-  // Fallback: dataset_store (Quick Analysis path, no cellId available)
-  return getAllDatasets().map(d => ({
-    varName:  d.name,
-    filename: d.name,
-    rows:     d.rows?.length ?? 0,
-    columns:  d.columns?.length ?? 0,
-    cellNum:  null,
-    cellId:   null,
-    fileType: typeMap[d.name] ?? 'csv',
-  }));
+  cellItems.forEach(item => {
+    const key = item.filename ?? item.varName;
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push({
+        varName:  item.varName,
+        filename: item.filename ?? item.varName,
+        rows:     item.rows,
+        columns:  item.columns,
+        cellNum:  item.cellNum,
+        cellId:   item.cellId,
+        fileType: typeMap[item.filename] ?? typeMap[item.varName] ?? 'csv',
+      });
+    }
+  });
+
+  // Add ARIA datasets not already covered by a Notebook cell
+  storeItems.forEach(d => {
+    const key = d.name;
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push({
+        varName:  d.name,          // dataset_store uses filename as name
+        filename: d.name,
+        rows:     Array.isArray(d.rows) ? d.rows.length : (d.rows ?? 0),
+        columns:  Array.isArray(d.columns) ? d.columns.length : (d.columns ?? 0),
+        cellNum:  null,
+        cellId:   null,
+        fileType: typeMap[d.name] ?? 'csv',
+      });
+    }
+  });
+
+  return merged;
 }
 
 // ── Modal singleton ───────────────────────────────────────────────────────────
