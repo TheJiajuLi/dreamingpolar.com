@@ -199,6 +199,21 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
 
         block.append(trigger);
 
+        // ── Separator hint banner ─────────────────────────────────────────────
+        // Shown when a 1-column DataFrame looks like it was parsed with the wrong
+        // delimiter (all values contain ';' or '\t').
+        if (o.sepHint) {
+          const sepLabel = o.sepHint === '\t' ? 'tab (\\t)' : `semicolon (${o.sepHint})`;
+          const sepCode  = o.sepHint === '\t' ? `sep='\\t'` : `sep=';'`;
+          const hint = document.createElement('div');
+          hint.className = 'vsug-sep-hint';
+          hint.innerHTML =
+            `<i class="ti ti-alert-triangle vsug-sep-hint-icon"></i>` +
+            `<span>检测到分隔符为 <code>${o.sepHint === '\t' ? '\\t' : o.sepHint}</code>，数据可能未正确解析。` +
+            `建议在导入代码中添加 <code>${sepCode}</code>。</span>`;
+          block.appendChild(hint);
+        }
+
         if (o.kind === 'dataframe') {
           // ── Clean section ─────────────────────────────────────────────────
           const cleanSection = document.createElement('div');

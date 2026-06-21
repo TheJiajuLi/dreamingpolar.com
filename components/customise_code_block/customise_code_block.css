@@ -337,8 +337,15 @@
   border-bottom: 1px solid var(--border, #e2e8f0);
   overflow: hidden;
   margin: 0;
+  transition: box-shadow 0.15s ease;
 }
 .cds-output-section:last-child  { border-bottom: none; }
+
+/* Active section — highlighted when the corresponding cell is focused */
+.cds-output-section.cds-section--active .cds-output-section-label {
+  border-bottom-color: var(--accent, #6366f1);
+  color: var(--accent, #6366f1);
+}
 
 /* Label: cell identifier left, action buttons right */
 .cds-output-section-label {

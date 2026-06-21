@@ -196,11 +196,18 @@ try:
             _shape_str = f'{_sh[0]:,}\\u5143\\u7d20'
         else:
             _shape_str = '\\u00d7'.join(str(d) for d in _sh)
-        _viz_candidates.append({
-            'varName': _vn,
-            'kind': _kind.lower(),
-            'shape': _shape_str,
-        })
+        _vc = {'varName': _vn, 'kind': _kind.lower(), 'shape': _shape_str}
+        # Detect likely wrong delimiter: 1-col DataFrame whose values contain ; or \t
+        if _kind == 'DataFrame' and len(_sh) > 1 and _sh[1] == 1:
+            try:
+                _col0 = _vo.iloc[:, 0].dropna().astype(str).head(5)
+                if len(_col0) > 0:
+                    _semi  = _col0.str.contains(';').all()
+                    _tab   = _col0.str.contains('\\t').all()
+                    if _semi:   _vc['sepHint'] = ';'
+                    elif _tab:  _vc['sepHint'] = '\\t'
+            except Exception: pass
+        _viz_candidates.append(_vc)
 except Exception:
     pass   # detection errors must not surface to the user
 

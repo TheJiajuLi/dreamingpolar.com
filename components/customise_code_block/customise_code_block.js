@@ -412,6 +412,12 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   el.append(toolbar, lowerRow, outputSection);
   cell.el = el;
 
+  // When any part of this cell gains focus, tell the output panel to highlight
+  // and scroll to the corresponding section.
+  el.addEventListener('focusin', () => {
+    document.dispatchEvent(new CustomEvent('notebook-cell-focused', { detail: { cellId: id } }));
+  });
+
   const outputAC = new AbortController();
   cell._outputAC = outputAC;
 

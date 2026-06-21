@@ -431,6 +431,15 @@ function setupCodingScreen() {
     );
   });
 
+  // Cell focus → highlight + scroll the corresponding output section
+  document.addEventListener('notebook-cell-focused', ({ detail: { cellId } }) => {
+    const sec = nbSections.get(cellId);
+    if (!sec) return;
+    nbSections.forEach(s => s.sectionEl.classList.remove('cds-section--active'));
+    sec.sectionEl.classList.add('cds-section--active');
+    sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
   // Restore outputs from previous session on load
   ;(function _restoreStoredOutputs() {
     let stored;
