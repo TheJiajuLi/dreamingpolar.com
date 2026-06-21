@@ -1,4 +1,58 @@
 import { getDataset, getAllDatasets, setActiveDataset } from '../../shared/dataset_store.js';
+import { getCellDatasetInfo } from '../../customise_code_block/customise_code_block.js';
+
+// ── Code templates inserted into the Power Notebook via ai-insert-and-run ────
+const _CODE_TEMPLATES = {
+  'time-series': v =>
+    `import pandas as pd\n` +
+    `# 设置时间索引\n` +
+    `_date_col = ${v}.select_dtypes(include=["object","datetime"]).columns[0]\n` +
+    `${v}[_date_col] = pd.to_datetime(${v}[_date_col])\n` +
+    `${v} = ${v}.set_index(_date_col)\n` +
+    `display(${v}.head())\n` +
+    `${v}.select_dtypes(include="number").plot(\n` +
+    `    figsize=(14, 6), grid=True, linewidth=1.2,\n` +
+    `    title="${v} — 时序趋势"\n` +
+    `)`,
+
+  'overview':
+    v =>
+    `print(f"Shape: {${v}.shape}")\n` +
+    `print(f"Columns: {list(${v}.columns)}")\n` +
+    `print(f"Dtypes:\\n{${v}.dtypes}\\n")\n` +
+    `print(f"Null counts:\\n{${v}.isnull().sum()}")\n` +
+    `display(${v}.head())\n` +
+    `display(${v}.tail())`,
+
+  'rolling':
+    v =>
+    `import matplotlib.pyplot as plt\n` +
+    `_num = ${v}.select_dtypes(include="number").iloc[:, :3]\n` +
+    `fig, ax = plt.subplots(figsize=(14, 6))\n` +
+    `_num.plot(ax=ax, alpha=0.4, linewidth=0.8, label=[f"{c}" for c in _num.columns])\n` +
+    `_num.rolling(20).mean().plot(\n` +
+    `    ax=ax, linewidth=1.8,\n` +
+    `    label=[f"{c} MA20" for c in _num.columns]\n` +
+    `)\n` +
+    `ax.set_title("${v} — 20 期移动均线", fontsize=14)\n` +
+    `ax.legend(); ax.grid(True); plt.tight_layout()`,
+
+  'describe':
+    v =>
+    `display(${v}.describe().round(2))\n` +
+    `_num = ${v}.select_dtypes(include="number")\n` +
+    `if _num.shape[1] > 1:\n` +
+    `    print("\\n相关系数矩阵:")\n` +
+    `    display(_num.corr().round(3))`,
+};
+
+function _resolveActiveVarName() {
+  const cells = getCellDatasetInfo?.();
+  if (cells?.length) return cells[0].varName;
+  const ds = getDataset();
+  if (ds?.name) return ds.name.replace(/\.[^.]+$/, '').replace(/[^a-z0-9_]/gi, '_') || 'df';
+  return 'df';
+}
 
 // ── Chart.js lazy loader ──────────────────────────────────────────────────────
 const _CHART_JS_CDN = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
@@ -203,6 +257,13 @@ export function createAriaChat() {
     `<span class="aria-chat-chip" data-q="帮我做客户分层分析">客户分层分析</span>` +
     `<span class="aria-chat-chip" data-q="哪些列有空值？">空值情况</span>` +
     `<span class="aria-chat-chip" data-q="给我看第一个数值列的分布">列分布图</span>` +
+    `</div>` +
+    `<div class="aria-code-tmpl-label">快速代码 → Notebook</div>` +
+    `<div class="aria-code-tmpl-chips">` +
+    `<span class="aria-code-chip" data-tmpl="time-series">📊 时序分析</span>` +
+    `<span class="aria-code-chip" data-tmpl="overview">📋 数据概览</span>` +
+    `<span class="aria-code-chip" data-tmpl="rolling">📈 移动均线</span>` +
+    `<span class="aria-code-chip" data-tmpl="describe">🔍 统计摘要</span>` +
     `</div></div>`;
 
   const scrollToBottomBtn = document.createElement('button');
@@ -348,8 +409,26 @@ export function createAriaChat() {
   input.addEventListener('input', () => { _histIdx = -1; });
   sendBtn.addEventListener('click', _submit);
   convArea.addEventListener('click', e => {
-    const chip = e.target.closest('.aria-chat-chip');
-    if (chip) { input.value = chip.dataset.q; input.focus(); }
+    // Question chip → fill input
+    const qChip = e.target.closest('.aria-chat-chip');
+    if (qChip) { input.value = qChip.dataset.q; input.focus(); return; }
+
+    // Code template chip → insert into Power Notebook and open it
+    const codeChip = e.target.closest('.aria-code-chip');
+    if (codeChip) {
+      const tmplId  = codeChip.dataset.tmpl;
+      const builder = _CODE_TEMPLATES[tmplId];
+      if (!builder) return;
+      const varName = _resolveActiveVarName();
+      const code    = builder(varName);
+      // Open the coding screen and insert+run the code
+      window.screenController?.open('coding');
+      setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('ai-insert-and-run', {
+          detail: { code, lang: 'python' },
+        }));
+      }, 150);
+    }
   });
 
   root._onDataLoaded = (name) => {

@@ -273,9 +273,30 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     lazyMode: true,
     onLoad: (varName, rows, filename, injectData, fileType, columns, columnNames = []) => {
       const cellNum = _cells.indexOf(cell) + 1;
-      const code =
-        `# "${filename}" → ${varName} (${rows.toLocaleString()} rows, ${columns} cols)\n` +
-        `print(${varName}.shape)\n${varName}.head()`;
+
+      // ── Smart code generation ─────────────────────────────────────────────
+      // Detect a date/time index column; if found, generate a time-series
+      // cell that sets the index and plots numeric columns automatically.
+      const DATE_COL_RE = /^(date|time|datetime|timestamp|dt|日期|时间|当日|yearmonth|month|year|week)$/i;
+      const dateCol = columnNames.find(c => DATE_COL_RE.test(c.trim()));
+
+      let code;
+      if (dateCol && columns >= 2 && fileType === 'csv') {
+        code =
+          `# "${filename}" → ${varName} (${rows.toLocaleString()} rows, ${columns} cols)\n` +
+          `import pandas as pd\n` +
+          `${varName}["${dateCol}"] = pd.to_datetime(${varName}["${dateCol}"])\n` +
+          `${varName} = ${varName}.set_index("${dateCol}")\n` +
+          `display(${varName}.head())\n` +
+          `${varName}.select_dtypes(include="number").plot(\n` +
+          `    figsize=(12, 5), grid=True, linewidth=1.2,\n` +
+          `    title="${varName}"\n` +
+          `)`;
+      } else {
+        code =
+          `# "${filename}" → ${varName} (${rows.toLocaleString()} rows, ${columns} cols)\n` +
+          `print(${varName}.shape)\n${varName}.head()`;
+      }
       cell.editor.value = code;
       autoResize(cell.editor);
       cell.editor.dispatchEvent(new Event('input'));

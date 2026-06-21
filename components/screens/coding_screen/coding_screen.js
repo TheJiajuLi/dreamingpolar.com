@@ -269,12 +269,12 @@ function setupCodingScreen() {
     const bodyEl = document.createElement('div');
     bodyEl.className = 'cds-output-section-body';
 
-    // Two-pane layout: text/tables on left, charts on right
-    const textPane  = document.createElement('div');
-    textPane.className = 'cds-output-text-pane';
+    // Vertical layout: chart/viz on top, text/tables below
     const chartPane = document.createElement('div');
     chartPane.className = 'cds-output-chart-pane';
-    bodyEl.append(textPane, chartPane);
+    const textPane  = document.createElement('div');
+    textPane.className = 'cds-output-text-pane';
+    bodyEl.append(chartPane, textPane); // chart first → appears on top
 
     sectionEl.append(labelEl, bodyEl);
 

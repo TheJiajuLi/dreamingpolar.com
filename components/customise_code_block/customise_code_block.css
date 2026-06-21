@@ -400,41 +400,42 @@
 .cds-output-section-body {
   padding: 0;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;   /* vertical: chart on top, text below */
   gap: 0;
   background: var(--surface, #ffffff);
   color: var(--text, #0f172a);
   min-height: 0;
 }
 
-/* Left pane — text / tables / errors / viz-suggestion cards */
+/* Bottom pane — text / tables / errors / viz-suggestion cards */
 .cds-output-text-pane {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow-x: auto;
 }
 
-/* Right pane — matplotlib images and viz charts. Collapses to zero when empty. */
+/* Top pane — matplotlib images and viz-suggestion cards.
+   Collapses to zero height when empty; expands naturally to image height. */
 .cds-output-chart-pane {
   flex: 0 0 0;
   overflow: hidden;
-  transition: flex-basis 0.25s ease;
 }
 .cds-output-chart-pane.has-chart {
-  flex: 0 1 55%;        /* takes up to 55% of the section width */
-  min-width: 220px;
-  border-left: 1px solid var(--border, #e2e8f0);
-  overflow-y: auto;
+  flex: 0 0 auto;          /* size to content (image natural height) */
+  width: 100%;
+  border-left: none;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  overflow: visible;
 }
 .cds-output-chart-pane .output-image {
   border-bottom: none;
   background: transparent;
 }
 
-/* viz-suggestion card inside chart pane: remove its left border to avoid
-   double-border with the pane's own left border */
+/* viz-suggestion card in top pane: use top border, remove left border */
 .cds-output-chart-pane .output-viz-suggestion {
   border-left: none;
   border-top: 1px solid var(--border, #e2e8f0);
