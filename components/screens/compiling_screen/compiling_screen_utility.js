@@ -125,11 +125,13 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
         vizBtn.addEventListener('click', async () => {
           // Toggle: if chart already exists, show/hide it
           if (_chartBlock) {
-            const hidden = _chartBlock.style.display === 'none';
-            _chartBlock.style.display = hidden ? '' : 'none';
-            vizBtn.textContent = hidden ? '收起图表' : '可视化';
+            const isHidden = _chartBlock.style.display === 'none';
+            _chartBlock.style.display = isHidden ? '' : 'none';
+            vizBtn.textContent = isHidden ? '收起图表' : '可视化';
             if (chartContainer) {
-              chartContainer.classList.toggle('has-chart', !hidden);
+              // isHidden=true 表示当前隐藏→点击后要显示→加 has-chart
+              // isHidden=false 表示当前显示→点击后要隐藏→去掉 has-chart
+              chartContainer.classList.toggle('has-chart', isHidden);
             }
             return;
           }
