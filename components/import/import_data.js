@@ -143,7 +143,7 @@ export function createLoadDataBtn({ varName = 'df', resolveVarName, lazyMode = f
           _toast(`✓ "${file.name}" → ${actualVarName} (${rows.toLocaleString()} rows, ${columns} cols) — click ▶ to load`);
           onLoad?.(actualVarName, rows, file.name, injectData, fileType, columns, columnNames);
         } else {
-          const result = await injectDataFrame(actualVarName, injectData, fileType);
+          const result = await injectDataFrame(actualVarName, injectData, fileType, file.name);
           _toast(`✓ "${file.name}" loaded → ${actualVarName}  (${result.rows} rows)  — try: ${actualVarName}.head()`);
           onLoad?.(actualVarName, result.rows, file.name);
         }

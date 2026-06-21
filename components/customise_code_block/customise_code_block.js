@@ -478,7 +478,9 @@ async function _flushPendingInjects() {
   for (const c of _cells) {
     if (c._pendingInject) {
       const { varName, data, fileType } = c._pendingInject;
-      await injectDataFrame(varName, data, fileType);
+      const fileName = c._datasetInfo?.filename ?? '';
+      const cellIndex = (_cells.indexOf(c) + 1) || undefined;
+      await injectDataFrame(varName, data, fileType, fileName, { cellIndex });
       c._pendingInject = null;
     }
   }
@@ -515,10 +517,7 @@ async function runAll(btn) {
     const cellRunBtn = cell.el.querySelector('.nb-run');
     if (cellRunBtn) cellRunBtn.disabled = true;
 
-    const _LANG_LABEL_RA = { python: 'Python', latex: 'LaTeX', mathjax: 'MathJax', markdown: 'Markdown' };
-    const outputs = await compile(code, cell.lang, {
-      runningMessage: `Cell ${i + 1} · ${_LANG_LABEL_RA[cell.lang] ?? cell.lang}`,
-    });
+    const outputs = await compile(code, cell.lang, { cellIndex: i + 1 });
 
     // Ensure import-button cells get a viz-suggestion (RUNNER diff misses these)
     const _ownDs = _cellInjectDs.get(cell.id);

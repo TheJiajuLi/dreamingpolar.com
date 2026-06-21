@@ -55,12 +55,8 @@ export function attachCellHooks({
       ? { ...cell._datasetInfo } : null;
 
     await flushPendingInjects?.();
-    const cellNum  = cell.numEl?.textContent ?? '';
-    const fileName = cell._datasetInfo?.filename ?? '';
-    const runningMessage = cell.lang === 'python'
-      ? `Running cell ${cellNum}${fileName ? ` · ${fileName}` : ''}…`
-      : 'Running…';
-    const outputs = await compile(code, cell.lang, { runningMessage });
+    const cellNum = cell.numEl?.textContent ?? '';
+    const outputs = await compile(code, cell.lang, { cellIndex: cellNum });
 
     // If this cell owns imported data, ensure a viz-suggestion card appears
     // (the RUNNER diff won't catch it because the variable existed pre-exec).

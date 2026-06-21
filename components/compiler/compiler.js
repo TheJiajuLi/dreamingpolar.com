@@ -10,6 +10,19 @@ import {
 const PYODIDE_VERSION = '314.0.0';
 const PYODIDE_INDEX   = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 
+// ── Status message helpers ────────────────────────────────────────────────────
+// Centralised here so i18n migration only needs to touch this one map.
+const LANG_LABEL = {
+  python:   'Python',
+  markdown: 'Markdown',
+  latex:    'LaTeX',
+  mathjax:  'MathJax',
+};
+
+function _cellSuffix(context) {
+  return context?.cellIndex != null ? ` · Cell ${context.cellIndex}` : '';
+}
+
 let _pyodide     = null;
 let _loading     = null;
 let _suppressKbs = false; // true during silent background preload
@@ -57,7 +70,7 @@ async function _getPyodide() {
       }
     } catch (_) {}
 
-    _dispatch('ready', 'Python ready', 100);
+    _dispatch('ready', 'Workspace ready · code, analyze, visualize', 100);
     _pyodide = py;
     document.body.classList.add('dp-ready');
     document.body.dispatchEvent(new Event('dp-ready-event'));
@@ -194,9 +207,9 @@ except Exception:
 _j.dumps({'stdout': _out.getvalue(), 'stderr': _err.getvalue(), 'error': _exc, 'rich': _rich, 'viz_candidates': _viz_candidates})
 `;
 
-async function _runPython(code, runningMessage = 'Running…') {
+async function _runPython(code, context = {}) {
   try {
-    _dispatch('running', runningMessage);
+    _dispatch('running', `Running Python${_cellSuffix(context)}`);
 
     // Pre-flight: warn about Pyodide-specific pitfalls before execution
     const preflight = preflightWarnings(code);
@@ -450,12 +463,20 @@ function afterKernelMutation(varName = 'df', source = 'run') {
 
 // ── Public API ────────────────────────────────────────────
 
-export async function compile(code, mode, { runningMessage } = {}) {
+export async function compile(code, mode, context = {}) {
   switch (mode) {
-    case 'python':   return _runPython(code, runningMessage);
-    case 'markdown': return _runMarkdown(code);
-    case 'latex':    return _runLatex(code);
-    case 'mathjax':  return _runMathJax(code);
+    case 'python':   return _runPython(code, context);
+    case 'markdown':
+    case 'latex':
+    case 'mathjax': {
+      // Sync runners: dispatch running/done so status bar reflects the cell
+      _dispatch('running', `Running ${LANG_LABEL[mode] ?? mode}${_cellSuffix(context)}`);
+      const out = mode === 'markdown' ? _runMarkdown(code)
+                : mode === 'latex'    ? _runLatex(code)
+                :                       _runMathJax(code);
+      _dispatch('ready', 'Done');
+      return out;
+    }
     default:         return [{ type: 'error', content: `Unknown mode: ${mode}` }];
   }
 }
@@ -485,9 +506,10 @@ export async function resetKernel() {
 //   xlsx / xls → data is a Uint8Array (raw binary)
 //
 // Dispatches console.warn (not silent) on any load failure.
-export async function injectDataFrame(varName, data, fileType = 'csv') {
+export async function injectDataFrame(varName, data, fileType = 'csv', fileName = '', context = {}) {
   const py = await _getPyodide();
-  _dispatch('running', `Loading "${varName}"…`);
+  const _displayName = fileName || varName;
+  _dispatch('running', `Loading ${fileType.toUpperCase()} "${_displayName}"${_cellSuffix(context)}`);
 
   // Load required packages
   const pkgs = ['pandas'];
@@ -549,7 +571,7 @@ del _pd_inj, _io_inj
     py.globals.delete('_dp_inject_name');
   }
 
-  _dispatch('ready', `"${varName}" ready — ${rows} rows`);
+  _dispatch('ready', `"${varName}" ready — ${rows.toLocaleString()} rows${_cellSuffix(context)}`);
   afterKernelMutation(varName, 'inject');
   return { varName, rows };
 }
