@@ -49,6 +49,36 @@ function _loadScript(src) {
 
 // ── Pyodide bootstrap ─────────────────────────────────────
 
+// ── Pre-write all inject-store files into Pyodide FS at boot ─────────────────
+// Called once inside _getPyodide()'s loading chain, after _pyodide is set.
+// Each file is written to /home/pyodide/<filename> so user code can reference
+// files by relative name without any prior Run (e.g. pd.read_csv("GE.csv")).
+// Individual failures are skipped with a warning — one bad entry won't block others.
+const _INJECT_KEY = 'dreaming-polar-inject-store';
+
+async function _preWriteInjectStore(py) {
+  let store;
+  try { store = JSON.parse(localStorage.getItem(_INJECT_KEY) ?? '{}'); }
+  catch { return; }
+
+  const entries = Object.values(store).filter(e => e?.filename && e?.data != null);
+  if (!entries.length) return;
+
+  if (entries.length > 3) {
+    _dispatch('loading', `Writing ${entries.length} files to workspace…`, 85, {
+      tip: 'Pre-loading files from your file centre into the Python runtime.',
+    });
+  }
+
+  for (const entry of entries) {
+    try {
+      writeToFS(entry.filename, entry.data, entry.fileType ?? 'csv');
+    } catch (err) {
+      console.warn(`[inject-store] Failed to pre-write "${entry.filename}" to FS:`, err);
+    }
+  }
+}
+
 async function _getPyodide() {
   if (_pyodide) return _pyodide;
   if (_loading)  return _loading;
@@ -70,8 +100,13 @@ async function _getPyodide() {
       }
     } catch (_) {}
 
+    // ── Pre-write inject-store files into Pyodide FS ─────────────────────────
+    // Must complete inside this Promise chain so any await _getPyodide() caller
+    // is guaranteed the files already exist in py.FS before running user code.
+    _pyodide = py;  // set now so writeToFS() can use it
+    await _preWriteInjectStore(py);
+
     _dispatch('ready', 'Notebook Editor', 100);
-    _pyodide = py;
     document.body.classList.add('dp-ready');
     document.body.dispatchEvent(new Event('dp-ready-event'));
     return py;
