@@ -100,7 +100,7 @@ function _buildImportCellCode(varName, rows, filename, columns, columnNames, fil
       `import pandas as pd\n` +
       `${varName}["${dateCol}"] = pd.to_datetime(${varName}["${dateCol}"])\n` +
       `${varName} = ${varName}.set_index("${dateCol}")\n` +
-      `display(${varName}.head())\n` +
+      `${varName}.head()\n` +
       `${varName}.select_dtypes(include="number").plot(\n` +
       `    figsize=(12, 5), grid=True, linewidth=1.2,\n` +
       `    title="${varName}"\n` +
@@ -304,9 +304,13 @@ function makeCell(lang = 'python', code = '', id = uid()) {
 
   const csvBtn = createLoadDataBtn({
     resolveVarName: (filename) => {
-      // Re-import to the same cell: reuse the existing variable name so the
-      // cell's code stays consistent and the new data simply overwrites the old.
-      if (cell._datasetInfo?.varName) return cell._datasetInfo.varName;
+      // Same file re-imported to the same cell → reuse the variable name so
+      // the cell's code stays consistent and data is simply overwritten.
+      // Different file → allocate a fresh name so the label correctly reflects
+      // what the variable actually contains.
+      if (cell._datasetInfo?.varName && cell._datasetInfo?.filename === filename) {
+        return cell._datasetInfo.varName;
+      }
       return _varNameResolver ? _varNameResolver(filename) : 'df';
     },
     lazyMode: true,

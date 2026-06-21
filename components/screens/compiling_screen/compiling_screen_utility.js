@@ -376,15 +376,11 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
           block.append(header);
         }
 
-        // Route viz-suggestion to chartContainer when available so it uses
-        // the right-hand space instead of being squeezed into the text column.
-        if (chartContainer) {
-          chartContainer.appendChild(block);
-          chartContainer.classList.add('has-chart');
-        } else {
-          container.appendChild(block);
-        }
-        continue; // already appended — skip default append below
+        // Viz-suggestion card always goes in textPane (container).
+        // Routing it to chartPane caused it to disappear when the chart was
+        // collapsed (chartPane collapses to height 0, hiding everything inside).
+        container.appendChild(block);
+        continue;
 
       }
       default:
