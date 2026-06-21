@@ -245,8 +245,8 @@ export function createAriaChat() {
   const welcomeHeader = document.createElement('div');
   welcomeHeader.className = 'aria-chat-welcome';
   welcomeHeader.innerHTML =
-    `<div class="aria-chat-welcome-title">导入数据后开始对话</div>` +
-    `<div class="aria-chat-welcome-hint">上传 CSV / Excel 文件，然后用自然语言提问。ARIA 会引用真实的列名、数字，并在需要时直接生成图表。</div>` +
+    `<div class="aria-chat-welcome-title">选择数据集后开始对话</div>` +
+    `<div class="aria-chat-welcome-hint">在右侧文件面板选择一个数据集，点击「发送到 Quick Analysis」即可开始提问。ARIA 会引用真实的列名和数值，并在需要时直接生成图表。</div>` +
     `<div class="aria-chat-welcome-chips">` +
     `<span class="aria-chat-chip" data-q="这些数据有什么特点？">这些数据有什么特点？</span>` +
     `<span class="aria-chat-chip" data-q="帮我做客户分层分析">客户分层分析</span>` +

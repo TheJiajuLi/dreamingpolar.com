@@ -6,7 +6,7 @@
 //
 // TWO export paths:
 //   createLoadDataBtn   — Power Notebook path: injects into Python kernel via Pyodide
-//   createQuickImportBtn — Quick Analysis path: pure JS, stores in dataset_store, no Python
+//   createLoadDataBtn — Notebook path: lazy (inject on Run) or eager (inject immediately)
 
 import { injectDataFrame } from '../compiler/compiler.js';
 import { setDataset } from '../shared/dataset_store.js';
@@ -207,52 +207,6 @@ function _splitCsvLine(line) {
   return fields;
 }
 
-// ── Quick Analysis import button ──────────────────────────────────────────────
-// Pure JS path: parses CSV/Excel client-side, stores in dataset_store.
-// Does NOT touch Pyodide — instant, works even before Python loads.
-//
-// onLoad(dataset) — optional callback with the parsed dataset object
-
-export function createQuickImportBtn({ onLoad } = {}) {
-  const btn = document.createElement('button');
-  btn.className   = 'sc-btn load-data-btn';
-  btn.title       = 'Import CSV / Excel — instant, no Python needed';
-  btn.textContent = '📂';
-
-  btn.addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type    = 'file';
-    input.accept  = '.csv,.xlsx,.xls,.txt';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-
-    input.addEventListener('change', async () => {
-      const file = input.files[0];
-      input.remove();
-      if (!file) return;
-
-      btn.disabled    = true;
-      btn.textContent = '⌛ Reading…';
-
-      try {
-        const csvText = await _fileToCsv(file);
-        const dataset = parseToDataset(csvText, file.name);
-        if (!dataset) throw new Error('Could not parse file');
-
-        setDataset(dataset);   // ← stores + dispatches 'dataset-updated'
-        _toast(`✓ "${file.name}" — ${dataset.rows.length.toLocaleString()} rows · ${dataset.columns.length} cols`);
-        onLoad?.(dataset);
-      } catch (e) {
-        _toast(`✗ Import failed: ${e.message}`);
-        console.error('[import_data quick]', e);
-      } finally {
-        btn.disabled    = false;
-        btn.textContent = '📂';
-      }
-    });
-
-    input.click();
-  });
-
-  return btn;
-}
+// createQuickImportBtn removed — file imports are now centralised in the
+// rb-file-panel (file_manager.js). Use the "发送到 Quick Analysis" button
+// on each file item to push data into dataset_store / ARIA.
