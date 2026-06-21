@@ -58,12 +58,11 @@ export function attachCellHooks({
     cell.counter.textContent = '*';
     runBtn.disabled = true;
 
-    // Save inject info BEFORE flush clears _pendingInject.
-    // Needed so we can add a viz-suggestion for import-button cells where
-    // the DataFrame is injected before the RUNNER runs and therefore never
-    // appears in the pre/post exec diff.
-    const _ownInjectDs = (cell._pendingInject && cell._datasetInfo)
-      ? { ...cell._datasetInfo } : null;
+    // Capture dataset info before flush — used to add viz-suggestion card for
+    // import-button cells (RUNNER diff never sees the variable as "new" since
+    // it was injected before exec). Also used on re-run after pendingInject
+    // is already flushed: fall back to _datasetInfo which persists across runs.
+    const _ownInjectDs = cell._datasetInfo ? { ...cell._datasetInfo } : null;
 
     await flushPendingInjects?.();
     const cellNum = cell.numEl?.textContent ?? '';

@@ -202,8 +202,36 @@ function setupCodingScreen() {
 
   notebookView.appendChild(nbOutputPanel);
 
+  // ── Output persistence (survives page refresh) ────────
+  const NB_OUTPUTS_KEY = 'dreaming-polar-nb-outputs';
+
+  function _saveOutputs(cellId, label, lang, outputs) {
+    let stored;
+    try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { stored = {}; }
+    // Strip raw image data (base64 PNG can be large); replace with a lightweight placeholder.
+    stored[cellId] = {
+      label, lang,
+      outputs: (outputs ?? []).map(o => o.type === 'image' ? { type: 'chart-placeholder' } : o),
+    };
+    try { localStorage.setItem(NB_OUTPUTS_KEY, JSON.stringify(stored)); } catch (_) {}
+  }
+
+  function _removeStoredOutput(cellId) {
+    let stored;
+    try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { stored = {}; }
+    delete stored[cellId];
+    try { localStorage.setItem(NB_OUTPUTS_KEY, JSON.stringify(stored)); } catch (_) {}
+  }
+
+  function _clearAllStoredOutputs() {
+    try { localStorage.removeItem(NB_OUTPUTS_KEY); } catch (_) {}
+  }
+
   // ── Per-cell output sections ──────────────────────────
   const nbSections = new Map();
+
+  const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
   function getOrCreateNbSection(cellId, cellLabel, lang) {
     if (nbSections.has(cellId)) {
@@ -211,7 +239,12 @@ function setupCodingScreen() {
       const spanEl = sec.labelEl.querySelector('span');
       if (spanEl && cellLabel) spanEl.textContent = cellLabel;
       if (lang) sec.lang = lang;
-      sec.bodyEl.innerHTML = '';
+      // Clear pane contents individually — do NOT do bodyEl.innerHTML='' which
+      // destroys chartPane/textPane themselves, causing renderBlocks to write
+      // into detached nodes (output invisible on every run after the first).
+      sec.chartPane.innerHTML = '';
+      sec.chartPane.classList.remove('has-chart');
+      sec.textPane.innerHTML = '';
       return sec;
     }
     nbOutputPlaceholder.style.display = 'none';
@@ -220,6 +253,7 @@ function setupCodingScreen() {
     sectionEl.className = 'cds-output-section';
     sectionEl.dataset.cellId = cellId;
 
+    // ── Label: cell identifier + action buttons on right ──
     const labelEl = document.createElement('div');
     labelEl.className = 'cds-output-section-label';
 
@@ -231,14 +265,12 @@ function setupCodingScreen() {
     labelEl.appendChild(labelInner);
 
     const sourceWidget = createSourceWidget();
+    sourceWidget.element.className = 'cds-inner-btn lus-btn';
     labelEl.appendChild(sourceWidget.element);
 
-    const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-    const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-
     const copySourceBtn = document.createElement('button');
-    copySourceBtn.className = 'nb-btn lus-copy-btn cds-copy-source-btn';
-    copySourceBtn.title = 'Copy output';
+    copySourceBtn.className = 'cds-inner-btn lus-copy-btn';
+    copySourceBtn.title = 'Copy output text';
     copySourceBtn.innerHTML = ICON_COPY;
     copySourceBtn.style.display = 'none';
     copySourceBtn.addEventListener('click', () => {
@@ -247,40 +279,37 @@ function setupCodingScreen() {
       navigator.clipboard?.writeText(text).then(() => {
         copySourceBtn.innerHTML = ICON_CHECK;
         copySourceBtn.classList.add('lus-copy-btn--done');
-        setTimeout(() => {
-          copySourceBtn.innerHTML = ICON_COPY;
-          copySourceBtn.classList.remove('lus-copy-btn--done');
-        }, 1500);
+        setTimeout(() => { copySourceBtn.innerHTML = ICON_COPY; copySourceBtn.classList.remove('lus-copy-btn--done'); }, 1500);
       });
     });
     labelEl.appendChild(copySourceBtn);
 
     const closeBtn = document.createElement('button');
-    closeBtn.className = 'cds-output-section-close';
+    closeBtn.className = 'cds-inner-btn cds-output-section-close';
     closeBtn.title = 'Dismiss';
     closeBtn.textContent = '✕';
     closeBtn.addEventListener('click', () => {
       sectionEl.remove();
       nbSections.delete(cellId);
+      _removeStoredOutput(cellId);
       if (nbSections.size === 0) nbOutputPlaceholder.style.display = '';
     });
     labelEl.appendChild(closeBtn);
 
+    // ── Body: chartPane → textPane ────────────────────
     const bodyEl = document.createElement('div');
     bodyEl.className = 'cds-output-section-body';
 
-    // Vertical layout: chart/viz on top, text/tables below
     const chartPane = document.createElement('div');
     chartPane.className = 'cds-output-chart-pane';
-    const textPane  = document.createElement('div');
-    textPane.className = 'cds-output-text-pane';
-    bodyEl.append(chartPane, textPane); // chart first → appears on top
 
+    const textPane = document.createElement('div');
+    textPane.className = 'cds-output-text-pane';
+
+    bodyEl.append(chartPane, textPane);
     sectionEl.append(labelEl, bodyEl);
 
     // Insert in notebook cell order, not execution order.
-    // Find the first already-rendered section that belongs to a later cell,
-    // then insertBefore it; otherwise fall back to appendChild.
     const cellOrder = getCellOrder();
     const myIdx = cellOrder.indexOf(cellId);
     let insertBefore = null;
@@ -291,9 +320,40 @@ function setupCodingScreen() {
     if (insertBefore) nbOutputBody.insertBefore(sectionEl, insertBefore);
     else              nbOutputBody.appendChild(sectionEl);
 
-    const sec = { sectionEl, labelEl, bodyEl, textPane, chartPane, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
+    const sec = { sectionEl, labelEl, bodyEl, textPane, chartPane, innerBar, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
     nbSections.set(cellId, sec);
     return sec;
+  }
+
+  function _renderIntoSection(sec, outputs, sourceCode, sourceLang) {
+    sec.sourceWidget?.setSource(sourceCode ?? null, sourceLang ?? null);
+    sec.sourceCode = sourceCode ?? null;
+    if (sec.copySourceBtn) sec.copySourceBtn.style.display = outputs?.length ? '' : 'none';
+    renderBlocks(outputs, sec.textPane, {
+      chartContainer: sec.chartPane,
+      onAskAI: async (errorText, block, btn) => {
+        btn.disabled = true;
+        btn.textContent = 'Thinking…';
+        try {
+          const context = sourceCode
+            ? `Code (${sourceLang ?? 'unknown'}):\n${sourceCode}\n\nError:\n${errorText}`
+            : errorText;
+          const explanation = await ask(context, systemExplainForLang(sourceLang), 512);
+          const explDiv = document.createElement('div');
+          explDiv.className = 'output-ai-explanation';
+          const lbl = document.createElement('div');
+          lbl.className = 'ai-explanation-label';
+          lbl.textContent = '小梦 suggests:';
+          const bodyEl2 = document.createElement('div');
+          bodyEl2.className = 'ai-explanation-body';
+          explDiv.append(lbl, bodyEl2);
+          block.after(explDiv);
+          lbl.appendChild(createRefactorBtn({ sourceCode, sourceLang, cellId: sec.sectionEl.dataset.cellId, explanation }));
+          renderBlocks(parseAIResponse(explanation), bodyEl2);
+        } catch { /* ignore */ }
+        finally { btn.disabled = false; btn.textContent = 'Ask AI'; }
+      },
+    });
   }
 
   document.addEventListener('notebook-cells-reordered', ({ detail: { order } }) => {
@@ -311,12 +371,21 @@ function setupCodingScreen() {
     nbOutputBody.innerHTML = '';
     nbSections.clear();
     nbOutputPlaceholder.style.display = '';
+    _clearAllStoredOutputs();
   });
 
   document.addEventListener('notebook-clear-output', () => {
     nbOutputBody.innerHTML = '';
     nbSections.clear();
     nbOutputPlaceholder.style.display = '';
+    _clearAllStoredOutputs();
+  });
+
+  document.addEventListener('kernel-restarted', () => {
+    nbOutputBody.innerHTML = '';
+    nbSections.clear();
+    nbOutputPlaceholder.style.display = '';
+    _clearAllStoredOutputs();
   });
 
   nbOutMaxBtn.addEventListener('click', () => {
@@ -350,39 +419,24 @@ function setupCodingScreen() {
     if (!detail.cellId) return;
     const { outputs, cellId, cellLabel, sourceCode, sourceLang } = detail;
     const sec = getOrCreateNbSection(cellId, cellLabel, sourceLang);
-    sec.sourceWidget?.setSource(sourceCode ?? null, sourceLang ?? null);
-    sec.sourceCode = sourceCode ?? null;
-    // Show copy button whenever there's output to copy (not gated on sourceCode).
-    if (sec.copySourceBtn) sec.copySourceBtn.style.display = outputs?.length ? '' : 'none';
-    renderBlocks(outputs, sec.textPane, {
-      chartContainer: sec.chartPane,
-      onAskAI: async (errorText, block, btn) => {
-        btn.disabled = true;
-        btn.textContent = 'Thinking…';
-        try {
-          const context = sourceCode
-            ? `Code (${sourceLang ?? 'unknown'}):\n${sourceCode}\n\nError:\n${errorText}`
-            : errorText;
-          const explanation = await ask(context, systemExplainForLang(sourceLang), 512);
-          const explDiv = document.createElement('div');
-          explDiv.className = 'output-ai-explanation';
-          const lbl = document.createElement('div');
-          lbl.className = 'ai-explanation-label';
-          lbl.textContent = '小梦 suggests:';
-          const bodyEl = document.createElement('div');
-          bodyEl.className = 'ai-explanation-body';
-          explDiv.append(lbl, bodyEl);
-          block.after(explDiv);
-          lbl.appendChild(createRefactorBtn({ sourceCode, sourceLang, cellId, explanation }));
-          renderBlocks(parseAIResponse(explanation), bodyEl);
-        } catch { /* ignore */ }
-        finally { btn.disabled = false; btn.textContent = 'Ask AI'; }
-      },
-    });
+    _renderIntoSection(sec, outputs, sourceCode, sourceLang);
+    _saveOutputs(cellId, cellLabel, sourceLang, outputs);
     requestAnimationFrame(() =>
       sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     );
   });
+
+  // Restore outputs from previous session on load
+  ;(function _restoreStoredOutputs() {
+    let stored;
+    try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { return; }
+    for (const [cellId, entry] of Object.entries(stored)) {
+      if (!entry?.outputs?.length) continue;
+      const sec = getOrCreateNbSection(cellId, entry.label ?? cellId, entry.lang ?? 'python');
+      _renderIntoSection(sec, entry.outputs, null, entry.lang ?? 'python');
+    }
+    if (nbSections.size > 0) nbOutputPanel.style.display = '';
+  })();
 
   // ── Chat-mode placeholder ─────────────────────────────
   const chatPlaceholder = document.createElement('div');

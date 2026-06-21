@@ -79,6 +79,15 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
         if (chartContainer) chartContainer.classList.add('has-chart');
         continue; // already appended, skip default append below
       }
+      case 'chart-placeholder': {
+        // Shown when a chart output was saved to localStorage but image data was stripped.
+        block.className += ' output-chart-placeholder';
+        block.innerHTML = `<span class="chart-placeholder-text">↻ Re-run to regenerate chart</span>`;
+        const phTarget = chartContainer ?? container;
+        phTarget.appendChild(block);
+        if (chartContainer) chartContainer.classList.add('has-chart');
+        continue;
+      }
       case 'cell-separator':
         block.className = 'nb-output-separator';
         block.innerHTML = `<span class="nb-sep-label">${escHtml(o.label ?? '')}</span>`;
@@ -99,45 +108,69 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
       }
       case 'viz-suggestion': {
         block.className = 'output-block output-viz-suggestion';
-        const kindLabel = { dataframe: 'DataFrame', series: 'Series', ndarray: 'ndarray' }[o.kind] ?? o.kind;
 
-        // ── Header row ────────────────────────────────────────────────────────
-        const header = document.createElement('div');
-        header.className = 'viz-suggest-header';
+        // ── Collapsible trigger row ───────────────────────────────────────────
+        const trigger = document.createElement('div');
+        trigger.className = 'vsug-trigger';
 
-        const icon = document.createElement('span');
-        icon.className = 'viz-suggest-icon';
-        icon.textContent = '◈';
+        const triggerLeft = document.createElement('div');
+        triggerLeft.className = 'vsug-trigger-left';
 
-        const label = document.createElement('span');
-        label.className = 'viz-suggest-label';
-        label.textContent = o.varName;
-        const meta = document.createElement('span');
-        meta.className = 'viz-suggest-meta';
-        meta.textContent = ` ${kindLabel}  ${o.shape ?? ''}`;
-        label.appendChild(meta);
+        const triggerIcon = document.createElement('i');
+        triggerIcon.className = 'ti ti-adjustments-horizontal vsug-trigger-ti';
 
         const vizBtn = document.createElement('button');
-        vizBtn.className = 'viz-suggest-btn';
+        vizBtn.className = 'vsug-icon-btn vsug-viz-btn';
         vizBtn.type = 'button';
-        vizBtn.textContent = '可视化';
+        vizBtn.title = '可视化';
+        vizBtn.innerHTML = `<i class="ti ti-chart-line"></i>`;
 
-        let _chartBlock = null; // reference to the generated chart block
+        const nameEl = document.createElement('span');
+        nameEl.className = 'vsug-name';
+        nameEl.textContent = o.varName;
+        const metaEl = document.createElement('span');
+        metaEl.className = 'vsug-meta';
+        metaEl.textContent = o.shape ?? '';
+
+        triggerLeft.append(triggerIcon, nameEl, metaEl);
+
+        const triggerRight = document.createElement('div');
+        triggerRight.className = 'vsug-trigger-right';
+        triggerRight.appendChild(vizBtn);
+
+        const chevron = document.createElement('i');
+        chevron.className = 'ti ti-chevron-down vsug-chevron';
+        triggerRight.appendChild(chevron);
+
+        trigger.append(triggerLeft, triggerRight);
+
+        // ── Collapsible body ──────────────────────────────────────────────────
+        const body = document.createElement('div');
+        body.className = 'vsug-body';
+        body.hidden = true;
+
+        // Toggle collapse
+        trigger.addEventListener('click', e => {
+          if (e.target.closest('.vsug-viz-btn')) return; // don't collapse on chart click
+          const opening = body.hidden;
+          body.hidden = !opening;
+          chevron.classList.toggle('vsug-chevron--open', opening);
+          // Compute counts once per open (cached after first call)
+          if (opening) _prefetchCounts();
+        });
+
+        // ── Chart toggle (vizBtn in trigger) ──────────────────────────────────
+        let _chartBlock = null;
         vizBtn.addEventListener('click', async () => {
-          // Toggle: if chart already exists, show/hide it
           if (_chartBlock) {
-            const isHidden = _chartBlock.style.display === 'none';
-            _chartBlock.style.display = isHidden ? '' : 'none';
-            vizBtn.textContent = isHidden ? '收起图表' : '可视化';
-            if (chartContainer) {
-              // isHidden=true 表示当前隐藏→点击后要显示→加 has-chart
-              // isHidden=false 表示当前显示→点击后要隐藏→去掉 has-chart
-              chartContainer.classList.toggle('has-chart', isHidden);
-            }
+            const hidden = _chartBlock.style.display === 'none';
+            _chartBlock.style.display = hidden ? '' : 'none';
+            vizBtn.classList.toggle('vsug-icon-btn--active', hidden);
+            if (chartContainer) chartContainer.classList.toggle('has-chart', hidden);
             return;
           }
           vizBtn.disabled = true;
-          vizBtn.textContent = '生成中…';
+          vizBtn.classList.add('vsug-icon-btn--loading');
           try {
             const img = await visualiseVar(o.varName);
             _chartBlock = document.createElement('div');
@@ -146,242 +179,240 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
             image.src = `data:image/png;base64,${img}`;
             image.alt = o.varName;
             _chartBlock.appendChild(image);
-            // Route to chart pane if available, otherwise insert after the card
             if (chartContainer) {
               chartContainer.appendChild(_chartBlock);
               chartContainer.classList.add('has-chart');
             } else {
               block.insertAdjacentElement('afterend', _chartBlock);
             }
-            vizBtn.textContent = '收起图表';
+            vizBtn.classList.remove('vsug-icon-btn--loading');
+            vizBtn.classList.add('vsug-icon-btn--active');
             vizBtn.disabled = false;
           } catch (err) {
             console.warn('[viz-suggestion] chart failed:', err);
-            vizBtn.textContent = '生成失败';
+            vizBtn.classList.remove('vsug-icon-btn--loading');
             vizBtn.disabled = false;
           }
         });
 
-        header.append(icon, label, vizBtn);
+        block.append(trigger);
 
-        // ── 清洗 panel (DataFrame only) ───────────────────────────────────────
         if (o.kind === 'dataframe') {
-          const cleanBtn = document.createElement('button');
-          cleanBtn.className = 'viz-suggest-btn';
-          cleanBtn.type = 'button';
-          cleanBtn.textContent = '清洗';
+          // ── Clean section ─────────────────────────────────────────────────
+          const cleanSection = document.createElement('div');
+          cleanSection.className = 'vsug-section';
 
-          const cleanPanel = document.createElement('div');
-          cleanPanel.className = 'viz-clean-panel';
-          cleanPanel.hidden = true;
+          const cleanTitle = document.createElement('div');
+          cleanTitle.className = 'vsug-section-title';
+          cleanTitle.textContent = '清洗';
 
-          // Helper: build one operation row
-          function _makeCleanRow(label, op) {
-            const row = document.createElement('div');
-            row.className = 'viz-clean-row';
+          const cleanChipRow = document.createElement('div');
+          cleanChipRow.className = 'vsug-chip-row';
 
-            const rowLabel = document.createElement('span');
-            rowLabel.className = 'viz-clean-label';
-            rowLabel.textContent = label;
+          const cleanFeedback = document.createElement('div');
+          cleanFeedback.className = 'vsug-feedback';
+          cleanFeedback.hidden = true;
 
-            const checkBtn = document.createElement('button');
-            checkBtn.className = 'viz-clean-action-btn';
-            checkBtn.textContent = '检查影响';
+          const confirmRow = document.createElement('div');
+          confirmRow.className = 'vsug-confirm-row';
+          confirmRow.hidden = true;
 
-            const previewEl = document.createElement('span');
-            previewEl.className = 'viz-clean-preview';
+          let _cleanPending = null;
+          let _activeChip = null;
+          let _counts = null; // cached { dropna, drop_dup }
 
-            const confirmBtn = document.createElement('button');
-            confirmBtn.className = 'viz-clean-action-btn viz-clean-confirm-btn';
-            confirmBtn.textContent = '确认执行';
-            confirmBtn.hidden = true;
+          function _setFeedback(text, mod = '') {
+            cleanFeedback.textContent = text;
+            cleanFeedback.className = 'vsug-feedback' + (mod ? ` vsug-fb-${mod}` : '');
+            cleanFeedback.hidden = !text;
+          }
 
-            const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'viz-clean-action-btn';
-            cancelBtn.textContent = '取消';
-            cancelBtn.hidden = true;
+          // Pre-fetch empty/duplicate counts once when panel opens; cache result
+          async function _prefetchCounts() {
+            if (_counts) return;
+            try {
+              const [na, dup] = await Promise.all([
+                previewClean(o.varName, 'dropna'),
+                previewClean(o.varName, 'drop_dup'),
+              ]);
+              _counts = { dropna: na.affected ?? 0, drop_dup: dup.affected ?? 0 };
+              naChip._setBadge(_counts.dropna);
+              dupChip._setBadge(_counts.drop_dup);
+            } catch (_) { /* silent */ }
+          }
 
-            let _pendingCols = null; // for date_fmt
+          function _makeCleanChip(icon, label, op) {
+            const chip = document.createElement('button');
+            chip.className = 'vsug-chip vsug-clean-chip';
+            chip.type = 'button';
 
-            function _resetRow() {
-              previewEl.textContent = '';
-              previewEl.className = 'viz-clean-preview';
-              confirmBtn.hidden = true;
-              cancelBtn.hidden = true;
-              _pendingCols = null;
-            }
+            const ico = document.createElement('i');
+            ico.className = `ti ${icon}`;
+            const lbl = document.createElement('span');
+            lbl.textContent = label;
 
-            cancelBtn.addEventListener('click', _resetRow);
+            // Badge for count (filled by _prefetchCounts)
+            const badge = document.createElement('span');
+            badge.className = 'vsug-badge';
+            badge.hidden = true;
+            chip._setBadge = (n) => { badge.textContent = n > 0 ? String(n) : ''; badge.hidden = n <= 0; };
 
-            checkBtn.addEventListener('click', async () => {
-              checkBtn.disabled = true;
-              previewEl.textContent = '检查中…';
-              confirmBtn.hidden = true;
-              cancelBtn.hidden = true;
-              _pendingCols = null;
+            chip.append(ico, lbl, badge);
+
+            chip.addEventListener('click', async () => {
+              // Toggle selected state
+              if (_activeChip && _activeChip !== chip) {
+                _activeChip.classList.remove('vsug-chip--selected');
+              }
+              const selecting = !chip.classList.contains('vsug-chip--selected');
+              chip.classList.toggle('vsug-chip--selected', selecting);
+              _activeChip = selecting ? chip : null;
+
+              if (!selecting) {
+                _cleanPending = null;
+                confirmRow.hidden = true;
+                _setFeedback('');
+                return;
+              }
+
+              _setFeedback('Checking…');
+              _cleanPending = null;
+              confirmRow.hidden = true;
               try {
                 const info = await previewClean(o.varName, op);
                 if (op === 'dropna') {
-                  if (info.affected === 0) {
-                    previewEl.textContent = '无全空行，无需操作';
-                    previewEl.className = 'viz-clean-preview viz-clean-ok';
-                  } else {
-                    previewEl.textContent = `将删除 ${info.affected} 行全空行（共 ${info.total} 行）`;
-                    previewEl.className = 'viz-clean-preview viz-clean-warn';
-                    confirmBtn.hidden = false;
-                    cancelBtn.hidden = false;
-                  }
+                  if (info.affected === 0) { _setFeedback('No empty rows — nothing to clean', 'ok'); chip.classList.remove('vsug-chip--selected'); _activeChip = null; }
+                  else { _setFeedback(`${info.affected} empty rows will be removed (of ${info.total})`, 'warn'); _cleanPending = { op }; confirmRow.hidden = false; }
                 } else if (op === 'drop_dup') {
-                  if (info.affected === 0) {
-                    previewEl.textContent = '无重复行，无需操作';
-                    previewEl.className = 'viz-clean-preview viz-clean-ok';
-                  } else {
-                    previewEl.textContent = `将删除 ${info.affected} 行重复行（共 ${info.total} 行）`;
-                    previewEl.className = 'viz-clean-preview viz-clean-warn';
-                    confirmBtn.hidden = false;
-                    cancelBtn.hidden = false;
-                  }
+                  if (info.affected === 0) { _setFeedback('No duplicates — nothing to clean', 'ok'); chip.classList.remove('vsug-chip--selected'); _activeChip = null; }
+                  else { _setFeedback(`${info.affected} duplicate rows will be removed (of ${info.total})`, 'warn'); _cleanPending = { op }; confirmRow.hidden = false; }
                 } else if (op === 'date_fmt') {
-                  if (!info.candidates?.length) {
-                    previewEl.textContent = '未检测到日期列';
-                    previewEl.className = 'viz-clean-preview viz-clean-ok';
-                  } else {
-                    _pendingCols = info.candidates.map(c => c.col);
-                    previewEl.textContent = `将统一列：${_pendingCols.join('、')}`;
-                    previewEl.className = 'viz-clean-preview viz-clean-warn';
-                    confirmBtn.hidden = false;
-                    cancelBtn.hidden = false;
+                  if (!info.candidates?.length) { _setFeedback('No date columns detected', 'ok'); chip.classList.remove('vsug-chip--selected'); _activeChip = null; }
+                  else {
+                    const cols = info.candidates.map(c => c.col);
+                    _setFeedback(`Will normalize: ${cols.join(', ')}`, 'warn');
+                    _cleanPending = { op, cols };
+                    confirmRow.hidden = false;
                   }
                 }
               } catch (e) {
-                previewEl.textContent = `检查失败：${e.message}`;
-                previewEl.className = 'viz-clean-preview viz-clean-err';
-                cancelBtn.hidden = false; // allow dismissing the error too
+                _setFeedback(`Error: ${e.message}`, 'err');
                 console.warn('[clean preview]', op, e);
-              } finally {
-                checkBtn.disabled = false;
               }
             });
-
-            confirmBtn.addEventListener('click', async () => {
-              confirmBtn.disabled = true;
-              cancelBtn.hidden = true;
-              previewEl.textContent = '执行中…';
-              try {
-                const res = await applyClean(o.varName, op, _pendingCols);
-                if (op === 'dropna' || op === 'drop_dup') {
-                  previewEl.textContent = `✓ 完成，${res.before} → ${res.after} 行`;
-                  previewEl.className = 'viz-clean-preview viz-clean-ok';
-                } else if (op === 'date_fmt') {
-                  const okMsg = res.applied?.length ? `✓ 已统一：${res.applied.join('、')}` : '';
-                  const errMsg = res.errors?.map(e => `✗ ${e.col}：${e.err}`).join('；') ?? '';
-                  previewEl.textContent = [okMsg, errMsg].filter(Boolean).join('  ');
-                  previewEl.className = res.errors?.length
-                    ? 'viz-clean-preview viz-clean-warn'
-                    : 'viz-clean-preview viz-clean-ok';
-                }
-                // Refresh shape in meta
-                meta.textContent = ` ${kindLabel}  (已更新)`;
-              } catch (e) {
-                previewEl.textContent = `执行失败：${e.message}`;
-                previewEl.className = 'viz-clean-preview viz-clean-err';
-                console.warn('[clean apply]', op, e);
-              } finally {
-                confirmBtn.disabled = false;
-                confirmBtn.hidden = true;
-              }
-            });
-
-            row.append(rowLabel, checkBtn, previewEl, confirmBtn, cancelBtn);
-            return row;
+            return chip;
           }
 
-          cleanPanel.append(
-            _makeCleanRow('删除全空行', 'dropna'),
-            _makeCleanRow('删除重复行', 'drop_dup'),
-            _makeCleanRow('统一日期格式', 'date_fmt'),
-          );
+          const naChip  = _makeCleanChip('ti-eraser',          'Empty rows',  'dropna');
+          const dupChip = _makeCleanChip('ti-copy',            'Duplicates',  'drop_dup');
+          const dtChip  = _makeCleanChip('ti-calendar-event',  'Date cols',   'date_fmt');
 
-          cleanBtn.addEventListener('click', () => {
-            cleanPanel.hidden = !cleanPanel.hidden;
-            cleanBtn.textContent = cleanPanel.hidden ? '清洗' : '收起';
-            // Collapse export panel when clean panel opens (and vice versa)
-            if (!cleanPanel.hidden) { exportPanel.hidden = true; exportBtn.textContent = '导出'; }
+          cleanChipRow.append(naChip, dupChip, dtChip);
+
+          const applyBtn = document.createElement('button');
+          applyBtn.className = 'vsug-apply-btn';
+          applyBtn.type = 'button';
+          applyBtn.textContent = 'Apply';
+
+          const discardBtn = document.createElement('button');
+          discardBtn.className = 'vsug-discard-btn';
+          discardBtn.type = 'button';
+          discardBtn.textContent = 'Cancel';
+
+          discardBtn.addEventListener('click', () => {
+            confirmRow.hidden = true;
+            _setFeedback('');
+            _cleanPending = null;
+            if (_activeChip) { _activeChip.classList.remove('vsug-chip--selected'); _activeChip = null; }
           });
 
-          // ── Export panel ──────────────────────────────────────────────────
-          const exportBtn = document.createElement('button');
-          exportBtn.className = 'viz-suggest-btn';
-          exportBtn.type = 'button';
-          exportBtn.textContent = '导出';
+          applyBtn.addEventListener('click', async () => {
+            if (!_cleanPending) return;
+            applyBtn.disabled = true;
+            _setFeedback('Applying…');
+            try {
+              const res = await applyClean(o.varName, _cleanPending.op, _cleanPending.cols ?? null);
+              const { op } = _cleanPending;
+              if (op === 'dropna' || op === 'drop_dup') {
+                _setFeedback(`✓ Done — ${res.before} → ${res.after} rows`, 'ok');
+              } else {
+                const ok  = res.applied?.length ? `✓ Normalized: ${res.applied.join(', ')}` : '';
+                const err = res.errors?.map(e => `✗ ${e.col}: ${e.err}`).join('; ') ?? '';
+                _setFeedback([ok, err].filter(Boolean).join('  '), res.errors?.length ? 'warn' : 'ok');
+              }
+              metaEl.textContent = `${o.shape ?? ''} (updated)`;
+              confirmRow.hidden = true;
+              _cleanPending = null;
+              _counts = null; // invalidate cache after mutation
+              if (_activeChip) { _activeChip.classList.remove('vsug-chip--selected'); _activeChip = null; }
+            } catch (e) {
+              _setFeedback(`Error: ${e.message}`, 'err');
+            } finally {
+              applyBtn.disabled = false;
+            }
+          });
 
-          const exportPanel = document.createElement('div');
-          exportPanel.className = 'viz-clean-panel';
-          exportPanel.hidden = true;
+          confirmRow.append(applyBtn, discardBtn);
+          cleanSection.append(cleanTitle, cleanChipRow, cleanFeedback, confirmRow);
 
-          const exportFormats = [
-            { fmt: 'csv',  label: 'CSV',   ext: 'csv'  },
-            { fmt: 'json', label: 'JSON',  ext: 'json' },
-            { fmt: 'xlsx', label: 'Excel', ext: 'xlsx' },
-            { fmt: 'xml',  label: 'XML',   ext: 'xml'  },
-          ];
+          // ── Export section ────────────────────────────────────────────────
+          const exportSection = document.createElement('div');
+          exportSection.className = 'vsug-section vsug-section--export';
 
-          exportFormats.forEach(({ fmt, label, ext }) => {
-            const row = document.createElement('div');
-            row.className = 'viz-clean-row';
+          const exportTitle = document.createElement('div');
+          exportTitle.className = 'vsug-section-title';
+          exportTitle.textContent = '导出为';
 
-            const rowLabel = document.createElement('span');
-            rowLabel.className = 'viz-clean-label';
-            rowLabel.textContent = label;
+          const exportChipRow = document.createElement('div');
+          exportChipRow.className = 'vsug-chip-row';
 
-            const dlBtn = document.createElement('button');
-            dlBtn.className = 'viz-clean-action-btn';
-            dlBtn.textContent = '下载';
+          const exportStatus = document.createElement('span');
+          exportStatus.className = 'vsug-export-status';
+          exportStatus.hidden = true;
 
-            const statusEl = document.createElement('span');
-            statusEl.className = 'viz-clean-preview';
-
-            dlBtn.addEventListener('click', async () => {
-              dlBtn.disabled = true;
-              statusEl.textContent = '导出中…';
-              statusEl.className = 'viz-clean-preview';
+          [
+            { fmt: 'csv',  label: 'CSV',   ext: 'csv',  icon: 'ti-table' },
+            { fmt: 'json', label: 'JSON',  ext: 'json', icon: 'ti-code' },
+            { fmt: 'xlsx', label: 'Excel', ext: 'xlsx', icon: 'ti-file-spreadsheet' },
+            { fmt: 'xml',  label: 'XML',   ext: 'xml',  icon: 'ti-file-code' },
+          ].forEach(({ fmt, label, ext, icon }) => {
+            const chip = document.createElement('button');
+            chip.className = 'vsug-chip vsug-export-chip';
+            chip.type = 'button';
+            const ico = document.createElement('i');
+            ico.className = `ti ${icon}`;
+            const lbl = document.createElement('span');
+            lbl.textContent = label;
+            chip.append(ico, lbl);
+            chip.addEventListener('click', async () => {
+              chip.disabled = true;
+              exportStatus.textContent = `Exporting ${label}…`;
+              exportStatus.className = 'vsug-export-status';
+              exportStatus.hidden = false;
               try {
                 const { content, b64 } = await exportDataFrame(o.varName, fmt);
                 downloadBlob(content, `${o.varName}.${ext}`, MIME[fmt] ?? 'application/octet-stream', b64);
-                statusEl.textContent = '✓ 已下载';
-                statusEl.className = 'viz-clean-preview viz-clean-ok';
+                exportStatus.textContent = `✓ ${label} downloaded`;
+                exportStatus.className = 'vsug-export-status vsug-fb-ok';
               } catch (err) {
-                statusEl.textContent = `✗ ${err.message ?? '导出失败'}`;
-                statusEl.className = 'viz-clean-preview viz-clean-err';
+                exportStatus.textContent = `✗ ${err.message ?? 'Export failed'}`;
+                exportStatus.className = 'vsug-export-status vsug-fb-err';
                 console.warn('[export]', fmt, err);
               } finally {
-                dlBtn.disabled = false;
+                chip.disabled = false;
               }
             });
-
-            row.append(rowLabel, dlBtn, statusEl);
-            exportPanel.appendChild(row);
+            exportChipRow.append(chip);
           });
 
-          exportBtn.addEventListener('click', () => {
-            exportPanel.hidden = !exportPanel.hidden;
-            exportBtn.textContent = exportPanel.hidden ? '导出' : '收起';
-            // Collapse clean panel when export panel opens
-            if (!exportPanel.hidden) { cleanPanel.hidden = true; cleanBtn.textContent = '清洗'; }
-          });
-
-          header.append(cleanBtn, exportBtn);
-          block.append(header, cleanPanel, exportPanel);
-        } else {
-          block.append(header);
+          exportSection.append(exportTitle, exportChipRow, exportStatus);
+          body.append(cleanSection, exportSection);
+          block.append(body);
         }
 
-        // Viz-suggestion card always goes in textPane (container).
-        // Routing it to chartPane caused it to disappear when the chart was
-        // collapsed (chartPane collapses to height 0, hiding everything inside).
+        // Always in textPane — chartPane collapses and would hide the card
         container.appendChild(block);
         continue;
-
       }
       default:
         block.innerHTML = `<pre class="output-text">${escHtml(String(o.content))}</pre>`;

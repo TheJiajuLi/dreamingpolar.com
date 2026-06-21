@@ -74,26 +74,28 @@ body.cs-resizing * {
 
 /* ── Output panel ──────────────────────────────────────── */
 .cds-output-panel {
-  flex: 1;              /* fills remaining width when no saved px width is applied */
+  flex: 0.42;           /* ~30% of the view; user can drag wider */
   min-width: 200px;
+  max-width: 55%;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
   background: var(--surface, #ffffff);
   position: relative;
-  border-left: 1.5px solid var(--border, #e2e8f0);
+  border-left: 1px solid var(--border, #e2e8f0);
 }
 
 .cds-output-panel-hdr {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 6px 0 14px;
-  height: 38px;
+  padding: 0 8px 0 16px;
+  height: 38px;           /* matches cds-notebook-toolbar */
   box-sizing: border-box;
   flex-shrink: 0;
-  background: var(--surface, #ffffff);
+  background: var(--bg, #f3f5f8);
+  border-bottom: 1px solid var(--border, #e2e8f0);
   user-select: none;
 }
 
@@ -116,53 +118,44 @@ body.cs-resizing * {
   font-size: 0.72rem;
   font-style: italic;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.4;
   letter-spacing: 0.02em;
 }
 
 .cds-output-body {
   flex: 1;
   overflow-y: auto;
-  background: var(--surface, #ffffff);
+  background: transparent;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
 }
 
-/* Clean output blocks inside the output panel — override compiling_screen.css defaults */
+/* Override compiling_screen.css for output panel context */
 .cds-output-body .output-block {
   background: transparent !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.045) !important;
-  padding: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04) !important;
 }
 .cds-output-body .output-block:last-child { border-bottom: none !important; }
-.cds-output-body .output-text  {
-  padding: 10px 16px;
-  font-size: 0.8rem;
-  border-left: none;
-}
-.cds-output-body .output-error {
-  background: transparent !important;
-  border-left: 2px solid #f87171;
-  padding: 9px 16px;
-  font-size: 0.8rem;
-  color: #b91c1c;
-}
-.cds-output-body .output-info  { padding: 8px 16px; font-size: 0.78rem; background: transparent !important; }
-.cds-output-body .output-html  { padding: 10px 16px; }
-.cds-output-body .output-latex { padding: 10px 16px; }
-.cds-output-body .output-image { padding: 0; }
-.cds-output-body .output-image img { width: 100%; height: auto; display: block; border-radius: 0; }
+.cds-output-body .output-text  { padding: 12px 18px; font-size: 0.8rem; }
+.cds-output-body .output-error { background: transparent !important; border-left: 2px solid #fca5a5; padding: 10px 18px; }
+.cds-output-body .output-info  { padding: 8px 18px; background: transparent !important; }
+.cds-output-body .output-html  { padding: 10px 18px; }
+.cds-output-body .output-latex { padding: 10px 18px; }
+.cds-output-body .output-image { padding: 8px 12px; }
+.cds-output-body .output-image img { width: 100%; height: auto; display: block; border-radius: 8px; }
 
-/* Dark / grey / aurora: match content-screen-body bg */
+/* Dark / grey / aurora theme overrides */
 [data-theme="dark"]   .cds-output-panel,
-[data-theme="dark"]   .cds-output-panel-hdr,
 [data-theme="dark"]   .cds-output-body     { background: #0d1117; }
+[data-theme="dark"]   .cds-output-panel-hdr { background: #161b22; }
+
 [data-theme="grey"]   .cds-output-panel,
-[data-theme="grey"]   .cds-output-panel-hdr,
 [data-theme="grey"]   .cds-output-body     { background: #22272e; }
+[data-theme="grey"]   .cds-output-panel-hdr { background: #2d333b; }
+
 [data-theme="aurora"] .cds-output-panel,
-[data-theme="aurora"] .cds-output-panel-hdr,
 [data-theme="aurora"] .cds-output-body     { background: #07071a; }
+[data-theme="aurora"] .cds-output-panel-hdr { background: #0e0e24; }
 [data-theme="dark"]   .cds-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
 [data-theme="grey"]   .cds-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
 

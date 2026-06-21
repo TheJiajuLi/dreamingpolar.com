@@ -394,10 +394,12 @@
 .aria-chat-scroll-btn:hover { background: var(--bg, #f8fafc); color: var(--text, #0f172a); }
 
 .aria-chat-welcome {
-  padding: 8px 0 4px;
+  padding: 10px 14px 6px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex-shrink: 0;        /* sits above conv-area, never compressed */
+  border-bottom: 1px solid var(--border, #e2e8f0);
 }
 .aria-chat-welcome-title {
   font-size: 0.62rem;

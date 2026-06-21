@@ -59,6 +59,23 @@
   font-family: var(--code-font, "JetBrains Mono", monospace);
 }
 
+/* Inline lang bar — sits above the source pre, inside textPane */
+.lus-inline-lang-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 14px 4px 16px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  flex-shrink: 0;
+}
+
+/* source pre reuses output-text style but marks itself */
+.lus-source-pre {
+  flex: 1;
+  border-left: 2px solid var(--accent, #6366f1) !important;
+  color: var(--text, #102040);
+}
+
 /* ── Copy button ─────────────────────────────────────────── */
 .lus-copy-btn {
   display: inline-flex;

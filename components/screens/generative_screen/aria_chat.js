@@ -5,15 +5,17 @@ import { getCellDatasetInfo } from '../../customise_code_block/customise_code_bl
 const _CODE_TEMPLATES = {
   'time-series': v =>
     `import pandas as pd\n` +
+    `import matplotlib.pyplot as plt\n` +
     `# 设置时间索引\n` +
     `_date_col = ${v}.select_dtypes(include=["object","datetime"]).columns[0]\n` +
     `${v}[_date_col] = pd.to_datetime(${v}[_date_col])\n` +
     `${v} = ${v}.set_index(_date_col)\n` +
-    `display(${v}.head())\n` +
+    `print(${v}.shape)\n` +
     `${v}.select_dtypes(include="number").plot(\n` +
     `    figsize=(14, 6), grid=True, linewidth=1.2,\n` +
     `    title="${v} — 时序趋势"\n` +
-    `)`,
+    `)\n` +
+    `${v}.head()`,
 
   'overview':
     v =>
@@ -239,17 +241,10 @@ export function createAriaChat() {
     _rebuildTabs(detail.all ?? [], detail.activeIdx ?? 0);
   });
 
-  // ── Conversation area — one messages div per dataset ──────────────────────
-  // Each dataset tab gets its own isolated scroll history. Only one div
-  // is visible at a time (.aria-chat-messages--active). The welcome screen
-  // is the initial active div shown before any dataset is imported.
-  const convArea = document.createElement('div');
-  convArea.className = 'aria-chat-conv-area';
-
-  const welcome = document.createElement('div');
-  welcome.className = 'aria-chat-messages aria-chat-messages--active';
-  welcome.innerHTML =
-    `<div class="aria-chat-welcome">` +
+  // ── Persistent welcome header (always visible, survives tab switches) ───────
+  const welcomeHeader = document.createElement('div');
+  welcomeHeader.className = 'aria-chat-welcome';
+  welcomeHeader.innerHTML =
     `<div class="aria-chat-welcome-title">导入数据后开始对话</div>` +
     `<div class="aria-chat-welcome-hint">上传 CSV / Excel 文件，然后用自然语言提问。ARIA 会引用真实的列名、数字，并在需要时直接生成图表。</div>` +
     `<div class="aria-chat-welcome-chips">` +
@@ -264,7 +259,17 @@ export function createAriaChat() {
     `<span class="aria-code-chip" data-tmpl="overview">📋 数据概览</span>` +
     `<span class="aria-code-chip" data-tmpl="rolling">📈 移动均线</span>` +
     `<span class="aria-code-chip" data-tmpl="describe">🔍 统计摘要</span>` +
-    `</div></div>`;
+    `</div>`;
+
+  // ── Conversation area — one messages div per dataset ──────────────────────
+  // Each dataset tab gets its own isolated scroll history. Only one div
+  // is visible at a time (.aria-chat-messages--active). The welcome div
+  // is an empty placeholder shown before any messages exist for a dataset.
+  const convArea = document.createElement('div');
+  convArea.className = 'aria-chat-conv-area';
+
+  const welcome = document.createElement('div');
+  welcome.className = 'aria-chat-messages aria-chat-messages--active';
 
   const scrollToBottomBtn = document.createElement('button');
   scrollToBottomBtn.className = 'aria-chat-scroll-btn';
@@ -324,7 +329,7 @@ export function createAriaChat() {
   sendBtn.className = 'aria-chat-send'; sendBtn.title = '发送 (Enter)';
   sendBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
   inputRow.append(input, sendBtn);
-  root.append(header, dsTabs, convArea, inputRow);
+  root.append(header, dsTabs, welcomeHeader, convArea, inputRow);
 
   let _busy = false;
 

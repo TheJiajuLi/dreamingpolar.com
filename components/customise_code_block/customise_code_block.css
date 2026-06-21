@@ -209,6 +209,22 @@
   flex-shrink: 1;
 }
 
+.nb-ds-clear-btn {
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 0 3px;
+  margin-left: -3px;
+  color: var(--accent, #6366f1);
+  opacity: 0.5;
+  background: transparent;
+  border: none;
+}
+.nb-ds-clear-btn:hover {
+  opacity: 1;
+  background: var(--accent-soft, #e0e3ff);
+  color: var(--accent, #6366f1);
+}
+
 /* Output copy button — lives in nb-output-section-label */
 .nb-output-copy-btn {
   width: 22px;
@@ -324,26 +340,27 @@
 }
 .cds-output-section:last-child  { border-bottom: none; }
 
+/* Label: cell identifier left, action buttons right */
 .cds-output-section-label {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  font-size: 0.65rem;
+  gap: 4px;
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--status-running, #6366f1);
-  padding: 0 8px 0 12px;
-  height: 30px;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #94a3b8);
+  padding: 0 6px 0 14px;
+  height: 28px;
   box-sizing: border-box;
   background: var(--bg, #f3f5f8);
-  border-bottom: 1.5px solid currentColor;
+  border-bottom: 1px solid var(--border, #e2e8f0);
   font-family: var(--code-font, "JetBrains Mono", monospace);
   user-select: none;
 }
 
-/* Dot badge before label text */
+/* Dot badge */
 .cds-output-section-label-text {
   display: flex;
   align-items: center;
@@ -353,12 +370,12 @@
 .cds-output-section-label-text::before {
   content: '';
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--accent, #6366f1);
   flex-shrink: 0;
-  opacity: 0.85;
+  opacity: 0.7;
 }
 
 .cds-output-section-close {
@@ -378,8 +395,43 @@
   font-family: inherit;
   line-height: 1;
 }
-.cds-output-section-close:hover { background: #fef2f2; color: #ef4444; }
+.cds-output-section-close:hover { background: transparent; color: #ef4444; }
 
+/* Compact buttons inside the section label */
+.cds-inner-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
+  line-height: 1;
+}
+.cds-inner-btn:hover { background: rgba(0,0,0,0.05); color: var(--text, #0f172a); }
+.cds-inner-btn.cds-output-section-close:hover { background: transparent; color: #ef4444; }
+
+/* chart-placeholder shown when image data was stripped from localStorage */
+.output-chart-placeholder {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+}
+.chart-placeholder-text {
+  font-size: 0.72rem;
+  color: var(--text-muted, #94a3b8);
+  font-style: italic;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+
+/* Old copy-source-btn kept for back-compat but no longer rendered */
 .cds-copy-source-btn {
   width: 20px;
   height: 20px;

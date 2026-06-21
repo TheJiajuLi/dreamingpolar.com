@@ -98,13 +98,15 @@ function _buildImportCellCode(varName, rows, filename, columns, columnNames, fil
     return (
       `# "${filename}" → ${varName} (${Number(rows).toLocaleString()} rows, ${columns} cols)\n` +
       `import pandas as pd\n` +
+      `import matplotlib.pyplot as plt\n` +   // explicit import so loadPackagesFromImports loads matplotlib
       `${varName}["${dateCol}"] = pd.to_datetime(${varName}["${dateCol}"])\n` +
       `${varName} = ${varName}.set_index("${dateCol}")\n` +
-      `${varName}.head()\n` +
+      `print(${varName}.shape)\n` +
       `${varName}.select_dtypes(include="number").plot(\n` +
       `    figsize=(12, 5), grid=True, linewidth=1.2,\n` +
       `    title="${varName}"\n` +
-      `)`
+      `)\n` +
+      `${varName}.head()`
     );
   }
   return (
@@ -129,6 +131,7 @@ function _restoreInjectData(showLabels = true, restoreDatasets = true) {
       if (c.dsLabel && showLabels) {
         c.dsLabel.textContent  = `${saved.varName} · ${Number(saved.rows).toLocaleString()} rows`;
         c.dsLabel.style.display = '';
+        if (c._dsClearBtn) c._dsClearBtn.style.display = '';
       }
       // If the cell's editor is empty (placeholder visible), regenerate the
       // import code so the user doesn't have to re-import just to get code back.
@@ -302,6 +305,22 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   dsLabel.style.display = 'none';
   cell.dsLabel = dsLabel;
 
+  // × button clears stale inject data from this cell without affecting others
+  const dsClearBtn = document.createElement('button');
+  dsClearBtn.className = 'nb-btn nb-ds-clear-btn';
+  dsClearBtn.title = 'Clear imported dataset from this cell';
+  dsClearBtn.textContent = '×';
+  dsClearBtn.style.display = 'none';
+  cell._dsClearBtn = dsClearBtn;
+  dsClearBtn.addEventListener('click', () => {
+    cell._pendingInject = null;
+    cell._datasetInfo   = null;
+    dsLabel.textContent  = '';
+    dsLabel.style.display = 'none';
+    dsClearBtn.style.display = 'none';
+    _removeFromInjectStore(cell.id);
+  });
+
   const csvBtn = createLoadDataBtn({
     resolveVarName: (filename) => {
       // Same file re-imported to the same cell → reuse the variable name so
@@ -326,6 +345,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
       cell._datasetInfo    = { varName, rows, columns, filename, columnNames };
       dsLabel.textContent  = `${varName} · ${rows.toLocaleString()} rows`;
       dsLabel.style.display = '';
+      dsClearBtn.style.display = '';
       _onDataImported?.(varName, rows, filename, cell.id, cellNum);
       _saveInjectStore(); // persist so data survives page refresh
       // No auto-run: Pyodide only boots when the user clicks ▶
@@ -334,7 +354,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   csvBtn.className = 'nb-btn nb-csv-btn';
   csvBtn.title     = 'Load CSV / Excel as DataFrame into this cell';
 
-  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, csvBtn, dsLabel, importBtn);
+  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, csvBtn, dsLabel, dsClearBtn, importBtn);
 
   const editor = document.createElement('textarea');
   editor.className    = 'nb-editor';
@@ -742,6 +762,7 @@ export function clearAllDatasetLabels() {
       c.dsLabel.textContent  = '';
       c.dsLabel.style.display = 'none';
     }
+    if (c._dsClearBtn) c._dsClearBtn.style.display = 'none';
     c._datasetInfo = null;
     // Re-arm _pendingInject from the persisted store so the next Run
     // re-injects data automatically after a kernel restart.

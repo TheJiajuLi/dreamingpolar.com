@@ -504,9 +504,8 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 /* Output panel */
 [data-theme="light"] .cds-output-panel { border-left-color: var(--border, #d7e1eb); }
 [data-theme="light"] .cds-output-panel,
-[data-theme="light"] .cds-output-panel-hdr,
 [data-theme="light"] .cds-output-body      { background: #f7f8fb; }
-[data-theme="light"] .cds-output-panel-hdr { border-bottom-color: var(--border, #d7e1eb); }
+[data-theme="light"] .cds-output-panel-hdr { background: #f0f1f5; border-bottom-color: var(--border, #d7e1eb); }
 [data-theme="light"] .cds-output-panel-label { color: var(--text-muted, #425366); }
 [data-theme="light"] .cds-output-placeholder { color: var(--text-muted, #425366); opacity: 0.5; }
 [data-theme="light"] .cds-output-body .output-block  { border-bottom-color: var(--border, #d7e1eb) !important; }

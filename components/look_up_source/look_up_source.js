@@ -3,10 +3,10 @@ const ICON_COPY   = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
 const ICON_CHECK  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
 export function createSourceWidget() {
-  let _code    = null;
-  let _lang    = null;
-  let _rawView = null;
-  let _isRaw   = false;
+  let _code      = null;
+  let _lang      = null;
+  let _isRaw     = false;
+  let _savedHTML = null;  // snapshot of textPane content for restore
 
   // ── Toggle button ──────────────────────────────────────────
   const btn = document.createElement('button');
@@ -16,24 +16,29 @@ export function createSourceWidget() {
   btn.style.display = 'none';
 
   // ── Helpers ────────────────────────────────────────────────
-  function _getBody() {
+  function _getTextPane() {
     const section = btn.closest('.cds-output-section, .nb-output-section');
-    return section?.querySelector('.cds-output-section-body, .nb-output-section-body') ?? null;
+    return section?.querySelector('.cds-output-text-pane')
+        ?? section?.querySelector('.cds-output-section-body, .nb-output-section-body')
+        ?? null;
   }
 
   function _showRaw() {
-    const body = _getBody();
-    if (!body || !_code) return;
+    const pane = _getTextPane();
+    if (!pane || !_code) return;
 
-    _rawView = document.createElement('div');
-    _rawView.className = 'lus-raw-view';
+    // Snapshot current output content so we can restore it
+    _savedHTML = pane.innerHTML;
 
-    const header = document.createElement('div');
-    header.className = 'lus-raw-header';
+    // Replace pane content inline — no new sibling element
+    pane.innerHTML = '';
+
+    const langBar = document.createElement('div');
+    langBar.className = 'lus-inline-lang-bar';
 
     const langLabel = document.createElement('span');
     langLabel.className   = 'lus-lang-label';
-    langLabel.textContent = (_lang ?? '').toUpperCase();
+    langLabel.textContent = (_lang ?? 'source').toUpperCase();
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'lus-copy-btn';
@@ -51,19 +56,13 @@ export function createSourceWidget() {
       });
     });
 
-    header.append(langLabel, copyBtn);
+    langBar.append(langLabel, copyBtn);
 
     const pre = document.createElement('pre');
-    pre.className = 'lus-code';
-    const codeEl = document.createElement('code');
-    codeEl.textContent = _code;
-    pre.appendChild(codeEl);
+    pre.className = 'output-text lus-source-pre';
+    pre.textContent = _code;
 
-    _rawView.append(header, pre);
-
-    // Slide the output body out, raw view in
-    body.style.display = 'none';
-    body.after(_rawView);
+    pane.append(langBar, pre);
 
     btn.classList.add('lus-btn--active');
     btn.title = 'Back to output';
@@ -71,10 +70,11 @@ export function createSourceWidget() {
   }
 
   function _showOutput() {
-    const body = _getBody();
-    _rawView?.remove();
-    _rawView = null;
-    if (body) body.style.display = '';
+    const pane = _getTextPane();
+    if (pane && _savedHTML !== null) {
+      pane.innerHTML = _savedHTML;
+      _savedHTML = null;
+    }
     btn.classList.remove('lus-btn--active');
     btn.title = 'View source';
     _isRaw = false;
