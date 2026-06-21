@@ -393,6 +393,91 @@
 }
 .aria-chat-scroll-btn:hover { background: var(--bg, #f8fafc); color: var(--text, #0f172a); }
 
+/* ── Data asset card ─────────────────────────────────────────────────────── */
+.aria-data-card {
+  flex-shrink: 0;
+  margin: 0 10px 6px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface, #ffffff);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.aria-data-card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px 7px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.aria-data-card-hdr:hover { background: var(--bg, #f8fafc); }
+
+.aria-data-card-summary {
+  font-size: 0.65rem;
+  font-weight: 600;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.aria-data-card-chevron {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+  transform: rotate(180deg);   /* open by default */
+}
+
+.aria-data-card-body {
+  padding: 4px 10px 8px 12px;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+/* Wrapping col chip list */
+.aria-data-card-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.aria-data-card-col-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--bg, #f8fafc);
+  font-size: 0.62rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+}
+
+.aria-data-card-col-icon {
+  font-size: 10px;
+  color: var(--accent, #6366f1);
+  opacity: 0.7;
+}
+
+.aria-data-card-col-name { color: var(--text, #0f172a); }
+
+/* Dark themes */
+[data-theme="dark"]   .aria-data-card { background: #161b22; border-color: rgba(255,255,255,0.07); }
+[data-theme="grey"]   .aria-data-card { background: #2d333b; border-color: rgba(255,255,255,0.07); }
+[data-theme="aurora"] .aria-data-card { background: #0d0d2e; border-color: rgba(192,132,252,0.15); }
+[data-theme="dark"]   .aria-data-card-summary,
+[data-theme="grey"]   .aria-data-card-summary   { color: #e6edf3; }
+[data-theme="aurora"] .aria-data-card-summary    { color: #e0e0ff; }
+[data-theme="dark"]   .aria-data-card-col-chip,
+[data-theme="grey"]   .aria-data-card-col-chip  { background: #0d1117; border-color: rgba(255,255,255,0.08); }
+[data-theme="aurora"] .aria-data-card-col-chip  { background: #07071a; border-color: rgba(192,132,252,0.12); }
+
 .aria-chat-welcome {
   padding: 10px 14px 6px;
   display: flex;

@@ -235,14 +235,81 @@ export function createAriaChat() {
     });
   }
 
-  // React to dataset changes: always rebuild tabs
+  // React to dataset changes: rebuild tabs, data card, and suggestion chips
   document.addEventListener('dataset-updated', ({ detail }) => {
     if (!detail) return;
     _rebuildTabs(detail.all ?? [], detail.activeIdx ?? 0);
-    // Rebuild chips to match the newly active dataset's dtypes
     const active = (detail.all ?? [])[detail.activeIdx ?? 0] ?? null;
+    _rebuildDataCard(active);
     _rebuildChips(active);
   });
+
+  // ── Data asset card (between dsTabs and welcomeHeader) ───────────────────────
+  const dataCard = document.createElement('div');
+  dataCard.className = 'aria-data-card';
+  dataCard.style.display = 'none';   // hidden until first dataset
+
+  // Collapse state
+  let _cardOpen = true;
+
+  const cardHdr = document.createElement('div');
+  cardHdr.className = 'aria-data-card-hdr';
+
+  const cardSummary = document.createElement('span');
+  cardSummary.className = 'aria-data-card-summary';
+
+  const cardChevron = document.createElement('i');
+  cardChevron.className = 'ti ti-chevron-down aria-data-card-chevron';
+
+  cardHdr.append(cardSummary, cardChevron);
+  cardHdr.addEventListener('click', () => {
+    _cardOpen = !_cardOpen;
+    cardBody.style.display = _cardOpen ? '' : 'none';
+    cardChevron.style.transform = _cardOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  });
+
+  const cardBody = document.createElement('div');
+  cardBody.className = 'aria-data-card-body';
+
+  dataCard.append(cardHdr, cardBody);
+
+  // Helper: dtype → Tabler icon class (reuse same rules as _inferChips)
+  function _dtypeIcon(dtype) {
+    if (!dtype) return 'ti-letter-case';
+    if (/datetime/i.test(dtype)) return 'ti-calendar';
+    if (/float|int/i.test(dtype)) return 'ti-number';
+    return 'ti-letter-case';
+  }
+
+  function _rebuildDataCard(dataset) {
+    if (!dataset) {
+      dataCard.style.display = 'none';
+      return;
+    }
+    dataCard.style.display = '';
+
+    const cols   = dataset.columns ?? [];
+    const dtypes = dataset.dtypes  ?? {};
+    const rows   = Array.isArray(dataset.rows) ? dataset.rows.length : 0;
+
+    cardSummary.textContent =
+      `${dataset.name}  ·  ${rows.toLocaleString()} 行 × ${cols.length} 列`;
+
+    cardBody.innerHTML = '';
+    const chipRow = document.createElement('div');
+    chipRow.className = 'aria-data-card-cols';
+
+    cols.forEach(col => {
+      const chip = document.createElement('span');
+      chip.className = 'aria-data-card-col-chip';
+      chip.innerHTML =
+        `<i class="ti ${_dtypeIcon(dtypes[col])} aria-data-card-col-icon"></i>` +
+        `<span class="aria-data-card-col-name">${col}</span>`;
+      chipRow.appendChild(chip);
+    });
+
+    cardBody.appendChild(chipRow);
+  }
 
   // ── Dynamic chip generation based on active dataset dtypes ──────────────────
   const _DEFAULT_CHIPS = [
@@ -378,7 +445,7 @@ export function createAriaChat() {
   sendBtn.className = 'aria-chat-send'; sendBtn.title = '发送 (Enter)';
   sendBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
   inputRow.append(input, sendBtn);
-  root.append(header, dsTabs, welcomeHeader, convArea, inputRow);
+  root.append(header, dsTabs, dataCard, welcomeHeader, convArea, inputRow);
 
   let _busy = false;
 
