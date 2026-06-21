@@ -83,11 +83,12 @@ function _toast(msg) {
 
 // ── Raw data reader for DataFrame injection ───────────────────────────────────
 // Returns { data, fileType } where data is the form expected by injectDataFrame:
-//   csv / json → text string   (read once; reused from the csv var for csv)
-//   xlsx / xls → Uint8Array    (binary, for pd.read_excel via openpyxl)
+//   csv / json / xml → text string
+//   xlsx / xls       → Uint8Array (binary, for pd.read_excel via openpyxl)
 async function _readInjectData(file, csvText) {
   const ext = file.name.split('.').pop().toLowerCase();
   if (ext === 'json') return { data: await _fileToText(file), fileType: 'json' };
+  if (ext === 'xml')  return { data: await _fileToText(file), fileType: 'xml' };
   if (ext === 'xlsx' || ext === 'xls')
     return { data: new Uint8Array(await _fileToBuffer(file)), fileType: ext };
   return { data: csvText, fileType: 'csv' };   // csv: reuse already-read text
@@ -107,7 +108,7 @@ export function createLoadDataBtn({ varName = 'df', resolveVarName, lazyMode = f
   btn.addEventListener('click', () => {
     const input    = document.createElement('input');
     input.type     = 'file';
-    input.accept   = '.csv,.xlsx,.xls,.json';
+    input.accept   = '.csv,.xlsx,.xls,.json,.xml';
     input.style.display = 'none';
     document.body.appendChild(input);
 

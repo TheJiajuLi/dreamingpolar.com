@@ -33,6 +33,11 @@
           "code": "# Excel（新增）\n# 选择 .xlsx / .xls 文件\n# openpyxl 自动加载（首次约需几秒）\n# 自动生成：\n# \"report.xlsx\" → df_report (200 rows, 8 cols)\nprint(df_report.columns.tolist())\ndf_report.head()",
           "result": "Excel 使用 pd.read_excel() + openpyxl，读取第一个 Sheet，保留原始数据类型（日期、数字格式不丢失）。多 Sheet 文件默认取 Sheet1；如需指定，目前需在 cell 里手动写 pd.read_excel('/tmp/...', sheet_name='Sheet2')。",
           "resultType": "text"
+        },
+        {
+          "code": "# XML（新增）\n# 选择 .xml 文件\n# lxml 自动加载（首次约需几秒）\n# 自动生成：\n# \"data.xml\" → df_data (30 rows, 5 cols)\nprint(df_data.dtypes)\ndf_data.head()\n\n# 示例 XML 格式（pd.read_xml 要求有统一的行元素）：\n# <root>\n#   <row><id>1</id><name>Alice</name><age>25</age></row>\n#   <row><id>2</id><name>Bob</name><age>30</age></row>\n# </root>",
+          "result": "XML 使用 pd.read_xml() + lxml，每个子元素作为一行，标签名作为列名。注意：XML 必须有统一的行节点结构，否则 lxml 解析会报错并在输出面板明确提示。",
+          "resultType": "text"
         }
       ]
     },

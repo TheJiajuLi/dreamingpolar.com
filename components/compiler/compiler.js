@@ -492,6 +492,7 @@ export async function injectDataFrame(varName, data, fileType = 'csv') {
   // Load required packages
   const pkgs = ['pandas'];
   if (fileType === 'xlsx' || fileType === 'xls') pkgs.push('openpyxl');
+  if (fileType === 'xml') pkgs.push('lxml');
   try {
     await py.loadPackage(pkgs, { messageCallback: () => {} });
   } catch (e) {
@@ -528,6 +529,12 @@ import pandas as _pd_inj, io as _io_inj
 _dp_kernel_ns[_dp_inject_name] = _pd_inj.read_excel(
     _io_inj.BytesIO(_dp_inject_data.to_py())
 )
+del _pd_inj, _io_inj
+`);
+    } else if (fileType === 'xml') {
+      py.runPython(`
+import pandas as _pd_inj, io as _io_inj
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_xml(_io_inj.StringIO(_dp_inject_data))
 del _pd_inj, _io_inj
 `);
     } else {
