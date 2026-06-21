@@ -47,7 +47,13 @@ function _loadInjectStore() {
 }
 
 function _saveInjectStore() {
-  const store = {};
+  // Merge-save: start from existing store so file-manager entries (keyed by
+  // "fm_*") and any cell entries whose _pendingInject is temporarily null
+  // (e.g. during kernel reset) are NOT wiped out by an intermediate saveAll().
+  let store;
+  try { store = JSON.parse(localStorage.getItem(INJECT_KEY) ?? '{}'); }
+  catch { store = {}; }
+
   _cells.forEach(c => {
     if (c._pendingInject && c._datasetInfo) {
       try {
@@ -64,6 +70,8 @@ function _saveInjectStore() {
         };
       } catch (_) { /* individual cell failure: skip, don't block others */ }
     }
+    // If _pendingInject is null (kernel reset in progress), leave existing
+    // store[c.id] untouched — it will be re-armed by _restoreInjectData().
   });
   try {
     localStorage.setItem(INJECT_KEY, JSON.stringify(store));

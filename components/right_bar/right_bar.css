@@ -170,13 +170,13 @@
   margin-top: 1px;
 }
 
-/* Dual-destination action buttons — visible on row hover */
+/* Dual-destination action buttons — dimly visible at rest, full on hover */
 .rb-file-item-actions {
   display: flex;
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
-  opacity: 0;
+  opacity: 0.3;          /* always faintly visible so users discover them */
   transition: opacity 0.12s;
 }
 .rb-file-item:hover .rb-file-item-actions { opacity: 1; }
@@ -236,6 +236,29 @@
 /* Active toggle button */
 .rb-file-toggle-btn { width: 26px; height: 26px; }
 .rb-btn--active { background: var(--accent-soft, #e0e3ff) !important; color: var(--accent, #6366f1) !important; }
+
+/* "+ 导入" button in panel header */
+.rb-file-import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent, #6366f1);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  cursor: pointer;
+  transition: opacity 0.12s;
+  flex-shrink: 0;
+}
+.rb-file-import-btn:hover:not(:disabled) { opacity: 0.85; }
+.rb-file-import-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Remove old dual-destination action buttons CSS (no longer rendered) */
+.rb-file-item-actions { display: none !important; }
 
 /* Dark theme */
 /* Dark themes: opaque glass with frosted tint */
