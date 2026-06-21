@@ -9,6 +9,7 @@ export function attachCellHooks({
   autoResize, saveAll, rebuildCells, cellLabel,
   getCells, setCells, getRunSeq, bumpRunSeq,
   flushPendingInjects,
+  buildImportCellCode,   // optional: auto-fill code when editor is empty
 }) {
   sel.addEventListener('change', () => {
     cell.lang = sel.value;
@@ -36,6 +37,16 @@ export function attachCellHooks({
   });
 
   runBtn.addEventListener('click', async () => {
+    // If editor is empty but this cell has pending import data, auto-fill code
+    // so the user gets useful output without having to re-import the file.
+    if (!editor.value.trim() && cell._pendingInject && cell._datasetInfo && buildImportCellCode) {
+      const { varName, fileType } = cell._pendingInject;
+      const { rows, columns, filename, columnNames } = cell._datasetInfo;
+      editor.value = buildImportCellCode(varName, rows, filename, columns, columnNames, fileType);
+      autoResize(editor);
+      editor.dispatchEvent(new Event('input'));
+      saveAll();
+    }
     const code = editor.value.trim();
     if (!code) return;
 

@@ -86,6 +86,33 @@ function _removeFromInjectStore(cellId) {
  * inject store.  Pass showLabels=false when called from kernel restart so
  * that the badge is hidden until data is re-injected on next Run.
  */
+
+// ── Shared code-generation helper ─────────────────────────────────────────────
+// Used by csvBtn.onLoad, _restoreInjectData (empty-editor fill), and the
+// runBtn auto-fill path.  Kept here to avoid circular imports with hooks.js.
+const _DATE_COL_RE = /^(date|time|datetime|timestamp|dt|日期|时间|当日|yearmonth|month|year|week)$/i;
+
+function _buildImportCellCode(varName, rows, filename, columns, columnNames, fileType) {
+  const dateCol = (columnNames ?? []).find(c => _DATE_COL_RE.test(c.trim()));
+  if (dateCol && columns >= 2 && fileType === 'csv') {
+    return (
+      `# "${filename}" → ${varName} (${Number(rows).toLocaleString()} rows, ${columns} cols)\n` +
+      `import pandas as pd\n` +
+      `${varName}["${dateCol}"] = pd.to_datetime(${varName}["${dateCol}"])\n` +
+      `${varName} = ${varName}.set_index("${dateCol}")\n` +
+      `display(${varName}.head())\n` +
+      `${varName}.select_dtypes(include="number").plot(\n` +
+      `    figsize=(12, 5), grid=True, linewidth=1.2,\n` +
+      `    title="${varName}"\n` +
+      `)`
+    );
+  }
+  return (
+    `# "${filename}" → ${varName} (${Number(rows).toLocaleString()} rows, ${columns} cols)\n` +
+    `print(${varName}.shape)\n${varName}.head()`
+  );
+}
+
 function _restoreInjectData(showLabels = true, restoreDatasets = true) {
   const store = _loadInjectStore();
   _cells.forEach(c => {
@@ -102,6 +129,18 @@ function _restoreInjectData(showLabels = true, restoreDatasets = true) {
       if (c.dsLabel && showLabels) {
         c.dsLabel.textContent  = `${saved.varName} · ${Number(saved.rows).toLocaleString()} rows`;
         c.dsLabel.style.display = '';
+      }
+      // If the cell's editor is empty (placeholder visible), regenerate the
+      // import code so the user doesn't have to re-import just to get code back.
+      if (showLabels && c.editor && !c.editor.value.trim()) {
+        c.editor.value = _buildImportCellCode(
+          saved.varName, saved.rows, saved.filename,
+          saved.columns, columnNames, saved.fileType,
+        );
+        requestAnimationFrame(() => {
+          autoResize(c.editor);
+          c.editor.dispatchEvent(new Event('input'));
+        });
       }
       // Restore dataset to dataset_store so ARIA tabs appear immediately on load.
       // Skip on kernel restart (restoreDatasets=false) — kernel has no data yet.
@@ -274,29 +313,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     onLoad: (varName, rows, filename, injectData, fileType, columns, columnNames = []) => {
       const cellNum = _cells.indexOf(cell) + 1;
 
-      // ── Smart code generation ─────────────────────────────────────────────
-      // Detect a date/time index column; if found, generate a time-series
-      // cell that sets the index and plots numeric columns automatically.
-      const DATE_COL_RE = /^(date|time|datetime|timestamp|dt|日期|时间|当日|yearmonth|month|year|week)$/i;
-      const dateCol = columnNames.find(c => DATE_COL_RE.test(c.trim()));
-
-      let code;
-      if (dateCol && columns >= 2 && fileType === 'csv') {
-        code =
-          `# "${filename}" → ${varName} (${rows.toLocaleString()} rows, ${columns} cols)\n` +
-          `import pandas as pd\n` +
-          `${varName}["${dateCol}"] = pd.to_datetime(${varName}["${dateCol}"])\n` +
-          `${varName} = ${varName}.set_index("${dateCol}")\n` +
-          `display(${varName}.head())\n` +
-          `${varName}.select_dtypes(include="number").plot(\n` +
-          `    figsize=(12, 5), grid=True, linewidth=1.2,\n` +
-          `    title="${varName}"\n` +
-          `)`;
-      } else {
-        code =
-          `# "${filename}" → ${varName} (${rows.toLocaleString()} rows, ${columns} cols)\n` +
-          `print(${varName}.shape)\n${varName}.head()`;
-      }
+      const code = _buildImportCellCode(varName, rows, filename, columns, columnNames, fileType);
       cell.editor.value = code;
       autoResize(cell.editor);
       cell.editor.dispatchEvent(new Event('input'));
@@ -430,7 +447,8 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     cell, PLACEHOLDER, ICON_COPY, ICON_CHECK,
     autoResize, saveAll, rebuildCells, cellLabel,
     getCells, setCells, getRunSeq, bumpRunSeq,
-    flushPendingInjects: _flushPendingInjects,
+    flushPendingInjects:  _flushPendingInjects,
+    buildImportCellCode:  _buildImportCellCode,
   });
 
   // ── Per-cell ICM instances ────────────────────────────
