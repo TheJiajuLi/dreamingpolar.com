@@ -116,19 +116,29 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
         vizBtn.className = 'viz-suggest-btn';
         vizBtn.type = 'button';
         vizBtn.textContent = '可视化';
+
+        let _chartBlock = null; // reference to the generated chart block
         vizBtn.addEventListener('click', async () => {
+          // Toggle: if chart already exists, show/hide it
+          if (_chartBlock) {
+            const hidden = _chartBlock.style.display === 'none';
+            _chartBlock.style.display = hidden ? '' : 'none';
+            vizBtn.textContent = hidden ? '收起图表' : '可视化';
+            return;
+          }
           vizBtn.disabled = true;
           vizBtn.textContent = '生成中…';
           try {
             const img = await visualiseVar(o.varName);
-            const imgBlock = document.createElement('div');
-            imgBlock.className = 'output-block output-image';
+            _chartBlock = document.createElement('div');
+            _chartBlock.className = 'output-block output-image';
             const image = document.createElement('img');
             image.src = `data:image/png;base64,${img}`;
             image.alt = o.varName;
-            imgBlock.appendChild(image);
-            block.insertAdjacentElement('afterend', imgBlock);
-            block.style.display = 'none';
+            _chartBlock.appendChild(image);
+            block.insertAdjacentElement('afterend', _chartBlock);
+            vizBtn.textContent = '收起图表'; // card stays visible; button toggles
+            vizBtn.disabled = false;
           } catch (err) {
             console.warn('[viz-suggestion] chart failed:', err);
             vizBtn.textContent = '生成失败';
@@ -170,12 +180,28 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
             confirmBtn.textContent = '确认执行';
             confirmBtn.hidden = true;
 
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'viz-clean-action-btn';
+            cancelBtn.textContent = '取消';
+            cancelBtn.hidden = true;
+
             let _pendingCols = null; // for date_fmt
+
+            function _resetRow() {
+              previewEl.textContent = '';
+              previewEl.className = 'viz-clean-preview';
+              confirmBtn.hidden = true;
+              cancelBtn.hidden = true;
+              _pendingCols = null;
+            }
+
+            cancelBtn.addEventListener('click', _resetRow);
 
             checkBtn.addEventListener('click', async () => {
               checkBtn.disabled = true;
               previewEl.textContent = '检查中…';
               confirmBtn.hidden = true;
+              cancelBtn.hidden = true;
               _pendingCols = null;
               try {
                 const info = await previewClean(o.varName, op);
@@ -187,6 +213,7 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
                     previewEl.textContent = `将删除 ${info.affected} 行全空行（共 ${info.total} 行）`;
                     previewEl.className = 'viz-clean-preview viz-clean-warn';
                     confirmBtn.hidden = false;
+                    cancelBtn.hidden = false;
                   }
                 } else if (op === 'drop_dup') {
                   if (info.affected === 0) {
@@ -196,6 +223,7 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
                     previewEl.textContent = `将删除 ${info.affected} 行重复行（共 ${info.total} 行）`;
                     previewEl.className = 'viz-clean-preview viz-clean-warn';
                     confirmBtn.hidden = false;
+                    cancelBtn.hidden = false;
                   }
                 } else if (op === 'date_fmt') {
                   if (!info.candidates?.length) {
@@ -206,11 +234,13 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
                     previewEl.textContent = `将统一列：${_pendingCols.join('、')}`;
                     previewEl.className = 'viz-clean-preview viz-clean-warn';
                     confirmBtn.hidden = false;
+                    cancelBtn.hidden = false;
                   }
                 }
               } catch (e) {
                 previewEl.textContent = `检查失败：${e.message}`;
                 previewEl.className = 'viz-clean-preview viz-clean-err';
+                cancelBtn.hidden = false; // allow dismissing the error too
                 console.warn('[clean preview]', op, e);
               } finally {
                 checkBtn.disabled = false;
@@ -219,6 +249,7 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
 
             confirmBtn.addEventListener('click', async () => {
               confirmBtn.disabled = true;
+              cancelBtn.hidden = true;
               previewEl.textContent = '执行中…';
               try {
                 const res = await applyClean(o.varName, op, _pendingCols);
@@ -245,7 +276,7 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
               }
             });
 
-            row.append(rowLabel, checkBtn, previewEl, confirmBtn);
+            row.append(rowLabel, checkBtn, previewEl, confirmBtn, cancelBtn);
             return row;
           }
 
