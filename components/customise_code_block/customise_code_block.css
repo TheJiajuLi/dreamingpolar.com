@@ -432,6 +432,14 @@
   border-bottom: none;
   background: transparent;
 }
+
+/* viz-suggestion card inside chart pane: remove its left border to avoid
+   double-border with the pane's own left border */
+.cds-output-chart-pane .output-viz-suggestion {
+  border-left: none;
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding-left: 12px;
+}
 .cds-output-chart-pane .output-image img {
   width: 100%;
   height: auto;

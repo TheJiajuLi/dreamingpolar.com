@@ -81,8 +81,12 @@ function _removeFromInjectStore(cellId) {
   }
 }
 
-/** After init(), restores _pendingInject + _datasetInfo + dsLabel for persisted cells. */
-function _restoreInjectData() {
+/**
+ * Restores _pendingInject + _datasetInfo (and optionally dsLabel) from the
+ * inject store.  Pass showLabels=false when called from kernel restart so
+ * that the badge is hidden until data is re-injected on next Run.
+ */
+function _restoreInjectData(showLabels = true) {
   const store = _loadInjectStore();
   _cells.forEach(c => {
     const saved = store[c.id];
@@ -95,7 +99,7 @@ function _restoreInjectData() {
         varName: saved.varName, rows: saved.rows,
         columns: saved.columns, filename: saved.filename, columnNames,
       };
-      if (c.dsLabel) {
+      if (c.dsLabel && showLabels) {
         c.dsLabel.textContent  = `${saved.varName} · ${Number(saved.rows).toLocaleString()} rows`;
         c.dsLabel.style.display = '';
       }
@@ -511,8 +515,9 @@ async function runAll(btn) {
     const cellRunBtn = cell.el.querySelector('.nb-run');
     if (cellRunBtn) cellRunBtn.disabled = true;
 
+    const _LANG_LABEL_RA = { python: 'Python', latex: 'LaTeX', mathjax: 'MathJax', markdown: 'Markdown' };
     const outputs = await compile(code, cell.lang, {
-      runningMessage: cell.lang === 'python' ? `Running cell ${i + 1}…` : 'Running…',
+      runningMessage: `Cell ${i + 1} · ${_LANG_LABEL_RA[cell.lang] ?? cell.lang}`,
     });
 
     // Ensure import-button cells get a viz-suggestion (RUNNER diff misses these)
@@ -688,8 +693,9 @@ export function clearAllDatasetLabels() {
     // re-injects data automatically after a kernel restart.
     c._pendingInject = null;
   });
-  // Restore inject data so subsequent runs re-inject the data
-  _restoreInjectData();
+  // Re-arm _pendingInject so next Run re-injects, but keep labels hidden
+  // until data is actually back in the kernel (showLabels=false).
+  _restoreInjectData(false);
 }
 
 export function setCellCode(cellId, code) {

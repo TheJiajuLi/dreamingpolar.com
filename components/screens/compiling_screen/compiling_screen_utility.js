@@ -376,7 +376,16 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
           block.append(header);
         }
 
-        break;
+        // Route viz-suggestion to chartContainer when available so it uses
+        // the right-hand space instead of being squeezed into the text column.
+        if (chartContainer) {
+          chartContainer.appendChild(block);
+          chartContainer.classList.add('has-chart');
+        } else {
+          container.appendChild(block);
+        }
+        continue; // already appended — skip default append below
+
       }
       default:
         block.innerHTML = `<pre class="output-text">${escHtml(String(o.content))}</pre>`;
