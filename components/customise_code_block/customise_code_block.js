@@ -819,20 +819,13 @@ export function getCellDatasetInfo() {
 }
 
 export function clearAllDatasetLabels() {
-  _cells.forEach(c => {
-    if (c.dsLabel) {
-      c.dsLabel.textContent  = '';
-      c.dsLabel.style.display = 'none';
-    }
-    if (c._dsClearBtn) c._dsClearBtn.style.display = 'none';
-    c._datasetInfo = null;
-    // Re-arm _pendingInject from the persisted store so the next Run
-    // re-injects data automatically after a kernel restart.
-    c._pendingInject = null;
-  });
-  // Re-arm _pendingInject but keep labels hidden and skip dataset_store restore:
-  // kernel has no data until the user Runs a cell again.
-  _restoreInjectData(false, false);
+  // Keep labels and code visible — user sees exactly what data they had.
+  // Just null out _pendingInject; _restoreInjectData will re-arm it from
+  // inject-store so the next Run automatically re-injects into the kernel.
+  _cells.forEach(c => { c._pendingInject = null; });
+  // showLabels=true so labels stay; restoreDatasets=false because kernel is
+  // empty until user Runs — dataset_store / ARIA tabs repopulate on first Run.
+  _restoreInjectData(true, false);
 }
 
 export function setCellCode(cellId, code) {
