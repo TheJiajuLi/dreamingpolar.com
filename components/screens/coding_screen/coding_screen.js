@@ -1,5 +1,5 @@
 import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
-import { init as initNotebook, addImportedCell, setVarNameResolver, clearAllDatasetLabels, getPersistedVarNames } from '../../customise_code_block/customise_code_block.js';
+import { init as initNotebook, addImportedCell, setVarNameResolver, clearAllDatasetLabels, getPersistedVarNames, getCellOrder } from '../../customise_code_block/customise_code_block.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
 import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
@@ -274,7 +274,19 @@ function setupCodingScreen() {
     bodyEl.append(textPane, chartPane);
 
     sectionEl.append(labelEl, bodyEl);
-    nbOutputBody.appendChild(sectionEl);
+
+    // Insert in notebook cell order, not execution order.
+    // Find the first already-rendered section that belongs to a later cell,
+    // then insertBefore it; otherwise fall back to appendChild.
+    const cellOrder = getCellOrder();
+    const myIdx = cellOrder.indexOf(cellId);
+    let insertBefore = null;
+    for (let i = myIdx + 1; i < cellOrder.length; i++) {
+      const laterSec = nbSections.get(cellOrder[i]);
+      if (laterSec) { insertBefore = laterSec.sectionEl; break; }
+    }
+    if (insertBefore) nbOutputBody.insertBefore(sectionEl, insertBefore);
+    else              nbOutputBody.appendChild(sectionEl);
 
     const sec = { sectionEl, labelEl, bodyEl, textPane, chartPane, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
     nbSections.set(cellId, sec);
