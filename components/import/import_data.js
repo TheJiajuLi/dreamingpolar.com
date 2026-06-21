@@ -49,10 +49,15 @@ async function _fileToCsv(file) {
   const ext = file.name.split('.').pop().toLowerCase();
   if (ext === 'csv') return _fileToText(file);
 
-  // Excel
+  // JSON and XML are text formats — read as-is so _parseToDataset can attempt
+  // metadata extraction without crashing (actual injection uses _readInjectData).
+  if (ext === 'json' || ext === 'xml') return _fileToText(file);
+
+  // Excel: SheetJS needs a Uint8Array, not a bare ArrayBuffer.
+  // _fileToBuffer returns ArrayBuffer → wrap with new Uint8Array() before passing.
   const XLSX = await _ensureXlsx();
   const buf  = await _fileToBuffer(file);
-  const wb   = XLSX.read(buf, { type: 'array' });
+  const wb   = XLSX.read(new Uint8Array(buf), { type: 'array' });
   const ws   = wb.Sheets[wb.SheetNames[0]];
   return XLSX.utils.sheet_to_csv(ws);
 }
