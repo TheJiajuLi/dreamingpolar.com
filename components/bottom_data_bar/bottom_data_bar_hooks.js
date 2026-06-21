@@ -154,6 +154,18 @@ document.addEventListener('dataset-updated', () => {
   _refreshFlyout();
 });
 
+// ── Kernel restart: wipe stale dataset info ───────────────────────────────────
+document.addEventListener('kernel-restarted', () => {
+  _kernelDfs = {};
+  _initDfSlot();
+  const slot = getDfSlot();
+  if (slot && _summaryEl) {
+    slot.removeAttribute('hidden');
+    _summaryEl.textContent = 'No active files — run a cell to reload';
+    if (_flyoutEl) _flyoutEl.innerHTML = '';
+  }
+});
+
 // ── DataFrame detection from Python execution ─────────────────────────────────
 // When Python cells run, queryKernelDataframes() fires kernel-dfs-updated with
 // the current DataFrame namespace. If no import-button datasets exist, we use

@@ -86,7 +86,7 @@ function _removeFromInjectStore(cellId) {
  * inject store.  Pass showLabels=false when called from kernel restart so
  * that the badge is hidden until data is re-injected on next Run.
  */
-function _restoreInjectData(showLabels = true) {
+function _restoreInjectData(showLabels = true, restoreDatasets = true) {
   const store = _loadInjectStore();
   _cells.forEach(c => {
     const saved = store[c.id];
@@ -103,8 +103,9 @@ function _restoreInjectData(showLabels = true) {
         c.dsLabel.textContent  = `${saved.varName} · ${Number(saved.rows).toLocaleString()} rows`;
         c.dsLabel.style.display = '';
       }
-      // Restore dataset to dataset_store so ARIA tabs appear immediately on load
-      if (saved.filename) {
+      // Restore dataset to dataset_store so ARIA tabs appear immediately on load.
+      // Skip on kernel restart (restoreDatasets=false) — kernel has no data yet.
+      if (saved.filename && restoreDatasets) {
         try {
           setDataset({
             name:    saved.filename,
@@ -692,9 +693,9 @@ export function clearAllDatasetLabels() {
     // re-injects data automatically after a kernel restart.
     c._pendingInject = null;
   });
-  // Re-arm _pendingInject so next Run re-injects, but keep labels hidden
-  // until data is actually back in the kernel (showLabels=false).
-  _restoreInjectData(false);
+  // Re-arm _pendingInject but keep labels hidden and skip dataset_store restore:
+  // kernel has no data until the user Runs a cell again.
+  _restoreInjectData(false, false);
 }
 
 export function setCellCode(cellId, code) {

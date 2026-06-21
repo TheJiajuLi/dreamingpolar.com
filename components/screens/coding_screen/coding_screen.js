@@ -6,6 +6,7 @@ import { ask, systemExplainForLang } from '../../ai/ai_client.js';
 import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../../look_up_source/look_up_source.js';
 import { resetKernel, preloadPython } from '../../compiler/compiler.js';
+import { clearDataset } from '../../shared/dataset_store.js';
 
 function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
@@ -92,7 +93,9 @@ function setupCodingScreen() {
     restartKernelBtn.textContent = '↺…';
     await resetKernel();
     _usedVarNames.clear();
-    clearAllDatasetLabels();
+    clearAllDatasetLabels();   // clears cell labels, re-arms pendingInject
+    clearDataset();            // wipe dataset_store so bottom bar shows no stale data
+    document.dispatchEvent(new CustomEvent('kernel-restarted')); // bottom bar reset
     restartKernelBtn.disabled    = false;
     restartKernelBtn.textContent = '↺';
   });
