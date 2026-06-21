@@ -239,20 +239,54 @@ export function createAriaChat() {
   document.addEventListener('dataset-updated', ({ detail }) => {
     if (!detail) return;
     _rebuildTabs(detail.all ?? [], detail.activeIdx ?? 0);
+    // Rebuild chips to match the newly active dataset's dtypes
+    const active = (detail.all ?? [])[detail.activeIdx ?? 0] ?? null;
+    _rebuildChips(active);
   });
+
+  // ── Dynamic chip generation based on active dataset dtypes ──────────────────
+  const _DEFAULT_CHIPS = [
+    { q: '帮我做客户分层分析', label: '客户分层分析' },
+    { q: '哪些列有空值？',     label: '空值情况'     },
+    { q: '给我看第一个数值列的分布', label: '列分布图' },
+  ];
+
+  function _inferChips(dataset) {
+    if (!dataset) return _DEFAULT_CHIPS;
+    const cols   = dataset.columns ?? [];
+    const dtypes = dataset.dtypes  ?? {};
+
+    const hasDt  = cols.some(c => /datetime/i.test(dtypes[c] ?? ''));
+    const numCols = cols.filter(c => /float|int/i.test(dtypes[c] ?? ''));
+    const hasId  = cols.some(c => /customer.?id|user.?id|client.?id/i.test(c));
+
+    if (hasDt) return [
+      { q: '帮我做个时序分析',       label: '时序分析'   },
+      { q: '这两列有什么关系',        label: '相关性分析' },
+      { q: '哪些列有空值？',          label: '空值情况'   },
+    ];
+    if (numCols.length >= 2) return [
+      { q: `${numCols[0]} 和 ${numCols[1]} 有什么关系`, label: '两列相关性' },
+      { q: '给我看数值列的分布',      label: '数值分布'   },
+      { q: '哪些列有空值？',          label: '空值情况'   },
+    ];
+    if (hasId) return [
+      { q: '帮我做客户分层分析',      label: '客户分层'   },
+      { q: '哪些列有空值？',          label: '空值情况'   },
+      { q: '给我看第一个数值列的分布', label: '列分布图'  },
+    ];
+    return _DEFAULT_CHIPS;
+  }
 
   // ── Persistent welcome header (always visible, survives tab switches) ───────
   const welcomeHeader = document.createElement('div');
   welcomeHeader.className = 'aria-chat-welcome';
+
+  // Build skeleton; chips container is live-updated by _rebuildChips()
   welcomeHeader.innerHTML =
     `<div class="aria-chat-welcome-title">选择数据集后开始对话</div>` +
     `<div class="aria-chat-welcome-hint">在右侧文件面板选择一个数据集，点击「发送到 Quick Analysis」即可开始提问。ARIA 会引用真实的列名和数值，并在需要时直接生成图表。</div>` +
-    `<div class="aria-chat-welcome-chips">` +
-    `<span class="aria-chat-chip" data-q="这些数据有什么特点？">这些数据有什么特点？</span>` +
-    `<span class="aria-chat-chip" data-q="帮我做客户分层分析">客户分层分析</span>` +
-    `<span class="aria-chat-chip" data-q="哪些列有空值？">空值情况</span>` +
-    `<span class="aria-chat-chip" data-q="给我看第一个数值列的分布">列分布图</span>` +
-    `</div>` +
+    `<div class="aria-chat-welcome-chips"></div>` +
     `<div class="aria-code-tmpl-label">快速代码 → Notebook</div>` +
     `<div class="aria-code-tmpl-chips">` +
     `<span class="aria-code-chip" data-tmpl="time-series">📊 时序分析</span>` +
@@ -260,6 +294,21 @@ export function createAriaChat() {
     `<span class="aria-code-chip" data-tmpl="rolling">📈 移动均线</span>` +
     `<span class="aria-code-chip" data-tmpl="describe">🔍 统计摘要</span>` +
     `</div>`;
+
+  const _chipsEl = welcomeHeader.querySelector('.aria-chat-welcome-chips');
+
+  function _rebuildChips(dataset) {
+    const dynamic = _inferChips(dataset);
+    _chipsEl.innerHTML =
+      // Fixed first chip
+      `<span class="aria-chat-chip" data-q="这些数据有什么特点？">这些数据有什么特点？</span>` +
+      dynamic.map(c =>
+        `<span class="aria-chat-chip" data-q="${c.q}">${c.label}</span>`
+      ).join('');
+  }
+
+  // Render defaults immediately (no dataset yet)
+  _rebuildChips(null);
 
   // ── Conversation area — one messages div per dataset ──────────────────────
   // Each dataset tab gets its own isolated scroll history. Only one div
