@@ -264,7 +264,12 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   cell.dsLabel = dsLabel;
 
   const csvBtn = createLoadDataBtn({
-    resolveVarName: (filename) => _varNameResolver ? _varNameResolver(filename) : 'df',
+    resolveVarName: (filename) => {
+      // Re-import to the same cell: reuse the existing variable name so the
+      // cell's code stays consistent and the new data simply overwrites the old.
+      if (cell._datasetInfo?.varName) return cell._datasetInfo.varName;
+      return _varNameResolver ? _varNameResolver(filename) : 'df';
+    },
     lazyMode: true,
     onLoad: (varName, rows, filename, injectData, fileType, columns, columnNames = []) => {
       const cellNum = _cells.indexOf(cell) + 1;
@@ -481,8 +486,14 @@ async function _flushPendingInjects() {
       const { varName, data, fileType } = c._pendingInject;
       const fileName = c._datasetInfo?.filename ?? '';
       const cellIndex = (_cells.indexOf(c) + 1) || undefined;
-      await injectDataFrame(varName, data, fileType, fileName, { cellIndex });
+      const result = await injectDataFrame(varName, data, fileType, fileName, { cellIndex });
       c._pendingInject = null;
+      // Update dsLabel with the actual row count returned from Python
+      // (metadata from _parseToDataset can be wrong for JSON/XML files).
+      if (c.dsLabel && result?.rows != null) {
+        c.dsLabel.textContent  = `${varName} · ${Number(result.rows).toLocaleString()} rows`;
+        c.dsLabel.style.display = '';
+      }
     }
   }
 }
