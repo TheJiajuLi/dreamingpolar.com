@@ -1,4 +1,5 @@
-import { visualiseVar, previewClean, applyClean } from '../../compiler/compiler.js';
+import { visualiseVar, previewClean, applyClean, exportDataFrame } from '../../compiler/compiler.js';
+import { downloadBlob, MIME } from '../../shared/file_download.js';
 
 export function escHtml(s) {
   return String(s)
@@ -304,10 +305,73 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
           cleanBtn.addEventListener('click', () => {
             cleanPanel.hidden = !cleanPanel.hidden;
             cleanBtn.textContent = cleanPanel.hidden ? '清洗' : '收起';
+            // Collapse export panel when clean panel opens (and vice versa)
+            if (!cleanPanel.hidden) { exportPanel.hidden = true; exportBtn.textContent = '导出'; }
           });
 
-          header.append(cleanBtn);
-          block.append(header, cleanPanel);
+          // ── Export panel ──────────────────────────────────────────────────
+          const exportBtn = document.createElement('button');
+          exportBtn.className = 'viz-suggest-btn';
+          exportBtn.type = 'button';
+          exportBtn.textContent = '导出';
+
+          const exportPanel = document.createElement('div');
+          exportPanel.className = 'viz-clean-panel';
+          exportPanel.hidden = true;
+
+          const exportFormats = [
+            { fmt: 'csv',  label: 'CSV',   ext: 'csv'  },
+            { fmt: 'json', label: 'JSON',  ext: 'json' },
+            { fmt: 'xlsx', label: 'Excel', ext: 'xlsx' },
+            { fmt: 'xml',  label: 'XML',   ext: 'xml'  },
+          ];
+
+          exportFormats.forEach(({ fmt, label, ext }) => {
+            const row = document.createElement('div');
+            row.className = 'viz-clean-row';
+
+            const rowLabel = document.createElement('span');
+            rowLabel.className = 'viz-clean-label';
+            rowLabel.textContent = label;
+
+            const dlBtn = document.createElement('button');
+            dlBtn.className = 'viz-clean-action-btn';
+            dlBtn.textContent = '下载';
+
+            const statusEl = document.createElement('span');
+            statusEl.className = 'viz-clean-preview';
+
+            dlBtn.addEventListener('click', async () => {
+              dlBtn.disabled = true;
+              statusEl.textContent = '导出中…';
+              statusEl.className = 'viz-clean-preview';
+              try {
+                const { content, b64 } = await exportDataFrame(o.varName, fmt);
+                downloadBlob(content, `${o.varName}.${ext}`, MIME[fmt] ?? 'application/octet-stream', b64);
+                statusEl.textContent = '✓ 已下载';
+                statusEl.className = 'viz-clean-preview viz-clean-ok';
+              } catch (err) {
+                statusEl.textContent = `✗ ${err.message ?? '导出失败'}`;
+                statusEl.className = 'viz-clean-preview viz-clean-err';
+                console.warn('[export]', fmt, err);
+              } finally {
+                dlBtn.disabled = false;
+              }
+            });
+
+            row.append(rowLabel, dlBtn, statusEl);
+            exportPanel.appendChild(row);
+          });
+
+          exportBtn.addEventListener('click', () => {
+            exportPanel.hidden = !exportPanel.hidden;
+            exportBtn.textContent = exportPanel.hidden ? '导出' : '收起';
+            // Collapse clean panel when export panel opens
+            if (!exportPanel.hidden) { cleanPanel.hidden = true; cleanBtn.textContent = '清洗'; }
+          });
+
+          header.append(cleanBtn, exportBtn);
+          block.append(header, cleanPanel, exportPanel);
         } else {
           block.append(header);
         }

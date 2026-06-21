@@ -755,6 +755,59 @@ _j.dumps({'applied': _applied, 'errors': _errors})
   }
 }
 
+// ── Export DataFrame to various formats ──────────────────────────────────────
+//
+// format: 'csv' | 'json' | 'xml' | 'xlsx'
+//   csv / json / xml → returns the file content as a UTF-8 string
+//   xlsx             → returns the file content as a base64-encoded string
+//                      (binary can't be passed through the JS↔Python boundary
+//                       as a plain string; base64 is the safe transport)
+//
+// openpyxl and lxml are NOT re-loaded here — they were already loaded by
+// injectDataFrame / Phase 1 imports. py.loadPackage is idempotent for
+// already-loaded packages, but we skip it to avoid unnecessary overhead.
+//
+// Throws on failure (caller must handle and display the error to the user).
+
+export async function exportDataFrame(varName, format) {
+  if (!_pyodide) throw new Error('Python runtime not loaded');
+  _pyodide.globals.set('_dp_export_var',  varName);
+  _pyodide.globals.set('_dp_export_fmt',  format);
+
+  try {
+    const raw = await _pyodide.runPythonAsync(`
+import json as _j, io as _io, base64 as _b64, pandas as _pd
+_df = _dp_kernel_ns.get(_dp_export_var)
+if _df is None:
+    raise ValueError(f"Variable '{_dp_export_var}' not found in kernel namespace")
+if not isinstance(_df, _pd.DataFrame):
+    raise TypeError(f"'{_dp_export_var}' is not a DataFrame (got {type(_df).__name__})")
+
+_fmt = _dp_export_fmt
+if _fmt == 'csv':
+    _result = _j.dumps({'content': _df.to_csv(index=False), 'b64': False})
+elif _fmt == 'json':
+    _result = _j.dumps({'content': _df.to_json(orient='records', force_ascii=False), 'b64': False})
+elif _fmt == 'xml':
+    _result = _j.dumps({'content': _df.to_xml(index=False), 'b64': False})
+elif _fmt == 'xlsx':
+    _buf = _io.BytesIO()
+    _df.to_excel(_buf, index=False, engine='openpyxl')
+    _result = _j.dumps({'content': _b64.b64encode(_buf.getvalue()).decode(), 'b64': True})
+else:
+    raise ValueError(f"Unsupported export format: '{_fmt}'")
+_result
+`);
+    return JSON.parse(raw);   // { content: string, b64: boolean }
+  } catch (e) {
+    console.warn(`[exportDataFrame] Failed to export "${varName}" as ${format}:`, e);
+    throw e;
+  } finally {
+    _pyodide.globals.delete('_dp_export_var');
+    _pyodide.globals.delete('_dp_export_fmt');
+  }
+}
+
 // ── Install a missing Python package ─────────────────────────────────────────
 // import name → Pyodide package name (when they differ)
 const _IMPORT_TO_PKG = {
