@@ -763,14 +763,24 @@ _j.dumps({'applied': _applied, 'errors': _errors})
 //                      (binary can't be passed through the JS↔Python boundary
 //                       as a plain string; base64 is the safe transport)
 //
-// openpyxl and lxml are NOT re-loaded here — they were already loaded by
-// injectDataFrame / Phase 1 imports. py.loadPackage is idempotent for
-// already-loaded packages, but we skip it to avoid unnecessary overhead.
-//
 // Throws on failure (caller must handle and display the error to the user).
 
 export async function exportDataFrame(varName, format) {
   if (!_pyodide) throw new Error('Python runtime not loaded');
+
+  // Load format-specific packages on demand — don't assume they were loaded
+  // earlier (the user may export without ever having imported the same format).
+  // py.loadPackage is idempotent for already-loaded packages.
+  const pkgs = ['pandas'];
+  if (format === 'xlsx') pkgs.push('openpyxl');
+  if (format === 'xml')  pkgs.push('lxml');
+  try {
+    await _pyodide.loadPackage(pkgs, { messageCallback: () => {} });
+  } catch (e) {
+    console.warn(`[exportDataFrame] failed to load packages ${pkgs}:`, e);
+    throw e;
+  }
+
   _pyodide.globals.set('_dp_export_var',  varName);
   _pyodide.globals.set('_dp_export_fmt',  format);
 
