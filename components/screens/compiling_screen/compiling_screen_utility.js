@@ -191,9 +191,44 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
             vizBtn.classList.add('vsug-icon-btn--active');
             vizBtn.disabled = false;
           } catch (err) {
-            console.warn('[viz-suggestion] chart failed:', err);
             vizBtn.classList.remove('vsug-icon-btn--loading');
             vizBtn.disabled = false;
+            const isNoNumeric = String(err?.message ?? err).includes('__NO_NUMERIC__');
+            // Show a contextual message block instead of a blank chart
+            _chartBlock = document.createElement('div');
+            _chartBlock.className = 'vsug-no-chart-msg';
+            if (isNoNumeric && o.sepHint) {
+              // Sep-hint: data likely misread — offer one-click fix
+              const sepArg = o.sepHint === '\t' ? `sep='\\t'` : `sep=';'`;
+              _chartBlock.innerHTML =
+                `<i class="ti ti-alert-circle vsug-no-chart-icon"></i>` +
+                `<div class="vsug-no-chart-text">数据无数值列——可能是分隔符错误</div>`;
+              const reloadBtn = document.createElement('button');
+              reloadBtn.className = 'vsug-sep-reload-btn';
+              reloadBtn.textContent = `重新导入 (${sepArg})`;
+              reloadBtn.addEventListener('click', () => {
+                document.dispatchEvent(new CustomEvent('sep-hint-reload', {
+                  detail: { varName: o.varName, sepArg },
+                }));
+                reloadBtn.disabled = true;
+                reloadBtn.textContent = '已插入代码 ↑';
+              });
+              _chartBlock.appendChild(reloadBtn);
+            } else {
+              _chartBlock.innerHTML =
+                `<i class="ti ti-chart-off vsug-no-chart-icon"></i>` +
+                `<div class="vsug-no-chart-text">${isNoNumeric ? '无数值列，无法绘图' : '图表生成失败'}</div>`;
+            }
+            const target = chartContainer ?? container;
+            target.appendChild(_chartBlock);
+            if (chartContainer) chartContainer.classList.add('has-chart');
+            // Clicking the message itself triggers the same collapse as clicking vizBtn again
+            _chartBlock.style.cursor = 'pointer';
+            _chartBlock.title = '点击收起';
+            _chartBlock.addEventListener('click', e => {
+              if (e.target.closest('button')) return; // don't intercept button clicks
+              vizBtn.click();
+            });
           }
         });
 
@@ -329,7 +364,10 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
                   }
                 }
               } catch (e) {
-                _setFeedback(`Error: ${e.message}`, 'err');
+                _setFeedback(
+                  e?.message === 'KERNEL_NOT_READY' ? '↑ 请先运行 cell 加载数据' : `Error: ${e.message}`,
+                  e?.message === 'KERNEL_NOT_READY' ? 'warn' : 'err'
+                );
                 console.warn('[clean preview]', op, e);
               }
             });
@@ -428,9 +466,12 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
                 exportStatus.textContent = `✓ ${label} downloaded`;
                 exportStatus.className = 'vsug-export-status vsug-fb-ok';
               } catch (err) {
-                exportStatus.textContent = `✗ ${err.message ?? 'Export failed'}`;
-                exportStatus.className = 'vsug-export-status vsug-fb-err';
-                console.warn('[export]', fmt, err);
+                const isNotReady = err?.message === 'KERNEL_NOT_READY';
+                exportStatus.textContent = isNotReady
+                  ? '↑ 请先运行 cell 再导出'
+                  : `✗ ${err.message ?? 'Export failed'}`;
+                exportStatus.className = `vsug-export-status ${isNotReady ? 'vsug-fb-warn' : 'vsug-fb-err'}`;
+                if (!isNotReady) console.warn('[export]', fmt, err);
               } finally {
                 chip.disabled = false;
               }

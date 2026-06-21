@@ -33,15 +33,18 @@
 /* ── File panel ─────────────────────────────────────────────────────────── */
 .rb-file-panel {
   position: absolute;
-  inset: 0;
-  left: var(--rb-w);
+  inset: 0;                        /* covers full right-bar — left edge = right-bar left edge */
   display: flex;
   flex-direction: column;
-  width: calc(var(--rb-w-expanded) - var(--rb-w));
+  width: 100%;
   background: var(--surface, #ffffff);
-  border-left: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;             /* same as #right-bar */
   overflow: hidden;
 }
+
+/* Hide icon strip when file panel is open — panel header has its own close btn */
+#right-bar.rb--expanded .rb-top,
+#right-bar.rb--expanded .rb-bottom { display: none; }
 .rb-file-panel[hidden] { display: none; }
 
 .rb-file-hdr {

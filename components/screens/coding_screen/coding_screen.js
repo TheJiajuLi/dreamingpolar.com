@@ -423,12 +423,29 @@ function setupCodingScreen() {
     }
   });
 
-  nbOutMinBtn.addEventListener('click', () => {
-    nbOutputPanel.style.display = 'none';
+  // ── Restore pill — appears in top-right corner when panel is hidden ──────────
+  const restoreBtn = document.createElement('button');
+  restoreBtn.className = 'nb-out-restore-btn';
+  restoreBtn.title = 'Restore output panel';
+  restoreBtn.textContent = '+';
+  restoreBtn.hidden = true;
+  restoreBtn.addEventListener('click', () => {
+    nbOutputPanel.style.display = '';
+    restoreBtn.hidden = true;
   });
+  // Mount on the notebookView so it sits in the top-right corner of the coding area
+  notebookView.appendChild(restoreBtn);
+
+  function _hidePanel() {
+    nbOutputPanel.style.display = 'none';
+    restoreBtn.hidden = false;
+  }
+
+  nbOutMinBtn.addEventListener('click', _hidePanel);
 
   document.addEventListener('compile-result', () => {
     nbOutputPanel.style.display = '';
+    restoreBtn.hidden = true;  // auto-show panel on new output, hide the pill
   });
 
   document.addEventListener('compile-result', ({ detail }) => {
@@ -485,6 +502,21 @@ function setupCodingScreen() {
     requestAnimationFrame(() =>
       sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     );
+  });
+
+  // Status bar "jump to output" action
+  document.addEventListener('scroll-to-cell-output', ({ detail: { cellIndex } }) => {
+    // Find section by matching the cell label text
+    for (const [, sec] of nbSections) {
+      const span = sec.labelEl?.querySelector('span');
+      if (span?.textContent?.includes(`Cell ${cellIndex}`)) {
+        nbOutputPanel.style.display = '';
+        nbSections.forEach(s => s.sectionEl.classList.remove('cds-section--active'));
+        sec.sectionEl.classList.add('cds-section--active');
+        sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+      }
+    }
   });
 
   // Cell focus → highlight + scroll the corresponding output section

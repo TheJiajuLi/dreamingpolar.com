@@ -504,7 +504,7 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 /* Output panel */
 [data-theme="light"] .cds-output-panel { border-left-color: var(--border, #d7e1eb); }
 [data-theme="light"] .cds-output-panel,
-[data-theme="light"] .cds-output-body      { background: #f7f8fb; }
+[data-theme="light"] .cds-output-body      { background: #f3f5f8; }
 [data-theme="light"] .cds-output-panel-hdr { background: #f0f1f5; border-bottom-color: var(--border, #d7e1eb); }
 [data-theme="light"] .cds-output-panel-label { color: var(--text-muted, #425366); }
 [data-theme="light"] .cds-output-placeholder { color: var(--text-muted, #425366); opacity: 0.5; }
@@ -1063,7 +1063,32 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 [data-theme="aurora"] .gen-output-panel,
 [data-theme="aurora"] .gen-output-panel-hdr,
 [data-theme="aurora"] .cds-output-panel,
-[data-theme="aurora"] .cds-output-panel-hdr { background: var(--surface, #0d0d2e); }
+/* aurora cds-output-panel-hdr is set in coding_screen.css with the notebook toolbar */
+
+/* ── Output section label colours per theme ─────────────────────────────── */
+[data-theme="dark"]   .cds-output-section-label {
+  background: #161b22;
+  color: #818cf8;
+  border-bottom-color: rgba(129,140,248,0.25);
+}
+[data-theme="grey"]   .cds-output-section-label {
+  background: #2d333b;
+  color: #818cf8;
+  border-bottom-color: rgba(129,140,248,0.25);
+}
+[data-theme="aurora"] .cds-output-section-label {
+  background: rgba(10,10,36,0.9);
+  color: #c084fc;
+  border-bottom-color: rgba(192,132,252,0.25);
+}
+[data-theme="dark"]   .cds-output-section.cds-section--active .cds-output-section-label { border-bottom-color: #818cf8; color: #a5b4fc; }
+[data-theme="grey"]   .cds-output-section.cds-section--active .cds-output-section-label { border-bottom-color: #818cf8; color: #a5b4fc; }
+[data-theme="aurora"] .cds-output-section.cds-section--active .cds-output-section-label { border-bottom-color: #c084fc; color: #e0aaff; }
+
+/* Card border per theme — background transparent, panel bg shows through */
+[data-theme="dark"]   .cds-output-section { border-color: rgba(255,255,255,0.06); background: transparent; }
+[data-theme="grey"]   .cds-output-section { border-color: rgba(255,255,255,0.06); background: transparent; }
+[data-theme="aurora"] .cds-output-section { border-color: rgba(192,132,252,0.15); background: transparent; }
 
 [data-theme="aurora"] .compiling-screen-header,
 [data-theme="aurora"] .aic-header { border-top: 1px solid rgba(99,102,241,0.25); border-bottom-color: rgba(99,102,241,0.18); }

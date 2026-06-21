@@ -81,7 +81,7 @@ body.cs-resizing * {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  background: var(--surface, #ffffff);
+  background: var(--bg, #f3f5f8);
   position: relative;
   border-left: 1px solid var(--border, #e2e8f0);
 }
@@ -125,7 +125,7 @@ body.cs-resizing * {
 .cds-output-body {
   flex: 1;
   overflow-y: auto;
-  background: transparent;
+  background: var(--bg, #f3f5f8);
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
 }
@@ -136,26 +136,31 @@ body.cs-resizing * {
   border-bottom: 1px solid rgba(0,0,0,0.04) !important;
 }
 .cds-output-body .output-block:last-child { border-bottom: none !important; }
-.cds-output-body .output-text  { padding: 12px 18px; font-size: 0.8rem; }
-.cds-output-body .output-error { background: transparent !important; border-left: 2px solid #fca5a5; padding: 10px 18px; }
-.cds-output-body .output-info  { padding: 8px 18px; background: transparent !important; }
-.cds-output-body .output-html  { padding: 10px 18px; }
-.cds-output-body .output-latex { padding: 10px 18px; }
-.cds-output-body .output-image { padding: 8px 12px; }
+/* ① Add breathing room — 14px horizontal padding on text blocks */
+.cds-output-body .output-text  { padding: 12px 14px 12px 16px; font-size: 0.8rem; }
+.cds-output-body .output-error { background: transparent !important; border-left: 2px solid #fca5a5; padding: 10px 16px; }
+.cds-output-body .output-info  { padding: 8px 16px; background: transparent !important; }
+.cds-output-body .output-html  { padding: 12px 16px; }
+.cds-output-body .output-latex { padding: 10px 16px; }
+/* ① Chart: 12px padding top/bottom so it breathes from the label and text below */
+.cds-output-body .output-image { padding: 12px 12px 8px; }
 .cds-output-body .output-image img { width: 100%; height: auto; display: block; border-radius: 8px; }
 
-/* Dark / grey / aurora theme overrides */
+/* Dark / grey / aurora — panel + header + notebook toolbar all use the same bg */
 [data-theme="dark"]   .cds-output-panel,
-[data-theme="dark"]   .cds-output-body     { background: #0d1117; }
-[data-theme="dark"]   .cds-output-panel-hdr { background: #161b22; }
+[data-theme="dark"]   .cds-output-body      { background: #0d1117; }
+[data-theme="dark"]   .cds-output-panel-hdr,
+[data-theme="dark"]   .cds-notebook-toolbar { background: #0d1117; border-bottom-color: rgba(255,255,255,0.06); }
 
 [data-theme="grey"]   .cds-output-panel,
-[data-theme="grey"]   .cds-output-body     { background: #22272e; }
-[data-theme="grey"]   .cds-output-panel-hdr { background: #2d333b; }
+[data-theme="grey"]   .cds-output-body      { background: #22272e; }
+[data-theme="grey"]   .cds-output-panel-hdr,
+[data-theme="grey"]   .cds-notebook-toolbar { background: #22272e; border-bottom-color: rgba(255,255,255,0.06); }
 
 [data-theme="aurora"] .cds-output-panel,
-[data-theme="aurora"] .cds-output-body     { background: #07071a; }
-[data-theme="aurora"] .cds-output-panel-hdr { background: #0e0e24; }
+[data-theme="aurora"] .cds-output-body      { background: #07071a; }
+[data-theme="aurora"] .cds-output-panel-hdr,
+[data-theme="aurora"] .cds-notebook-toolbar { background: #07071a; border-bottom-color: rgba(192,132,252,0.12); }
 [data-theme="dark"]   .cds-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
 [data-theme="grey"]   .cds-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
 
@@ -170,10 +175,15 @@ body.cs-resizing * {
 #cds-notebook-view {
   display: none;       /* hidden by default; JS sets display:flex in Customise mode */
   flex: 1;
-  flex-direction: row;   /* side-by-side: cells left, output right */
+  flex-direction: row;
   min-height: 0;
   overflow: hidden;
+  background: var(--bg, #f3f5f8);
+  position: relative;  /* anchors the restore pill */
 }
+[data-theme="dark"]   #cds-notebook-view { background: #0d1117; }
+[data-theme="grey"]   #cds-notebook-view { background: #22272e; }
+[data-theme="aurora"] #cds-notebook-view { background: #07071a; }
 
 /* Left panel: toolbar + notebook-editor-area — mirrors .cds-code-panel */
 .cds-notebook-panel {
@@ -190,6 +200,35 @@ body.cs-resizing * {
 
 /* Cell inline output is suppressed — output renders in the right cds-output-panel */
 .nb-output-section { display: none !important; }
+
+/* ── Output panel restore pill (top-right of notebookView) ─────────────────── */
+.nb-out-restore-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #ffffff);
+  color: var(--text-muted, #64748b);
+  font-size: 1rem;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  transition: background 0.12s, color 0.12s, opacity 0.12s;
+}
+.nb-out-restore-btn:hover {
+  background: var(--accent-soft, #e0e3ff);
+  color: var(--accent, #6366f1);
+  border-color: var(--accent, #6366f1);
+}
+.nb-out-restore-btn[hidden] { display: none; }
 
 /* ── DataFrame schema view ─────────────────────────────────────────────────── */
 .cds-schema-loading {

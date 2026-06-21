@@ -376,6 +376,8 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   cell.editor = editor;
 
   body.append(editor);
+  // Ensure editor height is correct on first paint (autoResize needs the element in DOM)
+  requestAnimationFrame(() => autoResize(editor));
   const lowerRow = document.createElement('div');
   lowerRow.className = 'nb-cell-lower';
   lowerRow.append(gutter, body);

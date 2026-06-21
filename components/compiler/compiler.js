@@ -29,11 +29,11 @@ let _suppressKbs = false; // true during silent background preload
 
 // ── Utilities ─────────────────────────────────────────────
 
-function _dispatch(status, message, percent) {
-  // During a silent preload, suppress 'loading' events so the KBS never mounts.
-  // 'running' / 'ready' / 'error' always fire so the bottom status bar stays live.
+function _dispatch(status, message, percent, extra = {}) {
   if (_suppressKbs && status === 'loading') return;
-  document.dispatchEvent(new CustomEvent('compiler-status', { detail: { status, message, percent } }));
+  document.dispatchEvent(new CustomEvent('compiler-status', {
+    detail: { status, message, percent, ...extra }
+  }));
 }
 
 function _loadScript(src) {
@@ -54,10 +54,10 @@ async function _getPyodide() {
   if (_loading)  return _loading;
 
   _loading = (async () => {
-    _dispatch('loading', 'Fetching Python runtime…', 5);
+    _dispatch('loading', 'Fetching Python runtime…', 5, { tip: 'Pyodide WASM runtime — loads once, cached by browser.' });
     await _loadScript(PYODIDE_INDEX + 'pyodide.js');
 
-    _dispatch('loading', 'Starting interpreter…', 30);
+    _dispatch('loading', 'Starting interpreter…', 30, { tip: 'Initialising CPython 3.14 in WebAssembly.' });
     const py = await window.loadPyodide({ indexURL: PYODIDE_INDEX, messageCallback: () => {} });
 
     // Write CJK font into Pyodide FS so matplotlib can use it when it is first
@@ -70,7 +70,7 @@ async function _getPyodide() {
       }
     } catch (_) {}
 
-    _dispatch('ready', 'Workspace ready · code, analyze, visualize', 100);
+    _dispatch('ready', 'Notebook Editor', 100);
     _pyodide = py;
     document.body.classList.add('dp-ready');
     document.body.dispatchEvent(new Event('dp-ready-event'));
@@ -216,7 +216,12 @@ _j.dumps({'stdout': _out.getvalue(), 'stderr': _err.getvalue(), 'error': _exc, '
 
 async function _runPython(code, context = {}) {
   try {
-    _dispatch('running', `Running Python${_cellSuffix(context)}`);
+    const _t0 = Date.now();
+    _dispatch('running', `Running Python${_cellSuffix(context)}`, undefined, {
+      cellIndex: context.cellIndex,
+      tip: 'Click to jump to cell output',
+      action: 'scroll-to-cell',
+    });
 
     // Pre-flight: warn about Pyodide-specific pitfalls before execution
     const preflight = preflightWarnings(code);
@@ -226,7 +231,13 @@ async function _runPython(code, context = {}) {
     py.globals.set('_user_code', code);
     const raw = await py.runPythonAsync(RUNNER);
     const d   = JSON.parse(raw);
-    _dispatch('ready', 'Done');
+    const _ms = Date.now() - _t0;
+    _dispatch('ready', 'Done', undefined, {
+      cellIndex: context.cellIndex,
+      elapsed: _ms,
+      tip: `Cell ${context.cellIndex ?? '?'} · ${_ms < 1000 ? _ms + ' ms' : (_ms/1000).toFixed(1) + ' s'}`,
+      action: 'scroll-to-cell',
+    });
 
     const out = [];
     for (const w of preflight) out.push({ type: 'info', content: w });
@@ -265,7 +276,11 @@ async function _runPython(code, context = {}) {
 
     return out;
   } catch (e) {
-    _dispatch('error', e.message);
+    _dispatch('error', e.message, undefined, {
+      tip: e.message?.slice(0, 120),
+      action: 'scroll-to-cell',
+      cellIndex: context?.cellIndex,
+    });
     return [{ type: 'error', content: String(e) }];
   }
 }
@@ -622,8 +637,9 @@ if _type_v == 'DataFrame':
     if not _num_v.empty:
         _num_v.iloc[:, :6].plot(ax=_ax_v, title=_dp_viz_varname)
     else:
-        _ax_v.text(0.5, 0.5, 'No numeric columns', ha='center', va='center', transform=_ax_v.transAxes)
-        _ax_v.set_title(_dp_viz_varname)
+        # Don't render a blank axes — raise so JS can show a friendly message instead
+        _plt_v.close(_fig_v)
+        raise ValueError('__NO_NUMERIC__')
 elif _type_v == 'Series':
     _obj_v.plot(ax=_ax_v, title=_dp_viz_varname)
 else:
@@ -687,7 +703,7 @@ _jq.dumps(_dfs)
 // Returns column schema: [{ col, dtype, nullPct, sample }]
 export async function getDataFrameSchema(varName) {
   if (!_pyodide) throw new Error('Kernel not ready');
-  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('Run the cell first');
+  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');
   _pyodide.globals.set('_dp_schema_var', varName);
   try {
     return JSON.parse(_pyodide.runPython(`
@@ -713,7 +729,7 @@ export function notifyKernelChanged(varName) {
 
 export async function previewClean(varName, op) {
   if (!_pyodide) throw new Error('Kernel not ready — run a cell first');
-  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('Run the cell first to load data into the kernel');
+  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');
   _pyodide.globals.set('_dp_clean_var', varName);
   try {
     if (op === 'dropna') {
@@ -821,15 +837,16 @@ _j.dumps({'applied': _applied, 'errors': _errors})
 
 export async function exportDataFrame(varName, format) {
   if (!_pyodide) throw new Error('Python runtime not loaded');
+  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');
 
   // Load format-specific packages on demand — don't assume they were loaded
   // earlier (the user may export without ever having imported the same format).
   // py.loadPackage is idempotent for already-loaded packages.
-  // Only load pandas — xlsx uses xlsxwriter (bundled with Pyodide), xml uses stdlib ET
+  // Load pandas + micropip (needed to install xlsxwriter on demand)
   try {
-    await _pyodide.loadPackage(['pandas'], { messageCallback: () => {} });
+    await _pyodide.loadPackage(['pandas', 'micropip'], { messageCallback: () => {} });
   } catch (e) {
-    console.warn(`[exportDataFrame] failed to load pandas:`, e);
+    console.warn(`[exportDataFrame] failed to load packages:`, e);
     throw e;
   }
 
@@ -874,7 +891,7 @@ elif _fmt == 'xlsx':
     try:
         _df.to_excel(_buf, index=False, engine='xlsxwriter')
     except ModuleNotFoundError:
-        import micropip as _mp
+        import micropip as _mp  # already loaded via JS loadPackage above
         await _mp.install('xlsxwriter')
         _buf = _io.BytesIO()
         _df.to_excel(_buf, index=False, engine='xlsxwriter')

@@ -11,7 +11,89 @@ document.addEventListener('screen-opened',    ({ detail: { id } }) => { if (id =
 document.addEventListener('screen-closed',    ({ detail: { id } }) => { if (id === 'ai-chat') getAiSlot()?.setAttribute('hidden', ''); });
 document.addEventListener('screen-minimized', ({ detail: { id } }) => { if (id === 'ai-chat') getAiSlot()?.setAttribute('hidden', ''); });
 
+// ── Compiler status slot ──────────────────────────────────────────────────────
+let _lastStatus = {};  // most recent dispatch detail for click popover
+
+// Click popover for the compiler slot
+let _statusPopover = null;
+let _statusPopoverOpen = false;
+
+function _getOrCreateStatusPopover() {
+  if (_statusPopover) return _statusPopover;
+  _statusPopover = document.createElement('div');
+  _statusPopover.className = 'bdb-status-popover';
+  document.body.appendChild(_statusPopover);
+  document.addEventListener('click', e => {
+    if (_statusPopoverOpen && !_statusPopover.contains(e.target) && !getCompilerSlot()?.contains(e.target)) {
+      _closeStatusPopover();
+    }
+  });
+  return _statusPopover;
+}
+
+function _closeStatusPopover() {
+  _statusPopover?.classList.remove('bdb-status-popover--open');
+  _statusPopoverOpen = false;
+}
+
+function _openStatusPopover() {
+  const slot = getCompilerSlot();
+  if (!slot) return;
+  const pop = _getOrCreateStatusPopover();
+  const { status, message, tip, elapsed, cellIndex, action } = _lastStatus;
+
+  const lines = [];
+  const statusLabel = { loading: '加载中', running: '执行中', ready: '就绪', error: '错误' }[status] ?? status;
+
+  lines.push(`<div class="bsp-row bsp-status ${status}"><span class="bsp-dot"></span><strong>${statusLabel}</strong></div>`);
+  lines.push(`<div class="bsp-row bsp-msg">${message ?? '—'}</div>`);
+
+  if (elapsed != null) {
+    lines.push(`<div class="bsp-row bsp-meta">耗时 ${elapsed < 1000 ? elapsed + ' ms' : (elapsed/1000).toFixed(2) + ' s'}</div>`);
+  }
+  if (cellIndex != null) {
+    lines.push(`<div class="bsp-row bsp-meta">Cell ${cellIndex}</div>`);
+  }
+  if (tip && tip !== message) {
+    lines.push(`<div class="bsp-row bsp-tip">${tip}</div>`);
+  }
+  if (action === 'scroll-to-cell' && cellIndex != null) {
+    lines.push(`<button class="bsp-action" data-action="scroll" data-cell="${cellIndex}">↗ 跳转到输出</button>`);
+  }
+  if (status === 'error') {
+    lines.push(`<button class="bsp-action bsp-action--danger" data-action="clear-error">✕ 忽略</button>`);
+  }
+
+  pop.innerHTML = lines.join('');
+
+  // Bind action buttons
+  pop.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const a = btn.dataset.action;
+      if (a === 'scroll') {
+        const cellNum = parseInt(btn.dataset.cell, 10);
+        // Scroll the output panel to the matching section
+        document.dispatchEvent(new CustomEvent('scroll-to-cell-output', { detail: { cellIndex: cellNum } }));
+        _closeStatusPopover();
+      } else if (a === 'clear-error') {
+        document.dispatchEvent(new CustomEvent('compiler-status', {
+          detail: { status: 'ready', message: 'Cleared' }
+        }));
+        _closeStatusPopover();
+      }
+    });
+  });
+
+  const rect = slot.getBoundingClientRect();
+  pop.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+  pop.style.left   = `${rect.left}px`;
+  pop.classList.add('bdb-status-popover--open');
+  _statusPopoverOpen = true;
+}
+
 document.addEventListener('compiler-status', ({ detail }) => {
+  _lastStatus = detail;
   const slot = getCompilerSlot();
   if (!slot) return;
   const spinning = detail.status === 'loading' || detail.status === 'running';
@@ -19,10 +101,30 @@ document.addEventListener('compiler-status', ({ detail }) => {
   if (detail.percent != null) slot.style.setProperty('--pct', `${detail.percent}%`);
   const pctLabel = (detail.percent != null && detail.status === 'loading')
     ? `<span class="status-pct">${detail.percent}%</span>` : '';
+  const elapsed = detail.elapsed != null
+    ? `<span class="status-elapsed">${detail.elapsed < 1000 ? detail.elapsed + 'ms' : (detail.elapsed/1000).toFixed(1) + 's'}</span>`
+    : '';
   slot.innerHTML = spinning
     ? `<span class="status-spinner"><i></i><i></i><i></i></span>${detail.message}${pctLabel}`
-    : detail.message;
+    : `${detail.message}${elapsed}`;
+
+  // Make slot clickable — cursor hint
+  slot.style.cursor = 'pointer';
+  slot.title = detail.tip ?? 'Click for details';
+
+  // Close any open popover when status changes
+  if (_statusPopoverOpen) _closeStatusPopover();
 });
+
+// Single listener added once
+;(function _initCompilerSlotClick() {
+  const slot = getCompilerSlot();
+  if (!slot) { setTimeout(_initCompilerSlotClick, 300); return; }
+  slot.addEventListener('click', e => {
+    e.stopPropagation();
+    _statusPopoverOpen ? _closeStatusPopover() : _openStatusPopover();
+  });
+})();
 
 // ── DataFrame stats slot ──────────────────────────────────────────────────────
 // Structure (built once in _initDfSlot):

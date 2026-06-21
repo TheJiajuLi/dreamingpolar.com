@@ -16,8 +16,8 @@ body {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: 4px;
-  padding: 4px 4px calc(var(--bottom-bar-h, 44px) + 4px) 4px;
+  gap: 6px;
+  padding: 6px 6px calc(var(--bottom-bar-h, 44px) + 6px) 6px;
   box-sizing: border-box;
 }
 
@@ -134,7 +134,7 @@ p {
 
 :root {
   --vt-w: 33px;
-  --header-height: 38px;    /* slimmer page header */
+  --header-height: var(--bottom-bar-h, 44px);  /* matches bottom data bar */
   --bottom-bar-h:  30px;    /* slimmer status bar */
   --screen-header-h: 32px;  /* slimmer panel headers */
   --status-bar-h: 22px;
