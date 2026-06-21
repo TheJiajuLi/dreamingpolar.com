@@ -116,6 +116,9 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
         const triggerLeft = document.createElement('div');
         triggerLeft.className = 'vsug-trigger-left';
 
+        const chevron = document.createElement('i');
+        chevron.className = 'ti ti-chevron-down vsug-chevron';
+
         const triggerIcon = document.createElement('i');
         triggerIcon.className = 'ti ti-adjustments-horizontal vsug-trigger-ti';
 
@@ -132,15 +135,12 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
         metaEl.className = 'vsug-meta';
         metaEl.textContent = o.shape ?? '';
 
-        triggerLeft.append(triggerIcon, nameEl, metaEl);
+        // chevron left of adjustments icon — both animate together on expand/collapse
+        triggerLeft.append(chevron, triggerIcon, nameEl, metaEl);
 
         const triggerRight = document.createElement('div');
         triggerRight.className = 'vsug-trigger-right';
         triggerRight.appendChild(vizBtn);
-
-        const chevron = document.createElement('i');
-        chevron.className = 'ti ti-chevron-down vsug-chevron';
-        triggerRight.appendChild(chevron);
 
         trigger.append(triggerLeft, triggerRight);
 
@@ -150,12 +150,14 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
         body.hidden = true;
 
         // Toggle collapse
+        // Placeholder — reassigned inside the dataframe block below
+        let _prefetchCounts = async () => {};
+
         trigger.addEventListener('click', e => {
           if (e.target.closest('.vsug-viz-btn')) return; // don't collapse on chart click
           const opening = body.hidden;
           body.hidden = !opening;
           chevron.classList.toggle('vsug-chevron--open', opening);
-          // Compute counts once per open (cached after first call)
           if (opening) _prefetchCounts();
         });
 
@@ -227,8 +229,9 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
             cleanFeedback.hidden = !text;
           }
 
-          // Pre-fetch empty/duplicate counts once when panel opens; cache result
-          async function _prefetchCounts() {
+          // Pre-fetch empty/duplicate counts once when panel opens; cache result.
+          // previewClean itself guards against uninitialized kernel — any error is silent.
+          _prefetchCounts = async function() {
             if (_counts) return;
             try {
               const [na, dup] = await Promise.all([
@@ -238,7 +241,7 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
               _counts = { dropna: na.affected ?? 0, drop_dup: dup.affected ?? 0 };
               naChip._setBadge(_counts.dropna);
               dupChip._setBadge(_counts.drop_dup);
-            } catch (_) { /* silent */ }
+            } catch (_) { /* silent — kernel not ready or pandas not loaded */ }
           }
 
           function _makeCleanChip(icon, label, op) {

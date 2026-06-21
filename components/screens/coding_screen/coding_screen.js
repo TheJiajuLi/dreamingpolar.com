@@ -264,9 +264,13 @@ function setupCodingScreen() {
     labelInner.appendChild(labelSpan);
     labelEl.appendChild(labelInner);
 
+    // Grouped button cluster on the right
+    const labelBtns = document.createElement('div');
+    labelBtns.className = 'cds-output-label-btns';
+
     const sourceWidget = createSourceWidget();
     sourceWidget.element.className = 'cds-inner-btn lus-btn';
-    labelEl.appendChild(sourceWidget.element);
+    labelBtns.appendChild(sourceWidget.element);
 
     const copySourceBtn = document.createElement('button');
     copySourceBtn.className = 'cds-inner-btn lus-copy-btn';
@@ -282,7 +286,7 @@ function setupCodingScreen() {
         setTimeout(() => { copySourceBtn.innerHTML = ICON_COPY; copySourceBtn.classList.remove('lus-copy-btn--done'); }, 1500);
       });
     });
-    labelEl.appendChild(copySourceBtn);
+    labelBtns.appendChild(copySourceBtn);
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'cds-inner-btn cds-output-section-close';
@@ -294,7 +298,8 @@ function setupCodingScreen() {
       _removeStoredOutput(cellId);
       if (nbSections.size === 0) nbOutputPlaceholder.style.display = '';
     });
-    labelEl.appendChild(closeBtn);
+    labelBtns.appendChild(closeBtn);
+    labelEl.appendChild(labelBtns);
 
     // ── Body: chartPane → textPane ────────────────────
     const bodyEl = document.createElement('div');
@@ -320,7 +325,7 @@ function setupCodingScreen() {
     if (insertBefore) nbOutputBody.insertBefore(sectionEl, insertBefore);
     else              nbOutputBody.appendChild(sectionEl);
 
-    const sec = { sectionEl, labelEl, bodyEl, textPane, chartPane, innerBar, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
+    const sec = { sectionEl, labelEl, bodyEl, textPane, chartPane, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
     nbSections.set(cellId, sec);
     return sec;
   }

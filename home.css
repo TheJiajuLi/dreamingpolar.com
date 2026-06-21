@@ -146,6 +146,10 @@ body.dp-fullscreen .nav-sidebar {
   pointer-events: none;
 }
 
+body.dp-fullscreen #au-vt-btn {
+  display: none;
+}
+
 body.dp-fullscreen #page-layout {
   gap: 0;
   padding: 0;

@@ -585,6 +585,7 @@ export async function getPyodide() {
 // Returns a base64-encoded PNG string, or throws on failure.
 export async function visualiseVar(varName) {
   const py = await _getPyodide();
+  if (!py.runPython('"_dp_kernel_ns" in globals()')) throw new Error('Run the cell first to load data into the kernel');
   await py.loadPackage(['matplotlib'], { messageCallback: () => {} });
 
   py.globals.set('_dp_viz_varname', varName);
@@ -681,7 +682,8 @@ export function notifyKernelChanged(varName) {
 }
 
 export async function previewClean(varName, op) {
-  if (!_pyodide) throw new Error('Python runtime not loaded');
+  if (!_pyodide) throw new Error('Kernel not ready — run a cell first');
+  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('Run the cell first to load data into the kernel');
   _pyodide.globals.set('_dp_clean_var', varName);
   try {
     if (op === 'dropna') {
@@ -793,13 +795,11 @@ export async function exportDataFrame(varName, format) {
   // Load format-specific packages on demand — don't assume they were loaded
   // earlier (the user may export without ever having imported the same format).
   // py.loadPackage is idempotent for already-loaded packages.
-  const pkgs = ['pandas'];
-  if (format === 'xlsx') pkgs.push('openpyxl');
-  if (format === 'xml')  pkgs.push('lxml');
+  // Only load pandas — xlsx uses xlsxwriter (bundled with Pyodide), xml uses stdlib ET
   try {
-    await _pyodide.loadPackage(pkgs, { messageCallback: () => {} });
+    await _pyodide.loadPackage(['pandas'], { messageCallback: () => {} });
   } catch (e) {
-    console.warn(`[exportDataFrame] failed to load packages ${pkgs}:`, e);
+    console.warn(`[exportDataFrame] failed to load pandas:`, e);
     throw e;
   }
 
@@ -808,7 +808,7 @@ export async function exportDataFrame(varName, format) {
 
   try {
     const raw = await _pyodide.runPythonAsync(`
-import json as _j, io as _io, base64 as _b64, pandas as _pd
+import json as _j, io as _io, base64 as _b64, pandas as _pd, re as _re
 _df = _dp_kernel_ns.get(_dp_export_var)
 if _df is None:
     raise ValueError(f"Variable '{_dp_export_var}' not found in kernel namespace")
@@ -821,10 +821,33 @@ if _fmt == 'csv':
 elif _fmt == 'json':
     _result = _j.dumps({'content': _df.to_json(orient='records', force_ascii=False), 'b64': False})
 elif _fmt == 'xml':
-    _result = _j.dumps({'content': _df.to_xml(index=False), 'b64': False})
+    # XML tag names must start with a letter/underscore and contain only word chars.
+    # Sanitize column names: replace invalid chars with '_', prefix digit-starts with 'col_'.
+    def _safe_tag(s):
+        s = _re.sub(r'[^\\w.-]', '_', str(s))
+        if s and (s[0].isdigit() or s[0] == '-'):
+            s = 'col_' + s
+        return s or 'col'
+    _xml_df = _df.copy()
+    _xml_df.columns = [_safe_tag(c) for c in _xml_df.columns]
+    import xml.etree.ElementTree as _ET
+    _root = _ET.Element('data')
+    for _, _row in _xml_df.iterrows():
+        _rec = _ET.SubElement(_root, 'row')
+        for _col, _val in _row.items():
+            _el = _ET.SubElement(_rec, str(_col))
+            _el.text = '' if _val is None else str(_val)
+    _xml_str = _ET.tostring(_root, encoding='unicode', xml_declaration=False)
+    _result = _j.dumps({'content': '<?xml version="1.0" encoding="utf-8"?>\\n' + _xml_str, 'b64': False})
 elif _fmt == 'xlsx':
     _buf = _io.BytesIO()
-    _df.to_excel(_buf, index=False, engine='openpyxl')
+    try:
+        _df.to_excel(_buf, index=False, engine='xlsxwriter')
+    except ModuleNotFoundError:
+        import micropip as _mp
+        await _mp.install('xlsxwriter')
+        _buf = _io.BytesIO()
+        _df.to_excel(_buf, index=False, engine='xlsxwriter')
     _result = _j.dumps({'content': _b64.b64encode(_buf.getvalue()).decode(), 'b64': True})
 else:
     raise ValueError(f"Unsupported export format: '{_fmt}'")

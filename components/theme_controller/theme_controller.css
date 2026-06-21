@@ -560,7 +560,7 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 [data-theme="light"] .nb-cell .nb-output-section .output-error             { color: #dc2626; }
 
 /* Per-cell output section headers in the right OUTPUT panel */
-[data-theme="light"] .cds-output-section-label { background: #f0f1f5; color: var(--status-running, #6366f1); border-bottom-color: rgba(99,102,241,0.25); }
+[data-theme="light"] .cds-output-section-label { background: #f7f8fb; color: var(--status-running, #6366f1); border-bottom-color: rgba(99,102,241,0.25); }
 [data-theme="light"] .cds-output-section-body  { background: #f7f8fb; box-shadow: none; }
 
 /* Terminal (dark even in light theme) */

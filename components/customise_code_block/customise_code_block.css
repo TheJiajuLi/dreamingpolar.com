@@ -397,6 +397,14 @@
 }
 .cds-output-section-close:hover { background: transparent; color: #ef4444; }
 
+/* Grouped button cluster — keeps all three buttons tight together on the right */
+.cds-output-label-btns {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
 /* Compact buttons inside the section label */
 .cds-inner-btn {
   display: inline-flex;

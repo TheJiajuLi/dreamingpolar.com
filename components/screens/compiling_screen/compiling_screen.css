@@ -51,7 +51,7 @@
 .output-block:last-child { border-bottom: none; }
 
 .output-text {
-  background: transparent;
+  background: var(--surface, #ffffff);
   border: none;
   padding: 12px 16px;
   margin: 0;
@@ -247,7 +247,7 @@
   color: var(--accent, #6366f1) !important;
 }
 
-/* Count badge on chip */
+/* Count badge on chip — hidden until a non-zero count is available */
 .vsug-badge {
   display: inline-flex;
   align-items: center;
@@ -263,7 +263,7 @@
   line-height: 1;
   margin-left: 2px;
 }
-.vsug-chip--selected .vsug-badge { background: var(--accent, #6366f1); }
+.vsug-badge[hidden] { display: none; }
 
 /* Feedback text */
 .vsug-feedback {
