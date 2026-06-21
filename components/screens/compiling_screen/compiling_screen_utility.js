@@ -34,7 +34,7 @@ export function parseAIResponse(text) {
     : [{ type: 'html', content: `<span class="ai-prose">${escHtml(text).replace(/\n/g, '<br>')}</span>` }];
 }
 
-export function renderBlocks(outputs, container, { onAskAI } = {}) {
+export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {}) {
   const mathBlocks = [];
 
   for (const o of outputs) {
@@ -70,10 +70,14 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
       case 'info':
         block.innerHTML = `<div class="output-info">${escHtml(o.content)}</div>`;
         break;
-      case 'image':
+      case 'image': {
         block.className += ' output-image';
         block.innerHTML = `<img src="data:image/png;base64,${o.content}" alt="Plot">`;
-        break;
+        const imgTarget = chartContainer ?? container;
+        imgTarget.appendChild(block);
+        if (chartContainer) chartContainer.classList.add('has-chart');
+        continue; // already appended, skip default append below
+      }
       case 'cell-separator':
         block.className = 'nb-output-separator';
         block.innerHTML = `<span class="nb-sep-label">${escHtml(o.label ?? '')}</span>`;
@@ -124,6 +128,9 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
             const hidden = _chartBlock.style.display === 'none';
             _chartBlock.style.display = hidden ? '' : 'none';
             vizBtn.textContent = hidden ? '收起图表' : '可视化';
+            if (chartContainer) {
+              chartContainer.classList.toggle('has-chart', !hidden);
+            }
             return;
           }
           vizBtn.disabled = true;
@@ -136,8 +143,14 @@ export function renderBlocks(outputs, container, { onAskAI } = {}) {
             image.src = `data:image/png;base64,${img}`;
             image.alt = o.varName;
             _chartBlock.appendChild(image);
-            block.insertAdjacentElement('afterend', _chartBlock);
-            vizBtn.textContent = '收起图表'; // card stays visible; button toggles
+            // Route to chart pane if available, otherwise insert after the card
+            if (chartContainer) {
+              chartContainer.appendChild(_chartBlock);
+              chartContainer.classList.add('has-chart');
+            } else {
+              block.insertAdjacentElement('afterend', _chartBlock);
+            }
+            vizBtn.textContent = '收起图表';
             vizBtn.disabled = false;
           } catch (err) {
             console.warn('[viz-suggestion] chart failed:', err);

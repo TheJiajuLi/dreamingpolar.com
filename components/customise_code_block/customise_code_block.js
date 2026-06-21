@@ -11,6 +11,7 @@ import { createRefactorBtn } from '../screens/compiling_screen/refactorization_b
 import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
 import { createLoadDataBtn } from '../import/import_data.js';
+import { setDataset } from '../shared/dataset_store.js';
 import { injectDataFrame, queryKernelDataframes } from '../compiler/compiler.js';
 
 const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
@@ -52,12 +53,13 @@ function _saveInjectStore() {
       try {
         const { s, isBase64 } = _serializeData(c._pendingInject.data);
         store[c.id] = {
-          varName:  c._pendingInject.varName,
-          fileType: c._pendingInject.fileType,
-          filename: c._datasetInfo.filename,
-          rows:     c._datasetInfo.rows,
-          columns:  c._datasetInfo.columns,
-          data:     s,
+          varName:     c._pendingInject.varName,
+          fileType:    c._pendingInject.fileType,
+          filename:    c._datasetInfo.filename,
+          rows:        c._datasetInfo.rows,
+          columns:     c._datasetInfo.columns,
+          columnNames: c._datasetInfo.columnNames ?? [],
+          data:        s,
           isBase64,
         };
       } catch (_) { /* individual cell failure: skip, don't block others */ }
@@ -87,14 +89,26 @@ function _restoreInjectData() {
     if (!saved) return;
     try {
       const data = _deserializeData({ s: saved.data, isBase64: saved.isBase64 });
+      const columnNames = saved.columnNames ?? [];
       c._pendingInject = { varName: saved.varName, data, fileType: saved.fileType };
       c._datasetInfo   = {
         varName: saved.varName, rows: saved.rows,
-        columns: saved.columns, filename: saved.filename,
+        columns: saved.columns, filename: saved.filename, columnNames,
       };
       if (c.dsLabel) {
         c.dsLabel.textContent  = `${saved.varName} · ${Number(saved.rows).toLocaleString()} rows`;
         c.dsLabel.style.display = '';
+      }
+      // Restore dataset to dataset_store so ARIA tabs appear immediately on load
+      if (saved.filename) {
+        try {
+          setDataset({
+            name:    saved.filename,
+            columns: columnNames,
+            dtypes:  {},
+            rows:    [], // metadata only — actual data in Python kernel after first Run
+          });
+        } catch (_) {}
       }
     } catch (e) {
       console.warn(`[inject-store] failed to restore cell ${c.id}:`, e.message);
@@ -247,7 +261,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   const csvBtn = createLoadDataBtn({
     resolveVarName: (filename) => _varNameResolver ? _varNameResolver(filename) : 'df',
     lazyMode: true,
-    onLoad: (varName, rows, filename, injectData, fileType, columns) => {
+    onLoad: (varName, rows, filename, injectData, fileType, columns, columnNames = []) => {
       const cellNum = _cells.indexOf(cell) + 1;
       const code =
         `# "${filename}" → ${varName} (${rows.toLocaleString()} rows, ${columns} cols)\n` +
@@ -257,7 +271,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
       cell.editor.dispatchEvent(new Event('input'));
       saveAll();
       cell._pendingInject  = { varName, data: injectData, fileType };
-      cell._datasetInfo    = { varName, rows, columns, filename };
+      cell._datasetInfo    = { varName, rows, columns, filename, columnNames };
       dsLabel.textContent  = `${varName} · ${rows.toLocaleString()} rows`;
       dsLabel.style.display = '';
       _onDataImported?.(varName, rows, filename, cell.id, cellNum);

@@ -131,10 +131,11 @@ export function createLoadDataBtn({ varName = 'df', resolveVarName, lazyMode = f
         const { data: injectData, fileType } = await _readInjectData(file, csv);
 
         if (lazyMode) {
-          const rows    = dataset?.rows.length    ?? Math.max(0, csv.split('\n').length - 1);
-          const columns = dataset?.columns.length ?? 0;
+          const rows        = dataset?.rows.length    ?? Math.max(0, csv.split('\n').length - 1);
+          const columns     = dataset?.columns.length ?? 0;
+          const columnNames = dataset?.columns        ?? [];
           _toast(`✓ "${file.name}" → ${actualVarName} (${rows.toLocaleString()} rows, ${columns} cols) — click ▶ to load`);
-          onLoad?.(actualVarName, rows, file.name, injectData, fileType, columns);
+          onLoad?.(actualVarName, rows, file.name, injectData, fileType, columns, columnNames);
         } else {
           const result = await injectDataFrame(actualVarName, injectData, fileType);
           _toast(`✓ "${file.name}" loaded → ${actualVarName}  (${result.rows} rows)  — try: ${actualVarName}.head()`);

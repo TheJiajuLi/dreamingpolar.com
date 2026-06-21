@@ -400,10 +400,43 @@
 .cds-output-section-body {
   padding: 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0;
   background: var(--surface, #ffffff);
   color: var(--text, #0f172a);
+  min-height: 0;
+}
+
+/* Left pane — text / tables / errors / viz-suggestion cards */
+.cds-output-text-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+}
+
+/* Right pane — matplotlib images and viz charts. Collapses to zero when empty. */
+.cds-output-chart-pane {
+  flex: 0 0 0;
+  overflow: hidden;
+  transition: flex-basis 0.25s ease;
+}
+.cds-output-chart-pane.has-chart {
+  flex: 0 1 55%;        /* takes up to 55% of the section width */
+  min-width: 220px;
+  border-left: 1px solid var(--border, #e2e8f0);
+  overflow-y: auto;
+}
+.cds-output-chart-pane .output-image {
+  border-bottom: none;
+  background: transparent;
+}
+.cds-output-chart-pane .output-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0;
 }
 
 /* ── Cell separator in output ──────────────────────────── */

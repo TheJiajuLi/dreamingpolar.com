@@ -239,7 +239,7 @@ function setupCodingScreen() {
     copySourceBtn.innerHTML = ICON_COPY;
     copySourceBtn.style.display = 'none';
     copySourceBtn.addEventListener('click', () => {
-      const text = sec?.bodyEl?.innerText ?? '';
+      const text = (sec?.textPane?.innerText ?? '') + (sec?.chartPane?.innerText ?? '');
       if (!text.trim()) return;
       navigator.clipboard?.writeText(text).then(() => {
         copySourceBtn.innerHTML = ICON_CHECK;
@@ -266,10 +266,17 @@ function setupCodingScreen() {
     const bodyEl = document.createElement('div');
     bodyEl.className = 'cds-output-section-body';
 
+    // Two-pane layout: text/tables on left, charts on right
+    const textPane  = document.createElement('div');
+    textPane.className = 'cds-output-text-pane';
+    const chartPane = document.createElement('div');
+    chartPane.className = 'cds-output-chart-pane';
+    bodyEl.append(textPane, chartPane);
+
     sectionEl.append(labelEl, bodyEl);
     nbOutputBody.appendChild(sectionEl);
 
-    const sec = { sectionEl, labelEl, bodyEl, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
+    const sec = { sectionEl, labelEl, bodyEl, textPane, chartPane, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
     nbSections.set(cellId, sec);
     return sec;
   }
@@ -332,7 +339,8 @@ function setupCodingScreen() {
     sec.sourceCode = sourceCode ?? null;
     // Show copy button whenever there's output to copy (not gated on sourceCode).
     if (sec.copySourceBtn) sec.copySourceBtn.style.display = outputs?.length ? '' : 'none';
-    renderBlocks(outputs, sec.bodyEl, {
+    renderBlocks(outputs, sec.textPane, {
+      chartContainer: sec.chartPane,
       onAskAI: async (errorText, block, btn) => {
         btn.disabled = true;
         btn.textContent = 'Thinking…';
