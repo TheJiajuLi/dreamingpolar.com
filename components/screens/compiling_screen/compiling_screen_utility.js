@@ -200,17 +200,32 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
         block.append(trigger);
 
         // ── Separator hint banner ─────────────────────────────────────────────
-        // Shown when a 1-column DataFrame looks like it was parsed with the wrong
-        // delimiter (all values contain ';' or '\t').
         if (o.sepHint) {
-          const sepLabel = o.sepHint === '\t' ? 'tab (\\t)' : `semicolon (${o.sepHint})`;
-          const sepCode  = o.sepHint === '\t' ? `sep='\\t'` : `sep=';'`;
+          const sepDisp = o.sepHint === '\t' ? '\\t' : o.sepHint;
+          const sepArg  = o.sepHint === '\t' ? `sep='\\t'` : `sep=';'`;
           const hint = document.createElement('div');
           hint.className = 'vsug-sep-hint';
-          hint.innerHTML =
+
+          const hintText = document.createElement('div');
+          hintText.className = 'vsug-sep-hint-text';
+          hintText.innerHTML =
             `<i class="ti ti-alert-triangle vsug-sep-hint-icon"></i>` +
-            `<span>检测到分隔符为 <code>${o.sepHint === '\t' ? '\\t' : o.sepHint}</code>，数据可能未正确解析。` +
-            `建议在导入代码中添加 <code>${sepCode}</code>。</span>`;
+            `检测到分隔符 <code>${sepDisp}</code>——数据未正确解析（全部挤在 1 列里）。`;
+
+          const reloadBtn = document.createElement('button');
+          reloadBtn.className = 'vsug-sep-reload-btn';
+          reloadBtn.textContent = `重新导入 (${sepArg})`;
+          reloadBtn.addEventListener('click', () => {
+            // Dispatch event so the notebook can patch the active cell's code
+            document.dispatchEvent(new CustomEvent('sep-hint-reload', {
+              detail: { varName: o.varName, sepArg },
+            }));
+            hint.style.opacity = '0.5';
+            reloadBtn.disabled = true;
+            reloadBtn.textContent = '已插入代码 ↑';
+          });
+
+          hint.append(hintText, reloadBtn);
           block.appendChild(hint);
         }
 

@@ -336,10 +336,17 @@
   border: none;
   border-bottom: 1px solid var(--border, #e2e8f0);
   overflow: hidden;
-  margin: 0;
-  transition: box-shadow 0.15s ease;
+  margin: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #ffffff);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
-.cds-output-section:last-child  { border-bottom: none; }
+.cds-output-section:last-child { border-bottom: 1px solid var(--border, #e2e8f0); }
+
+/* Shrink body padding to compensate for card margin */
+.cds-output-body { padding: 4px 0; }
 
 /* Active section — highlighted when the corresponding cell is focused */
 .cds-output-section.cds-section--active .cds-output-section-label {

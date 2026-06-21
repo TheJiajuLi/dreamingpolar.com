@@ -202,6 +202,7 @@ let _cells     = [];
 let _runSeq    = 0;
 let _saveTimer = null;
 let _cellsEl   = null;
+let _lastFocusedCellId = null; // track most recently focused cell for rb-insert-file
 
 // ── Per-cell CSV import — set by coding_screen.js ────────
 let _varNameResolver = null; // (filename) => string
@@ -303,6 +304,15 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   const dsLabel = document.createElement('span');
   dsLabel.className    = 'nb-ds-label';
   dsLabel.style.display = 'none';
+  dsLabel.title = '点击查看 schema';
+  dsLabel.style.cursor = 'pointer';
+  dsLabel.addEventListener('click', () => {
+    const varName = cell._datasetInfo?.varName;
+    if (!varName) return;
+    document.dispatchEvent(new CustomEvent('ds-schema-request', {
+      detail: { varName, cellId: id, cellLabel: `Cell ${_cells.indexOf(cell) + 1} · python` },
+    }));
+  });
   cell.dsLabel = dsLabel;
 
   // × button clears stale inject data from this cell without affecting others
@@ -415,6 +425,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   // When any part of this cell gains focus, tell the output panel to highlight
   // and scroll to the corresponding section.
   el.addEventListener('focusin', () => {
+    _lastFocusedCellId = id;
     document.dispatchEvent(new CustomEvent('notebook-cell-focused', { detail: { cellId: id } }));
   });
 
@@ -426,6 +437,8 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     const { outputs, sourceCode, sourceLang } = detail;
     cellSourceWidget.setSource(sourceCode ?? null, sourceLang ?? null);
     outputBody.innerHTML = '';
+    // Mark section as having output so the CSS placeholder hides
+    outputSection.classList.toggle('has-output', !!(outputs?.length));
     renderBlocks(outputs, outputBody, {
       onAskAI: async (errorText, block, btn) => {
         btn.disabled = true;
@@ -709,6 +722,35 @@ export function init(container, externalTopbar) {
   }).observe(cellsEl);
 
   attachNotebookHooks({ runAllBtn, runAll, getCells, autoResize, saveAll });
+
+  // Sep-hint reload: patch the active cell's import code to add sep argument
+  document.addEventListener('sep-hint-reload', ({ detail: { varName, sepArg } }) => {
+    const cell = _lastFocusedCellId
+      ? _cells.find(c => c.id === _lastFocusedCellId)
+      : _cells.find(c => c._datasetInfo?.varName === varName);
+    if (!cell) return;
+    // Patch: replace read_csv(...) with read_csv(..., sep=';')
+    const patched = cell.editor.value
+      .replace(/(pd\.read_csv\([^)]+?)(\))/, `$1, ${sepArg}$2`);
+    cell.editor.value = patched;
+    autoResize(cell.editor);
+    cell.editor.dispatchEvent(new Event('input'));
+    saveAll();
+    cell.el.querySelector('.nb-run')?.click();
+  });
+
+  // File manager: insert import code into the last focused cell (or create one)
+  document.addEventListener('rb-insert-file', ({ detail: { code } }) => {
+    const cell = _lastFocusedCellId
+      ? _cells.find(c => c.id === _lastFocusedCellId)
+      : _cells[0];
+    if (!cell) return;
+    cell.editor.value = code;
+    autoResize(cell.editor);
+    cell.editor.dispatchEvent(new Event('input'));
+    cell.editor.focus();
+    saveAll();
+  });
 
   // When AI generates code while the Customise tab is active, the notebook
   // owns this event — no other component needs to know about it.

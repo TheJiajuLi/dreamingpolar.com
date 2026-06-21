@@ -684,6 +684,29 @@ _jq.dumps(_dfs)
 //   Returns: { before?, after?, applied?, errors? }
 //   On failure throws — caller must handle & display.
 
+// Returns column schema: [{ col, dtype, nullPct, sample }]
+export async function getDataFrameSchema(varName) {
+  if (!_pyodide) throw new Error('Kernel not ready');
+  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('Run the cell first');
+  _pyodide.globals.set('_dp_schema_var', varName);
+  try {
+    return JSON.parse(_pyodide.runPython(`
+import json as _j
+_df = _dp_kernel_ns.get(_dp_schema_var)
+if _df is None: raise ValueError(f"Variable '{_dp_schema_var}' not found")
+import pandas as _pd
+_rows = []
+for _col in _df.columns:
+    _null_pct = round(float(_df[_col].isnull().mean() * 100), 1)
+    _sample = str(_df[_col].dropna().iloc[0]) if len(_df[_col].dropna()) > 0 else ''
+    _rows.append({'col': str(_col), 'dtype': str(_df[_col].dtype), 'nullPct': _null_pct, 'sample': _sample[:40]})
+_j.dumps({'rows': _rows, 'shape': [int(_df.shape[0]), int(_df.shape[1])]})
+`));
+  } finally {
+    _pyodide.globals.delete('_dp_schema_var');
+  }
+}
+
 export function notifyKernelChanged(varName) {
   afterKernelMutation(varName, 'inject');
 }

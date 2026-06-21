@@ -5,7 +5,7 @@ import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_scr
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
 import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../../look_up_source/look_up_source.js';
-import { resetKernel, preloadPython } from '../../compiler/compiler.js';
+import { resetKernel, preloadPython, getDataFrameSchema } from '../../compiler/compiler.js';
 import { clearDataset } from '../../shared/dataset_store.js';
 
 function setupCodingScreen() {
@@ -131,8 +131,19 @@ function setupCodingScreen() {
 
   const nbOutClearBtn = document.createElement('button');
   nbOutClearBtn.className = 'sc-btn';
-  nbOutClearBtn.title = 'Clear output';
+  nbOutClearBtn.title = 'Clear all output';
   nbOutClearBtn.textContent = '⊘';
+
+  // Scroll to the output section of the currently active/focused cell
+  const nbOutScrollActiveBtn = document.createElement('button');
+  nbOutScrollActiveBtn.className = 'sc-btn';
+  nbOutScrollActiveBtn.title = 'Scroll to active cell';
+  nbOutScrollActiveBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
+  nbOutScrollActiveBtn.addEventListener('click', () => {
+    const activeSec = nbOutputBody.querySelector('.cds-section--active');
+    const target = activeSec ?? nbOutputBody.lastElementChild;
+    target?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
 
   const nbOutMaxBtn = document.createElement('button');
   nbOutMaxBtn.className = 'sc-btn';
@@ -146,7 +157,7 @@ function setupCodingScreen() {
 
   const nbOutToolbar = document.createElement('div');
   nbOutToolbar.className = 'sc-toolbar';
-  nbOutToolbar.append(nbOutClearBtn, nbOutMaxBtn, nbOutMinBtn);
+  nbOutToolbar.append(nbOutClearBtn, nbOutScrollActiveBtn, nbOutMaxBtn, nbOutMinBtn);
 
   nbOutputPanelHdr.append(nbOutputHdrLabel, nbOutToolbar);
 
@@ -205,12 +216,12 @@ function setupCodingScreen() {
   // ── Output persistence (survives page refresh) ────────
   const NB_OUTPUTS_KEY = 'dreaming-polar-nb-outputs';
 
-  function _saveOutputs(cellId, label, lang, outputs) {
+  function _saveOutputs(cellId, label, lang, outputs, sourceCode) {
     let stored;
     try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { stored = {}; }
-    // Strip raw image data (base64 PNG can be large); replace with a lightweight placeholder.
     stored[cellId] = {
       label, lang,
+      sourceCode: sourceCode ?? null,
       outputs: (outputs ?? []).map(o => o.type === 'image' ? { type: 'chart-placeholder' } : o),
     };
     try { localStorage.setItem(NB_OUTPUTS_KEY, JSON.stringify(stored)); } catch (_) {}
@@ -425,7 +436,52 @@ function setupCodingScreen() {
     const { outputs, cellId, cellLabel, sourceCode, sourceLang } = detail;
     const sec = getOrCreateNbSection(cellId, cellLabel, sourceLang);
     _renderIntoSection(sec, outputs, sourceCode, sourceLang);
-    _saveOutputs(cellId, cellLabel, sourceLang, outputs);
+    _saveOutputs(cellId, cellLabel, sourceLang, outputs, sourceCode);
+    requestAnimationFrame(() =>
+      sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    );
+  });
+
+  // dsLabel click → show DataFrame schema in the output section
+  document.addEventListener('ds-schema-request', async ({ detail: { varName, cellId, cellLabel } }) => {
+    nbOutputPanel.style.display = '';
+    const sec = getOrCreateNbSection(cellId, cellLabel, 'python');
+
+    // Clear old content and show loading
+    sec.chartPane.innerHTML = '';
+    sec.chartPane.classList.remove('has-chart');
+    sec.textPane.innerHTML = `<div class="cds-schema-loading">Loading schema…</div>`;
+
+    try {
+      const { rows, shape } = await getDataFrameSchema(varName);
+      sec.textPane.innerHTML = '';
+
+      const hdr = document.createElement('div');
+      hdr.className = 'cds-schema-hdr';
+      hdr.textContent = `${varName}  —  ${shape[0].toLocaleString()} rows × ${shape[1]} cols`;
+      sec.textPane.appendChild(hdr);
+
+      const table = document.createElement('table');
+      table.className = 'cds-schema-table';
+      table.innerHTML = `<thead><tr>
+        <th>Column</th><th>Type</th><th>Nulls</th><th>Sample</th>
+      </tr></thead>`;
+      const tbody = document.createElement('tbody');
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        const nullClass = r.nullPct > 0 ? (r.nullPct > 20 ? 'cds-schema-null--high' : 'cds-schema-null--low') : '';
+        tr.innerHTML = `<td class="cds-schema-col">${r.col}</td>
+          <td class="cds-schema-dtype">${r.dtype}</td>
+          <td class="cds-schema-null ${nullClass}">${r.nullPct}%</td>
+          <td class="cds-schema-sample">${r.sample}</td>`;
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      sec.textPane.appendChild(table);
+    } catch (e) {
+      sec.textPane.innerHTML = `<pre class="output-error">Schema error: ${e.message}</pre>`;
+    }
+
     requestAnimationFrame(() =>
       sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     );
@@ -447,7 +503,7 @@ function setupCodingScreen() {
     for (const [cellId, entry] of Object.entries(stored)) {
       if (!entry?.outputs?.length) continue;
       const sec = getOrCreateNbSection(cellId, entry.label ?? cellId, entry.lang ?? 'python');
-      _renderIntoSection(sec, entry.outputs, null, entry.lang ?? 'python');
+      _renderIntoSection(sec, entry.outputs, entry.sourceCode ?? null, entry.lang ?? 'python');
     }
     if (nbSections.size > 0) nbOutputPanel.style.display = '';
   })();

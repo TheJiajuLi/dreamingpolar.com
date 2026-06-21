@@ -191,6 +191,51 @@ body.cs-resizing * {
 /* Cell inline output is suppressed — output renders in the right cds-output-panel */
 .nb-output-section { display: none !important; }
 
+/* ── DataFrame schema view ─────────────────────────────────────────────────── */
+.cds-schema-loading {
+  padding: 14px 18px;
+  font-size: 0.72rem;
+  color: var(--text-muted, #94a3b8);
+  font-style: italic;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+.cds-schema-hdr {
+  padding: 10px 18px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text, #0f172a);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+.cds-schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+.cds-schema-table th {
+  text-align: left;
+  padding: 5px 10px 5px 18px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #94a3b8);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+.cds-schema-table td {
+  padding: 4px 10px 4px 18px;
+  border-bottom: 1px solid rgba(0,0,0,0.03);
+  vertical-align: middle;
+}
+.cds-schema-table tr:last-child td { border-bottom: none; }
+.cds-schema-col   { color: var(--text, #0f172a); font-weight: 500; }
+.cds-schema-dtype { color: var(--accent, #6366f1); }
+.cds-schema-null  { color: var(--text-muted, #94a3b8); }
+.cds-schema-null--low  { color: #b45309; }
+.cds-schema-null--high { color: #dc2626; }
+.cds-schema-sample { color: var(--text-muted, #94a3b8); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ── Danger toolbar button (restart kernel) ─────────────── */
 .sc-btn--danger                { color: #ef4444; }
 .sc-btn--danger:hover          { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
