@@ -51,11 +51,10 @@
 .output-block:last-child { border-bottom: none; }
 
 .output-text {
-  background: var(--surface, #ffffff);
+  background: transparent;
   border: none;
   padding: 12px 16px;
   margin: 0;
-  /* ④ Force monospace so columns align in raw CSV/tabular stdout */
   font-family: var(--code-font, "JetBrains Mono", "Courier New", monospace) !important;
   font-size: 0.78rem;
   line-height: 1.7;

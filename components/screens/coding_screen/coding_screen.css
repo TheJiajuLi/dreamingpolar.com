@@ -255,25 +255,28 @@ body.cs-resizing * {
 .cds-schema-table th {
   text-align: left;
   padding: 5px 10px 5px 18px;
-  font-size: 0.6rem;
-  font-weight: 700;
+  font-size: 0.58rem;           /* Apple: slightly smaller than body */
+  font-weight: 600;             /* Semibold */
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted, #94a3b8);
-  border-bottom: 1px solid var(--border, #e2e8f0);
+  letter-spacing: 0.08em;
+  color: rgba(60,60,67,0.6);   /* iOS secondaryLabel */
+  border-bottom: 1px solid rgba(60,60,67,0.1);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
 }
 .cds-schema-table td {
-  padding: 4px 10px 4px 18px;
-  border-bottom: 1px solid rgba(0,0,0,0.03);
+  padding: 5px 10px 5px 18px;
+  border-bottom: 1px solid rgba(60,60,67,0.05);
   vertical-align: middle;
+  font-family: var(--code-font, "JetBrains Mono", monospace); /* pixel-perfect col alignment */
+  font-size: 0.75rem;
 }
 .cds-schema-table tr:last-child td { border-bottom: none; }
 .cds-schema-col   { color: var(--text, #0f172a); font-weight: 500; }
-.cds-schema-dtype { color: var(--accent, #6366f1); }
-.cds-schema-null  { color: var(--text-muted, #94a3b8); }
+.cds-schema-dtype { color: var(--accent, #6366f1); font-weight: 400; }
+.cds-schema-null  { color: rgba(60,60,67,0.45); }
 .cds-schema-null--low  { color: #b45309; }
 .cds-schema-null--high { color: #dc2626; }
-.cds-schema-sample { color: var(--text-muted, #94a3b8); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cds-schema-sample { color: rgba(60,60,67,0.4); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Danger toolbar button (restart kernel) ─────────────── */
 .sc-btn--danger                { color: #ef4444; }
