@@ -1,12 +1,12 @@
 import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
-import { init as initNotebook, addImportedCell, setVarNameResolver, clearAllDatasetLabels, getPersistedVarNames, getCellOrder } from '../../customise_code_block/customise_code_block.js';
+import { init as initNotebook, addImportedCell, setVarNameResolver, clearAllDatasetLabels, getPersistedVarNames, getCellOrder, getCellDatasetInfo } from '../../customise_code_block/customise_code_block.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
 import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
 import { ask, systemExplainForLang } from '../../ai/ai_client.js';
 import { createRefactorBtn } from '../compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../../look_up_source/look_up_source.js';
 import { resetKernel, preloadPython, getDataFrameSchema, queryKernelContext } from '../../compiler/compiler.js';
-import { clearDataset } from '../../shared/dataset_store.js';
+import { clearDataset, getAllDatasets } from '../../shared/dataset_store.js';
 
 function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
@@ -480,14 +480,82 @@ function setupCodingScreen() {
   });
 
   // dsLabel click → show DataFrame schema in the output section
+  // ── Schema rendering helpers ────────────────────────────────────────────────
+  function _renderFullSchema(pane, varName, { rows, shape }) {
+    pane.innerHTML = '';
+    const hdr = document.createElement('div');
+    hdr.className = 'cds-schema-hdr';
+    hdr.textContent = `${varName}  —  ${shape[0].toLocaleString()} rows × ${shape[1]} cols`;
+    pane.appendChild(hdr);
+
+    const table = document.createElement('table');
+    table.className = 'cds-schema-table';
+    table.innerHTML = `<thead><tr><th>Column</th><th>Type</th><th>Nulls</th><th>Sample</th></tr></thead>`;
+    const tbody = document.createElement('tbody');
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      const nullClass = r.nullPct > 0 ? (r.nullPct > 20 ? 'cds-schema-null--high' : 'cds-schema-null--low') : '';
+      tr.innerHTML = `<td class="cds-schema-col">${r.col}</td>
+        <td class="cds-schema-dtype">${r.dtype}</td>
+        <td class="cds-schema-null ${nullClass}">${r.nullPct}%</td>
+        <td class="cds-schema-sample">${r.sample}</td>`;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    pane.appendChild(table);
+  }
+
+  function _renderFallbackSchema(pane, varName, ds) {
+    pane.innerHTML = '';
+    // Estimate row count from ds.rows (full rows) or columns length
+    const rowCount = Array.isArray(ds.rows) ? ds.rows.length : 0;
+    const cols = ds.columns ?? [];
+
+    const hdr = document.createElement('div');
+    hdr.className = 'cds-schema-hdr';
+    hdr.textContent = `${varName}  —  ${rowCount.toLocaleString()} rows × ${cols.length} cols`;
+    pane.appendChild(hdr);
+
+    // Fallback notice banner
+    const notice = document.createElement('div');
+    notice.className = 'cds-schema-fallback-notice';
+    notice.textContent = '基于导入预览的估算数据 · 运行该 cell 后可查看精确统计';
+    pane.appendChild(notice);
+
+    const table = document.createElement('table');
+    table.className = 'cds-schema-table';
+    table.innerHTML = `<thead><tr><th>Column</th><th>Type</th><th>Nulls</th><th>Sample</th></tr></thead>`;
+    const tbody = document.createElement('tbody');
+    cols.forEach(col => {
+      const dtype  = ds.dtypes?.[col] ?? 'object';
+      const sample = Array.isArray(ds.rows) && ds.rows[0]?.[col] != null
+        ? String(ds.rows[0][col]).slice(0, 40)
+        : '';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="cds-schema-col">${col}</td>
+        <td class="cds-schema-dtype cds-schema-dtype--est">${dtype}</td>
+        <td class="cds-schema-null cds-schema-null--est">—</td>
+        <td class="cds-schema-sample">${sample}</td>`;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    pane.appendChild(table);
+  }
+
+  function _findDatasetForVar(varName) {
+    // Try cell dataset info first (has varName → filename mapping)
+    const cellInfo = getCellDatasetInfo().find(c => c.varName === varName);
+    const filename = cellInfo?.filename ?? varName;
+    return getAllDatasets().find(d => d.name === filename || d.name === varName) ?? null;
+  }
+
   document.addEventListener('ds-schema-request', async ({ detail: { varName, cellId, cellLabel } }) => {
     nbOutputPanel.style.display = '';
     const sec = getOrCreateNbSection(cellId, cellLabel, 'python');
 
-    // Toggle: if this section is already showing the schema for this varName, restore output
+    // Toggle: clicking the same varName again restores original output
     if (sec.sectionEl.dataset.schemaVar === varName) {
       sec.sectionEl.dataset.schemaVar = '';
-      // Restore from localStorage cache
       let stored;
       try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}')[cellId]; } catch { stored = null; }
       if (stored?.outputs?.length) {
@@ -499,42 +567,33 @@ function setupCodingScreen() {
       return;
     }
 
-    // Mark section as showing schema for this varName
     sec.sectionEl.dataset.schemaVar = varName;
-
-    // Clear old content and show loading
     sec.chartPane.innerHTML = '';
     sec.chartPane.classList.remove('has-chart');
     sec.textPane.innerHTML = `<div class="cds-schema-loading">Loading schema…</div>`;
 
     try {
-      const { rows, shape } = await getDataFrameSchema(varName);
-      sec.textPane.innerHTML = '';
+      // Check if the variable is actually in the Python kernel
+      // queryKernelContext() safely returns [] when kernel isn't initialized
+      const kernelCtx = await queryKernelContext();
+      const inKernel  = kernelCtx.some(d => d.varName === varName);
 
-      const hdr = document.createElement('div');
-      hdr.className = 'cds-schema-hdr';
-      hdr.textContent = `${varName}  —  ${shape[0].toLocaleString()} rows × ${shape[1]} cols`;
-      sec.textPane.appendChild(hdr);
-
-      const table = document.createElement('table');
-      table.className = 'cds-schema-table';
-      table.innerHTML = `<thead><tr>
-        <th>Column</th><th>Type</th><th>Nulls</th><th>Sample</th>
-      </tr></thead>`;
-      const tbody = document.createElement('tbody');
-      rows.forEach(r => {
-        const tr = document.createElement('tr');
-        const nullClass = r.nullPct > 0 ? (r.nullPct > 20 ? 'cds-schema-null--high' : 'cds-schema-null--low') : '';
-        tr.innerHTML = `<td class="cds-schema-col">${r.col}</td>
-          <td class="cds-schema-dtype">${r.dtype}</td>
-          <td class="cds-schema-null ${nullClass}">${r.nullPct}%</td>
-          <td class="cds-schema-sample">${r.sample}</td>`;
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      sec.textPane.appendChild(table);
+      if (inKernel) {
+        // ── Full schema: accurate dtypes + real null% from Python ────────────
+        const schema = await getDataFrameSchema(varName);
+        _renderFullSchema(sec.textPane, varName, schema);
+      } else {
+        // ── Fallback: JS-only schema from dataset_store ──────────────────────
+        const ds = _findDatasetForVar(varName);
+        if (ds) {
+          _renderFallbackSchema(sec.textPane, varName, ds);
+        } else {
+          sec.textPane.innerHTML = `<div class="cds-schema-loading">数据未找到 — 请先运行 cell 加载数据</div>`;
+          sec.sectionEl.dataset.schemaVar = '';
+        }
+      }
     } catch (e) {
-      sec.sectionEl.dataset.schemaVar = ''; // reset flag on error
+      sec.sectionEl.dataset.schemaVar = '';
       sec.textPane.innerHTML = `<pre class="output-error">Schema error: ${e.message}</pre>`;
     }
 
