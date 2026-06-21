@@ -195,9 +195,16 @@ export function initFileManager() {
   document.addEventListener('dataset-updated',  () => { if (_open) _refresh(); });
   document.addEventListener('kernel-restarted', () => { if (_open) _refresh(); });
   // Refresh when inject store changes (e.g., user imports a new file)
-  window.addEventListener('storage', e => {
-    if (e.key === INJECT_KEY && _open) _refresh();
+  // nb-file-imported fires in the same tab immediately after import
+  // Refresh whether open or closed — if closed, next open() will re-read store anyway,
+  // but if open we update the list live without requiring a close/reopen cycle.
+  document.addEventListener('nb-file-imported', () => {
+    if (_open) _refresh();
+    // Auto-open panel on first import so user sees the file immediately
+    else if (Object.keys(_loadStore()).length === 1) _open_();
   });
-  // Also refresh when a file is imported (custom event)
-  document.addEventListener('nb-file-imported', () => { if (_open) _refresh(); });
+
+  // dataset-updated fires on page restore (setDataset called from _restoreInjectData)
+  document.addEventListener('dataset-updated', () => { if (_open) _refresh(); });
+  document.addEventListener('kernel-restarted', () => { if (_open) _refresh(); });
 }

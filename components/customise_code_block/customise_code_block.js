@@ -329,6 +329,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     dsLabel.style.display = 'none';
     dsClearBtn.style.display = 'none';
     _removeFromInjectStore(cell.id);
+    document.dispatchEvent(new CustomEvent('nb-file-imported')); // refresh file manager
   });
 
   const csvBtn = createLoadDataBtn({
@@ -358,6 +359,17 @@ function makeCell(lang = 'python', code = '', id = uid()) {
       dsClearBtn.style.display = '';
       _onDataImported?.(varName, rows, filename, cell.id, cellNum);
       _saveInjectStore(); // persist so data survives page refresh
+      // Update dataset_store so ARIA tabs reflect the new import immediately
+      setDataset({
+        name:    filename,
+        columns: columnNames,
+        dtypes:  {},
+        rows:    [], // metadata only — actual row objects not needed here
+      });
+      // Notify file manager and other listeners that a new file was imported
+      document.dispatchEvent(new CustomEvent('nb-file-imported', {
+        detail: { varName, rows, columns, filename, fileType, cellId: cell.id }
+      }));
       // No auto-run: Pyodide only boots when the user clicks ▶
     },
   });

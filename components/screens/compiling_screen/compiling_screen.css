@@ -58,8 +58,12 @@
   font-family: var(--code-font, "JetBrains Mono", "Courier New", monospace) !important;
   font-size: 0.78rem;
   line-height: 1.7;
-  white-space: pre-wrap;
-  word-break: break-word;
+  /* ② strict tab-stop for perfect index column alignment */
+  white-space: pre;
+  word-break: normal;
+  overflow-x: auto;
+  tab-size: 4;
+  -moz-tab-size: 4;
   color: var(--text, #0f172a);
 }
 

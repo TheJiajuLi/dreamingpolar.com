@@ -79,8 +79,8 @@
   height: 18px;
   border: none;
   border-radius: 50%;
-  background: rgba(0,0,0,0.06);
-  color: transparent;             /* icon hidden by default */
+  background: rgba(0,0,0,0.08);
+  color: rgba(0,0,0,0.25);       /* subtle × visible even without hover */
   cursor: pointer;
   font-size: 10px;
   transition: background 0.15s, color 0.15s;

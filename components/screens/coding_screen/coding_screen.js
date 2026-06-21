@@ -467,6 +467,9 @@ function setupCodingScreen() {
 
   document.addEventListener('compile-result', ({ detail }) => {
     if (!detail.cellId) return;
+    // Clear schema-view flag so re-run always shows fresh output
+    const runSec = nbSections.get(detail.cellId);
+    if (runSec) runSec.sectionEl.dataset.schemaVar = '';
     const { outputs, cellId, cellLabel, sourceCode, sourceLang } = detail;
     const sec = getOrCreateNbSection(cellId, cellLabel, sourceLang);
     _renderIntoSection(sec, outputs, sourceCode, sourceLang);
@@ -480,6 +483,24 @@ function setupCodingScreen() {
   document.addEventListener('ds-schema-request', async ({ detail: { varName, cellId, cellLabel } }) => {
     nbOutputPanel.style.display = '';
     const sec = getOrCreateNbSection(cellId, cellLabel, 'python');
+
+    // Toggle: if this section is already showing the schema for this varName, restore output
+    if (sec.sectionEl.dataset.schemaVar === varName) {
+      sec.sectionEl.dataset.schemaVar = '';
+      // Restore from localStorage cache
+      let stored;
+      try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}')[cellId]; } catch { stored = null; }
+      if (stored?.outputs?.length) {
+        sec.chartPane.innerHTML = '';
+        sec.chartPane.classList.remove('has-chart');
+        sec.textPane.innerHTML = '';
+        _renderIntoSection(sec, stored.outputs, stored.sourceCode ?? null, stored.lang ?? 'python');
+      }
+      return;
+    }
+
+    // Mark section as showing schema for this varName
+    sec.sectionEl.dataset.schemaVar = varName;
 
     // Clear old content and show loading
     sec.chartPane.innerHTML = '';
@@ -513,6 +534,7 @@ function setupCodingScreen() {
       table.appendChild(tbody);
       sec.textPane.appendChild(table);
     } catch (e) {
+      sec.sectionEl.dataset.schemaVar = ''; // reset flag on error
       sec.textPane.innerHTML = `<pre class="output-error">Schema error: ${e.message}</pre>`;
     }
 
