@@ -170,6 +170,37 @@
   margin-top: 1px;
 }
 
+/* Dual-destination action buttons — visible on row hover */
+.rb-file-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.rb-file-item:hover .rb-file-item-actions { opacity: 1; }
+
+.rb-file-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  flex-shrink: 0;
+}
+.rb-file-action-btn:hover { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); }
+.rb-file-action-btn:disabled { opacity: 0.4; cursor: default; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .rb-file-item-info { min-width: 0; flex: 1; }
 
 .rb-file-item-name {

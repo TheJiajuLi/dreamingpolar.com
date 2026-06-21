@@ -15,7 +15,7 @@ const XLSX_CDN = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
 
 // ── File parsers ──────────────────────────────────────────────────────────────
 
-async function _ensureXlsx() {
+export async function ensureXlsx() {
   if (window.XLSX) return window.XLSX;
   await new Promise((res, rej) => {
     const s = document.createElement('script');
@@ -55,7 +55,7 @@ async function _fileToCsv(file) {
 
   // Excel: SheetJS needs a Uint8Array, not a bare ArrayBuffer.
   // _fileToBuffer returns ArrayBuffer → wrap with new Uint8Array() before passing.
-  const XLSX = await _ensureXlsx();
+  const XLSX = await ensureXlsx();
   const buf  = await _fileToBuffer(file);
   const wb   = XLSX.read(new Uint8Array(buf), { type: 'array' });
   const ws   = wb.Sheets[wb.SheetNames[0]];
@@ -131,7 +131,7 @@ export function createLoadDataBtn({ varName = 'df', resolveVarName, lazyMode = f
         // row/col counts in the bottom bar; actual injection uses raw data.
         const csv           = await _fileToCsv(file);
         const actualVarName = resolveVarName ? resolveVarName(file.name) : varName;
-        const dataset       = _parseToDataset(csv, file.name);
+        const dataset       = parseToDataset(csv, file.name);
         if (dataset) setDataset(dataset);
 
         const { data: injectData, fileType } = await _readInjectData(file, csv);
@@ -165,7 +165,7 @@ export function createLoadDataBtn({ varName = 'df', resolveVarName, lazyMode = f
 // ── CSV/text → { columns, dtypes, rows } ─────────────────────────────────────
 // Pure JS parser — no Pyodide needed.
 
-function _parseToDataset(csvText, filename) {
+export function parseToDataset(csvText, filename) {
   const lines = csvText.trim().split(/\r?\n/);
   if (lines.length < 1) return null;
 
@@ -236,7 +236,7 @@ export function createQuickImportBtn({ onLoad } = {}) {
 
       try {
         const csvText = await _fileToCsv(file);
-        const dataset = _parseToDataset(csvText, file.name);
+        const dataset = parseToDataset(csvText, file.name);
         if (!dataset) throw new Error('Could not parse file');
 
         setDataset(dataset);   // ← stores + dispatches 'dataset-updated'

@@ -3,6 +3,9 @@
 // collapsible file-tree panel in the right bar, and lets users click/drag
 // files to re-generate import code in the focused notebook cell.
 
+import { setDataset } from '../shared/dataset_store.js';
+import { ensureXlsx, parseToDataset } from '../import/import_data.js';
+
 const INJECT_KEY = 'dreaming-polar-inject-store';
 
 const TYPE_ICON = {
@@ -146,12 +149,33 @@ export function initFileManager() {
     return { el, body: sBody };
   }
 
+  // ── Parse inject-store raw data → dataset {columns, dtypes, rows} ────────────
+  async function _parseEntry(entry) {
+    const { fileType, filename, data: raw, isBase64 } = entry;
+    const isExcel = fileType === 'xlsx' || fileType === 'xls';
+
+    if (isExcel) {
+      // raw is base64-encoded binary; need SheetJS to convert to CSV first
+      const XLSX = await ensureXlsx();
+      const binary = atob(raw);
+      const bytes  = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const wb  = XLSX.read(bytes, { type: 'array' });
+      const csv = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
+      return parseToDataset(csv, filename);
+    }
+
+    // csv / json / xml: raw is plain text
+    const text = isBase64 ? atob(raw) : raw;
+    return parseToDataset(text, filename);
+  }
+
   function _makeFileItem(entry) {
     const { varName, fileType, filename, rows, columns } = entry;
     const item = document.createElement('div');
     item.className = 'rb-file-item';
     item.draggable = true;
-    item.title = `${filename}\n${varName} — ${rows}行×${columns}列\n点击插入导入代码`;
+    item.title = `${filename}\n${varName} — ${rows}行×${columns}列`;
 
     const iconEl = document.createElement('i');
     iconEl.className = `ti ${TYPE_ICON[fileType] ?? 'ti-file'} rb-file-item-icon`;
@@ -170,19 +194,75 @@ export function initFileManager() {
       : varName;
 
     info.append(nameEl, metaEl);
-    item.append(iconEl, info);
 
-    // Click → dispatch event (handled by customise_code_block.js)
-    item.addEventListener('click', () => {
+    // ── Action buttons (visible on row hover) ──────────────────────────────
+    const actions = document.createElement('div');
+    actions.className = 'rb-file-item-actions';
+
+    // "发送到 Notebook" — same as clicking the row
+    const toNbBtn = document.createElement('button');
+    toNbBtn.className = 'rb-file-action-btn';
+    toNbBtn.title = '发送到 Notebook (插入导入代码)';
+    toNbBtn.setAttribute('aria-label', '发送到 Notebook');
+    toNbBtn.innerHTML = `<i class="ti ti-notebook"></i>`;
+    toNbBtn.addEventListener('click', e => {
+      e.stopPropagation();
       document.dispatchEvent(new CustomEvent('rb-insert-file', {
         detail: { code: _buildCode(entry), entry },
       }));
-      // Brief highlight feedback
       item.classList.add('rb-file-item--flash');
       setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
     });
 
-    // Drag → set code as transfer data
+    // "发送到 Quick Analysis" — parse raw data, write to dataset_store
+    const toAriaBtn = document.createElement('button');
+    toAriaBtn.className = 'rb-file-action-btn';
+    toAriaBtn.title = '发送到 Quick Analysis (ARIA)';
+    toAriaBtn.setAttribute('aria-label', '发送到 Quick Analysis');
+    toAriaBtn.innerHTML = `<i class="ti ti-message-bolt"></i>`;
+    toAriaBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      toAriaBtn.disabled = true;
+      const origHtml = toAriaBtn.innerHTML;
+      toAriaBtn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i>`;
+      try {
+        const dataset = await _parseEntry(entry);
+        if (!dataset) throw new Error('解析失败');
+        setDataset(dataset);   // triggers dataset-updated → ARIA tabs update
+        item.classList.add('rb-file-item--flash');
+        setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
+        metaEl.textContent = `✓ 已发送到 ARIA`;
+        setTimeout(() => {
+          metaEl.textContent = rows
+            ? `${Number(rows).toLocaleString()}行 · ${columns}列 · ${varName}`
+            : varName;
+        }, 2000);
+      } catch (err) {
+        metaEl.textContent = `✗ ${err.message ?? '解析失败，暂不支持'}`;
+        setTimeout(() => {
+          metaEl.textContent = rows
+            ? `${Number(rows).toLocaleString()}行 · ${columns}列 · ${varName}`
+            : varName;
+        }, 3000);
+        console.warn('[file-manager] send to ARIA failed:', err);
+      } finally {
+        toAriaBtn.disabled = false;
+        toAriaBtn.innerHTML = origHtml;
+      }
+    });
+
+    actions.append(toNbBtn, toAriaBtn);
+    item.append(iconEl, info, actions);
+
+    // Row click still inserts to Notebook (existing behavior unchanged)
+    item.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('rb-insert-file', {
+        detail: { code: _buildCode(entry), entry },
+      }));
+      item.classList.add('rb-file-item--flash');
+      setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
+    });
+
     item.addEventListener('dragstart', e => {
       e.dataTransfer.setData('text/plain', _buildCode(entry));
       e.dataTransfer.effectAllowed = 'copy';
