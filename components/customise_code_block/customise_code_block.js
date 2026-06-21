@@ -473,6 +473,12 @@ async function runAll(btn) {
 
   document.dispatchEvent(new CustomEvent('notebook-clear-output'));
 
+  // Save per-cell inject info before flush clears _pendingInject.
+  const _cellInjectDs = new Map();
+  _cells.forEach(c => {
+    if (c._pendingInject && c._datasetInfo) _cellInjectDs.set(c.id, { ...c._datasetInfo });
+  });
+
   // Inject any pending DataFrames before any cell runs so every cell can
   // reference every imported variable, including AI-generated cells.
   await _flushPendingInjects();
@@ -494,6 +500,18 @@ async function runAll(btn) {
     const outputs = await compile(code, cell.lang, {
       runningMessage: cell.lang === 'python' ? `Running cell ${i + 1}…` : 'Running…',
     });
+
+    // Ensure import-button cells get a viz-suggestion (RUNNER diff misses these)
+    const _ownDs = _cellInjectDs.get(cell.id);
+    if (_ownDs?.varName && cell.lang === 'python') {
+      const { varName, rows, columns } = _ownDs;
+      if (!outputs.some(o => o.type === 'viz-suggestion' && o.varName === varName)) {
+        outputs.push({
+          type: 'viz-suggestion', varName, kind: 'dataframe',
+          shape: `${Number(rows).toLocaleString()}行×${Number(columns)}列`,
+        });
+      }
+    }
     if (cell.lang === 'python') {
       queryKernelDataframes().then(dfs => {
         if (Object.keys(dfs).length)

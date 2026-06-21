@@ -46,6 +46,14 @@ export function attachCellHooks({
 
     cell.counter.textContent = '*';
     runBtn.disabled = true;
+
+    // Save inject info BEFORE flush clears _pendingInject.
+    // Needed so we can add a viz-suggestion for import-button cells where
+    // the DataFrame is injected before the RUNNER runs and therefore never
+    // appears in the pre/post exec diff.
+    const _ownInjectDs = (cell._pendingInject && cell._datasetInfo)
+      ? { ...cell._datasetInfo } : null;
+
     await flushPendingInjects?.();
     const cellNum  = cell.numEl?.textContent ?? '';
     const fileName = cell._datasetInfo?.filename ?? '';
@@ -53,6 +61,21 @@ export function attachCellHooks({
       ? `Running cell ${cellNum}${fileName ? ` · ${fileName}` : ''}…`
       : 'Running…';
     const outputs = await compile(code, cell.lang, { runningMessage });
+
+    // If this cell owns imported data, ensure a viz-suggestion card appears
+    // (the RUNNER diff won't catch it because the variable existed pre-exec).
+    if (_ownInjectDs?.varName && cell.lang === 'python') {
+      const { varName, rows, columns } = _ownInjectDs;
+      const alreadyPresent = outputs.some(o => o.type === 'viz-suggestion' && o.varName === varName);
+      if (!alreadyPresent) {
+        outputs.push({
+          type: 'viz-suggestion',
+          varName,
+          kind: 'dataframe',
+          shape: `${Number(rows).toLocaleString()}行×${Number(columns)}列`,
+        });
+      }
+    }
     // After Python execution: query kernel for DataFrames and update bottom bar.
     if (cell.lang === 'python') {
       queryKernelDataframes().then(dfs => {
