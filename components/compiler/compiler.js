@@ -556,6 +556,34 @@ export async function resetKernel() {
   }
 }
 
+// ── Chart failure diagnosis ───────────────────────────────────────────────────
+// Returns { issue, dateCols, numCols } for targeted fix suggestions.
+// issue: 'not_found' | 'no_numeric' | 'date_as_text' | 'ok' | 'unknown'
+export function diagnoseChart(varName) {
+  if (!_pyodide) return { issue: 'not_found' };
+  try {
+    const raw = _pyodide.runPython(`
+import json as _jd
+_v = (_dp_kernel_ns if '_dp_kernel_ns' in dir() else {}).get('${varName}')
+if _v is None:
+    _jd.dumps({'issue': 'not_found', 'dateCols': [], 'numCols': []})
+else:
+    _num = list(_v.select_dtypes(include='number').columns)
+    _date = [c for c in _v.columns if str(_v[c].dtype) == 'object'
+             and any(k in str(c).lower() for k in ('date','time','dt','year','month'))]
+    if _num:
+        _jd.dumps({'issue': 'ok', 'dateCols': _date, 'numCols': _num})
+    elif _date:
+        _jd.dumps({'issue': 'date_as_text', 'dateCols': _date, 'numCols': []})
+    else:
+        _jd.dumps({'issue': 'no_numeric', 'dateCols': [], 'numCols': []})
+`);
+    return JSON.parse(raw);
+  } catch (_) {
+    return { issue: 'unknown', dateCols: [], numCols: [] };
+  }
+}
+
 // ── Write file to Pyodide virtual FS ─────────────────────────────────────────
 // Pyodide's default cwd is /home/pyodide — files here are accessible via
 // relative paths in Python (pd.read_csv("GE.csv"), open("data.json"), etc.).

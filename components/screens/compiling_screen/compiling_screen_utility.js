@@ -1,4 +1,4 @@
-import { visualiseVar, previewClean, applyClean, exportDataFrame } from '../../compiler/compiler.js';
+import { visualiseVar, previewClean, applyClean, exportDataFrame, diagnoseChart } from '../../compiler/compiler.js';
 import { downloadBlob, MIME } from '../../shared/file_download.js';
 
 export function escHtml(s) {
@@ -82,7 +82,7 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
       case 'chart-placeholder': {
         // Shown when a chart output was saved to localStorage but image data was stripped.
         block.className += ' output-chart-placeholder';
-        block.innerHTML = `<span class="chart-placeholder-text">↻ Re-run to regenerate chart</span>`;
+        block.innerHTML = `<span class="chart-placeholder-text"><i class="ti ti-refresh" style="font-size:11px;vertical-align:middle"></i> 运行该 cell 即可重新生成图表</span>`;
         const phTarget = chartContainer ?? container;
         phTarget.appendChild(block);
         if (chartContainer) chartContainer.classList.add('has-chart');
@@ -193,56 +193,90 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
           } catch (err) {
             vizBtn.classList.remove('vsug-icon-btn--loading');
             vizBtn.disabled = false;
-            const isNoNumeric   = String(err?.message ?? err).includes('__NO_NUMERIC__');
-            const isNotReady    = err?.message === 'KERNEL_NOT_READY';
+            const isNoNumeric = String(err?.message ?? err).includes('__NO_NUMERIC__');
+            const isNotReady  = err?.message === 'KERNEL_NOT_READY';
+
             _chartBlock = document.createElement('div');
             _chartBlock.className = 'vsug-no-chart-msg';
 
             if (isNotReady) {
-              // Data not loaded — offer to run the cell right now
+              // Kernel not initialized — offer one-click run
               _chartBlock.innerHTML =
-                `<i class="ti ti-player-play vsug-no-chart-icon" style="color:var(--accent,#6366f1)"></i>` +
-                `<div class="vsug-no-chart-text">数据还没有运行加载<br><small>点击下方按钮立即运行该 cell</small></div>`;
-              const runNowBtn = document.createElement('button');
-              runNowBtn.className = 'vsug-sep-reload-btn';
-              runNowBtn.style.background = 'var(--accent,#6366f1)';
-              runNowBtn.innerHTML = `▶ 立即运行`;
-              runNowBtn.addEventListener('click', () => {
-                // Find the cell that owns this output section and click its Run button
-                const secEl = _chartBlock.closest('[data-cell-id]');
-                const cellId = secEl?.dataset?.cellId;
-                if (cellId) {
-                  document.dispatchEvent(new CustomEvent('run-cell-by-id', { detail: { cellId } }));
-                } else {
-                  // Fallback: run all cells
-                  document.querySelector('.nb-run-all-btn')?.click();
-                }
-                runNowBtn.textContent = '运行中…';
-                runNowBtn.disabled = true;
-                // Reset _chartBlock so viz can retry after run
-                setTimeout(() => { _chartBlock = null; }, 3000);
+                `<i class="ti ti-player-play vsug-no-chart-icon" style="color:var(--accent,#6366f1);opacity:.8"></i>` +
+                `<div class="vsug-no-chart-text" style="font-weight:500">当前数据尚未加载到内核</div>` +
+                `<div class="vsug-no-chart-text" style="font-size:.65rem;opacity:.65">输出来自上次缓存 · 运行该 cell 可激活可视化</div>`;
+              const runBtn = document.createElement('button');
+              runBtn.className = 'vsug-sep-reload-btn';
+              runBtn.style.cssText = 'background:var(--accent,#6366f1);margin-top:2px';
+              runBtn.innerHTML = `<i class="ti ti-player-play" style="font-size:11px"></i> 立即运行并生成图表`;
+              runBtn.addEventListener('click', () => {
+                const cellId = _chartBlock.closest('[data-cell-id]')?.dataset?.cellId;
+                if (cellId) document.dispatchEvent(new CustomEvent('run-cell-by-id', { detail: { cellId } }));
+                else document.querySelector('.nb-run-all-btn')?.click();
+                runBtn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i> 运行中…`;
+                runBtn.disabled = true;
+                setTimeout(() => { _chartBlock = null; vizBtn.disabled = false; }, 4000);
               });
-              _chartBlock.appendChild(runNowBtn);
+              _chartBlock.appendChild(runBtn);
+
             } else if (isNoNumeric && o.sepHint) {
+              // Separator mismatch
               const sepArg = o.sepHint === '\t' ? `sep='\\t'` : `sep=';'`;
               _chartBlock.innerHTML =
-                `<i class="ti ti-alert-circle vsug-no-chart-icon"></i>` +
-                `<div class="vsug-no-chart-text">数据无数值列——可能是分隔符解析错误</div>`;
+                `<i class="ti ti-alert-circle vsug-no-chart-icon" style="color:#d97706"></i>` +
+                `<div class="vsug-no-chart-text" style="font-weight:500">数据可能未正确解析</div>` +
+                `<div class="vsug-no-chart-text" style="font-size:.65rem;opacity:.65">检测到所有值集中在同一列，可能是分隔符问题</div>`;
               const reloadBtn = document.createElement('button');
               reloadBtn.className = 'vsug-sep-reload-btn';
-              reloadBtn.textContent = `重新导入 (${sepArg})`;
+              reloadBtn.textContent = `⚡ 修复分隔符并重新导入 (${sepArg})`;
               reloadBtn.addEventListener('click', () => {
-                document.dispatchEvent(new CustomEvent('sep-hint-reload', {
-                  detail: { varName: o.varName, sepArg },
-                }));
-                reloadBtn.disabled = true;
-                reloadBtn.textContent = '已插入代码 ↑';
+                document.dispatchEvent(new CustomEvent('sep-hint-reload', { detail: { varName: o.varName, sepArg } }));
+                reloadBtn.disabled = true; reloadBtn.textContent = '已插入修复代码 ↑';
               });
               _chartBlock.appendChild(reloadBtn);
+
+            } else if (isNoNumeric) {
+              // No numeric columns — diagnose for date-as-text
+              const diag = diagnoseChart(o.varName);
+              if (diag.issue === 'date_as_text' && diag.dateCols.length) {
+                const col = diag.dateCols[0];
+                _chartBlock.innerHTML =
+                  `<i class="ti ti-calendar-exclamation vsug-no-chart-icon" style="color:#d97706"></i>` +
+                  `<div class="vsug-no-chart-text" style="font-weight:500">日期列 "${col}" 为文本格式</div>` +
+                  `<div class="vsug-no-chart-text" style="font-size:.65rem;opacity:.65">折线图需要时间戳类型，点击下方一键转换并重绘</div>`;
+                const fixBtn = document.createElement('button');
+                fixBtn.className = 'vsug-sep-reload-btn';
+                fixBtn.style.cssText = 'background:#d97706';
+                fixBtn.innerHTML = `⚡ 转换 "${col}" 为 datetime 并重绘`;
+                fixBtn.addEventListener('click', () => {
+                  const cellId = _chartBlock.closest('[data-cell-id]')?.dataset?.cellId;
+                  const patchCode = `import pandas as pd\n${o.varName}["${col}"] = pd.to_datetime(${o.varName}["${col}"])\n${o.varName} = ${o.varName}.set_index("${col}")`;
+                  document.dispatchEvent(new CustomEvent('rb-insert-file', { detail: { code: patchCode } }));
+                  if (cellId) document.dispatchEvent(new CustomEvent('run-cell-by-id', { detail: { cellId } }));
+                  fixBtn.textContent = '转换中…'; fixBtn.disabled = true;
+                  setTimeout(() => { _chartBlock = null; vizBtn.click(); }, 3500);
+                });
+                _chartBlock.appendChild(fixBtn);
+              } else {
+                _chartBlock.innerHTML =
+                  `<i class="ti ti-chart-off vsug-no-chart-icon"></i>` +
+                  `<div class="vsug-no-chart-text" style="font-weight:500">没有可绘图的数值列</div>` +
+                  `<div class="vsug-no-chart-text" style="font-size:.65rem;opacity:.65">请确认数据中包含数字类型列（open、close、price 等）</div>`;
+              }
             } else {
-              _chartBlock.innerHTML =
-                `<i class="ti ti-chart-off vsug-no-chart-icon"></i>` +
-                `<div class="vsug-no-chart-text">${isNoNumeric ? '无数值列，无法绘图' : '图表生成遇到问题，请检查数据格式'}</div>`;
+              // Generic unknown error — still show a diagnosis attempt
+              const diag = diagnoseChart(o.varName);
+              if (diag.issue === 'not_found') {
+                _chartBlock.innerHTML =
+                  `<i class="ti ti-player-play vsug-no-chart-icon" style="color:var(--accent,#6366f1)"></i>` +
+                  `<div class="vsug-no-chart-text" style="font-weight:500">变量 "${o.varName}" 不在当前内核中</div>` +
+                  `<div class="vsug-no-chart-text" style="font-size:.65rem;opacity:.65">运行该 cell 以加载数据</div>`;
+              } else {
+                _chartBlock.innerHTML =
+                  `<i class="ti ti-chart-off vsug-no-chart-icon" style="color:#94a3b8"></i>` +
+                  `<div class="vsug-no-chart-text" style="font-weight:500">图表渲染遇到问题</div>` +
+                  `<div class="vsug-no-chart-text" style="font-size:.65rem;opacity:.65">可尝试重新运行该 cell，或检查数据格式</div>`;
+              }
             }
             const target = chartContainer ?? container;
             target.appendChild(_chartBlock);
@@ -389,13 +423,26 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
                   }
                 }
               } catch (e) {
-                _setFeedback(
-                  e?.message === 'KERNEL_NOT_READY'
-                    ? '该 cell 还未运行，请先点击 ▶ 加载数据后再清洗'
-                    : `Error: ${e.message}`,
-                  e?.message === 'KERNEL_NOT_READY' ? 'warn' : 'err'
-                );
-                if (e?.message !== 'KERNEL_NOT_READY') console.warn('[clean preview]', op, e);
+                if (e?.message === 'KERNEL_NOT_READY') {
+                  // Show run button that retries the chip after cell runs
+                  _setFeedback('输出来自上次缓存 · 点击下方按钮加载数据后即可清洗', 'warn');
+                  // Inject a temporary "run & retry" button into the feedback area
+                  const runAndRetry = document.createElement('button');
+                  runAndRetry.className = 'vsug-sep-reload-btn';
+                  runAndRetry.style.cssText = 'background:var(--accent,#6366f1);margin-top:4px';
+                  runAndRetry.innerHTML = `<i class="ti ti-player-play" style="font-size:11px"></i> 立即运行并检查`;
+                  runAndRetry.addEventListener('click', () => {
+                    const cellId = runAndRetry.closest('[data-cell-id]')?.dataset?.cellId;
+                    if (cellId) document.dispatchEvent(new CustomEvent('run-cell-by-id', { detail: { cellId } }));
+                    runAndRetry.innerHTML = '运行中…'; runAndRetry.disabled = true;
+                    // Auto-retry the chip after cell run completes
+                    setTimeout(() => { chip.click(); }, 3500);
+                  });
+                  cleanFeedback.appendChild(runAndRetry);
+                } else {
+                  _setFeedback(`Error: ${e.message}`, 'err');
+                  console.warn('[clean preview]', op, e);
+                }
               }
             });
             return chip;
