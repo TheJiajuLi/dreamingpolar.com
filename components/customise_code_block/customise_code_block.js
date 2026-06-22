@@ -835,6 +835,58 @@ export function init(container, externalTopbar) {
     saveAll();
   });
 
+  // File manager smart click:
+  // • File already in a cell → navigate to that cell (switch screen + scroll + flash)
+  // • File not in any cell  → insert into first empty cell, or create one
+  document.addEventListener('rb-file-smart-click', ({ detail: { code, entry } }) => {
+    const filename = entry?.filename ?? '';
+
+    // ── Case 1: file already inserted in a cell ───────────────────────────
+    const existing = _cells.find(c => c._datasetInfo?.filename === filename);
+    if (existing) {
+      // Switch to coding screen if not already visible
+      const sc = window.screenController;
+      const st = sc?.getState('coding');
+      if (st === 'minimized' || st === 'closed') sc?.restore('coding');
+
+      // Scroll to the cell and flash it
+      requestAnimationFrame(() => {
+        existing.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        existing.editor.focus();
+        existing.el.classList.add('nb-cell--nav-flash');
+        setTimeout(() => existing.el.classList.remove('nb-cell--nav-flash'), 900);
+      });
+      return;
+    }
+
+    // ── Case 2: find first empty cell and insert there ────────────────────
+    const emptyCell = _cells.find(c => !c.editor.value.trim());
+    const target = emptyCell ?? (() => {
+      // No empty cell — create one at the end
+      const c = makeCell('python', '');
+      _cells.push(c);
+      rebuildCells();
+      return c;
+    })();
+
+    target.editor.value = code;
+    autoResize(target.editor);
+    target.editor.dispatchEvent(new Event('input'));
+    saveAll();
+
+    // Switch to coding screen and scroll to the cell
+    const sc = window.screenController;
+    const st = sc?.getState('coding');
+    if (st === 'minimized' || st === 'closed') sc?.restore('coding');
+
+    requestAnimationFrame(() => {
+      target.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.editor.focus();
+      target.el.classList.add('nb-cell--nav-flash');
+      setTimeout(() => target.el.classList.remove('nb-cell--nav-flash'), 900);
+    });
+  });
+
   // When AI generates code while the Customise tab is active, the notebook
   // owns this event — no other component needs to know about it.
   document.addEventListener('ai-insert-and-run', async ({ detail: { code, lang, cellId } }) => {

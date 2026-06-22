@@ -559,21 +559,25 @@ export function initFileManager() {
     toNbBtn.title = '插入到 Notebook';
     toNbBtn.setAttribute('aria-label', '插入到 Notebook');
     toNbBtn.innerHTML = `<i class="ti ti-corner-down-left"></i>`;
-    toNbBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      if (_selectMode) return;
-      document.dispatchEvent(new CustomEvent('rb-insert-file', {
+    // Shared smart-click dispatcher used by both the row click and the ↵ button
+    function _smartClick() {
+      document.dispatchEvent(new CustomEvent('rb-file-smart-click', {
         detail: { code: _buildCode(entry), entry },
       }));
       item.classList.add('rb-file-item--flash');
       setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
+    }
+
+    toNbBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (_selectMode) return;
+      _smartClick();
     });
 
     item.append(circle, iconEl, info, toNbBtn);
 
     item.addEventListener('click', () => {
       if (_selectMode) {
-        // Toggle selection
         if (_selected.has(storeKey)) {
           _selected.delete(storeKey);
           item.classList.remove('rb-file-item--selected');
@@ -584,12 +588,7 @@ export function initFileManager() {
         _updateDeleteBar();
         return;
       }
-      // Normal mode: insert code
-      document.dispatchEvent(new CustomEvent('rb-insert-file', {
-        detail: { code: _buildCode(entry), entry },
-      }));
-      item.classList.add('rb-file-item--flash');
-      setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
+      _smartClick();
     });
 
     item.addEventListener('dragstart', e => {

@@ -90,6 +90,16 @@
   box-shadow: 0 2px 12px rgba(99,102,241,0.1), 0 10px 36px rgba(99,102,241,0.05);
 }
 
+/* Navigation flash — cell just navigated to from file manager */
+@keyframes nb-cell-nav-flash {
+  0%   { border-color: var(--accent, #6366f1); box-shadow: 0 0 0 3px rgba(99,102,241,0.25); }
+  60%  { border-color: var(--accent, #6366f1); box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+  100% { border-color: rgba(0,0,0,0.03);       box-shadow: none; }
+}
+.nb-cell--nav-flash {
+  animation: nb-cell-nav-flash 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
 /* ── Mirror panes ─────────────────────────────────────────── */
 .mirror-code-pane {
   width: 58%;
