@@ -185,25 +185,34 @@ body.cs-resizing * {
   scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
 }
 
-/* Override compiling_screen.css for output panel context */
-.cds-output-body .output-block {
+/* Override compiling_screen.css for output panel / mirror pane context */
+.cds-output-body .output-block,
+.mirror-out-pane .output-block {
   background: transparent !important;
   border-bottom: 1px solid rgba(0,0,0,0.04) !important;
 }
-.cds-output-body .output-block:last-child { border-bottom: none !important; }
-/* output-text: the wrap div handles its own padding; reset the pre's padding in panel context */
-.cds-output-body .output-text-wrap { margin: 10px 14px; }
-.cds-output-body .output-text { padding: 12px 18px; font-size: 0.76rem; }
-.cds-output-body .output-text-meta { padding: 0 18px 10px; }
-.cds-output-body .output-error { background: transparent !important; border-left: 2px solid #fca5a5; padding: 10px 16px; }
-.cds-output-body .output-info  { padding: 8px 16px; background: transparent !important; }
-.cds-output-body .output-html  { padding: 12px 16px; }
-.cds-output-body .output-latex { padding: 10px 16px; }
-/* ① Chart: 12px padding top/bottom so it breathes from the label and text below */
-.cds-output-body .output-image { padding: 0; }
-.cds-output-body .output-image img { width: 100%; height: auto; display: block; border-radius: 0; }
+.cds-output-body .output-block:last-child,
+.mirror-out-pane .output-block:last-child { border-bottom: none !important; }
+.cds-output-body .output-text-wrap,
+.mirror-out-pane .output-text-wrap { margin: 10px 14px; }
+.cds-output-body .output-text,
+.mirror-out-pane .output-text { padding: 12px 18px; font-size: 0.76rem; }
+.cds-output-body .output-text-meta,
+.mirror-out-pane .output-text-meta { padding: 0 18px 10px; }
+.cds-output-body .output-error,
+.mirror-out-pane .output-error { background: transparent !important; border-left: 2px solid #fca5a5; padding: 10px 16px; }
+.cds-output-body .output-info,
+.mirror-out-pane .output-info  { padding: 8px 16px; background: transparent !important; }
+.cds-output-body .output-html,
+.mirror-out-pane .output-html  { padding: 12px 16px; }
+.cds-output-body .output-latex,
+.mirror-out-pane .output-latex { padding: 10px 16px; }
+.cds-output-body .output-image,
+.mirror-out-pane .output-image { padding: 0; }
+.cds-output-body .output-image img,
+.mirror-out-pane .output-image img { width: 100%; height: auto; display: block; border-radius: 0; }
 
-/* Dark / grey / aurora — panel + header + notebook toolbar all use the same bg */
+/* Dark / grey / aurora theme backgrounds */
 [data-theme="dark"]   .cds-output-panel,
 [data-theme="dark"]   .cds-output-body      { background: #0d1117; }
 [data-theme="dark"]   .cds-output-panel-hdr,
@@ -218,8 +227,10 @@ body.cs-resizing * {
 [data-theme="aurora"] .cds-output-body      { background: #07071a; }
 [data-theme="aurora"] .cds-output-panel-hdr,
 [data-theme="aurora"] .cds-notebook-toolbar { background: #07071a; border-bottom-color: rgba(192,132,252,0.12); }
-[data-theme="dark"]   .cds-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
-[data-theme="grey"]   .cds-output-body .output-block { border-bottom-color: rgba(255,255,255,0.04); }
+[data-theme="dark"]   .cds-output-body .output-block,
+[data-theme="dark"]   .mirror-out-pane .output-block { border-bottom-color: rgba(255,255,255,0.04); }
+[data-theme="grey"]   .cds-output-body .output-block,
+[data-theme="grey"]   .mirror-out-pane .output-block { border-bottom-color: rgba(255,255,255,0.04); }
 
 /* Mobile: stack vertically */
 @media (max-width: 768px) {

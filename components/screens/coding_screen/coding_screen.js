@@ -214,6 +214,7 @@ function setupCodingScreen() {
   });
 
   notebookView.appendChild(nbOutputPanel);
+  nbOutputPanel.style.display = 'none'; // Output now lives in each cell's .mirror-out-pane
 
   // ── Output persistence (survives page refresh) ────────
   const NB_OUTPUTS_KEY = 'dreaming-polar-nb-outputs';
@@ -344,16 +345,14 @@ function setupCodingScreen() {
     bodyEl.append(chartPane, textPane);
     sectionEl.append(labelEl, bodyEl);
 
-    // Insert in notebook cell order, not execution order.
-    const cellOrder = getCellOrder();
-    const myIdx = cellOrder.indexOf(cellId);
-    let insertBefore = null;
-    for (let i = myIdx + 1; i < cellOrder.length; i++) {
-      const laterSec = nbSections.get(cellOrder[i]);
-      if (laterSec) { insertBefore = laterSec.sectionEl; break; }
+    // Mount inside the cell's mirror output pane; fall back to legacy body if not found.
+    const mirrorOutPane = document.querySelector(`.nb-cell[data-nb-id="${cellId}"] .mirror-out-pane`);
+    if (mirrorOutPane) {
+      mirrorOutPane.appendChild(sectionEl);
+    } else {
+      console.warn('[mirror] No .mirror-out-pane for cell', cellId, '— falling back to output body');
+      nbOutputBody.appendChild(sectionEl);
     }
-    if (insertBefore) nbOutputBody.insertBefore(sectionEl, insertBefore);
-    else              nbOutputBody.appendChild(sectionEl);
 
     const sec = { sectionEl, labelEl, bodyEl, textPane, chartPane, lang: lang ?? '', sourceWidget, copySourceBtn, sourceCode: null };
     nbSections.set(cellId, sec);
@@ -429,13 +428,14 @@ function setupCodingScreen() {
     order.forEach((cellId, idx) => {
       const sec = nbSections.get(cellId);
       if (!sec) return;
-      nbOutputBody.appendChild(sec.sectionEl);
+      // sectionEl lives in .mirror-out-pane inside the cell — cells are reordered, sections follow
       const spanEl = sec.labelEl.querySelector('span');
       if (spanEl && sec.lang) spanEl.textContent = `Cell ${idx + 1} · ${sec.lang}`;
     });
   });
 
   nbOutClearBtn.addEventListener('click', () => {
+    nbSections.forEach(sec => sec.sectionEl.remove());
     nbOutputBody.innerHTML = '';
     nbSections.clear();
     nbOutputPlaceholder.style.display = '';
@@ -453,6 +453,7 @@ function setupCodingScreen() {
   });
 
   document.addEventListener('notebook-clear-output', () => {
+    nbSections.forEach(sec => sec.sectionEl.remove());
     nbOutputBody.innerHTML = '';
     nbSections.clear();
     nbOutputPlaceholder.style.display = '';
@@ -460,6 +461,7 @@ function setupCodingScreen() {
   });
 
   document.addEventListener('kernel-restarted', () => {
+    nbSections.forEach(sec => sec.sectionEl.remove());
     nbOutputBody.innerHTML = '';
     nbSections.clear();
     nbOutputPlaceholder.style.display = '';
@@ -506,8 +508,7 @@ function setupCodingScreen() {
   nbOutMinBtn.addEventListener('click', _hidePanel);
 
   document.addEventListener('compile-result', () => {
-    nbOutputPanel.style.display = '';
-    restoreBtn.hidden = true;  // auto-show panel on new output, hide the pill
+    restoreBtn.hidden = true;
   });
 
   document.addEventListener('compile-result', ({ detail }) => {
@@ -595,7 +596,6 @@ function setupCodingScreen() {
   }
 
   document.addEventListener('ds-schema-request', async ({ detail: { varName, cellId, cellLabel } }) => {
-    nbOutputPanel.style.display = '';
     const sec = getOrCreateNbSection(cellId, cellLabel, 'python');
 
     // Toggle: clicking the same varName again restores original output
@@ -649,11 +649,9 @@ function setupCodingScreen() {
 
   // Status bar "jump to output" action
   document.addEventListener('scroll-to-cell-output', ({ detail: { cellIndex } }) => {
-    // Find section by matching the cell label text
     for (const [, sec] of nbSections) {
       const span = sec.labelEl?.querySelector('span');
       if (span?.textContent?.includes(`Cell ${cellIndex}`)) {
-        nbOutputPanel.style.display = '';
         nbSections.forEach(s => s.sectionEl.classList.remove('cds-section--active'));
         sec.sectionEl.classList.add('cds-section--active');
         sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -662,13 +660,12 @@ function setupCodingScreen() {
     }
   });
 
-  // Cell focus → highlight + scroll the corresponding output section
+  // Cell focus → highlight the corresponding output section (no scroll — section is inline)
   document.addEventListener('notebook-cell-focused', ({ detail: { cellId } }) => {
     const sec = nbSections.get(cellId);
     if (!sec) return;
     nbSections.forEach(s => s.sectionEl.classList.remove('cds-section--active'));
     sec.sectionEl.classList.add('cds-section--active');
-    sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
   // Restore outputs from previous session on load

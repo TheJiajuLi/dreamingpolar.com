@@ -402,46 +402,89 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   lowerRow.className = 'nb-cell-lower';
   lowerRow.append(gutter, body);
 
+  // ── Legacy inline output section (kept for closure refs; not mounted; CSS hides it) ──
   const outputSection = document.createElement('div');
   outputSection.className = 'nb-output-section';
-  outputSection.style.display = 'none';
-
-  const outputLabel = document.createElement('div');
-  outputLabel.className = 'nb-output-section-label';
-  const outputLabelText = document.createElement('span');
-  outputLabelText.className = 'nb-output-section-label-text';
-  outputLabelText.textContent = 'Output';
-
   const cellSourceWidget = createSourceWidget();
-
-  const outputCopyBtn = document.createElement('button');
-  outputCopyBtn.className = 'nb-btn lus-copy-btn nb-output-copy-btn';
-  outputCopyBtn.title = 'Copy output';
-  outputCopyBtn.innerHTML = ICON_COPY;
-  outputCopyBtn.addEventListener('click', () => {
-    const text = outputBody.innerText ?? outputBody.textContent ?? '';
-    navigator.clipboard?.writeText(text).then(() => {
-      outputCopyBtn.innerHTML = ICON_CHECK;
-      outputCopyBtn.classList.add('lus-copy-btn--done');
-      setTimeout(() => {
-        outputCopyBtn.innerHTML = ICON_COPY;
-        outputCopyBtn.classList.remove('lus-copy-btn--done');
-      }, 1500);
-    });
-  });
-
-  const outputClose = document.createElement('button');
-  outputClose.className = 'nb-output-section-close';
-  outputClose.title = 'Hide output';
-  outputClose.textContent = '✕';
-  outputClose.addEventListener('click', () => { outputSection.style.display = 'none'; });
-  outputLabel.append(outputLabelText, cellSourceWidget.element, outputCopyBtn, outputClose);
-
   const outputBody = document.createElement('div');
   outputBody.className = 'nb-output-section-body';
-  outputSection.append(outputLabel, outputBody);
+  outputSection.append(outputBody);
 
-  el.append(toolbar, lowerRow, outputSection);
+  // ── Mirror split: code pane │ handle │ output pane ────────────────────
+  const mirrorCodePane = document.createElement('div');
+  mirrorCodePane.className = 'mirror-code-pane';
+  mirrorCodePane.append(toolbar, lowerRow);
+
+  const mirrorHandlePill = document.createElement('div');
+  mirrorHandlePill.className = 'mirror-handle-pill';
+  const mirrorHandle = document.createElement('div');
+  mirrorHandle.className = 'mirror-handle';
+  mirrorHandle.appendChild(mirrorHandlePill);
+
+  const mirrorOutPlaceholder = document.createElement('div');
+  mirrorOutPlaceholder.className = 'mirror-out-placeholder';
+  mirrorOutPlaceholder.textContent = 'Run to see output';
+  const mirrorOutPane = document.createElement('div');
+  mirrorOutPane.className = 'mirror-out-pane';
+  mirrorOutPane.appendChild(mirrorOutPlaceholder);
+
+  // ── Drag handle — rubber-band snap ────────────────────────────────────
+  function _startMirrorDrag(startClientX) {
+    document.body.classList.add('mirror-dragging');
+    const onMove = clientX => {
+      const cellRect = el.getBoundingClientRect();
+      const pct = ((clientX - cellRect.left) / cellRect.width) * 100;
+      mirrorCodePane.style.transition = 'none';
+      mirrorCodePane.style.width = Math.min(80, Math.max(22, pct)) + '%';
+      autoResize(editor);
+    };
+    const onUp = clientX => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup',   onMouseUp);
+      document.body.classList.remove('mirror-dragging');
+      const cellRect = el.getBoundingClientRect();
+      const pct = ((clientX - cellRect.left) / cellRect.width) * 100;
+      const clamped = Math.min(80, Math.max(22, pct));
+      mirrorCodePane.style.transition = 'width 320ms cubic-bezier(0.16,1,0.3,1)';
+      mirrorCodePane.style.width = clamped + '%';
+      setTimeout(() => { mirrorCodePane.style.transition = ''; autoResize(editor); }, 340);
+    };
+    const onMouseMove = e => onMove(e.clientX);
+    const onMouseUp   = e => onUp(e.clientX);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup',   onMouseUp);
+  }
+
+  mirrorHandle.addEventListener('mousedown', e => { e.preventDefault(); _startMirrorDrag(e.clientX); });
+  mirrorHandle.addEventListener('touchstart', e => {
+    e.preventDefault();
+    document.body.classList.add('mirror-dragging');
+    const onTouchMove = e => {
+      e.preventDefault();
+      const clientX = e.touches[0].clientX;
+      const cellRect = el.getBoundingClientRect();
+      const pct = ((clientX - cellRect.left) / cellRect.width) * 100;
+      mirrorCodePane.style.transition = 'none';
+      mirrorCodePane.style.width = Math.min(80, Math.max(22, pct)) + '%';
+      autoResize(editor);
+    };
+    const onTouchEnd = e => {
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend',  onTouchEnd);
+      document.body.classList.remove('mirror-dragging');
+      const clientX = e.changedTouches[0].clientX;
+      const cellRect = el.getBoundingClientRect();
+      const pct = ((clientX - cellRect.left) / cellRect.width) * 100;
+      const clamped = Math.min(80, Math.max(22, pct));
+      mirrorCodePane.style.transition = 'width 320ms cubic-bezier(0.16,1,0.3,1)';
+      mirrorCodePane.style.width = clamped + '%';
+      setTimeout(() => { mirrorCodePane.style.transition = ''; autoResize(editor); }, 340);
+    };
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend',  onTouchEnd);
+  }, { passive: false });
+
+  el.append(mirrorCodePane, mirrorHandle, mirrorOutPane);
   cell.el = el;
 
   // When any part of this cell gains focus, tell the output panel to highlight
@@ -459,8 +502,10 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     const { outputs, sourceCode, sourceLang } = detail;
     cellSourceWidget.setSource(sourceCode ?? null, sourceLang ?? null);
     outputBody.innerHTML = '';
-    // Mark section as having output so the CSS placeholder hides
     outputSection.classList.toggle('has-output', !!(outputs?.length));
+    // Mark cell as having fresh output; clear stale indicator on the mirror pane
+    el.dataset.hasOutput = '1';
+    el.classList.remove('mirror--stale');
     renderBlocks(outputs, outputBody, {
       onAskAI: async (errorText, block, btn) => {
         btn.disabled = true;
@@ -499,6 +544,8 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   document.addEventListener('notebook-clear-output', () => {
     outputSection.style.display = 'none';
     outputBody.innerHTML = '';
+    el.dataset.hasOutput = '';
+    el.classList.remove('mirror--stale');
   }, { signal: outputAC.signal });
 
   // After a package is installed, auto re-run this cell if it was the one that triggered it.
@@ -515,6 +562,11 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     flushPendingInjects:  _flushPendingInjects,
     buildImportCellCode:  _buildImportCellCode,
   });
+
+  // Mark mirror pane stale when code is edited after a run
+  editor.addEventListener('input', () => {
+    if (el.dataset.hasOutput === '1') el.classList.add('mirror--stale');
+  }, { signal: outputAC.signal });
 
   // ── Per-cell ICM instances ────────────────────────────
   cell._icm = { hl: createSyntaxHL(), th: createTextHL(), cc: createCompletion() };
