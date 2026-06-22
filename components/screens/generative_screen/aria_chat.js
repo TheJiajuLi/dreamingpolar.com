@@ -231,6 +231,89 @@ function _fmt(text) {
 }
 function _esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _time() { return new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}); }
+// ── Generate equivalent Python code for a CHART marker ───────────────────────
+function _chartToPython(marker, varName) {
+  if (!marker) return null;
+  if (marker.type === 'histogram' && marker.cols.length >= 1) {
+    const col = marker.cols[0];
+    return (
+      `import pandas as pd\n` +
+      `import matplotlib.pyplot as plt\n` +
+      `if '${varName}' not in dir():\n` +
+      `    ${varName} = pd.read_csv("${getDataset()?.name ?? 'data.csv'}")\n` +
+      `fig, ax = plt.subplots(figsize=(10, 5))\n` +
+      `${varName}["${col}"].dropna().plot.hist(ax=ax, bins=20, color="#f97316", edgecolor="white", alpha=0.85)\n` +
+      `ax.set_title("分布：${col}", fontsize=13)\n` +
+      `ax.set_xlabel("${col}")\n` +
+      `ax.grid(axis='y', alpha=0.4)\n` +
+      `plt.tight_layout()`
+    );
+  }
+  if (marker.type === 'scatter' && marker.cols.length >= 2) {
+    const [c1, c2] = marker.cols;
+    return (
+      `import pandas as pd\n` +
+      `import matplotlib.pyplot as plt\n` +
+      `if '${varName}' not in dir():\n` +
+      `    ${varName} = pd.read_csv("${getDataset()?.name ?? 'data.csv'}")\n` +
+      `fig, ax = plt.subplots(figsize=(8, 6))\n` +
+      `ax.scatter(${varName}["${c1}"], ${varName}["${c2}"], alpha=0.55, s=18, color="#f97316")\n` +
+      `ax.set_xlabel("${c1}"); ax.set_ylabel("${c2}")\n` +
+      `ax.set_title("${c1} × ${c2}", fontsize=13)\n` +
+      `ax.grid(alpha=0.3)\n` +
+      `plt.tight_layout()`
+    );
+  }
+  return null;
+}
+
+// ── Append "查看代码" inline expand button to a card ─────────────────────────
+function _appendViewCodeBtn(card, pyCode) {
+  const footer = document.createElement('div');
+  footer.className = 'aria-card-code-footer';
+
+  const viewBtn = document.createElement('button');
+  viewBtn.className = 'aria-card-view-code-btn';
+  viewBtn.innerHTML = `<i class="ti ti-code"></i> 查看代码`;
+
+  const codeBlock = document.createElement('div');
+  codeBlock.className = 'aria-card-code-block';
+  codeBlock.hidden = true;
+
+  const pre = document.createElement('pre');
+  pre.className = 'aria-card-code-pre';
+  pre.textContent = pyCode;
+
+  const sendBtn = document.createElement('button');
+  sendBtn.className = 'aria-card-send-to-nb-btn';
+  sendBtn.innerHTML = `<i class="ti ti-corner-down-left"></i> 发送到 Notebook`;
+  sendBtn.addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('rb-insert-file', {
+      detail: { code: pyCode, entry: {} },
+    }));
+    sendBtn.textContent = '✓ 已插入';
+    sendBtn.disabled = true;
+    setTimeout(() => {
+      sendBtn.innerHTML = `<i class="ti ti-corner-down-left"></i> 发送到 Notebook`;
+      sendBtn.disabled = false;
+    }, 2000);
+  });
+
+  codeBlock.append(pre, sendBtn);
+
+  let _open = false;
+  viewBtn.addEventListener('click', () => {
+    _open = !_open;
+    codeBlock.hidden = !_open;
+    viewBtn.innerHTML = _open
+      ? `<i class="ti ti-code-off"></i> 收起代码`
+      : `<i class="ti ti-code"></i> 查看代码`;
+  });
+
+  footer.append(viewBtn, codeBlock);
+  card.appendChild(footer);
+}
+
 // ── Chat card ─────────────────────────────────────────────────────────────────
 function _makeCard(question, messagesEl) {
   const card = document.createElement('div');
@@ -558,6 +641,12 @@ export function createAriaChat() {
         badge.className = 'aria-chat-card-meta';
         badge.innerHTML = `<span style="opacity:.5">基于</span> <strong>${_esc(ds.name)}</strong> · ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列`;
         card.appendChild(badge);
+      }
+      // "查看代码"按钮 — only for replies that contain a CHART: marker
+      if (marker) {
+        const varName = _resolveActiveVarName();
+        const pyCode  = _chartToPython(marker, varName);
+        if (pyCode) _appendViewCodeBtn(card, pyCode);
       }
     } catch (e) {
       body.innerHTML = `<span class="aria-chat-err">⚠ ${_esc(e.message)}</span>`;

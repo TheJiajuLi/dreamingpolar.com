@@ -699,3 +699,72 @@
 [data-theme="dark"]   .aria-chat-card-chart,
 [data-theme="grey"]   .aria-chat-card-chart,
 [data-theme="aurora"] .aria-chat-card-chart { background: var(--surface, #161b22); }
+
+/* ── "查看代码" card footer ──────────────────────────────────────────────── */
+.aria-card-code-footer {
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 6px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aria-card-view-code-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.65rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 3px 8px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.12s, color 0.12s;
+}
+.aria-card-view-code-btn:hover { border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
+
+.aria-card-code-block { display: flex; flex-direction: column; gap: 6px; }
+.aria-card-code-block[hidden] { display: none; }
+
+.aria-card-code-pre {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg, #f3f5f8);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  font-size: 0.72rem;
+  line-height: 1.65;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--text, #0f172a);
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+.aria-card-send-to-nb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  font-size: 0.65rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent, #6366f1);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.12s;
+}
+.aria-card-send-to-nb-btn:hover:not(:disabled) { opacity: 0.85; }
+.aria-card-send-to-nb-btn:disabled { opacity: 0.5; cursor: default; }
+
+[data-theme="dark"]   .aria-card-code-pre,
+[data-theme="grey"]   .aria-card-code-pre   { background: #0d1117; border-color: rgba(255,255,255,0.07); color: #e6edf3; }
+[data-theme="aurora"] .aria-card-code-pre   { background: #07071a; border-color: rgba(192,132,252,0.15); color: #e0e0ff; }
+[data-theme="dark"]   .aria-card-code-footer,
+[data-theme="grey"]   .aria-card-code-footer { border-top-color: rgba(255,255,255,0.06); }
+[data-theme="aurora"] .aria-card-code-footer  { border-top-color: rgba(192,132,252,0.1); }
