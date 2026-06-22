@@ -169,10 +169,10 @@ export function create() {
     const padL   = parseFloat(style.paddingLeft) || 0;
     const lines  = _editor.value.slice(0, _editor.selectionStart).split('\n');
     const charW  = parseFloat(style.fontSize) * 0.602;
-    return {
-      top:  padTop + lines.length * lineH - _editor.scrollTop,
-      left: Math.min(padL + lines[lines.length - 1].length * charW - _editor.scrollLeft, _editor.clientWidth - 220),
-    };
+    const rect   = _editor.getBoundingClientRect();
+    const caretTop  = padTop + lines.length * lineH - _editor.scrollTop;
+    const caretLeft = Math.min(padL + lines[lines.length - 1].length * charW - _editor.scrollLeft, _editor.clientWidth - 220);
+    return { top: rect.top + caretTop, left: rect.left + caretLeft };
   }
 
   function _onInput() {
@@ -189,10 +189,12 @@ export function create() {
     if (!_popup || _popup.style.display === 'none') return;
     if (e.key === 'ArrowDown') { e.preventDefault(); _setSelected(_sel + 1); return; }
     if (e.key === 'ArrowUp')   { e.preventDefault(); _setSelected(_sel - 1); return; }
-    if (e.key === 'Tab' || e.key === 'Enter') {
+    if (e.key === 'Tab') {
       if (_sel >= 0 && _items[_sel]) { e.preventDefault(); _accept(_items[_sel]); }
+      else if (_items.length) { e.preventDefault(); _accept(_items[0]); }
       return;
     }
+    if (e.key === 'Enter')  { _hide(); return; }   // close popup; default newline still fires
     if (e.key === 'Escape') { _hide(); return; }
   }
 
@@ -205,7 +207,7 @@ export function create() {
       _popup = document.createElement('div');
       _popup.className = 'pcc-popup';
       _popup.style.display = 'none';
-      editorArea.appendChild(_popup);
+      document.body.appendChild(_popup); // mount on body so overflow:hidden containers don't clip it
       editor.addEventListener('input',   _onInput);
       editor.addEventListener('keydown', _onKeydown);
       editor.addEventListener('blur',    _onBlur);

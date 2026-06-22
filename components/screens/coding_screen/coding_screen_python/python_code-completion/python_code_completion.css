@@ -1,6 +1,6 @@
 /* ── Completion popup ─────────────────────────────────────── */
 .pcc-popup {
-  position: absolute;
+  position: fixed;
   min-width: 200px;
   max-width: 340px;
   max-height: 220px;
