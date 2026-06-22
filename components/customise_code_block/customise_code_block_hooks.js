@@ -25,10 +25,10 @@ export function attachCellHooks({
   editor.addEventListener('keydown', e => {
     if (e.key === 'Tab') {
       e.preventDefault();
-      // If a completion popup is visible, let the completion handler accept the item
-      // Popup is mounted on document.body, so query there (not editor's parent)
-      const popup = document.querySelector('.pcc-popup');
-      if (popup && popup.style.display !== 'none') return;
+      // If any completion popup is visible, skip indent and let completion handle Tab.
+      // Popups are mounted on document.body; check ALL of them (multiple cells may exist).
+      const anyPopupVisible = [...document.querySelectorAll('.pcc-popup')].some(p => p.style.display !== 'none');
+      if (anyPopupVisible) return;
       const s = editor.selectionStart;
       editor.value = editor.value.slice(0, s) + '    ' + editor.value.slice(editor.selectionEnd);
       editor.selectionStart = editor.selectionEnd = s + 4;
