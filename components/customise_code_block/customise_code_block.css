@@ -466,6 +466,24 @@ body.mirror-dragging * {
 /* Shrink body padding to compensate for card margin */
 .cds-output-body { padding: 4px 0; }
 
+/* Mirror split: output section fills the pane edge-to-edge — no card chrome */
+.mirror-out-pane .cds-output-section {
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  transition: none;
+}
+.mirror-out-pane .cds-output-section:hover { box-shadow: none; }
+.mirror-out-pane .cds-output-section:last-child { border-bottom: none; }
+.mirror-out-pane .cds-output-section-label {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
 /* Active section — highlighted when the corresponding cell is focused */
 .cds-output-section.cds-section--active .cds-output-section-label {
   border-bottom-color: var(--accent, #6366f1);
