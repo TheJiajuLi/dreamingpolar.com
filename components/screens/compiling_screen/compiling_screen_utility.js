@@ -290,13 +290,13 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
             };
 
             if (isNotReady || (!isNoNumeric && diagnoseChart(o.varName).issue === 'not_found')) {
-              _chartBlock.innerHTML =
-                `<div class="vsug-error-icon-wrap"><i class="ti ti-database-off"></i></div>` +
-                `<div class="vsug-error-title">无法载入图表</div>` +
-                `<div class="vsug-error-body">此 Cell 需要重新运行以生成最新数据。</div>`;
-              const rb = _makeActionBtn('重新运行 Cell', 'ti-player-play', 'var(--accent,#6366f1)');
-              rb.addEventListener('click', () => _runAndViz(rb));
-              _chartBlock.appendChild(rb);
+              // Kernel empty (e.g. after page refresh with cached outputs): auto-run without error card
+              _chartBlock.innerHTML = `<div class="vsug-no-chart-loading"><i class="ti ti-loader-2"></i></div>`;
+              const autoTarget = chartContainer ?? container;
+              autoTarget.appendChild(_chartBlock);
+              if (chartContainer) chartContainer.classList.add('has-chart');
+              _runAndViz(null);
+              return;
 
             } else if (isNoNumeric && o.sepHint) {
               const sepArg = o.sepHint === '\t' ? `sep='\\t'` : `sep=';'`;
