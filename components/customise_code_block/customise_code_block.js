@@ -761,6 +761,12 @@ export function init(container, externalTopbar) {
     cell.el.querySelector('.nb-run')?.click();
   });
 
+  // "立即运行" button in viz/clean panels — run a specific cell by its ID
+  document.addEventListener('run-cell-by-id', ({ detail: { cellId } }) => {
+    const cell = _cells.find(c => c.id === cellId);
+    cell?.el.querySelector('.nb-run')?.click();
+  });
+
   // File manager: insert import code into the last focused cell (or create one)
   document.addEventListener('rb-insert-file', ({ detail: { code } }) => {
     const cell = _lastFocusedCellId

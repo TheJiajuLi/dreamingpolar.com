@@ -3,7 +3,7 @@
 // to both Notebook (py.FS) and Quick Analysis (dataset_store / ARIA tabs).
 // No "select destination" step — import once, use everywhere.
 
-import { setDataset }                    from '../shared/dataset_store.js';
+import { setDataset, removeDataset }      from '../shared/dataset_store.js';
 import { ensureXlsx, parseToDataset }    from '../import/import_data.js';
 import { writeToFS }                     from '../compiler/compiler.js';
 
@@ -46,7 +46,27 @@ async function _parseEntry(entry) {
   return parseToDataset(text, filename);
 }
 
-// Friendly code hint shown when clicking a file item
+// Runnable import code inserted into a Notebook cell
+function _buildCode(entry) {
+  const { varName, fileType, filename } = entry;
+  const readers = {
+    csv:  `pd.read_csv("${filename}")`,
+    json: `pd.read_json("${filename}")`,
+    xlsx: `pd.read_excel("${filename}")`,
+    xls:  `pd.read_excel("${filename}")`,
+    xml:  `pd.read_xml("${filename}")`,
+  };
+  const reader = readers[fileType] ?? `pd.read_csv("${filename}")`;
+  return (
+    `# "${filename}" → ${varName}\n` +
+    `import pandas as pd\n` +
+    `${varName} = ${reader}\n` +
+    `print(${varName}.shape)\n` +
+    `${varName}.head()`
+  );
+}
+
+// Friendly hint comment (kept for drag-to-editor use)
 function _buildHint(entry) {
   const { varName, filename, fileType } = entry;
   const readers = {
@@ -65,9 +85,39 @@ function _buildHint(entry) {
   );
 }
 
+// ── Restore inject-store → dataset_store on page load ────────────────────────
+// dataset_store is in-memory only. On page load we re-parse each inject-store
+// entry so ARIA gets real rows (not empty arrays) for its AI prompts.
+// Each entry is parsed independently — one failure won't block others.
+async function _syncStoreToDataset() {
+  const store   = _loadStore();
+  const entries = Object.values(store).filter(e => e?.filename && e?.data != null);
+  for (const entry of entries) {
+    try {
+      const dataset = await _parseEntry(entry);
+      if (dataset) setDataset(dataset);
+    } catch (e) {
+      // Fallback: at least register metadata so ARIA tab appears
+      console.warn('[file-manager] parse failed on restore, using metadata:', entry.filename, e);
+      try {
+        setDataset({
+          name:    entry.filename,
+          columns: entry.columnNames ?? [],
+          dtypes:  {},
+          rows:    [],
+        });
+      } catch (_) {}
+    }
+  }
+}
+
 export function initFileManager() {
   const rightBar = document.getElementById('right-bar');
   if (!rightBar) return;
+
+  // Populate dataset_store from inject-store on load — parse real rows so ARIA
+  // has actual data for its prompts (not empty arrays).
+  _syncStoreToDataset(); // async, fires in background — tabs appear progressively
 
   // ── Toggle button ─────────────────────────────────────────────────────────
   const toggleBtn = document.createElement('button');
@@ -101,14 +151,34 @@ export function initFileManager() {
   hdrClose.innerHTML = `<i class="ti ti-x"></i>`;
   hdrClose.addEventListener('click', _close);
 
-  hdr.append(hdrTitle, importBtn, hdrClose);
+  // "管理" toggle — enters select mode
+  const manageBtn = document.createElement('button');
+  manageBtn.className = 'rb-file-manage-btn';
+  manageBtn.title = '管理文件';
+  manageBtn.textContent = '管理';
+
+  hdr.append(hdrTitle, importBtn, manageBtn, hdrClose);
 
   const body = document.createElement('div');
   body.className = 'rb-file-body';
 
-  panel.append(hdr, body);
+  // Delete bar (shown in select mode when ≥1 item checked)
+  const deleteBar = document.createElement('div');
+  deleteBar.className = 'rb-file-delete-bar';
+  deleteBar.hidden = true;
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'rb-file-delete-btn';
+  deleteBtn.innerHTML = `<i class="ti ti-trash"></i> <span class="rb-del-label">删除所选</span>`;
+  const cancelSelBtn = document.createElement('button');
+  cancelSelBtn.className = 'rb-file-cancel-sel-btn';
+  cancelSelBtn.textContent = '取消';
+  deleteBar.append(deleteBtn, cancelSelBtn);
+
+  panel.append(hdr, body, deleteBar);
 
   let _open = false;
+  let _selectMode = false;
+  const _selected = new Set(); // keys in inject-store
 
   function _open_() {
     _open = true;
@@ -122,7 +192,55 @@ export function initFileManager() {
     panel.hidden = true;
     rightBar.classList.remove('rb--expanded');
     toggleBtn.classList.remove('rb-btn--active');
+    _exitSelectMode();
   }
+
+  // ── Select mode ───────────────────────────────────────────────────────────
+  function _enterSelectMode() {
+    _selectMode = true;
+    _selected.clear();
+    manageBtn.textContent = '完成';
+    manageBtn.classList.add('rb-file-manage-btn--active');
+    panel.classList.add('rb-panel--select');
+    _updateDeleteBar();
+    _refresh();
+  }
+  function _exitSelectMode() {
+    _selectMode = false;
+    _selected.clear();
+    manageBtn.textContent = '管理';
+    manageBtn.classList.remove('rb-file-manage-btn--active');
+    panel.classList.remove('rb-panel--select');
+    deleteBar.hidden = true;
+    _refresh();
+  }
+  function _updateDeleteBar() {
+    const n = _selected.size;
+    deleteBar.hidden = !(_selectMode && n > 0);
+    deleteBar.querySelector('.rb-del-label').textContent =
+      n > 0 ? `删除所选 (${n})` : '删除所选';
+  }
+
+  manageBtn.addEventListener('click', () =>
+    _selectMode ? _exitSelectMode() : _enterSelectMode()
+  );
+
+  cancelSelBtn.addEventListener('click', _exitSelectMode);
+
+  deleteBtn.addEventListener('click', () => {
+    if (!_selected.size) return;
+    const store = _loadStore();
+    // Remove from dataset_store (ARIA tabs) before wiping inject-store entries
+    _selected.forEach(key => {
+      const filename = store[key]?.filename;
+      if (filename) removeDataset(filename);  // triggers dataset-updated → ARIA refreshes
+      delete store[key];
+    });
+    _saveStore(store);
+    _selected.clear();
+    _exitSelectMode();
+    document.dispatchEvent(new CustomEvent('nb-file-imported'));
+  });
 
   toggleBtn.addEventListener('click', () => _open ? _close() : _open_());
 
@@ -248,10 +366,22 @@ export function initFileManager() {
   // ── Render file list ───────────────────────────────────────────────────────
   function _refresh() {
     body.innerHTML = '';
-    const store   = _loadStore();
-    const entries = Object.values(store);
+    const store = _loadStore();
 
-    if (!entries.length) {
+    // Deduplicate by filename — keep the entry with most info (prefer fm_* over cell-id)
+    const byFilename = new Map(); // filename → {key, entry}
+    Object.entries(store).forEach(([key, entry]) => {
+      if (!entry?.filename) return;
+      const existing = byFilename.get(entry.filename);
+      // Prefer fm_* entries (file-manager owned) over cell-id entries
+      if (!existing || key.startsWith('fm_')) {
+        byFilename.set(entry.filename, { key, entry });
+      }
+    });
+
+    const dedupedEntries = [...byFilename.values()];
+
+    if (!dedupedEntries.length) {
       const empty = document.createElement('div');
       empty.className = 'rb-file-empty';
       empty.innerHTML =
@@ -263,7 +393,7 @@ export function initFileManager() {
 
     // Section: 数据文件
     const sec = _makeSection('数据文件', 'ti-database');
-    entries.forEach(entry => sec.body.appendChild(_makeFileItem(entry)));
+    dedupedEntries.forEach(({ key, entry }) => sec.body.appendChild(_makeFileItem(key, entry)));
     body.appendChild(sec.el);
 
     // Section: 模型 & 配置 (placeholder)
@@ -299,12 +429,16 @@ export function initFileManager() {
     return { el, body: sBody };
   }
 
-  function _makeFileItem(entry) {
+  function _makeFileItem(storeKey, entry) {
     const { varName, fileType, filename, rows, columns } = entry;
     const item = document.createElement('div');
     item.className = 'rb-file-item';
-    item.draggable = true;
-    item.title = `${filename} — 点击插入使用提示`;
+    item.draggable = !_selectMode;
+
+    // ── Select circle (visible in select mode) ────────────────────────────
+    const circle = document.createElement('span');
+    circle.className = 'rb-file-select-circle';
+    circle.innerHTML = `<i class="ti ti-check rb-file-check-icon"></i>`;
 
     const iconEl = document.createElement('i');
     iconEl.className = `ti ${TYPE_ICON[fileType] ?? 'ti-file'} rb-file-item-icon`;
@@ -323,19 +457,49 @@ export function initFileManager() {
       : varName;
 
     info.append(nameEl, metaEl);
-    item.append(iconEl, info);
 
-    // Click → insert a friendly hint comment into the focused cell
-    item.addEventListener('click', () => {
+    // "→ Notebook" icon button (hidden in select mode)
+    const toNbBtn = document.createElement('button');
+    toNbBtn.className = 'rb-file-action-btn';
+    toNbBtn.title = '插入到 Notebook';
+    toNbBtn.setAttribute('aria-label', '插入到 Notebook');
+    toNbBtn.innerHTML = `<i class="ti ti-corner-down-left"></i>`;
+    toNbBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (_selectMode) return;
       document.dispatchEvent(new CustomEvent('rb-insert-file', {
-        detail: { code: _buildHint(entry), entry },
+        detail: { code: _buildCode(entry), entry },
+      }));
+      item.classList.add('rb-file-item--flash');
+      setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
+    });
+
+    item.append(circle, iconEl, info, toNbBtn);
+
+    item.addEventListener('click', () => {
+      if (_selectMode) {
+        // Toggle selection
+        if (_selected.has(storeKey)) {
+          _selected.delete(storeKey);
+          item.classList.remove('rb-file-item--selected');
+        } else {
+          _selected.add(storeKey);
+          item.classList.add('rb-file-item--selected');
+        }
+        _updateDeleteBar();
+        return;
+      }
+      // Normal mode: insert code
+      document.dispatchEvent(new CustomEvent('rb-insert-file', {
+        detail: { code: _buildCode(entry), entry },
       }));
       item.classList.add('rb-file-item--flash');
       setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
     });
 
     item.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text/plain', _buildHint(entry));
+      if (_selectMode) { e.preventDefault(); return; }
+      e.dataTransfer.setData('text/plain', _buildCode(entry));
       e.dataTransfer.effectAllowed = 'copy';
     });
 

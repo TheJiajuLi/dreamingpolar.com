@@ -147,8 +147,14 @@ function _updateSummary() {
   const items = _cellItems();
 
   // Fallback: Quick Analysis datasets from dataset_store (no cell association).
+  // De-duplicate by name and only count entries with real rows (parsed data).
   if (!items.length) {
-    const allDs = getAllDatasets();
+    const seen = new Set();
+    const allDs = getAllDatasets().filter(d => {
+      if (seen.has(d.name)) return false;
+      seen.add(d.name);
+      return Array.isArray(d.rows) && d.rows.length > 0;
+    });
     if (!allDs.length) { slot.setAttribute('hidden', ''); return; }
     const rows = allDs.reduce((s, d) => s + d.rows.length,    0);
     const cols = allDs.reduce((s, d) => s + d.columns.length, 0);

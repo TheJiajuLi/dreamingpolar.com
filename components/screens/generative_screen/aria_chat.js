@@ -4,7 +4,6 @@ import { getCellDatasetInfo } from '../../customise_code_block/customise_code_bl
 // ── Code templates inserted into the Power Notebook via ai-insert-and-run ────
 const _CODE_TEMPLATES = {
   'time-series': v =>
-    `import pandas as pd\n` +
     `import matplotlib.pyplot as plt\n` +
     `# 设置时间索引\n` +
     `_date_col = ${v}.select_dtypes(include=["object","datetime"]).columns[0]\n` +
@@ -23,8 +22,7 @@ const _CODE_TEMPLATES = {
     `print(f"Columns: {list(${v}.columns)}")\n` +
     `print(f"Dtypes:\\n{${v}.dtypes}\\n")\n` +
     `print(f"Null counts:\\n{${v}.isnull().sum()}")\n` +
-    `display(${v}.head())\n` +
-    `display(${v}.tail())`,
+    `${v}.head()`,
 
   'rolling':
     v =>
@@ -37,23 +35,73 @@ const _CODE_TEMPLATES = {
     `    label=[f"{c} MA20" for c in _num.columns]\n` +
     `)\n` +
     `ax.set_title("${v} — 20 期移动均线", fontsize=14)\n` +
-    `ax.legend(); ax.grid(True); plt.tight_layout()`,
+    `ax.legend(); ax.grid(True); plt.tight_layout()\n` +
+    `${v}.head()`,
 
   'describe':
     v =>
-    `display(${v}.describe().round(2))\n` +
+    `print(${v}.describe().round(2).to_string())\n` +
     `_num = ${v}.select_dtypes(include="number")\n` +
     `if _num.shape[1] > 1:\n` +
     `    print("\\n相关系数矩阵:")\n` +
-    `    display(_num.corr().round(3))`,
+    `    print(_num.corr().round(3).to_string())\n` +
+    `${v}.head()`,
 };
 
-function _resolveActiveVarName() {
+// Returns { varName, filename, fileType } for the active dataset.
+// varName is the real Python identifier; filename is used to auto-load if needed.
+function _resolveActiveContext() {
+  // 1. Notebook cells (most authoritative — variable already in kernel)
   const cells = getCellDatasetInfo?.();
-  if (cells?.length) return cells[0].varName;
+  if (cells?.length) {
+    const c = cells[0];
+    return { varName: c.varName, filename: c.filename, fileType: null, inKernel: true };
+  }
+
   const ds = getDataset();
-  if (ds?.name) return ds.name.replace(/\.[^.]+$/, '').replace(/[^a-z0-9_]/gi, '_') || 'df';
-  return 'df';
+  if (!ds?.name) return { varName: 'df', filename: null, fileType: null, inKernel: false };
+
+  // 2. Look up inject-store by filename → get the real varName + fileType
+  try {
+    const store = JSON.parse(localStorage.getItem('dreaming-polar-inject-store') ?? '{}');
+    const entry = Object.values(store).find(e => e?.filename === ds.name);
+    if (entry?.varName) {
+      return {
+        varName:  entry.varName,
+        filename: entry.filename,
+        fileType: entry.fileType ?? 'csv',
+        inKernel: false,  // may or may not be loaded — preamble will check
+      };
+    }
+  } catch (_) {}
+
+  // 3. Fallback
+  const fallback = ds.name.replace(/\.[^.]+$/, '').replace(/[^a-z0-9_]/gi, '_') || 'df';
+  return { varName: fallback, filename: ds.name, fileType: 'csv', inKernel: false };
+}
+
+// Backward-compat shim used elsewhere
+function _resolveActiveVarName() {
+  return _resolveActiveContext().varName;
+}
+
+// Build a preamble that loads the file into varName if not already in namespace.
+// File is in py.FS at /home/pyodide/<filename> from our pre-write step.
+function _buildLoadPreamble(varName, filename, fileType) {
+  if (!filename) return '';
+  const readers = {
+    csv:  `pd.read_csv("${filename}")`,
+    json: `pd.read_json("${filename}")`,
+    xlsx: `pd.read_excel("${filename}")`,
+    xls:  `pd.read_excel("${filename}")`,
+    xml:  `pd.read_xml("${filename}")`,
+  };
+  const reader = readers[fileType ?? 'csv'] ?? `pd.read_csv("${filename}")`;
+  return (
+    `import pandas as pd\n` +
+    `if '${varName}' not in dir():\n` +
+    `    ${varName} = ${reader}\n`
+  );
 }
 
 // ── Chart.js lazy loader ──────────────────────────────────────────────────────
@@ -529,7 +577,7 @@ export function createAriaChat() {
   // Typing breaks out of history navigation
   input.addEventListener('input', () => { _histIdx = -1; });
   sendBtn.addEventListener('click', _submit);
-  convArea.addEventListener('click', e => {
+  function _handleChipClick(e) {
     // Question chip → fill input
     const qChip = e.target.closest('.aria-chat-chip');
     if (qChip) { input.value = qChip.dataset.q; input.focus(); return; }
@@ -540,8 +588,9 @@ export function createAriaChat() {
       const tmplId  = codeChip.dataset.tmpl;
       const builder = _CODE_TEMPLATES[tmplId];
       if (!builder) return;
-      const varName = _resolveActiveVarName();
-      const code    = builder(varName);
+      const { varName, filename, fileType } = _resolveActiveContext();
+      const preamble = _buildLoadPreamble(varName, filename, fileType);
+      const code     = preamble + builder(varName);
       // Open the coding screen and insert+run the code
       window.screenController?.open('coding');
       setTimeout(() => {
@@ -550,7 +599,11 @@ export function createAriaChat() {
         }));
       }, 150);
     }
-  });
+  }
+
+  // Chips live in both convArea and welcomeHeader (which is outside convArea)
+  convArea.addEventListener('click', _handleChipClick);
+  welcomeHeader.addEventListener('click', _handleChipClick);
 
   root._onDataLoaded = (name) => {
     const ds = getDataset();

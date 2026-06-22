@@ -193,16 +193,41 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
           } catch (err) {
             vizBtn.classList.remove('vsug-icon-btn--loading');
             vizBtn.disabled = false;
-            const isNoNumeric = String(err?.message ?? err).includes('__NO_NUMERIC__');
-            // Show a contextual message block instead of a blank chart
+            const isNoNumeric   = String(err?.message ?? err).includes('__NO_NUMERIC__');
+            const isNotReady    = err?.message === 'KERNEL_NOT_READY';
             _chartBlock = document.createElement('div');
             _chartBlock.className = 'vsug-no-chart-msg';
-            if (isNoNumeric && o.sepHint) {
-              // Sep-hint: data likely misread — offer one-click fix
+
+            if (isNotReady) {
+              // Data not loaded — offer to run the cell right now
+              _chartBlock.innerHTML =
+                `<i class="ti ti-player-play vsug-no-chart-icon" style="color:var(--accent,#6366f1)"></i>` +
+                `<div class="vsug-no-chart-text">数据还没有运行加载<br><small>点击下方按钮立即运行该 cell</small></div>`;
+              const runNowBtn = document.createElement('button');
+              runNowBtn.className = 'vsug-sep-reload-btn';
+              runNowBtn.style.background = 'var(--accent,#6366f1)';
+              runNowBtn.innerHTML = `▶ 立即运行`;
+              runNowBtn.addEventListener('click', () => {
+                // Find the cell that owns this output section and click its Run button
+                const secEl = _chartBlock.closest('[data-cell-id]');
+                const cellId = secEl?.dataset?.cellId;
+                if (cellId) {
+                  document.dispatchEvent(new CustomEvent('run-cell-by-id', { detail: { cellId } }));
+                } else {
+                  // Fallback: run all cells
+                  document.querySelector('.nb-run-all-btn')?.click();
+                }
+                runNowBtn.textContent = '运行中…';
+                runNowBtn.disabled = true;
+                // Reset _chartBlock so viz can retry after run
+                setTimeout(() => { _chartBlock = null; }, 3000);
+              });
+              _chartBlock.appendChild(runNowBtn);
+            } else if (isNoNumeric && o.sepHint) {
               const sepArg = o.sepHint === '\t' ? `sep='\\t'` : `sep=';'`;
               _chartBlock.innerHTML =
                 `<i class="ti ti-alert-circle vsug-no-chart-icon"></i>` +
-                `<div class="vsug-no-chart-text">数据无数值列——可能是分隔符错误</div>`;
+                `<div class="vsug-no-chart-text">数据无数值列——可能是分隔符解析错误</div>`;
               const reloadBtn = document.createElement('button');
               reloadBtn.className = 'vsug-sep-reload-btn';
               reloadBtn.textContent = `重新导入 (${sepArg})`;
@@ -217,7 +242,7 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
             } else {
               _chartBlock.innerHTML =
                 `<i class="ti ti-chart-off vsug-no-chart-icon"></i>` +
-                `<div class="vsug-no-chart-text">${isNoNumeric ? '无数值列，无法绘图' : '图表生成失败'}</div>`;
+                `<div class="vsug-no-chart-text">${isNoNumeric ? '无数值列，无法绘图' : '图表生成遇到问题，请检查数据格式'}</div>`;
             }
             const target = chartContainer ?? container;
             target.appendChild(_chartBlock);
@@ -365,7 +390,9 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
                 }
               } catch (e) {
                 _setFeedback(
-                  e?.message === 'KERNEL_NOT_READY' ? '↑ 请先运行 cell 加载数据' : `Error: ${e.message}`,
+                  e?.message === 'KERNEL_NOT_READY'
+                    ? '该 cell 还未运行，请先点击 ▶ 加载数据后再清洗'
+                    : `Error: ${e.message}`,
                   e?.message === 'KERNEL_NOT_READY' ? 'warn' : 'err'
                 );
                 if (e?.message !== 'KERNEL_NOT_READY') console.warn('[clean preview]', op, e);
@@ -468,8 +495,8 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
               } catch (err) {
                 const isNotReady = err?.message === 'KERNEL_NOT_READY';
                 exportStatus.textContent = isNotReady
-                  ? '↑ 请先运行 cell 再导出'
-                  : `✗ ${err.message ?? 'Export failed'}`;
+                  ? '该 cell 还未运行，请先点击 ▶ 加载数据后再导出'
+                  : `✗ ${err.message ?? '导出失败'}`;
                 exportStatus.className = `vsug-export-status ${isNotReady ? 'vsug-fb-warn' : 'vsug-fb-err'}`;
                 if (!isNotReady) console.warn('[export]', fmt, err);
               } finally {

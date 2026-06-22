@@ -48,6 +48,16 @@ export function setActiveDataset(name) {
   }
 }
 
+/** Remove a single dataset by name. Active index is adjusted accordingly. */
+export function removeDataset(name) {
+  const idx = _datasets.findIndex(d => d.name === name);
+  if (idx < 0) return;
+  _datasets.splice(idx, 1);
+  if (_activeIdx >= _datasets.length) _activeIdx = _datasets.length - 1;
+  else if (_activeIdx === idx) _activeIdx = Math.max(0, idx - 1);
+  _notify('remove');
+}
+
 /** Remove all datasets. */
 export function clearDataset() {
   _datasets  = [];

@@ -250,9 +250,11 @@ function setupCodingScreen() {
       const spanEl = sec.labelEl.querySelector('span');
       if (spanEl && cellLabel) spanEl.textContent = cellLabel;
       if (lang) sec.lang = lang;
-      // Clear pane contents individually — do NOT do bodyEl.innerHTML='' which
-      // destroys chartPane/textPane themselves, causing renderBlocks to write
-      // into detached nodes (output invisible on every run after the first).
+      // If source view is open (_rawView sibling of textPane), close it first
+      // so viz cards are not hidden and textPane is visible for new output.
+      const rawView = sec.bodyEl?.querySelector('.lus-raw-view');
+      if (rawView) { rawView.remove(); sec.textPane.style.display = ''; }
+
       sec.chartPane.innerHTML = '';
       sec.chartPane.classList.remove('has-chart');
       sec.textPane.innerHTML = '';
@@ -405,6 +407,16 @@ function setupCodingScreen() {
     nbSections.clear();
     nbOutputPlaceholder.style.display = '';
     _clearAllStoredOutputs();
+  });
+
+  // Remove the corresponding output section when a cell is deleted
+  document.addEventListener('notebook-cell-deleted', ({ detail: { cellId } }) => {
+    const sec = nbSections.get(cellId);
+    if (!sec) return;
+    sec.sectionEl.remove();
+    nbSections.delete(cellId);
+    _removeStoredOutput(cellId);
+    if (nbSections.size === 0) nbOutputPlaceholder.style.display = '';
   });
 
   document.addEventListener('notebook-clear-output', () => {

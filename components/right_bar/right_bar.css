@@ -257,8 +257,105 @@
 .rb-file-import-btn:hover:not(:disabled) { opacity: 0.85; }
 .rb-file-import-btn:disabled { opacity: 0.5; cursor: default; }
 
-/* Remove old dual-destination action buttons CSS (no longer rendered) */
-.rb-file-item-actions { display: none !important; }
+/* "管理" toggle button */
+.rb-file-manage-btn {
+  font-size: 0.58rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 2px 7px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.rb-file-manage-btn:hover { border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
+.rb-file-manage-btn--active { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); border-color: var(--accent, #6366f1); }
+
+/* Select circle on each item */
+.rb-file-select-circle {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border, #cbd5e1);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, border-color 0.12s;
+}
+.rb-panel--select .rb-file-select-circle { display: inline-flex; }
+.rb-file-check-icon { font-size: 10px; color: #fff; opacity: 0; }
+
+/* Selected state */
+.rb-file-item--selected .rb-file-select-circle {
+  background: var(--accent, #6366f1);
+  border-color: var(--accent, #6366f1);
+}
+.rb-file-item--selected .rb-file-check-icon { opacity: 1; }
+.rb-file-item--selected { background: var(--accent-soft, #e0e3ff) !important; border-radius: 8px; }
+
+/* Hide action btn in select mode */
+.rb-panel--select .rb-file-action-btn { display: none; }
+
+/* Delete bar */
+.rb-file-delete-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border, #e2e8f0);
+  flex-shrink: 0;
+}
+.rb-file-delete-bar[hidden] { display: none; }
+.rb-file-delete-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.68rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.rb-file-delete-btn:hover { background: #fee2e2; }
+.rb-file-cancel-sel-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+/* Single action button per file item */
+.rb-file-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.35;
+  transition: background 0.12s, color 0.12s, opacity 0.12s;
+}
+.rb-file-item:hover .rb-file-action-btn { opacity: 1; }
+.rb-file-action-btn:hover { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); }
 
 /* Dark theme */
 /* Dark themes: opaque glass with frosted tint */
