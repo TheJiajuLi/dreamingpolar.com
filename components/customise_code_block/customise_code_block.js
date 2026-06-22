@@ -885,11 +885,11 @@ export function init(container, externalTopbar) {
   document.addEventListener('rb-file-smart-click', ({ detail: { code, entry } }) => {
     const filename = entry?.filename ?? '';
 
-    // Helper: ensure coding screen is visible, then scroll + flash the target cell.
-    // Always calls restore() — if already 'normal' it's a no-op; if minimized/closed it opens it.
+    // Helper: switch to coding screen (closes ARIA / ai-chat / other hero screens),
+    // then scroll to and flash the target cell.
     function _navigateTo(cell) {
-      window.screenController?.restore('coding');
-      // Give the screen time to become visible before scrolling
+      // open() calls _closeGroup → closes all other hero-group screens (terminal/ai-chat/content)
+      window.screenController?.open('coding');
       setTimeout(() => {
         cell.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         cell.editor.focus();
@@ -898,11 +898,21 @@ export function init(container, externalTopbar) {
       }, 80);
     }
 
-    // ── Case 1: file already tracked → navigate, never re-insert ─────────
+    // ── Case 1: file already in a cell → navigate, never re-insert ───────
     if (getSettings().smartFileNavigation) {
-      const existing = FileTracker.findCell(filename)
-        ?? _cells.find(c => c._datasetInfo?.filename === filename); // fallback: CSV-button imports
-      if (existing) { _navigateTo(existing); return; }
+      // Check FileTracker first, then verify by actual code content (avoids stale _datasetInfo)
+      const byTracker = FileTracker.findCell(filename);
+      const byCode    = !byTracker && _cells.find(c => {
+        const v = c.editor.value;
+        return v.includes(`"${filename}"`) || v.includes(`'${filename}'`);
+      });
+      const existing = byTracker ?? byCode ?? null;
+      if (existing) {
+        // Keep FileTracker in sync if we found it by code content
+        if (byCode) FileTracker.track(filename, byCode.id);
+        _navigateTo(existing);
+        return;
+      }
     }
 
     // ── Case 2: find first empty cell and insert ──────────────────────────
