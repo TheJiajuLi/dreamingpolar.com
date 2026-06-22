@@ -6,6 +6,7 @@
 import { setDataset, removeDataset }      from '../shared/dataset_store.js';
 import { ensureXlsx, parseToDataset }    from '../import/import_data.js';
 import { writeToFS }                     from '../compiler/compiler.js';
+import { createSettingsPanel, getSettings } from './settings.js';
 
 const INJECT_KEY = 'dreaming-polar-inject-store';
 
@@ -115,22 +116,134 @@ export function initFileManager() {
   const rightBar = document.getElementById('right-bar');
   if (!rightBar) return;
 
-  // Populate dataset_store from inject-store on load — parse real rows so ARIA
-  // has actual data for its prompts (not empty arrays).
-  _syncStoreToDataset(); // async, fires in background — tabs appear progressively
+  _syncStoreToDataset();
 
-  // ── Toggle button ─────────────────────────────────────────────────────────
+  // ── Two strip buttons: Files + Settings ───────────────────────────────────
   const toggleBtn = document.createElement('button');
   toggleBtn.className = 'rb-btn rb-file-toggle-btn';
   toggleBtn.title = '文件管理';
   toggleBtn.innerHTML = `<i class="ti ti-folder-open" style="font-size:14px"></i>`;
-  rightBar.querySelector('.rb-top')?.appendChild(toggleBtn);
 
-  // ── Panel ─────────────────────────────────────────────────────────────────
+  const settingsBtn = document.createElement('button');
+  settingsBtn.className = 'rb-btn rb-settings-toggle-btn';
+  settingsBtn.title = '设置';
+  settingsBtn.innerHTML = `<i class="ti ti-settings" style="font-size:14px"></i>`;
+
+  const rbTop = rightBar.querySelector('.rb-top');
+  rbTop?.appendChild(toggleBtn);
+  rbTop?.appendChild(settingsBtn);
+
+  // ── Outer container — clips the two-panel slide ───────────────────────────
+  const panelOuter = document.createElement('div');
+  panelOuter.className = 'rb-panel-outer';
+  panelOuter.hidden = true;
+  rightBar.appendChild(panelOuter);
+
+  // ── Inner sliding track — contains FILES panel + SETTINGS panel ───────────
+  const panelTrack = document.createElement('div');
+  panelTrack.className = 'rb-panel-track';
+  panelOuter.appendChild(panelTrack);
+
+  // ── Files panel ───────────────────────────────────────────────────────────
   const panel = document.createElement('div');
-  panel.className = 'rb-file-panel';
-  panel.hidden = true;
-  rightBar.appendChild(panel);
+  panel.className = 'rb-file-panel rb-slide-pane';
+  panelTrack.appendChild(panel);
+
+  // ── Settings panel (appended to track after files) ────────────────────────
+  const { panel: settingsPanel, settings: initialSettings, hdrClose: settingsClose } = createSettingsPanel(
+    (key, val) => _onSettingChange(key, val)
+  );
+  settingsPanel.classList.add('rb-slide-pane');
+  settingsClose?.addEventListener('click', _close);
+  panelTrack.appendChild(settingsPanel);
+
+  let _activePane = 'files'; // 'files' | 'settings'
+
+  function _slideToPane(pane) {
+    _activePane = pane;
+    panelTrack.style.transform = pane === 'settings' ? 'translateX(-50%)' : 'translateX(0)';
+    toggleBtn.classList.toggle('rb-btn--active',   pane === 'files');
+    settingsBtn.classList.toggle('rb-btn--active', pane === 'settings');
+    // Save state if setting is on
+    if (getSettings().cacheRightBarState) {
+      localStorage.setItem('dp-rb-pane', pane);
+    }
+  }
+
+  function _onSettingChange(key, val) {
+    if (key === 'cacheNotebookOutput' && !val) {
+      // clear output cache when disabled
+      try { localStorage.removeItem('dreaming-polar-nb-outputs'); } catch (_) {}
+    }
+  }
+
+  // ── Auto-switch: watch editor for pd.read_csv ─────────────────────────────
+  document.addEventListener('notebook-cell-focused', () => {
+    if (!getSettings().autoSwitchFiles) return;
+    if (!_open) return;
+    // Give time for editor to update, then check active line
+    setTimeout(() => {
+      const activeEditor = document.querySelector('.nb-cell:focus-within .nb-editor');
+      if (!activeEditor) return;
+      const val = activeEditor.value ?? '';
+      const lines = val.split('\n');
+      const sel   = activeEditor.selectionStart ?? 0;
+      const lineIdx = val.slice(0, sel).split('\n').length - 1;
+      const line  = lines[lineIdx] ?? '';
+      if (/pd\.read_(?:csv|json|excel|xml)\s*\(/.test(line) && _activePane !== 'files') {
+        _slideToPane('files');
+      }
+    }, 80);
+  });
+
+  let _open = false;
+
+  function _open_() {
+    _open = true;
+    panelOuter.hidden = false;
+    rightBar.classList.add('rb--expanded');
+    toggleBtn.classList.add('rb-btn--active');
+    settingsBtn.classList.remove('rb-btn--active');
+    if (getSettings().cacheRightBarState) {
+      localStorage.setItem('dp-rb-open', '1');          // ← persist open state
+      const saved = localStorage.getItem('dp-rb-pane');
+      if (saved === 'settings') { _slideToPane('settings'); } else { _slideToPane('files'); }
+    } else {
+      _slideToPane('files');
+    }
+    _refresh();
+  }
+  function _close() {
+    _open = false;
+    panelOuter.hidden = true;
+    rightBar.classList.remove('rb--expanded');
+    toggleBtn.classList.remove('rb-btn--active');
+    settingsBtn.classList.remove('rb-btn--active');
+    if (getSettings().cacheRightBarState) {
+      localStorage.removeItem('dp-rb-open');             // ← persist closed state
+    }
+    _exitSelectMode();
+  }
+
+  // ── Auto-restore on page load if state memory is ON ──────────────────────
+  if (getSettings().cacheRightBarState && localStorage.getItem('dp-rb-open') === '1') {
+    // Defer so DOM is fully set up first
+    requestAnimationFrame(() => _open_());
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    if (!_open) { _open_(); _slideToPane('files'); }
+    else if (_activePane === 'files') { _close(); }
+    else { _slideToPane('files'); }
+  });
+
+  settingsBtn.addEventListener('click', () => {
+    if (!_open) { _open_(); _slideToPane('settings'); }
+    else if (_activePane === 'settings') { _close(); }
+    else { _slideToPane('settings'); }
+  });
+
+  // ── Files panel header ────────────────────────────────────────────────────
 
   // Header row: title + import button + close
   const hdr = document.createElement('div');
@@ -176,24 +289,8 @@ export function initFileManager() {
 
   panel.append(hdr, body, deleteBar);
 
-  let _open = false;
   let _selectMode = false;
   const _selected = new Set(); // keys in inject-store
-
-  function _open_() {
-    _open = true;
-    panel.hidden = false;
-    rightBar.classList.add('rb--expanded');
-    toggleBtn.classList.add('rb-btn--active');
-    _refresh();
-  }
-  function _close() {
-    _open = false;
-    panel.hidden = true;
-    rightBar.classList.remove('rb--expanded');
-    toggleBtn.classList.remove('rb-btn--active');
-    _exitSelectMode();
-  }
 
   // ── Select mode ───────────────────────────────────────────────────────────
   function _enterSelectMode() {
@@ -241,8 +338,6 @@ export function initFileManager() {
     _exitSelectMode();
     document.dispatchEvent(new CustomEvent('nb-file-imported'));
   });
-
-  toggleBtn.addEventListener('click', () => _open ? _close() : _open_());
 
   // ── Core import logic ─────────────────────────────────────────────────────
   // 1. Parse file in JS

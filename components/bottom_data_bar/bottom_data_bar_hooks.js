@@ -109,8 +109,8 @@ document.addEventListener('compiler-status', ({ detail }) => {
     : `${detail.message}${elapsed}`;
 
   // Make slot clickable — cursor hint
-  slot.style.cursor = 'pointer';
-  slot.title = detail.tip ?? 'Click for details';
+  slot.style.cursor = 'default';
+  slot.title = '';
 
   // Close any open popover when status changes
   if (_statusPopoverOpen) _closeStatusPopover();

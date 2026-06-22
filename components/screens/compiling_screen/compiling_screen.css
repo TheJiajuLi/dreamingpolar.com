@@ -50,21 +50,62 @@
 }
 .output-block:last-child { border-bottom: none; }
 
+/* ── DataFrame / stdout output — Apple HIG data presentation ───────────── */
+/* Wrapper: gives the pre a distinct card-in-card feel with breathing room */
+.output-text-wrap {
+  position: relative;
+  margin: 10px 14px;
+  border-radius: 10px;
+  background: rgba(100,116,139,0.05);
+  border: 1px solid rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+/* Gradient fade on the right edge — hints at horizontal scrollability */
+.output-text-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 48px;
+  background: linear-gradient(to right, transparent, rgba(248,250,252,0.92));
+  pointer-events: none;
+  border-radius: 0 10px 10px 0;
+}
+
 .output-text {
+  display: block;
   background: transparent;
   border: none;
-  padding: 12px 16px;
+  /* Breathing room — never touches the container wall */
+  padding: 14px 20px;
   margin: 0;
-  font-family: var(--code-font, "JetBrains Mono", "Courier New", monospace) !important;
-  font-size: 0.78rem;
-  line-height: 1.7;
-  /* ② strict tab-stop for perfect index column alignment */
+  font-family: var(--code-font, "JetBrains Mono", "SF Mono", "Courier New", monospace) !important;
+  font-size: 0.76rem;
+  line-height: 1.75;
   white-space: pre;
   word-break: normal;
   overflow-x: auto;
-  tab-size: 4;
-  -moz-tab-size: 4;
+  tab-size: 8;
+  -moz-tab-size: 8;
   color: var(--text, #0f172a);
+  /* Zebra striping via repeating gradient locked to line-height */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(1.75em - 0.5px),
+    rgba(100,116,139,0.04) calc(1.75em - 0.5px),
+    rgba(100,116,139,0.04) 1.75em
+  );
+}
+
+/* Subdued metadata line: [N rows x M cols] */
+.output-text-meta {
+  display: block;
+  font-size: 0.62rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  color: var(--text-muted, #94a3b8);
+  padding: 0 20px 12px;
+  letter-spacing: 0.02em;
+  background: transparent;
 }
 
 .output-error {
@@ -317,24 +358,88 @@
 .vsug-discard-btn:hover { border-color: #ef4444; color: #ef4444; }
 
 /* ② No-chart placeholder (no numeric cols / viz error) */
+/* ── No-chart / error state — perfect geometric symmetry ──────────────── */
 .vsug-no-chart-msg {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 24px 16px;
+  gap: 8px;                     /* uniform 8px between every element */
+  padding: 28px 24px;           /* equal top/bottom, equal left/right */
   text-align: center;
 }
+
+/* Loading spinner (in-place, while running) */
+.vsug-no-chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  color: var(--accent, #6366f1);
+  font-size: 22px;
+  animation: spin .8s linear infinite;
+}
+
+/* Icon container — square, centered, subtle */
+.vsug-error-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(100,116,139,0.07);
+  color: var(--text-muted, #94a3b8);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.vsug-error-icon-wrap--warn { background: rgba(217,119,6,0.07); color: #d97706; }
+
+/* Title */
+.vsug-error-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* Body — secondary */
+.vsug-error-body {
+  font-size: 0.64rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.5;
+  max-width: 200px;
+  margin: 0;
+}
+
+/* Action button */
+.vsug-error-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--btn-bg, var(--accent, #6366f1));
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 600;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  cursor: pointer;
+  transition: opacity 0.12s;
+  letter-spacing: 0.01em;
+  margin-top: 4px;   /* only slight extra gap before CTA */
+}
+.vsug-error-action-btn:hover:not(:disabled) { opacity: 0.84; }
+.vsug-error-action-btn:disabled { opacity: 0.45; cursor: default; }
+.vsug-error-action-btn i { font-size: 11px; }
+
+/* Keep legacy class working for sep-hint */
 .vsug-no-chart-icon {
-  font-size: 28px;
+  font-size: 18px;
   color: var(--text-muted, #94a3b8);
   opacity: 0.5;
-}
-.vsug-no-chart-text {
-  font-size: 0.72rem;
-  font-family: var(--code-font, "JetBrains Mono", monospace);
-  color: var(--text-muted, #94a3b8);
 }
 
 /* Export status */

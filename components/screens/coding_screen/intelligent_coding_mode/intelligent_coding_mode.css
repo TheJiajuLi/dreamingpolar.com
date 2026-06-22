@@ -3,7 +3,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px 3px 6px;
+  height: 26px;
+  box-sizing: border-box;
+  padding: 0 8px 0 6px;
   border-radius: 6px;
   border: 1px solid var(--border, #e2e8f0);
   background: transparent;
@@ -11,6 +13,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  line-height: 1;
   text-transform: uppercase;
   cursor: pointer;
   flex-shrink: 0;
@@ -24,7 +27,7 @@
   background: var(--bg, #f3f5f8);
 }
 
-.icm-icon { flex-shrink: 0; width: 14px; height: 14px; object-fit: contain; transition: transform 300ms ease; }
+.icm-icon { flex-shrink: 0; width: 13px; height: 13px; object-fit: contain; transition: transform 300ms ease; }
 
 .icm-btn.icm-on { animation: icm-appear 200ms ease both; }
 

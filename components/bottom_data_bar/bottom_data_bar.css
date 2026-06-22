@@ -64,20 +64,8 @@ body.dp-fullscreen #bottom-data-bar { display: none; }
   white-space: nowrap;
   font-size: inherit;
   font-family: inherit;
-  cursor: pointer;
-  border-radius: 3px;
-  padding: 1px 4px;
-  transition: background 0.12s;
+  cursor: default;
   user-select: none;
-  /* Underline hint that it's clickable */
-  text-decoration-line: underline;
-  text-decoration-style: dotted;
-  text-underline-offset: 2px;
-  text-decoration-color: rgba(99,102,241,0.4);
-}
-.bdb-df-summary:hover {
-  background: var(--bg, #f1f5f9);
-  color: var(--text, #0f172a);
 }
 
 /* ── Fixed-position popover (mounted on <body>, not inside the bar) ─────── */

@@ -7,6 +7,7 @@ import { createRefactorBtn } from '../compiling_screen/refactorization_button/re
 import { createSourceWidget } from '../../look_up_source/look_up_source.js';
 import { resetKernel, preloadPython, getDataFrameSchema, queryKernelContext } from '../../compiler/compiler.js';
 import { clearDataset, getAllDatasets } from '../../shared/dataset_store.js';
+import { getSettings } from '../../right_bar/settings.js';
 
 function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
@@ -40,10 +41,11 @@ function setupCodingScreen() {
   const clearCellsBtn = createClearCellsBtn();
 
   // ── Restart kernel button (two-step confirm) ──────────────
+  const _RESTART_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`;
   const restartKernelBtn = document.createElement('button');
   restartKernelBtn.className   = 'sc-btn sc-btn--danger';
   restartKernelBtn.title       = 'Restart kernel — clears all variables (click twice to confirm)';
-  restartKernelBtn.textContent = '↺';
+  restartKernelBtn.innerHTML   = _RESTART_SVG;
 
   nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn);
 
@@ -76,12 +78,12 @@ function setupCodingScreen() {
   restartKernelBtn.addEventListener('click', async () => {
     if (!_restartArmed) {
       _restartArmed = true;
-      restartKernelBtn.textContent = 'Sure?';
+      restartKernelBtn.innerHTML = `<span class="sc-btn-sure-text">Sure?</span>`;
       restartKernelBtn.classList.add('sc-btn--danger-armed');
       setTimeout(() => {
         if (_restartArmed) {
           _restartArmed = false;
-          restartKernelBtn.textContent = '↺';
+          restartKernelBtn.innerHTML = _RESTART_SVG;
           restartKernelBtn.classList.remove('sc-btn--danger-armed');
         }
       }, 3000);
@@ -89,15 +91,15 @@ function setupCodingScreen() {
     }
     _restartArmed = false;
     restartKernelBtn.classList.remove('sc-btn--danger-armed');
-    restartKernelBtn.disabled    = true;
-    restartKernelBtn.textContent = '↺…';
+    restartKernelBtn.disabled = true;
+    restartKernelBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="sc-btn-spin"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`;
     await resetKernel();
     _usedVarNames.clear();
-    clearAllDatasetLabels();   // clears cell labels, re-arms pendingInject
-    clearDataset();            // wipe dataset_store so bottom bar shows no stale data
-    document.dispatchEvent(new CustomEvent('kernel-restarted')); // bottom bar reset
-    restartKernelBtn.disabled    = false;
-    restartKernelBtn.textContent = '↺';
+    clearAllDatasetLabels();
+    clearDataset();
+    document.dispatchEvent(new CustomEvent('kernel-restarted'));
+    restartKernelBtn.disabled = false;
+    restartKernelBtn.innerHTML = _RESTART_SVG;
   });
 
   // ── Mode label ────────────────────────────────────────
@@ -217,6 +219,7 @@ function setupCodingScreen() {
   const NB_OUTPUTS_KEY = 'dreaming-polar-nb-outputs';
 
   function _saveOutputs(cellId, label, lang, outputs, sourceCode) {
+    if (!getSettings().cacheNotebookOutput) return;  // setting OFF → don't persist
     let stored;
     try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { stored = {}; }
     stored[cellId] = {
@@ -255,8 +258,22 @@ function setupCodingScreen() {
       const rawView = sec.bodyEl?.querySelector('.lus-raw-view');
       if (rawView) { rawView.remove(); sec.textPane.style.display = ''; }
 
-      sec.chartPane.innerHTML = '';
-      sec.chartPane.classList.remove('has-chart');
+      // If a viz retry is in progress, preserve chartPane so there's no collapse flicker.
+      // The caller sets data-preserve-chart before dispatching run-cell-by-id.
+      // Save which viz-suggestion bodies were expanded so we can restore them after re-render
+      const _expandedVizVars = new Set();
+      sec.textPane.querySelectorAll('.vsug-body:not([hidden])').forEach(body => {
+        const name = body.closest('.output-viz-suggestion')?.querySelector('.vsug-name')?.textContent;
+        if (name) _expandedVizVars.add(name);
+      });
+      sec._expandedVizVars = _expandedVizVars;
+
+      if (sec.sectionEl.dataset.preserveChart) {
+        delete sec.sectionEl.dataset.preserveChart;
+      } else {
+        sec.chartPane.innerHTML = '';
+        sec.chartPane.classList.remove('has-chart');
+      }
       sec.textPane.innerHTML = '';
       return sec;
     }
@@ -389,6 +406,22 @@ function setupCodingScreen() {
         finally { btn.disabled = false; btn.textContent = 'Ask AI'; }
       },
     });
+
+    // Restore viz-suggestion bodies that were expanded before re-render
+    if (sec._expandedVizVars?.size) {
+      sec.textPane.querySelectorAll('.output-viz-suggestion').forEach(card => {
+        const name = card.querySelector('.vsug-name')?.textContent;
+        if (name && sec._expandedVizVars.has(name)) {
+          const body    = card.querySelector('.vsug-body');
+          const chevron = card.querySelector('.vsug-chevron');
+          if (body) {
+            body.hidden = false;
+            chevron?.classList.add('vsug-chevron--open');
+          }
+        }
+      });
+      sec._expandedVizVars = null;
+    }
   }
 
   document.addEventListener('notebook-cells-reordered', ({ detail: { order } }) => {
@@ -452,18 +485,18 @@ function setupCodingScreen() {
     }
   });
 
-  // ── Restore pill — appears in top-right corner when panel is hidden ──────────
+  // ── Restore button — lives in the notebook toolbar (far right), hidden by default ──
   const restoreBtn = document.createElement('button');
-  restoreBtn.className = 'nb-out-restore-btn';
+  restoreBtn.className = 'sc-btn nb-out-restore-btn';
   restoreBtn.title = 'Restore output panel';
-  restoreBtn.textContent = '+';
+  restoreBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
   restoreBtn.hidden = true;
   restoreBtn.addEventListener('click', () => {
     nbOutputPanel.style.display = '';
     restoreBtn.hidden = true;
   });
-  // Mount on the notebookView so it sits in the top-right corner of the coding area
-  notebookView.appendChild(restoreBtn);
+  // Mount in the notebook toolbar so it stays in the left panel, never overlaps output header
+  nbToolbar.appendChild(restoreBtn);
 
   function _hidePanel() {
     nbOutputPanel.style.display = 'none';
@@ -640,15 +673,24 @@ function setupCodingScreen() {
 
   // Restore outputs from previous session on load
   ;(function _restoreStoredOutputs() {
+    if (!getSettings().cacheNotebookOutput) return;  // setting OFF → skip restore
     let stored;
     try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { return; }
     for (const [cellId, entry] of Object.entries(stored)) {
       if (!entry?.outputs?.length) continue;
       const sec = getOrCreateNbSection(cellId, entry.label ?? cellId, entry.lang ?? 'python');
       _renderIntoSection(sec, entry.outputs, entry.sourceCode ?? null, entry.lang ?? 'python');
+      // Only mark stale if user has NOT opted into caching — if they did, this IS the normal state
+      // cacheNotebookOutput ON → no badge; OFF → show badge warning it's old data
     }
     if (nbSections.size > 0) nbOutputPanel.style.display = '';
   })();
+
+  // Clear stale mark when the cell produces fresh output
+  document.addEventListener('compile-result', ({ detail }) => {
+    if (!detail?.cellId) return;
+    nbSections.get(detail.cellId)?.sectionEl.classList.remove('cds-section--stale');
+  });
 
   // ── Chat-mode placeholder ─────────────────────────────
   const chatPlaceholder = document.createElement('div');

@@ -18,25 +18,33 @@
   background: var(--surface, #ffffff);
 }
 
+/* ── Run All button — Apple HIG Primary Action ─────────────────────── */
 .nb-run-all-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px 3px 6px;
+  height: 26px;
+  box-sizing: border-box;
+  padding: 0 9px 0 7px;
   border-radius: 6px;
-  border: 1px solid var(--border, #e2e8f0);
-  background: transparent;
-  color: var(--text, #0f172a);
-  font-size: 0.65rem;
+  border: 1px solid transparent;
+  background: var(--accent, #6366f1);
+  color: #fff;
+  font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.13s, border-color 0.13s, color 0.13s;
+  box-shadow: 0 1px 3px rgba(99,102,241,0.3), 0 1px 0 rgba(255,255,255,0.12) inset;
+  transition: opacity 0.12s, box-shadow 0.12s;
+  white-space: nowrap;
 }
-.nb-run-all-btn:hover    { background: var(--accent-soft, #e0e3ff); border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
-.nb-run-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.nb-run-all-btn svg { flex-shrink: 0; }
+.nb-run-all-label   { letter-spacing: 0.01em; }
+.nb-run-all-btn:hover    { opacity: 0.88; }
+.nb-run-all-btn:active   { opacity: 0.75; box-shadow: 0 0 0 rgba(99,102,241,0.2); }
+.nb-run-all-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .nb-cell-count {
   font-size: 0.68rem;
@@ -375,6 +383,23 @@
   color: var(--accent, #6366f1);
 }
 
+/* Stale cache: tiny badge on the label only — no overlay on content */
+.cds-output-section.cds-section--stale .cds-output-section-label::after {
+  content: '缓存';
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.06);
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+[data-theme="dark"]   .cds-output-section.cds-section--stale .cds-output-section-label::after,
+[data-theme="grey"]   .cds-output-section.cds-section--stale .cds-output-section-label::after { background: rgba(255,255,255,0.08); }
+[data-theme="aurora"] .cds-output-section.cds-section--stale .cds-output-section-label::after { background: rgba(192,132,252,0.12); color: rgba(192,132,252,0.6); }
+
 /* Label: cell identifier left, action buttons right */
 .cds-output-section-label {
   display: flex;
@@ -531,7 +556,7 @@
   border-left: none;
   border-bottom: 1px solid var(--border, #e2e8f0);
   overflow: visible;
-  padding: 14px 14px 0;    /* ① chart breathing room — axes don't touch card edge */
+  padding: 0;
 }
 .cds-output-chart-pane .output-image {
   border-bottom: none;

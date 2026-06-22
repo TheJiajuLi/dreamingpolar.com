@@ -57,6 +57,12 @@ function _loadScript(src) {
 const _INJECT_KEY = 'dreaming-polar-inject-store';
 
 async function _preWriteInjectStore(py) {
+  // Respect the "内核数据预载" setting
+  try {
+    const s = JSON.parse(localStorage.getItem('dp-settings') ?? '{}');
+    if (s.cacheKernelData === false) return;
+  } catch (_) {}
+
   let store;
   try { store = JSON.parse(localStorage.getItem(_INJECT_KEY) ?? '{}'); }
   catch { return; }
@@ -177,6 +183,15 @@ try:
     if _HAS_MPL:
         for _n in _plt.get_fignums():
             _f = _plt.figure(_n)
+            # Skip blank figures — any axis that has no plotted artists means
+            # the template ran on data with no numeric columns, producing empty axes.
+            _has_data = any(
+                len(_ax.lines) + len(_ax.collections) + len(_ax.patches) > 0
+                for _ax in _f.get_axes()
+            )
+            if not _has_data:
+                _plt.close(_f)
+                continue
             _b = io.BytesIO()
             _f.savefig(_b, format='png', bbox_inches='tight', dpi=150)
             _b.seek(0)
@@ -243,6 +258,21 @@ try:
                     elif _tab:  _vc['sepHint'] = '\\t'
             except Exception: pass
         _viz_candidates.append(_vc)
+
+    # __dp_viz_hint__: ARIA preamble sets this to force viz-suggestion even
+    # when the variable shape hasn't changed (pre-existing variable re-used).
+    _hint = _dp_kernel_ns.pop('__dp_viz_hint__', None)
+    if _hint and isinstance(_hint, str) and _hint in _dp_kernel_ns:
+        _already = any(c['varName'] == _hint for c in _viz_candidates)
+        if not _already:
+            _hv = _dp_kernel_ns[_hint]
+            _hk = type(_hv).__name__
+            if _hk in ('DataFrame', 'Series'):
+                try:
+                    _hsh = list(_hv.shape)
+                    _hshape = f'{_hsh[0]:,}\\u884c\\u00d7{_hsh[1]}\\u5217' if len(_hsh) > 1 else f'{_hsh[0]:,}'
+                    _viz_candidates.append({'varName': _hint, 'kind': _hk.lower(), 'shape': _hshape})
+                except Exception: pass
 except Exception:
     pass   # detection errors must not surface to the user
 
@@ -723,7 +753,7 @@ if not getattr(_mpl_v, '_dp_font_set', False):
 import matplotlib.pyplot as _plt_v, io as _io_v, base64 as _b64_v, json as _jv
 
 _fig_v, _ax_v = _plt_v.subplots(figsize=(7, 3.8))
-_obj_v = _dp_kernel_ns.get(_dp_viz_varname)
+_obj_v = _dp_kernel_ns.get(_dp_viz_varname); _obj_v = _obj_v if _obj_v is not None else globals().get(_dp_viz_varname)
 if _obj_v is None:
     raise ValueError(f"Variable '{_dp_viz_varname}' not found in kernel namespace")
 
@@ -842,7 +872,7 @@ export async function getDataFrameSchema(varName) {
   try {
     return JSON.parse(_pyodide.runPython(`
 import json as _j
-_df = _dp_kernel_ns.get(_dp_schema_var)
+_df = _dp_kernel_ns.get(_dp_schema_var); _df = _df if _df is not None else globals().get(_dp_schema_var)
 if _df is None: raise ValueError(f"Variable '{_dp_schema_var}' not found")
 import pandas as _pd
 _rows = []
@@ -869,7 +899,7 @@ export async function previewClean(varName, op) {
     if (op === 'dropna') {
       return JSON.parse(_pyodide.runPython(`
 import json as _j
-_df = _dp_kernel_ns.get(_dp_clean_var)
+_df = _dp_kernel_ns.get(_dp_clean_var); _df = _df if _df is not None else globals().get(_dp_clean_var)
 if _df is None: raise ValueError(f"Variable '{_dp_clean_var}' not found")
 _j.dumps({'affected': int(len(_df) - len(_df.dropna(how='all'))), 'total': int(len(_df))})
 `));
@@ -877,7 +907,7 @@ _j.dumps({'affected': int(len(_df) - len(_df.dropna(how='all'))), 'total': int(l
     if (op === 'drop_dup') {
       return JSON.parse(_pyodide.runPython(`
 import json as _j
-_df = _dp_kernel_ns.get(_dp_clean_var)
+_df = _dp_kernel_ns.get(_dp_clean_var); _df = _df if _df is not None else globals().get(_dp_clean_var)
 if _df is None: raise ValueError(f"Variable '{_dp_clean_var}' not found")
 _j.dumps({'affected': int(_df.duplicated().sum()), 'total': int(len(_df))})
 `));
@@ -885,7 +915,7 @@ _j.dumps({'affected': int(_df.duplicated().sum()), 'total': int(len(_df))})
     if (op === 'date_fmt') {
       return JSON.parse(_pyodide.runPython(`
 import json as _j, pandas as _pd
-_df = _dp_kernel_ns.get(_dp_clean_var)
+_df = _dp_kernel_ns.get(_dp_clean_var); _df = _df if _df is not None else globals().get(_dp_clean_var)
 if _df is None: raise ValueError(f"Variable '{_dp_clean_var}' not found")
 _cands = []
 for _col in _df.columns:
@@ -990,7 +1020,7 @@ export async function exportDataFrame(varName, format) {
   try {
     const raw = await _pyodide.runPythonAsync(`
 import json as _j, io as _io, base64 as _b64, pandas as _pd, re as _re
-_df = _dp_kernel_ns.get(_dp_export_var)
+_df = _dp_kernel_ns.get(_dp_export_var); _df = _df if _df is not None else globals().get(_dp_export_var)
 if _df is None:
     raise ValueError(f"Variable '{_dp_export_var}' not found in kernel namespace")
 if not isinstance(_df, _pd.DataFrame):

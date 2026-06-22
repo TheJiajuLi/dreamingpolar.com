@@ -30,27 +30,184 @@
   align-items: stretch;
 }
 
-/* ── File panel ─────────────────────────────────────────────────────────── */
-.rb-file-panel {
+/* ── Settings strip button ─────────────────────────────────────────────── */
+.rb-settings-toggle-btn { width: 26px; height: 26px; }
+
+/* ── Outer clip container ─────────────────────────────────────────────── */
+.rb-panel-outer {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  border-radius: 14px;
+}
+.rb-panel-outer[hidden] { display: none; }
+
+/* ── Sliding track — two panes side by side ────────────────────────────── */
+.rb-panel-track {
+  display: flex;
+  width: 200%;
+  height: 100%;
+  transform: translateX(0);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Each slide pane occupies half the track = 100% of visible area ────── */
+.rb-slide-pane {
+  width: 50%;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  /* macOS glass material — translucent with vibrancy */
+  overflow: hidden;
   background: rgba(255,255,255,0.82);
   backdrop-filter: blur(24px) saturate(1.6);
   -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  border-radius: 14px;
-  overflow: hidden;
   border: 1px solid rgba(255,255,255,0.6);
   box-shadow: 0 8px 32px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
 }
 
-/* Hide icon strip when file panel is open — panel header has its own close btn */
+/* ── Settings panel ────────────────────────────────────────────────────── */
+.dp-settings-panel { overflow: hidden; }
+
+.dp-settings-hdr {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  height: 34px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+.dp-settings-hdr-title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+
+.dp-settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+}
+
+/* Section label */
+.dp-setting-section {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 8px 4px 4px;
+}
+.dp-setting-section:first-child { padding-top: 2px; }
+
+/* Card group */
+.dp-setting-card {
+  background: rgba(100,116,139,0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.04);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.dp-setting-sep {
+  height: 1px;
+  background: rgba(0,0,0,0.05);
+  margin: 0 12px;
+}
+
+/* Individual row */
+.dp-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.dp-setting-text { flex: 1; min-width: 0; }
+.dp-setting-name {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text, #0f172a);
+  font-family: -apple-system, "SF Pro Text", "Inter", sans-serif;
+}
+.dp-setting-sub {
+  font-size: 0.6rem;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 2px;
+  line-height: 1.4;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+}
+
+/* ── iOS Toggle ─────────────────────────────────────────────────────────── */
+.dp-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.dp-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.dp-toggle-track {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(120,120,128,0.16);
+  position: relative;
+  transition: background 0.28s cubic-bezier(0.25, 1, 0.5, 1);
+  flex-shrink: 0;
+}
+.dp-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(0,0,0,0.08);
+  transition: left 0.28s cubic-bezier(0.25,1,0.5,1),
+              width 0.14s cubic-bezier(0.25,1,0.5,1);
+}
+/* Checked state */
+.dp-toggle input:checked ~ .dp-toggle-track {
+  background: var(--accent, #6366f1);
+}
+.dp-toggle input:checked ~ .dp-toggle-track .dp-toggle-thumb {
+  left: 21px;
+}
+/* Stretch spring on press — jelly physics */
+.dp-toggle-track:active .dp-toggle-thumb { width: 24px; }
+.dp-toggle input:checked ~ .dp-toggle-track:active .dp-toggle-thumb {
+  width: 24px;
+  left: 15px;
+}
+
+/* Dark themes */
+[data-theme="dark"]   .rb-slide-pane,
+[data-theme="grey"]   .rb-slide-pane   { background: rgba(22,27,34,0.88); border-color: rgba(255,255,255,0.08); }
+[data-theme="aurora"] .rb-slide-pane   { background: rgba(14,14,36,0.88); border-color: rgba(192,132,252,0.15); }
+[data-theme="dark"]   .dp-setting-name,
+[data-theme="grey"]   .dp-setting-name  { color: #e6edf3; }
+[data-theme="aurora"] .dp-setting-name  { color: #e0e0ff; }
+[data-theme="dark"]   .dp-setting-card,
+[data-theme="grey"]   .dp-setting-card  { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
+
+/* ── File panel (now a rb-slide-pane, glass handled by parent) ─────────── */
+.rb-file-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hide icon strip when expanded — both panels have their own headers */
 #right-bar.rb--expanded .rb-top,
 #right-bar.rb--expanded .rb-bottom { display: none; }
-.rb-file-panel[hidden] { display: none; }
 
 .rb-file-hdr {
   display: flex;
@@ -359,11 +516,9 @@
 
 /* Dark theme */
 /* Dark themes: opaque glass with frosted tint */
-[data-theme="dark"]   .rb-file-panel { background: rgba(22,27,34,0.88); border-color: rgba(255,255,255,0.08); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+/* glass handled by .rb-slide-pane dark overrides above */
 [data-theme="dark"]   .rb-file-hdr   { background: transparent; border-color: rgba(255,255,255,0.06); }
-[data-theme="grey"]   .rb-file-panel { background: rgba(45,51,59,0.88); border-color: rgba(255,255,255,0.08); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 [data-theme="grey"]   .rb-file-hdr   { background: transparent; border-color: rgba(255,255,255,0.06); }
-[data-theme="aurora"] .rb-file-panel { background: rgba(14,14,36,0.88); border-color: rgba(192,132,252,0.15); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 [data-theme="aurora"] .rb-file-hdr   { background: transparent; border-color: rgba(192,132,252,0.1); }
 
 /* ── Top and bottom slot groups ──────────────────────────────────────────── */

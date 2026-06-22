@@ -5,15 +5,20 @@ import { getCellDatasetInfo } from '../../customise_code_block/customise_code_bl
 const _CODE_TEMPLATES = {
   'time-series': v =>
     `import matplotlib.pyplot as plt\n` +
-    `# 设置时间索引\n` +
-    `_date_col = ${v}.select_dtypes(include=["object","datetime"]).columns[0]\n` +
-    `${v}[_date_col] = pd.to_datetime(${v}[_date_col])\n` +
-    `${v} = ${v}.set_index(_date_col)\n` +
-    `print(${v}.shape)\n` +
-    `${v}.select_dtypes(include="number").plot(\n` +
-    `    figsize=(14, 6), grid=True, linewidth=1.2,\n` +
-    `    title="${v} — 时序趋势"\n` +
-    `)\n` +
+    `_dt_cols = ${v}.select_dtypes(include=["object","datetime"]).columns\n` +
+    `_num_cols = ${v}.select_dtypes(include="number")\n` +
+    `if len(_dt_cols) == 0 or len(_num_cols.columns) == 0:\n` +
+    `    print(f"提示：${v} 缺少日期列或数值列，无法绘制时序图。列：{list(${v}.columns)}")\n` +
+    `else:\n` +
+    `    _date_col = _dt_cols[0]\n` +
+    `    _tmp = ${v}.copy()\n` +
+    `    _tmp[_date_col] = pd.to_datetime(_tmp[_date_col])\n` +
+    `    _tmp = _tmp.set_index(_date_col)\n` +
+    `    print(_tmp.shape)\n` +
+    `    _tmp.select_dtypes(include="number").plot(\n` +
+    `        figsize=(14, 6), grid=True, linewidth=1.2,\n` +
+    `        title="${v} — 时序趋势"\n` +
+    `    )\n` +
     `${v}.head()`,
 
   'overview':
@@ -28,14 +33,17 @@ const _CODE_TEMPLATES = {
     v =>
     `import matplotlib.pyplot as plt\n` +
     `_num = ${v}.select_dtypes(include="number").iloc[:, :3]\n` +
-    `fig, ax = plt.subplots(figsize=(14, 6))\n` +
-    `_num.plot(ax=ax, alpha=0.4, linewidth=0.8, label=[f"{c}" for c in _num.columns])\n` +
-    `_num.rolling(20).mean().plot(\n` +
-    `    ax=ax, linewidth=1.8,\n` +
-    `    label=[f"{c} MA20" for c in _num.columns]\n` +
-    `)\n` +
-    `ax.set_title("${v} — 20 期移动均线", fontsize=14)\n` +
-    `ax.legend(); ax.grid(True); plt.tight_layout()\n` +
+    `if _num.empty:\n` +
+    `    print(f"提示：${v} 没有数值列，无法绘制均线图。列：{list(${v}.columns)}")\n` +
+    `else:\n` +
+    `    fig, ax = plt.subplots(figsize=(14, 6))\n` +
+    `    _num.plot(ax=ax, alpha=0.4, linewidth=0.8, label=[f"{c}" for c in _num.columns])\n` +
+    `    _num.rolling(20).mean().plot(\n` +
+    `        ax=ax, linewidth=1.8,\n` +
+    `        label=[f"{c} MA20" for c in _num.columns]\n` +
+    `    )\n` +
+    `    ax.set_title("${v} — 20 期移动均线", fontsize=14)\n` +
+    `    ax.legend(); ax.grid(True); plt.tight_layout()\n` +
     `${v}.head()`,
 
   'describe':
@@ -97,10 +105,16 @@ function _buildLoadPreamble(varName, filename, fileType) {
     xml:  `pd.read_xml("${filename}")`,
   };
   const reader = readers[fileType ?? 'csv'] ?? `pd.read_csv("${filename}")`;
+  // Load from file if not already in globals, then sync to _dp_kernel_ns.
+  // Append a special sentinel __dp_viz_hint__ that the RUNNER's viz-candidate
+  // loop reads to force a viz-suggestion even when the shape hasn't changed.
   return (
     `import pandas as pd\n` +
     `if '${varName}' not in dir():\n` +
-    `    ${varName} = ${reader}\n`
+    `    ${varName} = ${reader}\n` +
+    `if '_dp_kernel_ns' in dir():\n` +
+    `    _dp_kernel_ns['${varName}'] = ${varName}\n` +
+    `    _dp_kernel_ns['__dp_viz_hint__'] = '${varName}'\n`
   );
 }
 

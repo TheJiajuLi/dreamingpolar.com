@@ -384,7 +384,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   csvBtn.className = 'nb-btn nb-csv-btn';
   csvBtn.title     = 'Load CSV / Excel as DataFrame into this cell';
 
-  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, csvBtn, dsLabel, dsClearBtn, importBtn);
+  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, dsLabel, dsClearBtn, importBtn);
 
   const editor = document.createElement('textarea');
   editor.className    = 'nb-editor';
@@ -692,14 +692,17 @@ export function init(container, externalTopbar) {
 
   const runAllBtn = document.createElement('button');
   runAllBtn.className = 'nb-run-all-btn';
-  runAllBtn.innerHTML = '&#9654;&#9654;&nbsp;Run All';
-  runAllBtn.title = 'Run all cells in order';
+  runAllBtn.innerHTML =
+    `<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 2.5l10 5.5-10 5.5V2.5z"/><path d="M13 2h1.5v12H13V2z"/></svg>` +
+    `<span class="nb-run-all-label">Run All</span>`;
+  runAllBtn.title = 'Run all cells in order (⌘⏎)';
 
   const cellCount = document.createElement('span');
   cellCount.className = 'nb-cell-count';
 
   _updateCellCount = () => {
-    cellCount.textContent = `${_cells.length} cell${_cells.length === 1 ? '' : 's'}`;
+    const n = _cells.length;
+    cellCount.textContent = `${n} cell${n === 1 ? '' : 's'}`;
   };
 
   const icmSlot = document.createElement('div');
