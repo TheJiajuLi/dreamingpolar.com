@@ -10,6 +10,7 @@ import { ask, systemExplainForLang } from '../ai/ai_client.js';
 import { createRefactorBtn } from '../screens/compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
+import { getSettings } from '../right_bar/settings.js';
 import { createLoadDataBtn } from '../import/import_data.js';
 import { setDataset } from '../shared/dataset_store.js';
 import { injectDataFrame, queryKernelDataframes } from '../compiler/compiler.js';
@@ -211,6 +212,48 @@ let _runSeq    = 0;
 let _saveTimer = null;
 let _cellsEl   = null;
 let _lastFocusedCellId = null; // track most recently focused cell for rb-insert-file
+
+// ── FileTracker — persistent filename→cellId registry ────────────────────────
+// Single source of truth for which cell "owns" a given file. Used by the
+// file manager smart-click to navigate rather than re-insert.
+const _FILE_CELL_MAP_KEY = 'dp-file-cell-map';
+const FileTracker = {
+  _get() {
+    try { return JSON.parse(localStorage.getItem(_FILE_CELL_MAP_KEY) ?? '{}'); } catch { return {}; }
+  },
+  _set(map) {
+    try { localStorage.setItem(_FILE_CELL_MAP_KEY, JSON.stringify(map)); } catch {}
+  },
+  /** Register that `filename` lives in `cellId`. */
+  track(filename, cellId) {
+    if (!filename || !cellId) return;
+    const map = this._get(); map[filename] = cellId; this._set(map);
+  },
+  /** Remove all entries pointing to `cellId` (called on cell delete). */
+  untrackCell(cellId) {
+    const map = this._get();
+    let changed = false;
+    for (const fn of Object.keys(map)) { if (map[fn] === cellId) { delete map[fn]; changed = true; } }
+    if (changed) this._set(map);
+  },
+  /** Remove entry for a specific filename (cell code was cleared). */
+  untrackFile(filename) {
+    const map = this._get(); delete map[filename]; this._set(map);
+  },
+  /**
+   * Find the live cell that owns `filename`.
+   * Returns the cell object or null (cell may have been deleted since last session).
+   */
+  findCell(filename) {
+    if (!filename) return null;
+    const map  = this._get();
+    const cid  = map[filename];
+    if (!cid) return null;
+    const cell = _cells.find(c => c.id === cid);
+    if (!cell) { this.untrackFile(filename); return null; } // stale — prune
+    return cell;
+  },
+};
 
 // ── Per-cell CSV import — set by coding_screen.js ────────
 let _varNameResolver = null; // (filename) => string
@@ -737,6 +780,7 @@ export function init(container, externalTopbar) {
   // Clean up inject store when a cell is deleted
   document.addEventListener('notebook-cell-deleted', ({ detail: { cellId } }) => {
     _removeFromInjectStore(cellId);
+    FileTracker.untrackCell(cellId); // remove file→cell mapping so next click re-inserts
   });
 
   const nb = document.createElement('div');
@@ -836,33 +880,34 @@ export function init(container, externalTopbar) {
   });
 
   // File manager smart click:
-  // • File already in a cell → navigate to that cell (switch screen + scroll + flash)
-  // • File not in any cell  → insert into first empty cell, or create one
+  // • File tracked in FileTracker → navigate (switch screen + scroll + flash)
+  // • File not tracked            → insert into first empty cell, or create one
   document.addEventListener('rb-file-smart-click', ({ detail: { code, entry } }) => {
     const filename = entry?.filename ?? '';
 
-    // ── Case 1: file already inserted in a cell ───────────────────────────
-    const existing = _cells.find(c => c._datasetInfo?.filename === filename);
-    if (existing) {
-      // Switch to coding screen if not already visible
+    // Helper: switch to coding screen if not visible, then scroll + flash a cell
+    function _navigateTo(cell) {
       const sc = window.screenController;
       const st = sc?.getState('coding');
       if (st === 'minimized' || st === 'closed') sc?.restore('coding');
-
-      // Scroll to the cell and flash it
       requestAnimationFrame(() => {
-        existing.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        existing.editor.focus();
-        existing.el.classList.add('nb-cell--nav-flash');
-        setTimeout(() => existing.el.classList.remove('nb-cell--nav-flash'), 900);
+        cell.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cell.editor.focus();
+        cell.el.classList.add('nb-cell--nav-flash');
+        setTimeout(() => cell.el.classList.remove('nb-cell--nav-flash'), 900);
       });
-      return;
     }
 
-    // ── Case 2: find first empty cell and insert there ────────────────────
+    // ── Case 1: file already tracked → navigate, never re-insert ─────────
+    if (getSettings().smartFileNavigation) {
+      const existing = FileTracker.findCell(filename)
+        ?? _cells.find(c => c._datasetInfo?.filename === filename); // fallback: CSV-button imports
+      if (existing) { _navigateTo(existing); return; }
+    }
+
+    // ── Case 2: find first empty cell and insert ──────────────────────────
     const emptyCell = _cells.find(c => !c.editor.value.trim());
     const target = emptyCell ?? (() => {
-      // No empty cell — create one at the end
       const c = makeCell('python', '');
       _cells.push(c);
       rebuildCells();
@@ -874,17 +919,15 @@ export function init(container, externalTopbar) {
     target.editor.dispatchEvent(new Event('input'));
     saveAll();
 
-    // Switch to coding screen and scroll to the cell
-    const sc = window.screenController;
-    const st = sc?.getState('coding');
-    if (st === 'minimized' || st === 'closed') sc?.restore('coding');
+    // Register in FileTracker so next click navigates here
+    FileTracker.track(filename, target.id);
 
-    requestAnimationFrame(() => {
-      target.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      target.editor.focus();
-      target.el.classList.add('nb-cell--nav-flash');
-      setTimeout(() => target.el.classList.remove('nb-cell--nav-flash'), 900);
-    });
+    _navigateTo(target);
+
+    // Auto-run the cell if setting is ON
+    if (getSettings().autoRunOnFileInsert) {
+      requestAnimationFrame(() => target.el.querySelector('.nb-run')?.click());
+    }
   });
 
   // When AI generates code while the Customise tab is active, the notebook

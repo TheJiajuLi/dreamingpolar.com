@@ -9,6 +9,8 @@ const DEFAULTS = {
   cacheKernelData:      true,   // prewrite inject-store files to Pyodide FS at boot
   cacheRightBarState:   true,   // remember which panel (files/settings) was last open
   autoSwitchFiles:      false,  // auto-switch to file manager when cursor is on pd.read_csv line
+  autoRunOnFileInsert:  true,   // auto-run cell after inserting file from file manager
+  smartFileNavigation:  true,   // clicking an already-inserted file navigates to its cell
 };
 
 export function getSettings() {
@@ -145,6 +147,16 @@ export function createSettingsPanel(onSettingChange) {
   // ── Interaction section ────────────────────────────────────────────────────
   body.appendChild(_makeSection('交互'));
   body.appendChild(_makeCard(
+    _makeRow(
+      '插入文件后自动运行',
+      '从文件中心点击插入时，自动运行对应 Cell',
+      'autoRunOnFileInsert', settings, onChange
+    ),
+    _makeRow(
+      '文件智能导航',
+      '已插入的文件点击后追踪跳转至对应 Cell，而非重复插入',
+      'smartFileNavigation', settings, onChange
+    ),
     _makeRow(
       '文件管理自动切换',
       '光标停在 pd.read_csv() 行时自动切换到文件管理',
