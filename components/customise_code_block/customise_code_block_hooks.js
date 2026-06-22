@@ -26,7 +26,8 @@ export function attachCellHooks({
     if (e.key === 'Tab') {
       e.preventDefault();
       // If a completion popup is visible, let the completion handler accept the item
-      const popup = editor.parentElement?.querySelector('.pcc-popup');
+      // Popup is mounted on document.body, so query there (not editor's parent)
+      const popup = document.querySelector('.pcc-popup');
       if (popup && popup.style.display !== 'none') return;
       const s = editor.selectionStart;
       editor.value = editor.value.slice(0, s) + '    ' + editor.value.slice(editor.selectionEnd);
