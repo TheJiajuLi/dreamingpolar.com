@@ -885,17 +885,17 @@ export function init(container, externalTopbar) {
   document.addEventListener('rb-file-smart-click', ({ detail: { code, entry } }) => {
     const filename = entry?.filename ?? '';
 
-    // Helper: switch to coding screen if not visible, then scroll + flash a cell
+    // Helper: ensure coding screen is visible, then scroll + flash the target cell.
+    // Always calls restore() — if already 'normal' it's a no-op; if minimized/closed it opens it.
     function _navigateTo(cell) {
-      const sc = window.screenController;
-      const st = sc?.getState('coding');
-      if (st === 'minimized' || st === 'closed') sc?.restore('coding');
-      requestAnimationFrame(() => {
+      window.screenController?.restore('coding');
+      // Give the screen time to become visible before scrolling
+      setTimeout(() => {
         cell.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         cell.editor.focus();
         cell.el.classList.add('nb-cell--nav-flash');
         setTimeout(() => cell.el.classList.remove('nb-cell--nav-flash'), 900);
-      });
+      }, 80);
     }
 
     // ── Case 1: file already tracked → navigate, never re-insert ─────────
