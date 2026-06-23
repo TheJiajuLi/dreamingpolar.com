@@ -368,6 +368,8 @@ function _renderFollowupChunk(raw, container) {
       flush();
     }
   });
+
+  _typesetMath(container);
 }
 
 // ── Markdown-lite renderer (## h3, **bold**, think filter) ───────────────────
@@ -404,6 +406,15 @@ function _renderChunk(rawAccum, container) {
     }
   });
   _flushP();
+
+  // Trigger MathJax to render any $$ ... $$ or \( ... \) blocks in the text
+  _typesetMath(container);
+}
+
+function _typesetMath(el) {
+  if (!window.MathJax) return;
+  const run = () => MathJax.typesetPromise([el]).catch(() => {});
+  window.MathJax.startup?.promise ? MathJax.startup.promise.then(run) : run();
 }
 
 // ── PDF 导出（html2canvas + jsPDF → 自动下载，与 CSV/XML 导出行为一致）────────
