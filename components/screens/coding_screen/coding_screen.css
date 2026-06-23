@@ -19,10 +19,9 @@
   align-items: center;
   gap: 8px;
   padding: 0 16px;
-  height: 44px;
+  height: 36px;     /* compressed: was 44px */
   flex-shrink: 0;
-  /* No hard border — color difference between toolbar bg (--bg) and cell bg (--surface) does the work */
-  box-shadow: 0 0.5px 0 rgba(0,0,0,0.05);  /* ultra-subtle shadow hint, not a line */
+  box-shadow: 0 0.5px 0 rgba(0,0,0,0.05);
 }
 
 .cds-runall-slot {

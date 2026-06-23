@@ -58,7 +58,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 12px 24px;
+  padding: 6px 12px 24px;  /* top compressed: 12→6px; aligned with 16px toolbar padding */
   min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;   /* invisible at rest */
