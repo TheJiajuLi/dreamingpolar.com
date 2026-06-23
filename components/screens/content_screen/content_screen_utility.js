@@ -96,7 +96,22 @@ export function renderJson(data, body) {
 
   for (const block of blocks) {
     const id       = (block.label ?? '').toLowerCase().replace(/\s+/g, '-');
-    const examples = block.examples ?? [{ code: block.code, result: block.result, resultType: block.resultType }];
+    const examples = block.examples ?? (block.code ? [{ code: block.code, result: block.result, resultType: block.resultType }] : []);
+
+    // Optional intro paragraph
+    const introHtml = block.intro
+      ? `<p class="card-intro">${escapeHtml(block.intro)}</p>`
+      : '';
+
+    // Optional callout / note box
+    const noteHtml = block.note
+      ? `<div class="card-note"><span class="card-note-icon">💡</span><span>${escapeHtml(block.note)}</span></div>`
+      : '';
+
+    // Optional bullet list
+    const itemsHtml = block.items?.length
+      ? `<ul class="card-items">${block.items.map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ul>`
+      : '';
 
     const exHtml = examples.map(ex => {
       let resultHtml = '';
@@ -112,8 +127,11 @@ export function renderJson(data, body) {
           resultHtml = `<div class="expression">\\[${ex.result}\\]</div>`;
         }
       }
+      // Optional per-example description
+      const exDesc = ex.desc ? `<p class="ex-desc">${escapeHtml(ex.desc)}</p>` : '';
       return `
         <div class="example-pair">
+          ${exDesc}
           <div class="cs-code-wrap"><pre class="code-block"><code>${escapeHtml(ex.code ?? '')}</code></pre>${COPY_BTN}</div>
           ${resultHtml}
         </div>`;
@@ -122,7 +140,7 @@ export function renderJson(data, body) {
     html += `
       <section class="card" id="${id}">
         <h2>${escapeHtml(block.label ?? '')}</h2>
-        ${exHtml}
+        ${introHtml}${noteHtml}${itemsHtml}${exHtml}
       </section>`;
   }
 

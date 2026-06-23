@@ -1,291 +1,106 @@
 {
-  "setup": "import matplotlib.pyplot as plt\nimport numpy as np",
+  "title": "Matplotlib 数据可视化",
+  "setup": "import matplotlib.pyplot as plt\nimport numpy as np\nimport pandas as pd",
+
   "blocks": [
 
     {
-      "label": "Line Plot",
+      "label": "什么是 Matplotlib？",
+      "intro": "Matplotlib 是 Python 最经典的可视化库，几乎所有科学图表都可以用它绘制。核心接口是 plt（pyplot），每次调用 plt.show() 渲染图表。",
+      "note": "在 Dreaming Polar Notebook 中，plt.show() 已被自动 hook，图表会直接渲染在 Cell 输出区，无需额外配置。",
+      "items": [
+        "折线图 plot() — 趋势与时序",
+        "散点图 scatter() — 分布与相关性",
+        "柱状图 bar() / barh() — 类别对比",
+        "直方图 hist() — 频率分布",
+        "热力图 imshow() — 矩阵与相关系数",
+        "子图 subplots() — 多图并排"
+      ]
+    },
+
+    {
+      "label": "折线图 Line Plot",
+      "intro": "折线图最适合展示随时间或连续变量变化的趋势。支持多条线、图例、自定义样式。",
       "examples": [
         {
-          "code": "x = np.linspace(0, 2 * np.pi, 100)\ny = np.sin(x)\nplt.plot(x, y)\nplt.title('Sine Wave')\nplt.xlabel('x')\nplt.ylabel('sin(x)')\nplt.show()",
-          "result": "A smooth sine wave plotted from 0 to 2π.",
-          "resultType": "plot"
+          "desc": "基础正弦/余弦双线图",
+          "code": "x = np.linspace(0, 2 * np.pi, 100)\nplt.plot(x, np.sin(x), label='sin(x)', linewidth=2)\nplt.plot(x, np.cos(x), label='cos(x)', linestyle='--', linewidth=2)\nplt.title('正弦与余弦曲线')\nplt.xlabel('x (弧度)')\nplt.ylabel('y')\nplt.legend()\nplt.grid(alpha=0.3)\nplt.show()",
+          "resultType": "plot",
+          "result": "蓝色实线为 sin(x)，橙色虚线为 cos(x)，0 到 2π 范围，带图例和网格。"
         },
         {
-          "code": "x = np.linspace(0, 2 * np.pi, 100)\nplt.plot(x, np.sin(x), label='sin(x)')\nplt.plot(x, np.cos(x), label='cos(x)', linestyle='--')\nplt.legend()\nplt.title('Sine and Cosine')\nplt.show()",
-          "result": "Sine (solid) and cosine (dashed) on the same axes with a legend.",
-          "resultType": "plot"
+          "desc": "模拟股价时序图（带填充区域）",
+          "code": "np.random.seed(42)\ndays = np.arange(1, 61)\nprice = 100 + np.cumsum(np.random.randn(60))\nplt.figure(figsize=(8, 3))\nplt.plot(days, price, color='#6366f1', linewidth=1.5)\nplt.fill_between(days, price, 100, where=(price > 100),\n                 alpha=0.15, color='#6366f1', label='盈利区间')\nplt.fill_between(days, price, 100, where=(price <= 100),\n                 alpha=0.15, color='#ef4444', label='亏损区间')\nplt.axhline(100, color='gray', linestyle=':', linewidth=1)\nplt.legend(fontsize=9)\nplt.title('模拟股价走势（60日）')\nplt.show()",
+          "resultType": "plot",
+          "result": "紫色折线显示价格波动，超过基准线的盈利区间以紫色填充，低于基准线的亏损区间以红色填充。"
         }
       ]
     },
 
     {
-      "label": "Scatter Plot",
+      "label": "散点图 Scatter Plot",
+      "intro": "散点图用于探索两个变量之间的关系（正相关、负相关、无相关）。颜色和大小可编码第三、第四维信息。",
       "examples": [
         {
-          "code": "np.random.seed(42)\nx = np.random.rand(80)\ny = np.random.rand(80)\ncolors = np.random.rand(80)\nsizes = 200 * np.random.rand(80)\nplt.scatter(x, y, c=colors, s=sizes, cmap='plasma', alpha=0.7)\nplt.colorbar(label='Color scale')\nplt.title('Scatter Plot with Variable Size and Color')\nplt.show()",
-          "result": "80 points coloured and sized randomly — larger and brighter points appear where random values are higher.",
-          "resultType": "plot"
-        },
-        {
-          "code": "np.random.seed(0)\nx = np.linspace(0, 10, 50)\ny = 2 * x + np.random.randn(50) * 2\nplt.scatter(x, y, alpha=0.6, color='steelblue', label='Data')\nm, b = np.polyfit(x, y, 1)\nplt.plot(x, m*x + b, color='coral', linewidth=2, label=f'Fit: y={m:.1f}x+{b:.1f}')\nplt.legend()\nplt.title('Scatter with Linear Fit')\nplt.show()",
-          "result": "Scattered data points with a coral trend line fitted by least squares.",
-          "resultType": "plot"
+          "desc": "带趋势线的散点图",
+          "code": "np.random.seed(0)\nx = np.linspace(0, 10, 60)\ny = 2.5 * x + np.random.randn(60) * 3\nplt.scatter(x, y, alpha=0.6, color='#6366f1', s=40, label='数据点')\nm, b = np.polyfit(x, y, 1)\nplt.plot(x, m*x + b, color='#ef4444', linewidth=2,\n         label=f'趋势线: y={m:.1f}x+{b:.1f}')\nplt.legend()\nplt.title('散点图 + 线性趋势线')\nplt.xlabel('x')\nplt.ylabel('y')\nplt.show()",
+          "resultType": "plot",
+          "result": "紫色散点呈正相关分布，红色趋势线拟合整体走向，斜率约2.5。"
         }
       ]
     },
 
     {
-      "label": "Bar Charts",
+      "label": "柱状图 Bar Chart",
+      "intro": "柱状图适合类别对比。水平柱状图（barh）在标签较长时更易读。",
       "examples": [
         {
-          "code": "categories = ['Python', 'JavaScript', 'Rust', 'Go', 'Julia']\nvalues = [58, 47, 22, 18, 9]\nplt.bar(categories, values, color=['#3776ab', '#f7df1e', '#dea584', '#00add8', '#9558b2'])\nplt.title('Language Popularity Index')\nplt.ylabel('Score')\nplt.show()",
-          "result": "Five coloured bars showing relative language popularity.",
-          "resultType": "plot"
-        },
-        {
-          "code": "quarters = ['Q1', 'Q2', 'Q3', 'Q4']\na = np.array([20, 35, 30, 28])\nb = np.array([18, 22, 25, 30])\nc = np.array([12, 10, 18, 15])\nx = np.arange(len(quarters))\nplt.bar(x, a, label='Product A')\nplt.bar(x, b, bottom=a, label='Product B')\nplt.bar(x, c, bottom=a+b, label='Product C')\nplt.xticks(x, quarters)\nplt.legend()\nplt.title('Stacked Quarterly Revenue')\nplt.show()",
-          "result": "Stacked bars for three products across four quarters.",
-          "resultType": "plot"
+          "desc": "分组柱状图——季度对比",
+          "code": "categories = ['Q1', 'Q2', 'Q3', 'Q4']\nproduct_a  = [120, 135, 148, 162]\nproduct_b  = [98,  112, 127, 141]\nx = np.arange(len(categories))\nwidth = 0.35\nfig, ax = plt.subplots()\nax.bar(x - width/2, product_a, width, label='产品 A', color='#6366f1', alpha=0.85)\nax.bar(x + width/2, product_b, width, label='产品 B', color='#16a34a', alpha=0.85)\nax.set_xticks(x)\nax.set_xticklabels(categories)\nax.set_title('季度销售对比')\nax.set_ylabel('销售额（万元）')\nax.legend()\nplt.tight_layout()\nplt.show()",
+          "resultType": "plot",
+          "result": "紫色（产品A）和绿色（产品B）两组柱状图并排，四个季度各一组，整体呈上升趋势。"
         }
       ]
     },
 
     {
-      "label": "Histograms",
+      "label": "直方图 Histogram",
+      "intro": "直方图展示数值变量的频率分布——数据集中在哪个区间、是否偏态、有无多峰。",
       "examples": [
         {
-          "code": "np.random.seed(1)\ndata = np.random.randn(1000)\nplt.hist(data, bins=30, color='steelblue', edgecolor='white')\nplt.title('Normal Distribution — 1000 Samples')\nplt.xlabel('Value')\nplt.ylabel('Frequency')\nplt.show()",
-          "result": "Bell-shaped histogram of 1000 samples drawn from a standard normal distribution.",
-          "resultType": "plot"
-        },
-        {
-          "code": "np.random.seed(2)\na = np.random.normal(0, 1, 500)\nb = np.random.normal(3, 1.2, 500)\nplt.hist(a, bins=25, alpha=0.6, label='mu=0, sigma=1', color='royalblue')\nplt.hist(b, bins=25, alpha=0.6, label='mu=3, sigma=1.2', color='coral')\nplt.legend()\nplt.title('Overlapping Histograms')\nplt.show()",
-          "result": "Two overlapping semi-transparent histograms with different means.",
-          "resultType": "plot"
+          "desc": "正态分布 vs 偏态分布对比",
+          "code": "np.random.seed(1)\nnormal_data = np.random.normal(50, 10, 500)\nskewed_data = np.random.exponential(scale=15, size=500)\nfig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.5))\nax1.hist(normal_data, bins=25, color='#6366f1', alpha=0.75, edgecolor='white')\nax1.set_title('正态分布（μ=50, σ=10）')\nax1.set_xlabel('值')\nax2.hist(skewed_data, bins=25, color='#f59e0b', alpha=0.75, edgecolor='white')\nax2.set_title('右偏分布（指数分布）')\nax2.set_xlabel('值')\nplt.tight_layout()\nplt.show()",
+          "resultType": "plot",
+          "result": "左图为钟形正态分布，中心集中在50；右图为右偏分布，大量数据集中在左侧小值区间，长尾向右延伸。"
         }
       ]
     },
 
     {
-      "label": "Pie and Polar Charts",
+      "label": "热力图 Heatmap",
+      "intro": "热力图将矩阵数值映射为颜色深浅，常用于展示相关系数矩阵或混淆矩阵。",
+      "note": "更高级的热力图可以用 seaborn.heatmap()，但 Matplotlib 的 imshow() 已足够绝大多数场景。",
       "examples": [
         {
-          "code": "sizes  = [35, 25, 20, 15, 5]\nlabels = ['Python', 'JavaScript', 'Java', 'C++', 'Other']\nexplode = (0.08, 0, 0, 0, 0)\nplt.pie(sizes, explode=explode, labels=labels,\n        autopct='%1.1f%%', startangle=90, shadow=True)\nplt.title('Language Share')\nplt.show()",
-          "result": "Pie chart with Python's slice slightly exploded to highlight it.",
-          "resultType": "plot"
-        },
-        {
-          "code": "theta = np.linspace(0, 2*np.pi, 300)\nr = 1 + 0.6 * np.sin(6*theta)\nax = plt.subplot(111, projection='polar')\nax.plot(theta, r, color='mediumorchid', linewidth=1.5)\nax.fill(theta, r, alpha=0.25, color='mediumorchid')\nax.set_title('Polar Rose — r = 1 + 0.6*sin(6t)', va='bottom')\nplt.show()",
-          "result": "A 6-petal rose curve drawn in polar coordinates.",
-          "resultType": "plot"
+          "desc": "相关系数热力图",
+          "code": "np.random.seed(42)\ndata = np.random.randn(100, 4)\ndf = pd.DataFrame(data, columns=['特征A', '特征B', '特征C', '特征D'])\ndf['特征B'] = df['特征A'] * 0.8 + np.random.randn(100) * 0.3\ncorr = df.corr()\nfig, ax = plt.subplots(figsize=(5, 4))\nim = ax.imshow(corr, cmap='RdYlGn', vmin=-1, vmax=1)\nplt.colorbar(im, ax=ax)\nax.set_xticks(range(len(corr.columns)))\nax.set_yticks(range(len(corr.columns)))\nax.set_xticklabels(corr.columns, rotation=30, ha='right')\nax.set_yticklabels(corr.columns)\nfor i in range(len(corr)):\n    for j in range(len(corr.columns)):\n        ax.text(j, i, f'{corr.iloc[i,j]:.2f}', ha='center', va='center', fontsize=9)\nax.set_title('特征相关系数矩阵')\nplt.tight_layout()\nplt.show()",
+          "resultType": "plot",
+          "result": "4×4 矩阵，对角线均为1.0（自相关），特征A与特征B显示高正相关（约0.93），以绿色表示。"
         }
       ]
     },
 
     {
-      "label": "Statistics and Error Bars",
+      "label": "子图 Subplots",
+      "intro": "使用 plt.subplots(rows, cols) 创建多个并排的子图，适合在一张图中展示多个维度的分析结果。",
       "examples": [
         {
-          "code": "np.random.seed(10)\ndata = [np.random.normal(0, std, 100) for std in range(1, 5)]\nplt.boxplot(data, labels=['s=1', 's=2', 's=3', 's=4'], patch_artist=True)\nplt.title('Box Plots — Varying Standard Deviation')\nplt.ylabel('Value')\nplt.show()",
-          "result": "Four box plots showing how spread grows as standard deviation increases.",
-          "resultType": "plot"
-        },
-        {
-          "code": "np.random.seed(3)\nx = np.arange(1, 7)\ny = np.array([2.1, 3.5, 4.2, 3.8, 5.1, 4.7])\nyerr = np.array([0.3, 0.4, 0.2, 0.5, 0.3, 0.4])\nplt.errorbar(x, y, yerr=yerr, fmt='o-', capsize=6,\n             color='steelblue', ecolor='coral', linewidth=2)\nplt.title('Measurements with Error Bars')\nplt.xlabel('Sample'); plt.ylabel('Value')\nplt.show()",
-          "result": "Line connecting measurements with vertical error bars capped in coral.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "Subplots and Figures",
-      "examples": [
-        {
-          "code": "fig, axes = plt.subplots(1, 2, figsize=(10, 4))\nx = np.linspace(0, 2*np.pi, 100)\naxes[0].plot(x, np.sin(x), color='royalblue')\naxes[0].set_title('Sine')\naxes[1].plot(x, np.cos(x), color='coral')\naxes[1].set_title('Cosine')\nplt.tight_layout()\nplt.show()",
-          "result": "Two side-by-side subplots — sine on the left, cosine on the right.",
-          "resultType": "plot"
-        },
-        {
-          "code": "fig, axes = plt.subplots(2, 2, figsize=(9, 7))\nx = np.linspace(0, 10, 100)\naxes[0,0].plot(x, np.sin(x)); axes[0,0].set_title('Sine')\naxes[0,1].plot(x, x**2, color='coral'); axes[0,1].set_title('Quadratic')\naxes[1,0].plot(x, np.log(x+1), color='green'); axes[1,0].set_title('Logarithm')\naxes[1,1].plot(x, np.exp(-0.5*x), color='purple'); axes[1,1].set_title('Exponential Decay')\nplt.tight_layout()\nplt.show()",
-          "result": "2x2 grid of subplots showing four different mathematical functions.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "Contours and Images",
-      "examples": [
-        {
-          "code": "x = np.linspace(-3, 3, 120)\ny = np.linspace(-3, 3, 120)\nX, Y = np.meshgrid(x, y)\nZ = np.sin(X) * np.cos(Y)\nplt.contourf(X, Y, Z, levels=20, cmap='RdYlBu')\nplt.colorbar(label='sin(x)*cos(y)')\nplt.title('Filled Contour Plot')\nplt.xlabel('x'); plt.ylabel('y')\nplt.show()",
-          "result": "Smooth colour-filled contour map of sin(x)*cos(y) over [-3, 3] squared.",
-          "resultType": "plot"
-        },
-        {
-          "code": "np.random.seed(5)\ndata = np.random.rand(10, 10)\nplt.imshow(data, cmap='inferno', interpolation='nearest')\nplt.colorbar(label='Intensity')\nplt.title('Heatmap — imshow')\nplt.show()",
-          "result": "10x10 heatmap of random values rendered with the inferno colourmap.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "Annotations and Fill",
-      "examples": [
-        {
-          "code": "x = np.linspace(0, 2*np.pi, 100)\ny = np.sin(x)\nplt.plot(x, y)\nplt.annotate('Maximum', xy=(np.pi/2, 1),\n             xytext=(np.pi/2 + 0.5, 0.7),\n             arrowprops=dict(arrowstyle='->', color='red'),\n             fontsize=10, color='red')\nplt.annotate('Minimum', xy=(3*np.pi/2, -1),\n             xytext=(3*np.pi/2 + 0.5, -0.7),\n             arrowprops=dict(arrowstyle='->', color='blue'),\n             fontsize=10, color='blue')\nplt.title('Annotated Sine Wave')\nplt.show()",
-          "result": "Sine wave with red arrow pointing to the peak and blue arrow to the trough.",
-          "resultType": "plot"
-        },
-        {
-          "code": "x = np.linspace(0, 2*np.pi, 100)\ny1 = np.sin(x)\ny2 = np.sin(x) + 0.5\nplt.plot(x, y1, label='sin(x)')\nplt.plot(x, y2, label='sin(x) + 0.5', linestyle='--')\nplt.fill_between(x, y1, y2, alpha=0.3, color='skyblue', label='Gap')\nplt.legend()\nplt.title('Fill Between Curves')\nplt.show()",
-          "result": "Two sine curves with the gap between them shaded in sky blue.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "Style Sheets",
-      "examples": [
-        {
-          "code": "plt.style.use('ggplot')\nx = np.linspace(0, 10, 100)\nfor n in range(1, 4):\n    plt.plot(x, np.sin(n*x), label=f'sin({n}x)')\nplt.legend()\nplt.title('ggplot Style')\nplt.show()\nplt.style.use('default')",
-          "result": "Three sine harmonics rendered with ggplot's grey grid background and auto colour cycle.",
-          "resultType": "plot"
-        },
-        {
-          "code": "plt.style.use('dark_background')\nx = np.linspace(0, 2*np.pi, 100)\nplt.plot(x, np.sin(x), color='cyan', linewidth=2, label='sin(x)')\nplt.plot(x, np.cos(x), color='magenta', linewidth=2, label='cos(x)')\nplt.legend()\nplt.title('Dark Background Style')\nplt.show()\nplt.style.use('default')",
-          "result": "Sine and cosine in cyan and magenta on a black canvas.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "Clip the data to the axes view limits",
-      "examples": [
-        {
-          "code": "x = np.linspace(0, 10, 100)\ny = np.sin(x)\nplt.plot(x, y, label='sin(x)')\nplt.xlim(2, 8)\nplt.ylim(-0.5, 0.5)\nplt.legend()\nplt.title('Clipped View')\nplt.show()",
-          "result": "Sine wave cropped to x ∈ [2, 8] and y ∈ [−0.5, 0.5] — the line is clipped at the axes boundary.",
-          "resultType": "plot"
-        },
-        {
-          "code": "x = np.linspace(0, 10, 100)\ny = np.sin(x)\nplt.plot(x, y, label='sin(x)')\nplt.xlim(2, 8)\nplt.ylim(-0.5, 0.5)\nplt.legend()\nplt.title('Clipped View with clip_on=False')\nplt.setp(plt.gca().lines, clip_on=False)\nplt.show()",
-          "result": "The same plot as before but the line extends beyond the axes limits.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "3D Plotting",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx = np.linspace(-5, 5, 60)\ny = np.linspace(-5, 5, 60)\nX, Y = np.meshgrid(x, y)\nR = np.sqrt(X**2 + Y**2)\nZ = np.sinc(R / np.pi)\nax.plot_surface(X, Y, Z, cmap='viridis', linewidth=0)\nax.set_title('3D Surface — sinc(r)')\nplt.show()",
-          "result": "3D surface of the sinc function — a sharp central peak with rippling rings fading outward.",
-          "resultType": "plot"
-        },
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\ntheta = np.linspace(0, 4*np.pi, 200)\nz = np.linspace(-2, 2, 200)\nr = z**2 + 1\nx = r * np.sin(theta)\ny = r * np.cos(theta)\nax.plot(x, y, z, color='royalblue', linewidth=1.5)\nax.set_title('3D Parametric Spiral')\nplt.show()",
-          "result": "A spiralling 3D parametric curve that widens as it moves away from the centre.",
-          "resultType": "plot"
-        },
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx = np.linspace(-5, 5, 60)\ny = np.linspace(-5, 5, 60)\nX, Y = np.meshgrid(x, y)\nR = np.sqrt(X**2 + Y**2)\nZ = np.sinc(R / np.pi)\nax.plot_wireframe(X, Y, Z, cmap='viridis', linewidth=0.5)\nax.set_title('3D Wireframe — sinc(r)')\nplt.show()",
-          "result": "3D wireframe of the sinc function — a sharp central peak with rippling rings fading outward.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "Plot 2D data on 3D plot",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx = np.linspace(-5, 5, 60)\ny = np.linspace(-5, 5, 60)\nX, Y = np.meshgrid(x, y)\nR = np.sqrt(X**2 + Y**2)\nZ = np.sinc(R / np.pi)\nax.plot_surface(X, Y, Z, cmap='viridis', alpha=0.7)\nax.contour(X, Y, Z, zdir='z', offset=-0.5, cmap='viridis')\nax.set_title('Surface with Contour Projection')\nplt.show()",
-          "result": "3D surface of the sinc function with a contour projection on the bottom plane.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "Demo of 3D bar charts",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx, y = np.random.rand(2, 100) * 4\nz = np.zeros(100)\ndx = dy = 0.1\ndz = np.random.rand(100) * 2\nax.bar3d(x, y, z, dx, dy, dz, color='steelblue', alpha=0.7)\nax.set_title('3D Bar Chart')\nplt.show()",
-          "result": "100 small 3D bars of varying heights scattered across the x-y plane.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "Create 2D bar graphs in different planes",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx = np.arange(5)\ny = np.random.rand(5) * 4\nz = np.zeros(5)\ndx = dy = 0.5\ndz = y\nax.bar3d(x, z, z, dx, dy, dz, color='coral', alpha=0.7)\nax.set_title('2D Bar Graph in 3D Space')\nplt.show()",
-          "result": "5 bars rising from the x-z plane with heights determined by random values.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "3D box surface plot",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx = np.linspace(-1, 1, 10)\ny = np.linspace(-1, 1, 10)\nX, Y = np.meshgrid(x, y)\nZ = np.zeros_like(X)\nax.plot_surface(X, Y, Z, color='lightblue', alpha=0.5)\nax.plot_surface(X, Y, Z+1, color='lightblue', alpha=0.5)\nax.plot_surface(X, Z, Y, color='lightblue', alpha=0.5)\nax.plot_surface(X+1, Y, Z, color='lightblue', alpha=0.5)\nax.plot_surface(Z, X, Y, color='lightblue', alpha=0.5)\nax.plot_surface(Z, X+1, Y+1, color='lightblue', alpha=0.5)\nax.set_title('3D Box Surface Plot')\nplt.show()",
-          "result": "A wireframe box created by plotting six surfaces in 3D space.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "3D contour plot",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx = np.linspace(-5, 5, 60)\ny = np.linspace(-5, 5, 60)\nX, Y = np.meshgrid(x, y)\nR = np.sqrt(X**2 + Y**2)\nZ = np.sinc(R / np.pi)\nax.contour3D(X, Y, Z, levels=50, cmap='viridis')\nax.set_title('3D Contour Plot — sinc(r)')\nplt.show()",
-          "result": "A 3D contour plot of the sinc function with 50 contour levels.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "3D quiver plot",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx, y, z = np.meshgrid(np.arange(-1, 1, 0.5),\n                      np.arange(-1, 1, 0.5),\n                      np.arange(-1, 1, 0.5))\nu = -y\nv = x\nw = np.zeros_like(z)\nax.quiver(x, y, z, u, v, w, length=0.2, color='steelblue')\nax.set_title('3D Quiver Plot — Vector Field')\nplt.show()",
-          "result": "A 3D quiver plot showing a vector field with arrows pointing in the direction of rotation around the z-axis.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "3D scatter plot with color mapping",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx = np.random.rand(100) * 4 - 2\ny = np.random.rand(100) * 4 - 2\nz = np.random.rand(100) * 4 - 2\nc = np.sqrt(x**2 + y**2 + z**2)\nax.scatter(x, y, z, c=c, cmap='viridis', alpha=0.7)\nax.set_title('3D Scatter Plot with Color Mapping')\nplt.show()",
-          "result": "A 3D scatter plot of 100 points coloured by their distance from the origin.",
-          "resultType": "plot"
-        }
-      ]
-    },
-
-    {
-      "label": "3D surface plot with wireframe",
-      "examples": [
-        {
-          "code": "from mpl_toolkits.mplot3d import Axes3D\nfig = plt.figure(figsize=(8, 6))\nax = fig.add_subplot(111, projection='3d')\nx = np.linspace(-5, 5, 60)\ny = np.linspace(-5, 5, 60)\nX, Y = np.meshgrid(x, y)\nR = np.sqrt(X**2 + Y**2)\nZ = np.sinc(R / np.pi)\nax.plot_surface(X, Y, Z, cmap='viridis', alpha=0.7)\nax.plot_wireframe(X, Y, Z, color='black', linewidth=0.5)\nax.set_title('Surface with Wireframe')\nplt.show()",
-          "result": "3D surface of the sinc function overlaid with a black wireframe grid.",
-          "resultType": "plot"
+          "desc": "2×2 四格分析图",
+          "code": "np.random.seed(7)\ndata = np.random.randn(200)\nfig, axes = plt.subplots(2, 2, figsize=(8, 6))\nfig.suptitle('数据四维视图', fontsize=13, y=1.01)\n# 折线\naxes[0,0].plot(np.cumsum(data), color='#6366f1', linewidth=1)\naxes[0,0].set_title('累计走势')\n# 直方图\naxes[0,1].hist(data, bins=20, color='#16a34a', alpha=0.7, edgecolor='white')\naxes[0,1].set_title('分布直方图')\n# 散点\naxes[1,0].scatter(range(200), data, s=8, alpha=0.4, color='#f59e0b')\naxes[1,0].axhline(0, color='gray', linestyle=':')\naxes[1,0].set_title('数据散点')\n# 箱线图\naxes[1,1].boxplot(data, vert=True, patch_artist=True,\n                   boxprops=dict(facecolor='#e0e7ff'))\naxes[1,1].set_title('箱线图')\nplt.tight_layout()\nplt.show()",
+          "resultType": "plot",
+          "result": "左上：累计和折线；右上：钟形正态直方图；左下：随机散点；右下：箱线图显示中位数和四分位范围。"
         }
       ]
     }
-
   ]
 }

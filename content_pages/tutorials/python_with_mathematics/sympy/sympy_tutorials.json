@@ -1,198 +1,130 @@
 {
-  "setup": "import sympy as sym\n\nx = sym.Symbol('x')",
+  "title": "SymPy 符号计算",
+  "setup": "from sympy import *\nx, y, z, t, n = symbols('x y z t n')\ninit_printing(use_unicode=True)",
+
   "blocks": [
+
     {
-      "label": "Find the solutions to an equation",
+      "label": "什么是符号计算？",
+      "intro": "SymPy 让 Python 像数学软件（Mathematica、Wolfram Alpha）一样处理代数符号，而不是数值近似。结果是精确的数学表达式，可以进一步化简、求导、积分。",
+      "note": "SymPy 的输出支持 LaTeX 渲染——Dreaming Polar 内置了 MathJax，公式会直接以数学形式显示。",
+      "items": [
+        "精确符号运算：√2 就是 √2，不是 1.41421…",
+        "代数化简：自动展开、因式分解、有理化",
+        "微积分：极限、导数、不定积分、定积分",
+        "方程求解：代数方程、方程组、微分方程",
+        "矩阵与线性代数：行列式、逆矩阵、特征值"
+      ]
+    },
+
+    {
+      "label": "符号与表达式",
+      "intro": "所有符号运算的基础是先声明符号变量，再构建表达式。",
       "examples": [
         {
-          "code": "equation = x ** 2 - 3\nsym.solveset(equation, x)",
-          "result": "\\left\\{- \\sqrt{3}, \\sqrt{3}\\right\\}"
+          "desc": "声明符号并构建表达式",
+          "code": "expr = x**2 + 2*x + 1\nprint('表达式    :', expr)\nprint('因式分解  :', factor(expr))\nprint('展开      :', expand((x + 1)**3))\nprint('化简      :', simplify(sin(x)**2 + cos(x)**2))",
+          "resultType": "text",
+          "result": "表达式    : x**2 + 2*x + 1\n因式分解  : (x + 1)**2\n展开      : x**3 + 3*x**2 + 3*x + 1\n化简      : 1"
         },
         {
-          "code": "equation = x ** 2 - 3 * x + 1\nsym.solveset(equation, x, domain=sym.S.Complexes)",
-          "result": "\\left\\{\\frac{3 - \\sqrt{5}}{2}, \\frac{3 + \\sqrt{5}}{2}\\right\\}"
+          "desc": "精确数值计算",
+          "code": "print('sqrt(8) 精确值 :', sqrt(8))\nprint('pi 近似值(20位):', pi.evalf(20))\nprint('1/3 + 1/6      :', Rational(1,3) + Rational(1,6))\nprint('e 的精确表达   :', exp(1))",
+          "resultType": "text",
+          "result": "sqrt(8) 精确值 : 2*sqrt(2)\npi 近似值(20位): 3.1415926535897932385\n1/3 + 1/6      : 1/2\ne 的精确表达   : E"
         }
       ]
     },
+
     {
-      "label": "Compute the derivative of a function",
-      "code": "f = sym.sin(x) * sym.exp(x)\nsym.diff(f, x)",
-      "result": "e^{x} \\sin{\\left(x \\right)} + e^{x} \\cos{\\left(x \\right)}"
+      "label": "方程求解",
+      "intro": "solve() 求代数方程的精确解析解，支持单变量、多变量和方程组。",
+      "examples": [
+        {
+          "desc": "一元方程",
+          "code": "sols = solve(x**2 - 5*x + 6, x)\nprint('x^2 - 5x + 6 = 0 的解:', sols)\n\nsols2 = solve(x**3 - x, x)\nprint('x^3 - x = 0 的解      :', sols2)",
+          "resultType": "text",
+          "result": "x^2 - 5x + 6 = 0 的解: [2, 3]\nx^3 - x = 0 的解      : [-1, 0, 1]"
+        },
+        {
+          "desc": "方程组",
+          "code": "sol = solve([x + y - 5, x - y - 1], [x, y])\nprint('线性方程组:', sol)\n\nnl = solve([x**2 + y**2 - 25, x - y - 1], [x, y])\nprint('非线性方程组:', nl)",
+          "resultType": "text",
+          "result": "线性方程组: {x: 3, y: 2}\n非线性方程组: [(4, 3), (-3, -4)]"
+        }
+      ]
     },
+
     {
-      "label": "Complete the square",
-      "code": "a, b, c = sym.symbols('a b c')\ncompleted_square = a * (x - b) ** 2 + c\ncompleted_square",
-      "result": "a \\left(x - b\\right)^{2} + c"
+      "label": "极限与导数",
+      "intro": "limit() 计算精确极限，diff() 计算符号导数，结果均为精确解析形式。",
+      "examples": [
+        {
+          "desc": "极限",
+          "code": "print('lim(x->0) sin(x)/x   =', limit(sin(x)/x, x, 0))\nprint('lim(x->oo)(1+1/x)^x  =', limit((1+1/x)**x, x, oo))\nprint('lim(x->0) (e^x-1)/x  =', limit((exp(x)-1)/x, x, 0))",
+          "resultType": "text",
+          "result": "lim(x->0) sin(x)/x   = 1\nlim(x->oo)(1+1/x)^x  = E\nlim(x->0) (e^x-1)/x  = 1"
+        },
+        {
+          "desc": "一阶与高阶导数",
+          "code": "f = x**4 - 3*x**3 + 2*x\nprint(\"f(x)   =\", f)\nprint(\"f'(x)  =\", diff(f, x))\nprint(\"f''(x) =\", diff(f, x, 2))\n\ng = x**2 * y + sin(x*y)\nprint('\\n偏导数:')\nprint('dg/dx =', diff(g, x))\nprint('dg/dy =', diff(g, y))",
+          "resultType": "text",
+          "result": "f(x)   = x**4 - 3*x**3 + 2*x\nf'(x)  = 4*x**3 - 9*x**2 + 2\nf''(x) = 12*x**2 - 18*x\n\n偏导数:\ndg/dx = 2*x*y + y*cos(x*y)\ndg/dy = x**2 + x*cos(x*y)"
+        }
+      ]
     },
+
     {
-      "label": "Expand an expression",
-      "code": "expr = (x + 1) ** 3\nsym.expand(expr)",
-      "result": "x^{3} + 3 x^{2} + 3 x + 1"
+      "label": "积分",
+      "intro": "integrate() 计算不定积分（原函数）和定积分（精确面积）。",
+      "examples": [
+        {
+          "desc": "不定积分与定积分",
+          "code": "print('∫ x^2 dx      =', integrate(x**2, x))\nprint('∫ sin(x) dx   =', integrate(sin(x), x))\nprint('∫₀³ x^2 dx    =', integrate(x**2, (x, 0, 3)))\nprint('∫₋∞^∞ e^-x^2  =', integrate(exp(-x**2), (x, -oo, oo)))",
+          "resultType": "text",
+          "result": "∫ x^2 dx      = x**3/3\n∫ sin(x) dx   = -cos(x)\n∫₀³ x^2 dx    = 9\n∫₋∞^∞ e^-x^2  = sqrt(pi)"
+        }
+      ]
     },
+
     {
-      "label": "Factor an expression",
-      "code": "expr = x ** 3 - 6 * x ** 2 + 11 * x - 6\nsym.factor(expr)",
-      "result": "\\left(x - 1\\right) \\left(x - 2\\right) \\left(x - 3\\right)"
+      "label": "泰勒展开",
+      "intro": "series() 将函数展开为幂级数，用于近似计算和分析函数在某点附近的行为。",
+      "examples": [
+        {
+          "desc": "常见函数的展开",
+          "code": "print('sin(x)  ≈', sin(x).series(x, 0, 7))\nprint()\nprint('e^x     ≈', exp(x).series(x, 0, 5))\nprint()\nprint('ln(1+x) ≈', ln(1+x).series(x, 0, 6))",
+          "resultType": "text",
+          "result": "sin(x)  ≈ x - x**3/6 + x**5/120 + O(x**7)\n\ne^x     ≈ 1 + x + x**2/2 + x**3/6 + O(x**5)\n\nln(1+x) ≈ x - x**2/2 + x**3/3 - x**4/4 + x**5/5 + O(x**6)"
+        }
+      ]
     },
+
     {
-      "label": "Integrate a function",
-      "code": "f = sym.exp(-x ** 2)\nsym.integrate(f, x)",
-      "result": "\\frac{\\sqrt{\\pi} \\operatorname{erf}{\\left(x \\right)}}{2}"
+      "label": "矩阵与线性代数",
+      "intro": "SymPy 的 Matrix 支持符号矩阵运算，特征值、逆矩阵等结果均为精确解析解。",
+      "examples": [
+        {
+          "desc": "基础矩阵运算",
+          "code": "A = Matrix([[1, 2], [3, 4]])\nprint('det(A) =', A.det())\nprint('inv(A) =')\nprint(A.inv())\nprint('特征值 :', A.eigenvals())",
+          "resultType": "text",
+          "result": "det(A) = -2\ninv(A) =\nMatrix([[-2, 1], [3/2, -1/2]])\n特征值 : {2 - sqrt(6): 1, 2 + sqrt(6): 1}"
+        }
+      ]
     },
+
     {
-      "label": "Evaluate a limit",
-      "code": "sym.limit(sym.sin(x) / x, x, 0)",
-      "result": "1"
-    },
-    {
-      "label": "Solve a system of equations",
-      "code": "y = sym.Symbol('y')\nequations = [sym.Eq(x + y, 3), sym.Eq(x - y, 1)]\nsym.solve(equations, (x, y))",
-      "result": "{x: 2, y: 1}"
-    },
-    {
-      "label": "Compute the Taylor series expansion of a function",
-      "code": "f = sym.exp(x)\ntaylor_series = sym.series(f, x, 0, 5).removeO()\ntaylor_series",
-      "result": "1 + x + \\frac{x^{2}}{2} + \\frac{x^{3}}{6} + \\frac{x^{4}}{24}"
-    },
-    {
-      "label": "Perform matrix operations",
-      "code": "A = sym.Matrix([[1, 2], [3, 4]])\nB = sym.Matrix([[5, 6], [7, 8]])\nA + B, A * B",
-      "result": "\\left[\\begin{matrix}6 & 8\\\\10 & 12\\end{matrix}\\right], \\left[\\begin{matrix}19 & 22\\\\43 & 50\\end{matrix}\\right]"
-    },
-    {
-      "label": "Compute eigenvalues and eigenvectors",
-      "code": "A = sym.Matrix([[2, 1], [1, 2]])\neigenvals = A.eigenvals()\neigenvects = A.eigenvects()\neigenvals, eigenvects",
-      "result": "{3: 1, 1: 1}, [(3, 1, [Matrix([[1], [1]])]), (1, 1, [Matrix([[-1], [1]])])]"
-    },
-    {
-      "label": "Perform symbolic summation",
-      "code": "n = sym.Symbol('n', integer=True)\nsym.summation(1 / n ** 2, (n, 1, sym.oo))",
-      "result": "\\frac{\\pi^{2}}{6}"
-    },
-    {
-      "label": "Perform symbolic product",
-      "code": "n = sym.Symbol('n', integer=True)\nsym.product(n, (n, 1, 5))",
-      "result": "120"
-    },
-    {
-      "label": "Compute the Fourier transform of a function",
-      "code": "f = sym.exp(-x ** 2)\nfourier_transform = sym.fourier_transform(f, x, sym.Symbol('k'))\nfourier_transform",
-      "result": "\\sqrt{\\pi} e^{- \\frac{\\pi^{2} k^{2}}{4}}"
-    },
-    {
-      "label": "Compute the Laplace transform of a function",
-      "code": "f = sym.exp(-x)\nlaplace_transform = sym.laplace_transform(f, x, sym.Symbol('s'))\nlaplace_transform",
-      "result": "\\frac{1}{s + 1}, 0, \\frac{1}{s + 1}"
-    },
-    {
-      "label": "Solve a differential equation",
-      "code": "y = sym.Function('y')\ndifferential_equation = sym.Eq(y(x).diff(x, 2) - y(x), 0)\nsym.dsolve(differential_equation, y(x))",
-      "result": "Eq(y(x), C1*exp(x) + C2*exp(-x))"
-    },
-    {
-      "label": "Compute the Jacobian matrix of a vector-valued function",
-      "code": "f = sym.Matrix([sym.sin(x), sym.cos(x)])\njacobian_matrix = f.jacobian([x])\njacobian_matrix",
-      "result": "\\left[\\begin{matrix}\\cos{\\left(x \\right)} & - \\sin{\\left(x \\right)}\\end{matrix}\\right]"
-    },
-    {
-      "label": "Compute the Hessian matrix of a scalar-valued function",
-      "code": "f = sym.sin(x) * sym.exp(x)\nhessian_matrix = sym.hessian(f, [x])\nhessian_matrix",
-      "result": "\\left[\\begin{matrix}2 e^{x} \\cos{\\left(x \\right)} - e^{x} \\sin{\\left(x \\right)}\\end{matrix}\\right]"
-    },
-    {
-      "label": "Perform symbolic differentiation",
-      "code": "f = sym.sin(x) * sym.exp(x)\nsym.diff(f, x)",
-      "result": "e^{x} \\sin{\\left(x \\right)} + e^{x} \\cos{\\left(x \\right)}"
-    },
-    {
-      "label": "Perform symbolic integration",
-      "code": "f = sym.exp(-x ** 2)\nsym.integrate(f, x)",
-      "result": "\\frac{\\sqrt{\\pi} \\operatorname{erf}{\\left(x \\right)}}{2}"
-    },
-    {
-      "label": "Perform symbolic limits",
-      "code": "sym.limit(sym.sin(x) / x, x, 0)",
-      "result": "1"
-    },
-    {
-      "label": "Perform symbolic summation",
-      "code": "n = sym.Symbol('n', integer=True)\nsym.summation(1 / n ** 2, (n, 1, sym.oo))",
-      "result": "\\frac{\\pi^{2}}{6}"
-    },
-    {
-      "label": "Perform symbolic products",
-      "code": "n = sym.Symbol('n', integer=True)\nsym.product(n, (n, 1, 5))",
-      "result": "120"
-    },
-    {
-      "label": "binomial distribution",
-      "code": "n, p, k = sym.symbols('n p k')\ndist = sym.binomial(n, p)\nprob = dist.pmf(k)\nprob",
-      "result": "\\binom{n}{k} p^{k} \\left(1 - p\\right)^{n - k}"
-    },
-    {
-      "label": "normal distribution",
-      "code": "mu, sigma, x = sym.symbols('mu sigma x')\ndist = sym.Normal(mu, sigma)\npdf = dist.pdf(x)\npdf",
-      "result": "\\frac{1}{\\sqrt{2 \\pi} \\sigma} e^{- \\frac{\\left(x - \\mu\\right)^{2}}{2 \\sigma^{2}}}"
-    },
-    {
-      "label": "poisson distribution",
-      "code": "lam, k = sym.symbols('lam k')\ndist = sym.Poisson(lam)\nprob = dist.pmf(k)\nprob",
-      "result": "\\frac{e^{- \\lambda} \\lambda^{k}}{k!}"
-    },
-    {
-      "label": "exponential distribution",
-      "code": "lam, x = sym.symbols('lam x')\ndist = sym.Exponential(lam)\npdf = dist.pdf(x)\npdf",
-      "result": "\\lambda e^{- \\lambda x}"
-    },
-    {
-      "label": "gamma distribution",
-      "code": "alpha, beta, x = sym.symbols('alpha beta x')\ndist = sym.Gamma(alpha, beta)\npdf = dist.pdf(x)\npdf",
-      "result": "\\frac{\\beta^{\\alpha} x^{\\alpha - 1} e^{- \\beta x}}{\\Gamma{\\left(\\alpha \\right)}}"
-    },
-    {
-      "label": "beta distribution",
-      "code": "alpha, beta, x = sym.symbols('alpha beta x')\ndist = sym.Beta(alpha, beta)\npdf = dist.pdf(x)\npdf",
-      "result": "\\frac{\\Gamma{\\left(\\alpha + \\beta \\right)} x^{\\alpha - 1} \\left(1 - x\\right)^{\\beta - 1}}{\\Gamma{\\left(\\alpha \\right)} \\Gamma{\\left(\\beta \\right)}}"
-    },
-    {
-      "label": "cauchy distribution",
-      "code": "x0, gamma, x = sym.symbols('x0 gamma x')\ndist = sym.Cauchy(x0, gamma)\npdf = dist.pdf(x)\npdf",
-      "result": "\\frac{1}{\\pi \\gamma \\left(1 + \\left(\\frac{x - x_{0}}{\\gamma}\\right)^{2}\\right)}"
-    },
-    {
-      "label": "chi-squared distribution",
-      "code": "k, x = sym.symbols('k x')\ndist = sym.ChiSquared(k)\npdf = dist.pdf(x)\npdf",
-      "result": "\\frac{1}{2^{\\frac{k}{2}} \\Gamma{\\left(\\frac{k}{2} \\right)}} x^{\\frac{k}{2} - 1} e^{- \\frac{x}{2}}"
-    },
-    {
-      "label": "sample mean and variance",
-      "code": "data = sym.symbols('data', cls=sym.IndexedBase)\nsample_mean = sym.Sum(data[i], (i, 1, sym.Symbol('n'))).doit() / sym.Symbol('n')\nsample_variance = sym.Sum((data[i] - sample_mean) ** 2, (i, 1, sym.Symbol('n'))).doit() / (sym.Symbol('n') - 1)\nsample_mean, sample_variance",
-      "result": "\\frac{\\sum_{i=1}^{n} data_{i}}{n}, \\frac{\\sum_{i=1}^{n}    \\left(data_{i} - \\frac{\\sum_{j=1}^{n} data_{j}}{n}\\right)^{2}}{n - 1}"
-    },
-    {
-      "label": "confidence interval for the mean",
-      "code": "sample_mean, sample_variance, n, confidence_level = sym.symbols('sample_mean sample_variance n confidence_level')\nalpha = 1 - confidence_level\nz_score = sym.stats.norm.ppf(1 - alpha / 2)\nmargin_of_error = z_score * sym.sqrt(sample_variance / n)\nconfidence_interval = (sample_mean - margin_of_error, sample_mean + margin_of_error)\nconfidence_interval",
-      "result": "\\left(sample\\_mean - z\\_score \\sqrt{\\frac{sample\\_variance}{n}}, sample\\_mean + z\\_score \\sqrt{\\frac{sample\\_variance}{n}}\\right)"
-    },
-    {
-      "label": "hypothesis testing for the mean",
-      "code": "sample_mean, sample_variance, n, hypothesized_mean = sym.symbols('sample_mean sample_variance n hypothesized_mean')\nt_statistic = (sample_mean - hypothesized_mean) / sym.sqrt(sample_variance / n)\np_value = 2 * (1 - sym.stats.norm.cdf(sym.Abs(t_statistic)))\nt_statistic, p_value",
-      "result": "\\frac{sample\\_mean - hypothesized\\_mean}{\\sqrt{\\frac{sample\\_variance}{n}}}, 2 \\left(1 - \\operatorname{norm} \\left(0, 1\\right).cdf{\\left|t\\_statistic\\right|}\\right)"
-    },
-    {
-      "label": "hypothesis testing for the difference of means",
-      "code": "sample_mean1, sample_variance1, n1, sample_mean2, sample_variance2, n2 = sym.symbols('sample_mean1 sample_variance1 n1 sample_mean2 sample_variance2 n2')\npooled_variance = ((n1 - 1) * sample_variance1 + (n2 - 1) * sample_variance2) / (n1 + n2 - 2)\nt_statistic = (sample_mean1 - sample_mean2) / sym.sqrt(pooled_variance * (1 / n1 + 1 / n2))\np_value = 2 * (1 - sym.stats.norm.cdf(sym.Abs(t_statistic)))\nt_statistic, p_value",
-      "result": "\\frac{sample\\_mean_{1} - sample\\_mean_{2}}{\\sqrt{pooled\\_variance \\left(\\frac{1}{n_{1}} + \\frac{1}{n_{2}}\\right)}}, 2 \\left(1 - \\operatorname{norm} \\left(0, 1\\right).cdf{\\left|t\\_statistic\\right|}\\right)"
-    },
-    {
-      "label": "hypothesis testing for the difference of proportions",
-      "code": "p1, n1, p2, n2 = sym.symbols('p1 n1 p2 n2')\npool_proportion = (p1 * n1 + p2 * n2) / (n1 + n2)\nz_statistic = (p1 - p2) / sym.sqrt(pool_proportion * (1 - pool_proportion) * (1 / n1 + 1 / n2))\np_value = 2 * (1 - sym.stats.norm.cdf(sym.Abs(z_statistic)))\nz_statistic, p_value",
-      "result": "\\frac{p_{1} - p_{2}}{\\sqrt{pool\\_proportion \\left(1 - pool\\_proportion\\right) \\left(\\frac{1}{n_{1}} + \\frac{1}{n_{2}}\\right)}}, 2 \\left(1 - \\operatorname{norm} \\left(0, 1\\right).cdf{\\left|z\\_statistic\\right|}\\right)"
-    },
-    {
-      "label": "ANOVA",
-      "code": "group_means = sym.symbols('group_mean1 group_mean2 group_mean3')\noverall_mean = sym.symbols('overall_mean')\nss_between = sum(n * (group_mean - overall_mean) ** 2 for group_mean in group_means)\nss_within = sum((n - 1) * sample_variance for sample_variance in [sym.symbols('sample_variance1'), sym.symbols('sample_variance2'), sym.symbols('sample_variance3')])\ndf_between = len(group_means) - 1\ndf_within = sum(n - 1 for n in [sym.symbols('n1'), sym.symbols('n2'), sym.symbols('n3')])\nms_between = ss_between / df_between\nms_within = ss_within / df_within\nf_statistic = ms_between / ms_within\np_value = 1 - sym.stats.f.cdf(f_statistic, df_between, df_within)\nf_statistic, p_value",
-      "result": "\\frac{\\frac{\\sum_{i=1}^{k} n_{i} \\left(group\\_mean_{i} - overall\\_mean\\right)^{2}}{k - 1}}{\\frac{\\sum_{i=1}^{k} \\left(n_{i} - 1\\right) sample\\_variance_{i}}{N - k}}, 1 - \\operatorname{F} \\left(df\\_between, df\\_within\\right).cdf{\\left(f\\_statistic\\right)}"
+      "label": "输出为 LaTeX",
+      "intro": "用 latex() 将 SymPy 表达式转为 LaTeX 字符串，可直接用于论文、报告或 MathJax 渲染。",
+      "note": "Dreaming Polar 的报告追问对话框使用 MathJax 渲染数学公式，$$...$$（显示公式）和 $...$（行内公式）都已支持。",
+      "examples": [
+        {
+          "desc": "生成 LaTeX 字符串",
+          "code": "expr1 = Integral(sqrt(1/x), x)\nprint(latex(expr1))\n\nexpr2 = (x**2 + sqrt(2)) / (x - 1)\nprint(latex(expr2))\n\nM = Matrix([[1, x], [x, 1]])\nprint(latex(M))",
+          "resultType": "text",
+          "result": "\\int \\sqrt{\\frac{1}{x}}\\, dx\n\\frac{x^{2} + \\sqrt{2}}{x - 1}\n\\left[\\begin{matrix}1 & x\\\\x & 1\\end{matrix}\\right]"
+        }
+      ]
     }
   ]
 }

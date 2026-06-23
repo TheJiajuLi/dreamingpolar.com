@@ -358,3 +358,47 @@ body.cs-resizing * {
   background: rgba(239, 68, 68, 0.08);
   color: #ef4444;
 }
+
+/* ── Enhanced block elements (intro / note / items / ex-desc) ─────── */
+.content-screen-body .card-intro {
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+  line-height: 1.65;
+  margin: 0 0 10px;
+}
+
+.content-screen-body .card-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(99,102,241,0.06);
+  border-left: 3px solid var(--accent, #6366f1);
+  font-size: 0.77rem;
+  color: var(--text, #1e293b);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.content-screen-body .card-note-icon { flex-shrink: 0; }
+
+.content-screen-body .card-items {
+  padding-left: 18px;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.content-screen-body .card-items li {
+  font-size: 0.79rem;
+  color: var(--text, #1e293b);
+  line-height: 1.6;
+}
+
+.content-screen-body .ex-desc {
+  font-size: 0.77rem;
+  color: var(--text-muted, #64748b);
+  line-height: 1.6;
+  margin: 0 0 6px;
+  font-style: italic;
+}
