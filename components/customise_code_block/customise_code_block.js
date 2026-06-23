@@ -1,4 +1,4 @@
-import { compile } from '../compiler/compiler.js';
+import { compile, queryKernelContext } from '../compiler/compiler.js';
 import { attachCellHooks, attachAddBtnHook, attachNotebookHooks } from './customise_code_block_hooks.js';
 import { isEnabled as icmEnabled, onChange as icmOnChange, mount as mountICM } from '../screens/coding_screen/intelligent_coding_mode/intelligent_coding_mode.js';
 import { create as createSyntaxHL } from '../screens/coding_screen/coding_screen_python/python_syntax_highlight/python_syntax_highlight.js';
@@ -6,7 +6,7 @@ import { create as createTextHL }   from '../screens/coding_screen/coding_screen
 import { create as createCompletion } from '../screens/coding_screen/coding_screen_python/python_code-completion/python_code_completion.js';
 import { getCurrentMode } from '../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
 import { renderBlocks, parseAIResponse } from '../screens/compiling_screen/compiling_screen_utility.js';
-import { ask, systemExplainForLang } from '../ai/ai_client.js';
+import { ask, streamChat, systemExplainForLang } from '../ai/ai_client.js';
 import { createRefactorBtn } from '../screens/compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
@@ -290,6 +290,199 @@ function autoResize(el) {
 
 function cellLabel(cell) {
   return `Cell ${_cells.indexOf(cell) + 1} · ${cell.lang}`;
+}
+
+// ── Ctrl+I inline AI completion ───────────────────────────────────────────────
+const _INLINE_AI_SYSTEM =
+  'You are a Python code assistant embedded in a data science notebook.\n' +
+  'The user will describe what they want in natural language.\n' +
+  'Respond with ONLY raw Python code — no markdown fences, no explanations.\n' +
+  'Keep the code concise and idiomatic.';
+
+function _getCursorLine(editor) {
+  return editor.value.slice(0, editor.selectionStart).split('\n').length - 1;
+}
+
+function _openInlineAI(cell, editor) {
+  // Prevent duplicate popups on the same cell
+  if (cell._inlineAIPopup) {
+    cell._inlineAIPopup.querySelector('.nb-inline-ai-input')?.focus();
+    return;
+  }
+
+  const cursorLine = _getCursorLine(editor);
+
+  // ── Popup mounted inside .mirror-code-pane as flow element ────────────────
+  // The cell/pane expand naturally; no fixed positioning needed.
+  const codePaneEl = cell.el.querySelector('.mirror-code-pane');
+  if (!codePaneEl) return;
+
+  const popup = document.createElement('div');
+  popup.className = 'nb-inline-ai';
+  cell._inlineAIPopup = popup;
+
+  // ── Close logic ───────────────────────────────────────────────────────────
+  function _close() {
+    popup.remove();
+    cell._inlineAIPopup = null;
+    document.removeEventListener('pointerdown', _outsideClick, true);
+    // Let autoResize recalculate editor height
+    autoResize(editor);
+  }
+  function _outsideClick(e) { if (!popup.contains(e.target)) _close(); }
+  setTimeout(() => document.addEventListener('pointerdown', _outsideClick, true), 0);
+
+  // ── State 1: input row ─────────────────────────────────────────────────────
+  const topRow = document.createElement('div');
+  topRow.className = 'nb-inline-ai-top';
+
+  const sparkIcon = document.createElement('i');
+  sparkIcon.className = 'ti ti-sparkles nb-inline-ai-spark';
+
+  const input = document.createElement('input');
+  input.className    = 'nb-inline-ai-input';
+  input.type         = 'text';
+  input.placeholder  = '描述你想要的代码… (如: 把 date 列转为 datetime 并设为索引)';
+  input.autocomplete = 'off';
+  input.spellcheck   = false;
+
+  const sendBtn = document.createElement('button');
+  sendBtn.className = 'nb-inline-ai-send';
+  sendBtn.title     = '发送 (Enter)';
+  sendBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+
+  topRow.append(sparkIcon, input, sendBtn);
+
+  const hintBar = document.createElement('div');
+  hintBar.className = 'nb-inline-ai-hint';
+  hintBar.innerHTML =
+    `<kbd>Enter</kbd> 发送 &nbsp;·&nbsp; <kbd>Esc</kbd> 关闭 &nbsp;·&nbsp; <kbd>↑</kbd> 读取当前行注释`;
+
+  popup.append(topRow, hintBar);
+  codePaneEl.appendChild(popup);
+  autoResize(editor);   // recalc after DOM change
+  input.focus();
+
+  // ── ↑ reads comment ───────────────────────────────────────────────────────
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape')  { e.preventDefault(); _close(); return; }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const line    = (editor.value.split('\n')[cursorLine] ?? '').trimStart();
+      const comment = line.startsWith('#') ? line.replace(/^#+\s*/, '') : '';
+      if (comment) { input.value = comment; input.setSelectionRange(comment.length, comment.length); }
+      return;
+    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _send(); }
+  });
+  sendBtn.addEventListener('click', _send);
+
+  // ── State 2 + 3: send → stream → actions ──────────────────────────────────
+  let _abort = null;
+  let _code  = '';
+
+  async function _send() {
+    const instruction = input.value.trim();
+    if (!instruction) return;
+
+    // Lock input
+    input.readOnly = true;
+    sendBtn.remove();
+
+    // Build prompt
+    const cellCode = editor.value;
+    let   kernelCtx = '';
+    try {
+      const dfs = await queryKernelContext();
+      if (dfs.length) kernelCtx = '\n\nKernel variables:\n' + dfs.map(d =>
+        `  ${d.varName}: shape=${d.shape.join('×')}, cols=[${d.columns.join(', ')}]`
+      ).join('\n');
+    } catch {}
+
+    const userMsg =
+      `Cell code:\n\`\`\`python\n${cellCode}\n\`\`\`\n` +
+      `Cursor line: ${cursorLine + 1}${kernelCtx}\n\n` +
+      `Instruction: ${instruction}`;
+
+    // Stop button in top row
+    const stopBtn = document.createElement('button');
+    stopBtn.className = 'nb-inline-ai-stop';
+    stopBtn.innerHTML = `<i class="ti ti-player-stop-filled"></i> 停止`;
+    topRow.appendChild(stopBtn);
+
+    // Preview card
+    const previewCard = document.createElement('div');
+    previewCard.className = 'nb-inline-ai-preview';
+    const previewLabel = document.createElement('div');
+    previewLabel.className = 'nb-inline-ai-preview-label';
+    previewLabel.textContent = '预览';
+    const pre = document.createElement('pre');
+    pre.className = 'nb-inline-ai-code';
+    previewCard.append(previewLabel, pre);
+
+    hintBar.remove();   // hide hint during generation
+    popup.appendChild(previewCard);
+
+    _abort = new AbortController();
+    stopBtn.addEventListener('click', () => _abort.abort());
+
+    _code = '';
+    try {
+      for await (const chunk of streamChat(
+        [{ role: 'user', content: userMsg }],
+        _INLINE_AI_SYSTEM, 512,
+      )) {
+        if (_abort.signal.aborted) break;
+        _code += chunk;
+        pre.textContent = _code;
+        previewCard.scrollTop = previewCard.scrollHeight;
+      }
+    } catch (err) {
+      if (!_abort.signal.aborted)
+        previewLabel.textContent = `错误: ${err.message}`;
+    }
+
+    // ── State 3: generation done ──────────────────────────────────────────
+    stopBtn.remove();
+    previewLabel.className  = 'nb-inline-ai-preview-label nb-inline-ai-preview-label--done';
+    previewLabel.textContent = '生成完成';
+
+    const actRow = document.createElement('div');
+    actRow.className = 'nb-inline-ai-actions';
+
+    const replBtn = document.createElement('button');
+    replBtn.className = 'nb-inline-ai-act nb-inline-ai-act--primary';
+    replBtn.innerHTML = `<i class="ti ti-replace"></i> 替换当前行`;
+
+    const insBtn = document.createElement('button');
+    insBtn.className = 'nb-inline-ai-act';
+    insBtn.innerHTML = `<i class="ti ti-row-insert-bottom"></i> 插入到下方`;
+
+    const discBtn = document.createElement('button');
+    discBtn.className = 'nb-inline-ai-act nb-inline-ai-act--muted';
+    discBtn.textContent = '取消';
+
+    actRow.append(replBtn, insBtn, discBtn);
+    popup.appendChild(actRow);
+
+    function _apply(mode) {
+      const lines    = editor.value.split('\n');
+      const genLines = _code.trim().split('\n');
+      if (mode === 'replace') lines.splice(cursorLine, 1, ...genLines);
+      else                    lines.splice(cursorLine + 1, 0, ...genLines);
+      editor.value = lines.join('\n');
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      _close();
+    }
+
+    replBtn.addEventListener('click', () => _apply('replace'));
+    insBtn.addEventListener('click',  () => _apply('insert'));
+    discBtn.addEventListener('click', _close);
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Escape') _close();
+    }, { once: true });
+  }
 }
 
 // ── Cell factory ──────────────────────────────────────────
@@ -615,7 +808,15 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   // Mark mirror pane stale when code is edited after a run; clear ARIA badge on any edit
   editor.addEventListener('input', () => {
     if (el.dataset.hasOutput === '1') el.classList.add('mirror--stale');
-    delete el.dataset.ariaSource; // user modified the AI code — remove ARIA attribution
+    delete el.dataset.ariaSource;
+  }, { signal: outputAC.signal });
+
+  // Ctrl+I / Cmd+I — open inline AI completion popup
+  editor.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+      e.preventDefault();
+      _openInlineAI(cell, editor);
+    }
   }, { signal: outputAC.signal });
 
   // ── Per-cell ICM instances ────────────────────────────
