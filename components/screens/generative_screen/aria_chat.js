@@ -1,5 +1,21 @@
 import { getDataset, getAllDatasets, setActiveDataset } from '../../shared/dataset_store.js';
 import { getCellDatasetInfo } from '../../customise_code_block/customise_code_block.js';
+import { getSettings } from '../../right_bar/settings.js';
+
+// ── Chat history persistence ──────────────────────────────────────────────────
+const _ARIA_HISTORY_KEY = 'dp-aria-chat-history';
+const _MAX_MSGS_PER_DS  = 40; // cap per dataset to stay within localStorage budget
+
+function _loadAriaHistory() {
+  try { return JSON.parse(localStorage.getItem(_ARIA_HISTORY_KEY) ?? '{}'); } catch { return {}; }
+}
+function _saveAriaHistory(store) {
+  if (!getSettings().cacheAriaHistory) return;
+  try { localStorage.setItem(_ARIA_HISTORY_KEY, JSON.stringify(store)); } catch {}
+}
+function _clearAriaHistory() {
+  try { localStorage.removeItem(_ARIA_HISTORY_KEY); } catch {}
+}
 
 // ── Code templates inserted into the Power Notebook via ai-insert-and-run ────
 const _CODE_TEMPLATES = {
@@ -541,9 +557,26 @@ export function createAriaChat() {
   convArea.append(welcome, scrollToBottomBtn);
 
   // ── Per-dataset conversation management ───────────────────────────────────
-  const _convMap = new Map(); // dsName → HTMLElement (messages div)
-  let _activeConvName = null; // null = welcome screen
+  const _convMap  = new Map(); // dsName → HTMLElement (messages div)
+  const _rawStore = {};        // dsName → [{question,answer,time,meta}]  (in-memory raw data)
+  let _activeConvName = null;
   let _activeMessages = welcome;
+
+  function _restoreConvFromHistory(el, dsName) {
+    const saved = _loadAriaHistory()[dsName];
+    if (!Array.isArray(saved) || !saved.length) return;
+    saved.forEach(entry => {
+      const { card, body } = _makeCard(entry.question, el);
+      body.innerHTML = _fmt(entry.answer);
+      if (entry.meta) {
+        const badge = document.createElement('div');
+        badge.className = 'aria-chat-card-meta aria-chat-card-meta--restored';
+        badge.innerHTML = entry.meta;
+        card.appendChild(badge);
+      }
+    });
+    _rawStore[dsName] = [...saved]; // sync raw store
+  }
 
   function _getOrCreateConv(dsName) {
     if (_convMap.has(dsName)) return _convMap.get(dsName);
@@ -551,6 +584,7 @@ export function createAriaChat() {
     el.className = 'aria-chat-messages';
     convArea.insertBefore(el, scrollToBottomBtn);
     _convMap.set(dsName, el);
+    if (getSettings().cacheAriaHistory) _restoreConvFromHistory(el, dsName);
     return el;
   }
 
@@ -650,11 +684,26 @@ export function createAriaChat() {
       const marker = _parseChartMarker(fullReply);
       if (marker && getDataset()) await _renderChart(card, marker);
       const ds = getDataset();
+      let metaHTML = '';
       if (ds) {
+        metaHTML = `<span style="opacity:.5">基于</span> <strong>${_esc(ds.name)}</strong> · ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列`;
         const badge = document.createElement('div');
         badge.className = 'aria-chat-card-meta';
-        badge.innerHTML = `<span style="opacity:.5">基于</span> <strong>${_esc(ds.name)}</strong> · ${ds.rows.length.toLocaleString()} 行 × ${ds.columns.length} 列`;
+        badge.innerHTML = metaHTML;
         card.appendChild(badge);
+      }
+
+      // Persist to history
+      if (getSettings().cacheAriaHistory && _activeConvName) {
+        if (!_rawStore[_activeConvName]) _rawStore[_activeConvName] = [];
+        _rawStore[_activeConvName].push({ question, answer: fullReply, time: _time(), meta: metaHTML });
+        // Cap per-dataset message count
+        if (_rawStore[_activeConvName].length > _MAX_MSGS_PER_DS) {
+          _rawStore[_activeConvName] = _rawStore[_activeConvName].slice(-_MAX_MSGS_PER_DS);
+        }
+        const allHistory = _loadAriaHistory();
+        allHistory[_activeConvName] = _rawStore[_activeConvName];
+        _saveAriaHistory(allHistory);
       }
       // "查看代码"按钮 — only for replies that contain a CHART: marker
       if (marker) {

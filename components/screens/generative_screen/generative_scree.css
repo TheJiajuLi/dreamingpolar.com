@@ -633,6 +633,19 @@
   background: var(--code-bg, #f8fafc);
 }
 .aria-chat-card-meta strong { color: var(--text-muted, #64748b); font-weight: 600; }
+/* Restored from history: show a subtle "历史" tag */
+.aria-chat-card-meta--restored::after {
+  content: '历史';
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.05);
+  font-size: 0.48rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  opacity: 0.7;
+}
 .aria-chat-err { color: #dc2626; }
 
 .aria-chat-input-row {

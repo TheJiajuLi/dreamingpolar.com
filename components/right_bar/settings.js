@@ -8,6 +8,7 @@ const DEFAULTS = {
   cacheNotebookOutput:  true,   // persist output blocks across page refreshes
   cacheKernelData:      true,   // prewrite inject-store files to Pyodide FS at boot
   cacheRightBarState:   true,   // remember which panel (files/settings) was last open
+  cacheAriaHistory:     true,   // persist ARIA chat history across page refreshes
   autoSwitchFiles:      false,  // auto-switch to file manager when cursor is on pd.read_csv line
   autoRunOnFileInsert:  true,   // auto-run cell after inserting file from file manager
   smartFileNavigation:  true,   // clicking an already-inserted file navigates to its cell
@@ -131,6 +132,11 @@ export function createSettingsPanel(onSettingChange) {
       'Notebook 输出缓存',
       '刷新后自动恢复 Cell 输出，无需重新运行',
       'cacheNotebookOutput', settings, onChange
+    ),
+    _makeRow(
+      'ARIA 对话历史',
+      '刷新后保留与 ARIA 的聊天记录，最多保存最近 40 条',
+      'cacheAriaHistory', settings, onChange
     ),
     _makeRow(
       '内核数据预载',
