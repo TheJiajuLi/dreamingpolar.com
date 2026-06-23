@@ -303,6 +303,32 @@ function _getCursorLine(editor) {
   return editor.value.slice(0, editor.selectionStart).split('\n').length - 1;
 }
 
+function _inlineAIPlaceholder(cell) {
+  const ds   = cell._datasetInfo;
+  const code = cell.editor?.value ?? '';
+
+  if (ds?.columnNames?.length) {
+    const cols   = ds.columnNames;
+    const varName = ds.varName ?? 'df';
+    // Pick a contextual example from column types
+    const dateLike = cols.find(c => /date|time|dt|year|month|day/i.test(c));
+    const numLike  = cols.find(c => !/id|index|name|code|identifier/i.test(c) && /price|count|score|amount|sales|revenue|value|num|qty|total/i.test(c));
+    const catLike  = cols.find(c => /category|type|status|group|label|industry|country|region/i.test(c));
+
+    if (dateLike) return `如: 把 ${dateLike} 列转为 datetime 并设为索引`;
+    if (numLike)  return `如: 对 ${varName} 的 ${numLike} 列做归一化处理`;
+    if (catLike)  return `如: 统计 ${catLike} 列的值分布`;
+    return `如: 对 ${varName} 过滤空值并重置索引`;
+  }
+
+  // Fallback: inspect cursor-line code for variable names
+  const curLine = (code.split('\n')[_getCursorLine(cell.editor)] ?? '').trim();
+  if (/pd\.read_csv|pd\.read_excel/.test(curLine)) return '如: 打印数据形状并预览前5行';
+  if (/import/.test(curLine))                       return '如: 读取 CSV 并赋值给 df';
+  if (/\.plot|plt\./.test(curLine))                 return '如: 添加标题和坐标轴标签';
+  return '描述你想要的代码…';
+}
+
 function _openInlineAI(cell, editor) {
   // Prevent duplicate popups on the same cell
   if (cell._inlineAIPopup) {
@@ -342,7 +368,7 @@ function _openInlineAI(cell, editor) {
   const input = document.createElement('input');
   input.className    = 'nb-inline-ai-input';
   input.type         = 'text';
-  input.placeholder  = '描述你想要的代码… (如: 把 date 列转为 datetime 并设为索引)';
+  input.placeholder  = _inlineAIPlaceholder(cell);
   input.autocomplete = 'off';
   input.spellcheck   = false;
 
