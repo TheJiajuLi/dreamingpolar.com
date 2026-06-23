@@ -216,6 +216,19 @@ const _REPORT_SYSTEM =
   '- 章节顺序：## 数据概览 → ## 关键发现 → （有时序列时）## 趋势分析 → ## 异常与注意 → ## 建议下一步\n' +
   '- 最后一行固定输出："您还想了解什么？"';
 
+// Phase 3 追问专用 system prompt — 允许输出代码，与报告生成完全分开
+const _FOLLOWUP_SYSTEM =
+  '直接回答，不要输出推理过程。\n' +   // DeepSeek-R1 guard
+  '你是 Dreaming Polar 的数据分析助理。用户正在查看一份数据分析报告，现在有追问。\n\n' +
+  '回答原则：\n' +
+  '- 直接回答用户的问题，言简意赅\n' +
+  '- 如果用户要求计算或可视化，提供可在 Python/pandas 中运行的代码\n' +
+  '- 代码用 markdown 代码块包裹（```python ... ```）\n' +
+  '- 代码里的变量名使用数据集真实的变量名（从对话历史中获取）\n' +
+  '- 如果用户的问题可以用数据直接回答（比如"最高点是哪年"），直接给出答案\n' +
+  '- 语言跟随用户（中文问就中文答）\n' +
+  '- 不要说"我无法执行代码"——你的职责是给分析和代码，执行由用户在 Notebook 完成';
+
 // ── JS-side basic stats for numeric columns ──────────────────────────────────
 function _numStats(rows, col) {
   const vals = rows.map(r => parseFloat(r[col])).filter(v => !isNaN(v));
@@ -280,6 +293,81 @@ async function _buildReportPrompt(varName) {
 
   prompt += `\n请根据以上信息撰写结构化分析报告。`;
   return prompt;
+}
+
+// ── Followup renderer — same as _renderChunk but handles ```code``` blocks ───
+function _renderFollowupChunk(raw, container) {
+  const clean = raw
+    .replace(/<think>[\s\S]*?<\/think>/g, '')
+    .replace(/<think>[\s\S]*/g, '');
+
+  container.innerHTML = '';
+  // Split on fenced code blocks
+  const parts = clean.split(/(```[\s\S]*?```|```[\s\S]*$)/);
+
+  parts.forEach(part => {
+    const fenceMatch = part.match(/^```(\w*)\n?([\s\S]*?)```?$/s);
+    if (fenceMatch) {
+      const lang = fenceMatch[1] || 'python';
+      const code = fenceMatch[2].trim();
+
+      const wrap = document.createElement('div');
+      wrap.className = 'fu-code-wrap';
+
+      const toolbar = document.createElement('div');
+      toolbar.className = 'fu-code-toolbar';
+      const langLabel = document.createElement('span');
+      langLabel.className = 'fu-code-lang';
+      langLabel.textContent = lang;
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'fu-code-btn';
+      copyBtn.innerHTML = '<i class="ti ti-copy"></i> 复制';
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard?.writeText(code).then(() => {
+          copyBtn.innerHTML = '<i class="ti ti-check"></i> 已复制';
+          setTimeout(() => { copyBtn.innerHTML = '<i class="ti ti-copy"></i> 复制'; }, 1500);
+        });
+      });
+
+      const sendBtn = document.createElement('button');
+      sendBtn.className = 'fu-code-btn fu-code-btn--send';
+      sendBtn.innerHTML = '<i class="ti ti-corner-down-left"></i> 发送到 Notebook';
+      sendBtn.addEventListener('click', () => {
+        document.dispatchEvent(new CustomEvent('rb-insert-file', { detail: { code } }));
+        sendBtn.innerHTML = '<i class="ti ti-check"></i> 已发送';
+        setTimeout(() => { sendBtn.innerHTML = '<i class="ti ti-corner-down-left"></i> 发送到 Notebook'; }, 1500);
+      });
+
+      toolbar.append(langLabel, copyBtn, sendBtn);
+
+      const pre = document.createElement('pre');
+      pre.className = 'fu-code-pre';
+      const codeEl = document.createElement('code');
+      codeEl.textContent = code;
+      pre.appendChild(codeEl);
+
+      wrap.append(toolbar, pre);
+      container.appendChild(wrap);
+    } else {
+      // Plain text — same rendering as report body
+      const lines = part.split('\n');
+      let pBuf = [];
+      const flush = () => {
+        if (!pBuf.length) return;
+        const p = document.createElement('p');
+        p.className = 'report-p';
+        p.innerHTML = pBuf.join('<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        container.appendChild(p);
+        pBuf = [];
+      };
+      lines.forEach(line => {
+        if (line.trim() === '') flush();
+        else pBuf.push(line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'));
+      });
+      flush();
+    }
+  });
 }
 
 // ── Markdown-lite renderer (## h3, **bold**, think filter) ───────────────────
@@ -654,9 +742,9 @@ export async function openReportModal(varName) {
 
     let fuAccum = '';
     try {
-      for await (const chunk of streamChat(messages, _REPORT_SYSTEM, 1000)) {
+      for await (const chunk of streamChat(messages, _FOLLOWUP_SYSTEM, 1200)) {
         fuAccum += chunk;
-        _renderChunk(fuAccum, responseDiv);
+        _renderFollowupChunk(fuAccum, responseDiv);
         body.scrollTop = body.scrollHeight;
       }
     } catch (err) {

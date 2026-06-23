@@ -952,3 +952,71 @@
 }
 [data-theme="dark"] .report-followup-bubble,
 [data-theme="grey"] .report-followup-bubble { color: #e6edf3; background: rgba(129,140,248,0.1); }
+
+/* ── Phase 3: 追问代码块 ─────────────────────────────────────────────────── */
+.fu-code-wrap {
+  margin: 10px 0;
+  border: 0.5px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg, #f6f8fa);
+}
+.fu-code-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-bottom: 0.5px solid var(--border, #e2e8f0);
+  background: var(--bg, #f3f5f8);
+}
+.fu-code-lang {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent, #6366f1);
+  text-transform: uppercase;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  margin-right: auto;
+}
+.fu-code-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 5px;
+  background: var(--surface, #ffffff);
+  color: var(--text-muted, #64748b);
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.fu-code-btn:hover { background: var(--bg, #f3f5f8); color: var(--text, #0f172a); }
+.fu-code-btn--send {
+  color: var(--accent, #6366f1);
+  border-color: rgba(99,102,241,0.3);
+  background: rgba(99,102,241,0.05);
+}
+.fu-code-btn--send:hover { background: rgba(99,102,241,0.1); }
+.fu-code-pre {
+  margin: 0;
+  padding: 12px 14px;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text, #0f172a);
+  background: transparent;
+}
+
+[data-theme="dark"] .fu-code-wrap,
+[data-theme="grey"] .fu-code-wrap { background: #0d1117; border-color: rgba(255,255,255,0.07); }
+[data-theme="dark"] .fu-code-toolbar,
+[data-theme="grey"] .fu-code-toolbar { background: #161b22; border-bottom-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .fu-code-pre,
+[data-theme="grey"] .fu-code-pre { color: #e6edf3; }
+[data-theme="dark"] .fu-code-btn,
+[data-theme="grey"] .fu-code-btn { background: #161b22; border-color: #30363d; color: #8b949e; }
