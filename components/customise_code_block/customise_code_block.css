@@ -222,8 +222,8 @@ body.mirror-dragging * {
   scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
-  /* Cap output pane height so expanding output scrolls inside, not stretching the cell */
-  max-height: 680px;
+  /* No max-height here: text output is capped by output-text-wrap (380px).
+     Charts and viz cards should be fully visible without truncation. */
 }
 .mirror-out-pane:hover {
   scrollbar-color: rgba(0,0,0,0.12) transparent;
@@ -564,6 +564,7 @@ body.mirror-dragging * {
   box-shadow: none;
   background: transparent;
   transition: none;
+  overflow: visible;   /* CRITICAL: let viz-suggestion card below text be visible */
 }
 .mirror-out-pane .cds-output-section:hover { box-shadow: none; }
 .mirror-out-pane .cds-output-section:last-child { border-bottom: none; }
