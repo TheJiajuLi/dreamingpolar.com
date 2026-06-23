@@ -899,3 +899,56 @@
 [data-theme="grey"] .report-chart-canvas-wrap { background: #0d1117; }
 [data-theme="aurora"] .report-chart-card { background: #0d0d2e; border-color: rgba(192,132,252,0.12); }
 [data-theme="aurora"] .report-chart-canvas-wrap { background: #07071a; }
+
+/* ── Phase 3: 追问对话框 ─────────────────────────────────────────────────── */
+.report-followup {
+  margin: 16px 0 4px;
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding-top: 12px;
+}
+
+/* Re-use ai-dialog-main layout with tighter report styling */
+.report-followup .ai-dialog-main {
+  border: 0.5px solid rgba(99,102,241,0.25);
+  border-radius: 10px;
+  background: var(--surface, #ffffff);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.06);
+}
+.report-followup .ai-header-input {
+  font-size: 0.84rem;
+}
+.report-followup .ai-header-submit {
+  width: 28px;
+  height: 28px;
+  margin: 3px 3px 3px 0;
+}
+
+/* User question bubble (right-aligned) */
+.report-followup-bubble {
+  background: rgba(99,102,241,0.08);
+  border-radius: 10px 10px 2px 10px;
+  padding: 7px 13px;
+  font-size: 0.82rem;
+  color: var(--text, #0f172a);
+  max-width: 80%;
+  margin: 16px 0 8px auto;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+/* AI followup response */
+.report-followup-response {
+  margin-bottom: 8px;
+  padding-left: 2px;
+  border-left: 2px solid rgba(99,102,241,0.2);
+  padding-left: 10px;
+}
+.report-followup-response .report-h3 { margin-top: 12px; }
+
+[data-theme="dark"] .report-followup .ai-dialog-main,
+[data-theme="grey"] .report-followup .ai-dialog-main {
+  background: #161b22;
+  border-color: rgba(129,140,248,0.2);
+}
+[data-theme="dark"] .report-followup-bubble,
+[data-theme="grey"] .report-followup-bubble { color: #e6edf3; background: rgba(129,140,248,0.1); }

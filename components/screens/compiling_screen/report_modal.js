@@ -615,12 +615,107 @@ export async function openReportModal(varName) {
     chartBtn.disabled = false;
   });
 
+  // ── Followup conversation area (hidden until report done) ───────────────────
+  const followupEl = document.createElement('div');
+  followupEl.className = 'report-followup';
+  followupEl.hidden    = true;
+  body.appendChild(followupEl);
+
+  const fuInner = document.createElement('div');
+  fuInner.className = 'ai-dialog-main';
+
+  const fuInputWrap = document.createElement('div');
+  fuInputWrap.className = 'ai-input-wrap';
+
+  const fuSpark = document.createElement('i');
+  fuSpark.className = 'ti ti-sparkles';
+  fuSpark.style.cssText = 'color:var(--accent,#6366f1);font-size:13px;flex-shrink:0';
+
+  const fuInput = document.createElement('input');
+  fuInput.className    = 'ai-header-input';
+  fuInput.type         = 'text';
+  fuInput.placeholder  = '您还想了解什么？';
+  fuInput.autocomplete = 'off';
+  fuInput.spellcheck   = false;
+
+  const fuSendBtn = document.createElement('button');
+  fuSendBtn.className = 'ai-header-submit';
+  fuSendBtn.title     = '发送 (Enter)';
+  fuSendBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+
+  fuInputWrap.append(fuSpark, fuInput);
+  fuInner.append(fuInputWrap, fuSendBtn);
+  followupEl.appendChild(fuInner);
+
+  // ── Conversation history for multi-turn ──────────────────────────────────
+  let _dataPrompt = '';
+  let _reportText = '';
+  let _convHistory = [];  // [{role,content}, ...]
+
+  let _fuBusy = false;
+
+  async function _sendFollowup() {
+    const question = fuInput.value.trim();
+    if (!question || _fuBusy) return;
+    _fuBusy = true;
+    fuInput.value    = '';
+    fuInput.disabled = true;
+    fuSendBtn.disabled = true;
+
+    // ── User bubble ─────────────────────────────────────────────────────────
+    const bubble = document.createElement('div');
+    bubble.className   = 'report-followup-bubble';
+    bubble.textContent = question;
+    contentEl.appendChild(bubble);
+    body.scrollTop = body.scrollHeight;
+
+    // ── AI response container ────────────────────────────────────────────────
+    const responseDiv = document.createElement('div');
+    responseDiv.className = 'report-followup-response';
+    contentEl.appendChild(responseDiv);
+    body.scrollTop = body.scrollHeight;
+
+    // Build messages: data context + report + history + new question
+    const messages = [
+      { role: 'user',      content: _dataPrompt  },
+      { role: 'assistant', content: _reportText   },
+      ..._convHistory,
+      { role: 'user',      content: question      },
+    ];
+
+    let fuAccum = '';
+    try {
+      for await (const chunk of streamChat(messages, _REPORT_SYSTEM, 1000)) {
+        fuAccum += chunk;
+        _renderChunk(fuAccum, responseDiv);
+        body.scrollTop = body.scrollHeight;
+      }
+    } catch (err) {
+      responseDiv.innerHTML =
+        `<p class="report-error"><i class="ti ti-alert-circle"></i> ${err.message}</p>`;
+    }
+
+    // Accumulate for next turn
+    _convHistory.push({ role: 'user',      content: question });
+    _convHistory.push({ role: 'assistant', content: fuAccum  });
+
+    _fuBusy = false;
+    fuInput.disabled = false;
+    fuSendBtn.disabled = false;
+    fuInput.focus();
+    body.scrollTop = body.scrollHeight;
+  }
+
+  fuInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _sendFollowup(); }
+  });
+  fuSendBtn.addEventListener('click', _sendFollowup);
+
   // ── Generate report ───────────────────────────────────────────────────────
   let rawAccum  = '';
-  let inThink   = false;
 
   try {
-    const prompt = await _buildReportPrompt(varName);
+    _dataPrompt = await _buildReportPrompt(varName);
 
     loadingEl.hidden  = false;
     contentEl.hidden  = true;
@@ -629,14 +724,14 @@ export async function openReportModal(varName) {
 
     let started = false;
     for await (const chunk of streamChat(
-      [{ role: 'user', content: prompt }],
+      [{ role: 'user', content: _dataPrompt }],
       _REPORT_SYSTEM,
       2000,
     )) {
       if (_abortCtrl.signal.aborted) break;
 
-      // DeepSeek-R1 think-block state machine
       rawAccum += chunk;
+      _reportText = rawAccum;   // keep in sync for followup context
 
       if (!started) {
         started = true;
@@ -648,11 +743,13 @@ export async function openReportModal(varName) {
       body.scrollTop = body.scrollHeight;
     }
 
-    // Done — unlock action buttons; cache schema
+    // Done — unlock action buttons; cache schema; show followup
     try { _cachedSchema = await getDataFrameSchema(varName); } catch {}
     chartBtn.disabled = false;
     chartBtn.title    = '基于数据自动生成图表';
     pdfBtn.disabled   = false;
+    followupEl.hidden = false;
+    fuInput.focus();
 
   } catch (err) {
     loadingEl.hidden  = true;
