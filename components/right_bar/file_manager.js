@@ -600,10 +600,45 @@ export function initFileManager() {
     return item;
   }
 
+  // ── Kernel restart: "reload datasets" banner ──────────────────────────────
+  let _kernelBanner = null;
+
+  function _showKernelBanner() {
+    if (_kernelBanner) return;
+    const banner = document.createElement('div');
+    banner.className = 'rb-kernel-banner';
+    banner.innerHTML =
+      `<span class="rb-kernel-banner-text">` +
+      `<i class="ti ti-database-off"></i> 内核已重置，数据集待重新注入` +
+      `</span>` +
+      `<button class="rb-kernel-banner-btn"><i class="ti ti-refresh"></i> 重新载入</button>`;
+
+    const btn = banner.querySelector('.rb-kernel-banner-btn');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i> 载入中…`;
+      document.dispatchEvent(new CustomEvent('reload-injected-datasets'));
+    });
+
+    // Insert at top of body
+    body.insertBefore(banner, body.firstChild);
+    _kernelBanner = banner;
+  }
+
+  function _hideKernelBanner() {
+    _kernelBanner?.remove();
+    _kernelBanner = null;
+  }
+
   // ── Event listeners ────────────────────────────────────────────────────────
-  // Always refresh when panel is open. On kernel-restarted, read directly from
-  // localStorage (inject-store itself is not touched by kernel reset).
   document.addEventListener('nb-file-imported',  () => { if (_open) _refresh(); });
-  document.addEventListener('kernel-restarted',   () => { if (_open) _refresh(); });
+  document.addEventListener('kernel-restarted', () => {
+    if (_open) _refresh();
+    // Show reload banner if there are any tracked files
+    const store = _loadStore();
+    const hasFiles = Object.values(store).some(e => e?.filename);
+    if (hasFiles) _showKernelBanner();
+  });
   document.addEventListener('dataset-updated',    () => { if (_open) _refresh(); });
+  document.addEventListener('datasets-reloaded',  () => _hideKernelBanner());
 }

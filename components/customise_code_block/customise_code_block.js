@@ -242,7 +242,8 @@ const FileTracker = {
   },
   /**
    * Find the live cell that owns `filename`.
-   * Returns the cell object or null (cell may have been deleted since last session).
+   * Returns the cell object or null if stale (deleted or code no longer contains the file).
+   * Self-healing: prunes stale entries automatically.
    */
   findCell(filename) {
     if (!filename) return null;
@@ -250,7 +251,12 @@ const FileTracker = {
     const cid  = map[filename];
     if (!cid) return null;
     const cell = _cells.find(c => c.id === cid);
-    if (!cell) { this.untrackFile(filename); return null; } // stale — prune
+    if (!cell) { this.untrackFile(filename); return null; } // cell deleted
+    // Verify cell code still actually references this file (user may have cleared it)
+    const v = cell.editor.value;
+    if (!v.includes(`"${filename}"`) && !v.includes(`'${filename}'`)) {
+      this.untrackFile(filename); return null; // code cleared — allow re-insert
+    }
     return cell;
   },
 };
@@ -965,6 +971,16 @@ export function init(container, externalTopbar) {
 
   document.addEventListener('refactor-code', ({ detail: { code, cellId } }) => {
     setCellCode(cellId, code);
+  });
+
+  // Kernel restart: re-inject all datasets (FS survives restart, only namespace is cleared)
+  document.addEventListener('reload-injected-datasets', async () => {
+    try {
+      await _flushPendingInjects();
+      document.dispatchEvent(new CustomEvent('datasets-reloaded'));
+    } catch (e) {
+      console.warn('[inject] reload failed:', e);
+    }
   });
 
   container.appendChild(nb);
