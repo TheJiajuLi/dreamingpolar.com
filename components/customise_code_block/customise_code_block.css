@@ -143,8 +143,19 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  /* Cap height so long code scrolls inside the pane, not the entire page */
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
+.mirror-code-pane:hover {
+  scrollbar-color: var(--border, #cbd5e1) transparent;
+}
+.mirror-code-pane::-webkit-scrollbar       { width: 4px; }
+.mirror-code-pane::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; }
+.mirror-code-pane:hover::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); }
 
 .mirror-handle {
   width: 0;           /* takes no layout space */
