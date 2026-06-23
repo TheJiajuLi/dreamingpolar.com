@@ -87,7 +87,7 @@
 [data-theme="light"] {
   --bg:          #f3f5f8;
   --surface:     #ffffff;
-  --outer-bg:    #dde3ea;   /* soft blue-grey — panels float cleanly on this */
+  --outer-bg:    #f0f2f5;   /* cold-white canvas — cells float as cards above this */
   --text:        #102040;
   --text-muted:  #425366;
   --border:      #d7e1eb;
@@ -111,7 +111,7 @@
 [data-theme="dark"] {
   --bg:          #0d1117;
   --surface:     #161b22;
-  --outer-bg:    #010409;
+  --outer-bg:    #0d1117;   /* same as --bg; surface (#161b22) floats above */
   --text:        #e6edf3;
   --text-muted:  #8b949e;
   --border:      #30363d;
