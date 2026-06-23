@@ -760,7 +760,7 @@ async function runAll(btn) {
     cell.counter.textContent = _runSeq;
 
     document.dispatchEvent(new CustomEvent('compile-result', {
-      detail: { outputs, cellId: cell.id, cellLabel: `Cell ${i + 1} · ${cell.lang}`, sourceCode: code, sourceLang: cell.lang }
+      detail: { outputs, cellId: cell.id, cellLabel: `Cell ${i + 1} · ${cell.lang}`, sourceCode: code, sourceLang: cell.lang, ariaSource: cell.el.dataset.ariaSource === '1' }
     }));
   }
 

@@ -107,7 +107,7 @@ export function attachCellHooks({
     bumpRunSeq();
     cell.counter.textContent = getRunSeq();
     document.dispatchEvent(new CustomEvent('compile-result', {
-      detail: { outputs, cellId: cell.id, cellLabel: cellLabel(cell), sourceCode: code, sourceLang: cell.lang }
+      detail: { outputs, cellId: cell.id, cellLabel: cellLabel(cell), sourceCode: code, sourceLang: cell.lang, ariaSource: cell.el.dataset.ariaSource === '1' }
     }));
   });
 

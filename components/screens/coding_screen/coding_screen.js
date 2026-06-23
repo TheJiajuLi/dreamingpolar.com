@@ -509,13 +509,19 @@ function setupCodingScreen() {
 
   document.addEventListener('compile-result', ({ detail }) => {
     if (!detail.cellId) return;
-    // Clear schema-view flag so re-run always shows fresh output
     const runSec = nbSections.get(detail.cellId);
     if (runSec) runSec.sectionEl.dataset.schemaVar = '';
-    const { outputs, cellId, cellLabel, sourceCode, sourceLang } = detail;
-    const sec = getOrCreateNbSection(cellId, cellLabel, sourceLang);
+    const { outputs, cellId, cellLabel, sourceCode, sourceLang, ariaSource } = detail;
+    // When ARIA-generated, show "ARIA" in place of the lang in the label
+    const displayLabel = ariaSource
+      ? cellLabel.replace(/·\s*\S+$/, '· ARIA')
+      : cellLabel;
+    const sec = getOrCreateNbSection(cellId, displayLabel, sourceLang);
+    // Mark/unmark output section as ARIA-generated for orange styling
+    if (ariaSource) sec.sectionEl.dataset.ariaSource = '1';
+    else            delete sec.sectionEl.dataset.ariaSource;
     _renderIntoSection(sec, outputs, sourceCode, sourceLang);
-    _saveOutputs(cellId, cellLabel, sourceLang, outputs, sourceCode);
+    _saveOutputs(cellId, displayLabel, sourceLang, outputs, sourceCode);
     requestAnimationFrame(() =>
       sec.sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     );
