@@ -318,6 +318,83 @@ function _renderChunk(rawAccum, container) {
   _flushP();
 }
 
+// ── PDF 导出（浏览器 print → Save as PDF）────────────────────────────────────
+function _exportPDF(varName, contentEl) {
+  // Convert all canvas elements to static <img> so they print correctly
+  const clone = contentEl.cloneNode(true);
+  const origCanvases = contentEl.querySelectorAll('canvas');
+  const cloneCanvases = clone.querySelectorAll('canvas');
+  origCanvases.forEach((c, i) => {
+    const img = document.createElement('img');
+    img.src   = c.toDataURL('image/png');
+    img.style.cssText = 'width:100%;display:block;border-radius:6px';
+    cloneCanvases[i]?.replaceWith(img);
+  });
+
+  const now  = new Date().toLocaleString('zh-CN');
+  const html = `<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>${varName} 智能报告</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
+         color: #0f172a; background: #fff; padding: 32px 40px; }
+  h1   { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+  .sub { font-size: 0.75rem; color: #94a3b8; margin-bottom: 28px; }
+  h3.rh { font-size: 0.78rem; font-weight: 700; color: #6366f1;
+           text-transform: uppercase; letter-spacing: 0.06em;
+           border-bottom: 1px solid #e0e3ff; padding-bottom: 4px;
+           margin: 22px 0 10px; }
+  p  { font-size: 0.86rem; line-height: 1.8; margin-bottom: 10px; }
+  strong { font-weight: 700; }
+  .charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+  .chart-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+  .chart-card img { width: 100%; display: block; }
+  .insight { font-size: 0.72rem; color: #64748b; font-style: italic;
+             padding: 6px 10px 8px; border-top: 1px solid #f1f5f9; }
+  @media print {
+    body { padding: 20px 28px; }
+    .charts { grid-template-columns: repeat(2, 1fr); }
+    @page { margin: 1.5cm; size: A4; }
+  }
+</style>
+</head>
+<body>
+<h1>${varName} 的智能报告</h1>
+<div class="sub">生成时间：${now} · Dreaming Polar</div>
+${_cloneToHtml(clone)}
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) { alert('请允许弹出窗口后重试'); return; }
+  win.document.write(html);
+  win.document.close();
+  // Auto-trigger print after images load
+  win.addEventListener('load', () => {
+    setTimeout(() => { win.focus(); win.print(); }, 300);
+  });
+}
+
+function _cloneToHtml(el) {
+  // Convert the cloned DOM to a print-friendly HTML string
+  const tmp = document.createElement('div');
+  // Remap classes to inline-friendly equivalents
+  el.querySelectorAll('.report-h3').forEach(h => h.setAttribute('class', 'rh'));
+  el.querySelectorAll('.report-charts-grid').forEach(g => g.setAttribute('class', 'charts'));
+  el.querySelectorAll('.report-chart-card').forEach(c => c.setAttribute('class', 'chart-card'));
+  el.querySelectorAll('.report-chart-canvas-wrap').forEach(w => {
+    // wrap already has <img> from canvas replacement, remove the div wrapper
+    w.replaceWith(...w.childNodes);
+  });
+  el.querySelectorAll('.report-chart-insight').forEach(i => i.setAttribute('class', 'insight'));
+  el.querySelectorAll('.report-charts-section > h3').forEach(h => h.setAttribute('class', 'rh'));
+  tmp.appendChild(el);
+  return tmp.innerHTML;
+}
+
 // ── Modal ────────────────────────────────────────────────────────────────────
 export async function openReportModal(varName) {
   // ── Overlay ─────────────────────────────────────────────────────────────
@@ -380,7 +457,8 @@ export async function openReportModal(varName) {
   pdfBtn.className = 'report-footer-btn report-footer-btn--secondary';
   pdfBtn.innerHTML = '<i class="ti ti-file-type-pdf"></i> 导出 PDF';
   pdfBtn.disabled  = true;
-  pdfBtn.title     = '即将推出';
+  pdfBtn.title     = '报告生成完成后解锁';
+  pdfBtn.addEventListener('click', () => _exportPDF(varName, contentEl));
 
   const closeFooterBtn = document.createElement('button');
   closeFooterBtn.className = 'report-footer-btn';
