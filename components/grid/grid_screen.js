@@ -783,7 +783,10 @@ function setupGridScreen() {
   }
 
   // ── Empty state open btn ──────────────────────────────────────────────────
-  screen.querySelector('#grid-empty-open')?.addEventListener('click', _showDatasetOverlay);
+  screen.querySelector('#grid-empty-open')?.addEventListener('click', e => {
+    e.stopPropagation();   // 防止点击事件冒泡到父元素触发关闭逻辑
+    _showDatasetOverlay();
+  });
 
   // ── Init ──────────────────────────────────────────────────────────────────
   _renderTabs();
