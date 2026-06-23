@@ -2,6 +2,7 @@
 import { getAllDatasets, setDataset } from '../shared/dataset_store.js';
 import { injectDataFrame }           from '../compiler/compiler.js';
 import { downloadBlob }              from '../shared/file_download.js';
+import { getSettings }               from '../right_bar/settings.js';
 
 const INJECT_KEY = 'dreaming-polar-inject-store';
 const MAX_TABS   = 8;
@@ -365,6 +366,7 @@ function setupGridScreen() {
     tabs.push({ id, varName: ds.varName, filename: ds.filename, ds });
     _renderTabs();
     _setActive(id);
+    setTimeout(_saveGridState, 0);
   }
 
   // ── Render tabs ────────────────────────────────────────────────────────────
@@ -597,7 +599,11 @@ function setupGridScreen() {
     filters.forEach((f, i) => {
       const chip = document.createElement('span');
       chip.className = 'g-filter-chip';
-      chip.innerHTML = `<span>${f.col} ${f.op} "${f.val}"</span><button class="g-chip-close" data-fi="${i}">✕</button>`;
+      chip.innerHTML =
+        `<span class="g-chip-col">${f.col}</span>` +
+        `<span class="g-chip-op">${f.op}</span>` +
+        `<span class="g-chip-val">${f.val}</span>` +
+        `<button class="g-chip-close" data-fi="${i}" title="移除过滤">✕</button>`;
       filterChips.appendChild(chip);
     });
   }
@@ -655,7 +661,15 @@ function setupGridScreen() {
   async function _syncToKernel() {
     const tab = _activeTab();
     const ed  = _activeEdit();
-    if (!tab || !ed) return;
+    if (!tab || !ed || !ed.dirtyCount) return;
+
+    // Confirm dialog if setting is on
+    if (getSettings().gridConfirmSync) {
+      const ok = window.confirm(
+        `将 ${ed.dirtyCount} 处改动同步到内核变量 "${tab.varName}"？\n此操作会覆盖内核中的原始数据。`
+      );
+      if (!ok) return;
+    }
 
     syncBtn.disabled = true;
     syncBtn.innerHTML = '<i class="ti ti-loader-2"></i> 同步中…';
@@ -792,12 +806,53 @@ function setupGridScreen() {
     _showDatasetOverlay();
   });
 
+  // ── Grid state persistence (cacheGridState setting) ──────────────────────
+  const GRID_STATE_KEY = 'dp-grid-state';
+
+  function _saveGridState() {
+    if (!getSettings().cacheGridState) return;
+    try {
+      localStorage.setItem(GRID_STATE_KEY, JSON.stringify({
+        tabs: tabs.map(t => ({ varName: t.varName, filename: t.filename, from: t.ds._from })),
+        activeFilename: _activeTab()?.filename ?? null,
+      }));
+    } catch {}
+  }
+
+  function _restoreGridState() {
+    if (!getSettings().cacheGridState) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(GRID_STATE_KEY) ?? 'null');
+      if (!saved?.tabs?.length) return;
+      const allSources = _getAvailableSources();
+      saved.tabs.forEach(t => {
+        const src = allSources.find(s =>
+          (s.filename === t.filename || s.name === t.filename) && s.varName === t.varName
+        );
+        if (src) _openDataset(src);
+      });
+    } catch {}
+  }
+
+  // Auto-save when tab opens/closes or active changes
+  const _origSetActive = _setActive;
+  // Patch _openDataset to save state
+  const origOpen = _openDataset;
+
   // ── Init ──────────────────────────────────────────────────────────────────
   _renderTabs();
   _showEmpty();
 
+  // Restore persisted grid state after a short delay (sources need to settle)
+  setTimeout(_restoreGridState, 400);
+
+  // Save state on visibility change (tab switch or close)
+  document.addEventListener('screen-opened',   () => _saveGridState());
+  document.addEventListener('nb-file-imported', () => {/* sources updated */});
+
   // Expose for debugging / external use
   window._gridOpenDataset = _openDataset;
+  window._saveGridState   = _saveGridState;
 }
 
 if (document.readyState === 'loading') {

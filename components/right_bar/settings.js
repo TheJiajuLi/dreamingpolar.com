@@ -13,6 +13,9 @@ const DEFAULTS = {
   autoSwitchFiles:      false,  // auto-switch to file manager when cursor is on pd.read_csv line
   autoRunOnFileInsert:  true,   // auto-run cell after inserting file from file manager
   smartFileNavigation:  true,   // clicking an already-inserted file navigates to its cell
+  // ── DP Grid ──────────────────────────────────────────────────────────────
+  cacheGridState:       true,   // remember open datasets across page refreshes
+  gridConfirmSync:      true,   // show confirm dialog before syncing edits to kernel
 };
 
 export function getSettings() {
@@ -173,6 +176,21 @@ export function createSettingsPanel(onSettingChange) {
       '文件管理自动切换',
       '光标停在 pd.read_csv() 行时自动切换到文件管理',
       'autoSwitchFiles', settings, onChange
+    ),
+  ));
+
+  // ── DP Grid section ────────────────────────────────────────────────────────
+  body.appendChild(_makeSection('DP Grid'));
+  body.appendChild(_makeCard(
+    _makeRow(
+      '记住打开的数据集',
+      '刷新后自动恢复 Grid 中打开的数据集标签页',
+      'cacheGridState', settings, onChange
+    ),
+    _makeRow(
+      '同步前确认',
+      '将编辑同步到内核前弹出确认对话框，防止误操作',
+      'gridConfirmSync', settings, onChange
     ),
   ));
 
