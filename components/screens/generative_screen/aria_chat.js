@@ -512,7 +512,12 @@ export function createAriaChat() {
 
   // Build skeleton; chips container is live-updated by _rebuildChips()
   welcomeHeader.innerHTML =
-    `<div class="aria-chat-welcome-title">选择数据集后开始对话</div>` +
+    `<div class="aria-chat-welcome-hdr">` +
+    `<span class="aria-chat-welcome-title">选择数据集后开始对话</span>` +
+    `<button class="aria-chat-welcome-toggle" title="收起" aria-label="收起提示区">` +
+    `<i class="ti ti-chevron-down aria-chat-welcome-chevron"></i></button>` +
+    `</div>` +
+    `<div class="aria-chat-welcome-body">` +
     `<div class="aria-chat-welcome-hint">在右侧文件面板选择一个数据集，点击「发送到 Quick Analysis」即可开始提问。ARIA 会引用真实的列名和数值，并在需要时直接生成图表。</div>` +
     `<div class="aria-chat-welcome-chips"></div>` +
     `<div class="aria-code-tmpl-label">快速代码 → Notebook</div>` +
@@ -521,7 +526,30 @@ export function createAriaChat() {
     `<span class="aria-code-chip" data-tmpl="overview">📋 数据概览</span>` +
     `<span class="aria-code-chip" data-tmpl="rolling">📈 移动均线</span>` +
     `<span class="aria-code-chip" data-tmpl="describe">🔍 统计摘要</span>` +
+    `</div>` +
     `</div>`;
+
+  // ── Collapse / expand logic ───────────────────────────────────────────────
+  const _WELCOME_COLLAPSED_KEY = 'dp-aria-welcome-collapsed';
+  const _welcomeBody   = welcomeHeader.querySelector('.aria-chat-welcome-body');
+  const _toggleBtn     = welcomeHeader.querySelector('.aria-chat-welcome-toggle');
+
+  function _setWelcomeCollapsed(collapsed) {
+    welcomeHeader.classList.toggle('aria-chat-welcome--collapsed', collapsed);
+    _toggleBtn.title = collapsed ? '展开' : '收起';
+    _toggleBtn.setAttribute('aria-label', collapsed ? '展开提示区' : '收起提示区');
+    try { localStorage.setItem(_WELCOME_COLLAPSED_KEY, collapsed ? '1' : '0'); } catch {}
+  }
+
+  _toggleBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    _setWelcomeCollapsed(!welcomeHeader.classList.contains('aria-chat-welcome--collapsed'));
+  });
+
+  // Restore persisted state
+  try {
+    if (localStorage.getItem(_WELCOME_COLLAPSED_KEY) === '1') _setWelcomeCollapsed(true);
+  } catch {}
 
   const _chipsEl = welcomeHeader.querySelector('.aria-chat-welcome-chips');
 
