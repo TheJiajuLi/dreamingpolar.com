@@ -606,7 +606,7 @@ function setupGridScreen() {
     filterBar.style.display = filterBar.style.display === 'none' ? '' : 'none';
   });
 
-  screen.querySelector('#g-fadd')?.addEventListener('click', () => {
+  function _addFilter() {
     const col = fcolEl.value;
     const op  = screen.querySelector('#g-fop').value;
     const val = fvalEl.value.trim();
@@ -616,7 +616,11 @@ function setupGridScreen() {
     _renderFilterChips();
     if (activeTabId) _renderTable(activeTabId);
     _updateStatus();
-  });
+  }
+
+  screen.querySelector('#g-fadd')?.addEventListener('click', _addFilter);
+  // Enter 键也触发添加
+  fvalEl?.addEventListener('keydown', e => { if (e.key === 'Enter') _addFilter(); });
 
   filterChips.addEventListener('click', e => {
     const btn = e.target.closest('[data-fi]');
