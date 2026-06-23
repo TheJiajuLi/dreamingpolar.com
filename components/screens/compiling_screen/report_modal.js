@@ -368,8 +368,7 @@ function _renderFollowupChunk(raw, container) {
       flush();
     }
   });
-
-  _typesetMath(container);
+  // _typesetMath called by caller after streaming ends, not per-chunk
 }
 
 // ── Markdown-lite renderer (## h3, **bold**, think filter) ───────────────────
@@ -406,13 +405,14 @@ function _renderChunk(rawAccum, container) {
     }
   });
   _flushP();
-
-  // Trigger MathJax to render any $$ ... $$ or \( ... \) blocks in the text
-  _typesetMath(container);
+  // Note: _typesetMath is NOT called here. During streaming this function is
+  // invoked per-chunk and clears innerHTML each time, which would destroy
+  // already-rendered MathJax SVG nodes. Call _typesetMath once after streaming ends.
 }
 
 function _typesetMath(el) {
   if (!window.MathJax) return;
+  // MathJax needs the element to be in the DOM and fully settled before typesetting.
   const run = () => MathJax.typesetPromise([el]).catch(() => {});
   window.MathJax.startup?.promise ? MathJax.startup.promise.then(run) : run();
 }
@@ -769,6 +769,8 @@ export async function openReportModal(varName) {
         _renderFollowupChunk(fuAccum, responseDiv);
         body.scrollTop = body.scrollHeight;
       }
+      // Typeset math once after streaming completes (not per-chunk)
+      _typesetMath(responseDiv);
     } catch (err) {
       responseDiv.innerHTML =
         `<p class="report-error"><i class="ti ti-alert-circle"></i> ${err.message}</p>`;
@@ -821,6 +823,9 @@ export async function openReportModal(varName) {
       _renderChunk(rawAccum, contentEl);
       body.scrollTop = body.scrollHeight;
     }
+
+    // Typeset math once after report finishes streaming
+    _typesetMath(contentEl);
 
     // Done — unlock action buttons; cache schema; show followup
     try { _cachedSchema = await getDataFrameSchema(varName); } catch {}
