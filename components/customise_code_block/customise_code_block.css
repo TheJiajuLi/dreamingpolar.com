@@ -522,16 +522,20 @@ body.mirror-dragging * {
   color: var(--accent, #6366f1);
 }
 
-/* ARIA-generated output section: orange label + dot */
-.cds-output-section[data-aria-source] .cds-output-section-label {
+/* ARIA-generated output section: orange label + dot.
+   Include .cds-section--active variant to beat the purple active rule (higher specificity). */
+.cds-output-section[data-aria-source] .cds-output-section-label,
+.cds-output-section.cds-section--active[data-aria-source] .cds-output-section-label {
   color: #f97316;
-  border-bottom-color: rgba(249,115,22,0.2);
+  border-bottom-color: rgba(249,115,22,0.3);
 }
 .cds-output-section[data-aria-source] .cds-output-section-label-text::before {
   background: #f97316;
 }
 [data-theme="dark"] .cds-output-section[data-aria-source] .cds-output-section-label,
-[data-theme="grey"] .cds-output-section[data-aria-source] .cds-output-section-label { color: #fb923c; }
+[data-theme="dark"] .cds-output-section.cds-section--active[data-aria-source] .cds-output-section-label,
+[data-theme="grey"] .cds-output-section[data-aria-source] .cds-output-section-label,
+[data-theme="grey"] .cds-output-section.cds-section--active[data-aria-source] .cds-output-section-label { color: #fb923c; }
 
 /* Stale cache: tiny badge on the label only — no overlay on content */
 .cds-output-section.cds-section--stale .cds-output-section-label::after {
