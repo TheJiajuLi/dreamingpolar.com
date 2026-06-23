@@ -196,10 +196,15 @@ body.cs-resizing * {
 .cds-output-body .output-text-wrap,
 .mirror-out-pane .output-text-wrap {
   margin: 10px 12px;
-  /* Lift card slightly above output-pane background */
   background: rgba(255,255,255,0.72);
   box-shadow: 0 1px 4px rgba(0,0,0,0.05), inset 0 0 0 0.5px rgba(0,0,0,0.06);
   border: none;
+  /* Cap output text height so long stdout/print is scrollable within the block */
+  max-height: 380px;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.12) transparent;
 }
 .cds-output-body .output-text,
 .mirror-out-pane .output-text { padding: 11px 16px; font-size: 0.76rem; }

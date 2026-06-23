@@ -319,13 +319,16 @@ body.mirror-dragging * {
   align-items: center;
   gap: 2px;
   padding: 3px 6px;
-  border-bottom: none;          /* removed — cell is one unified surface */
-  background: transparent;
+  border-bottom: none;
+  background: var(--surface, #ffffff);  /* opaque so it covers scrolling code below */
   flex-shrink: 0;
-  position: relative;
+  /* sticky: stays at top of mirror-code-pane when code is long and scrolled */
+  position: sticky;
+  top: 0;
+  z-index: 4;
   opacity: 0;
   transition: opacity 0.18s ease;
-  pointer-events: none;         /* invisible = non-interactive */
+  pointer-events: none;
 }
 /* Reveal on hover / focus / active cell */
 .nb-cell:hover .nb-toolbar,
