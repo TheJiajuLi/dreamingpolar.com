@@ -19,7 +19,7 @@
   align-items: center;
   gap: 8px;
   padding: 0 16px;
-  height: 36px;     /* compressed: was 44px */
+  height: 34px;     /* matches rb-file-hdr (34px) for horizontal grid alignment */
   flex-shrink: 0;
   box-shadow: 0 0.5px 0 rgba(0,0,0,0.05);
 }
@@ -211,7 +211,7 @@ body.cs-resizing * {
 .cds-output-body .output-text-meta,
 .mirror-out-pane .output-text-meta { padding: 0 18px 10px; }
 .cds-output-body .output-error,
-.mirror-out-pane .output-error { background: transparent !important; border-left: 2px solid #fca5a5; padding: 10px 16px; }
+.mirror-out-pane .output-error { background: transparent !important; border-left: 2px solid #fca5a5; padding: 10px 14px 10px 14px; box-sizing: border-box; width: 100%; }
 .cds-output-body .output-info,
 .mirror-out-pane .output-info  { padding: 8px 16px; background: transparent !important; }
 .cds-output-body .output-html,

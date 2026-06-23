@@ -234,28 +234,23 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-top: 8px;
+  margin-top: 10px;       /* breathing room from error box above */
   padding: 4px 12px;
   font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: #16a34a;
-  background: transparent;
-  border-radius: 7px;
+  background: rgba(22,163,74,0.09);   /* subtle green fill — no hard border */
+  border: none;
+  border-radius: 20px;    /* pill shape */
   cursor: pointer;
-  transition: color 0.2s, box-shadow 0.25s, transform 0.18s;
-
-  background:
-    linear-gradient(var(--surface, #fff) 0 100%) padding-box,
-    linear-gradient(90deg, #16a34a, #7c3aed) border-box;
-  border: 1.5px solid transparent;
+  transition: background 0.15s, color 0.15s;
 }
 .ask-ai-btn:hover {
+  background: rgba(22,163,74,0.18);
   color: #15803d;
-  box-shadow: 0 0 12px rgba(22,163,74,0.3), 0 0 24px rgba(124,58,237,0.12);
-  transform: translateY(-1px);
 }
-.ask-ai-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+.ask-ai-btn:disabled { opacity: 0.4; cursor: default; }
 
 
 /* ── AI explanation output block ──────────────────────────── */
