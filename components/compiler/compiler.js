@@ -891,6 +891,25 @@ export function notifyKernelChanged(varName) {
   afterKernelMutation(varName, 'inject');
 }
 
+/** Return up to `n` rows of a DataFrame as a plain JS array-of-objects. */
+export async function getDataSample(varName, n = 300) {
+  if (!_pyodide) throw new Error('KERNEL_NOT_READY');
+  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');
+  _pyodide.globals.set('_dp_sample_var', varName);
+  _pyodide.globals.set('_dp_sample_n',   n);
+  try {
+    return JSON.parse(_pyodide.runPython(`
+import json as _j
+_df = _dp_kernel_ns.get(_dp_sample_var); _df = _df if _df is not None else globals().get(_dp_sample_var)
+if _df is None: raise ValueError(f"Variable '{_dp_sample_var}' not found")
+_j.dumps(_df.head(int(_dp_sample_n)).to_dict(orient='records'))
+`));
+  } finally {
+    _pyodide.globals.delete('_dp_sample_var');
+    _pyodide.globals.delete('_dp_sample_n');
+  }
+}
+
 export async function previewClean(varName, op) {
   if (!_pyodide) throw new Error('Kernel not ready — run a cell first');
   if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');

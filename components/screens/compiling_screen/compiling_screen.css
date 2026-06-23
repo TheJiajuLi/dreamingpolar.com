@@ -853,3 +853,49 @@
 [data-theme="aurora"] .report-footer { background: #07071a; }
 [data-theme="dark"]   .report-footer-btn,
 [data-theme="grey"]   .report-footer-btn { background: #161b22; border-color: #30363d; color: #e6edf3; }
+
+/* ── Phase 2: 智能报告图表区 ─────────────────────────────────────────────── */
+.report-charts-section { margin-top: 8px; }
+
+.report-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.report-chart-card {
+  border: 0.5px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface, #ffffff);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.report-chart-canvas-wrap {
+  position: relative;
+  height: 200px;
+  padding: 10px 10px 4px;
+  background: var(--bg, #f6f8fa);
+}
+
+.report-chart-canvas-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.report-chart-insight {
+  padding: 8px 12px 10px;
+  font-size: 0.76rem;
+  color: var(--text-muted, #64748b);
+  line-height: 1.5;
+  border-top: 0.5px solid var(--border, #e2e8f0);
+  font-style: italic;
+}
+
+[data-theme="dark"] .report-chart-card,
+[data-theme="grey"] .report-chart-card { background: #161b22; border-color: rgba(255,255,255,0.07); }
+[data-theme="dark"] .report-chart-canvas-wrap,
+[data-theme="grey"] .report-chart-canvas-wrap { background: #0d1117; }
+[data-theme="aurora"] .report-chart-card { background: #0d0d2e; border-color: rgba(192,132,252,0.12); }
+[data-theme="aurora"] .report-chart-canvas-wrap { background: #07071a; }
