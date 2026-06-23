@@ -13,7 +13,6 @@
   align-items: center;
   gap: 8px;
   padding: 5px 10px;
-  border-bottom: 1px solid var(--border, #e2e8f0);
   flex-shrink: 0;
   background: var(--surface, #ffffff);
 }
@@ -358,16 +357,19 @@ body.mirror-dragging * {
   font-size: 0.72rem;
   font-weight: 600;
   font-family: inherit;
-  border: 1px solid var(--border, #cbd5e1);
-  border-radius: 4px;
-  padding: 2px 6px 2px 4px;
-  background: var(--surface, #ffffff);
-  color: var(--text, #0f172a);
+  border: none;                     /* no border — matches macOS control style */
+  border-radius: 6px;
+  padding: 3px 6px 3px 4px;
+  background: transparent;
+  color: var(--text-muted, #64748b);
   cursor: pointer;
   margin-right: 4px;
   outline: none;
+  transition: background 0.12s, color 0.12s;
+  appearance: auto;
 }
-.nb-lang-select:focus { border-color: #6366f1; }
+.nb-lang-select:hover  { background: rgba(0,0,0,0.05); color: var(--text, #0f172a); }
+.nb-lang-select:focus  { background: rgba(99,102,241,0.07); color: var(--accent, #6366f1); outline: none; }
 
 .nb-btn {
   display: inline-flex;

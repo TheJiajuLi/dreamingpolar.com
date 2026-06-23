@@ -7,7 +7,7 @@
   box-sizing: border-box;
   padding: 0 8px 0 6px;
   border-radius: 6px;
-  border: 1px solid var(--border, #e2e8f0);
+  border: none;                         /* no border at rest — macOS toolbar style */
   background: transparent;
   color: var(--text-muted, #94a3b8);
   font-size: 0.65rem;
@@ -17,14 +17,13 @@
   text-transform: uppercase;
   cursor: pointer;
   flex-shrink: 0;
-  transition: color 150ms, border-color 150ms, background 150ms, box-shadow 150ms;
+  transition: color 150ms, background 150ms, box-shadow 150ms;
   font-family: inherit;
 }
 
 .icm-btn:hover {
   color: var(--text, #102040);
-  border-color: var(--text-muted, #94a3b8);
-  background: var(--bg, #f3f5f8);
+  background: rgba(0,0,0,0.06);        /* hover fill, no border */
 }
 
 .icm-icon { flex-shrink: 0; width: 13px; height: 13px; object-fit: contain; transition: transform 300ms ease; }
