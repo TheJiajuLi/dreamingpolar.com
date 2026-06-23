@@ -318,81 +318,139 @@ function _renderChunk(rawAccum, container) {
   _flushP();
 }
 
-// ── PDF 导出（浏览器 print → Save as PDF）────────────────────────────────────
-function _exportPDF(varName, contentEl) {
-  // Convert all canvas elements to static <img> so they print correctly
-  const clone = contentEl.cloneNode(true);
-  const origCanvases = contentEl.querySelectorAll('canvas');
-  const cloneCanvases = clone.querySelectorAll('canvas');
-  origCanvases.forEach((c, i) => {
-    const img = document.createElement('img');
-    img.src   = c.toDataURL('image/png');
-    img.style.cssText = 'width:100%;display:block;border-radius:6px';
-    cloneCanvases[i]?.replaceWith(img);
-  });
+// ── PDF 导出（html2canvas + jsPDF → 自动下载，与 CSV/XML 导出行为一致）────────
+const _H2C_CDN  = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+const _JSPDF_CDN = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+let _pdfLibsP = null;
 
-  const now  = new Date().toLocaleString('zh-CN');
-  const html = `<!DOCTYPE html>
-<html lang="zh">
-<head>
-<meta charset="UTF-8">
-<title>${varName} 智能报告</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
-         color: #0f172a; background: #fff; padding: 32px 40px; }
-  h1   { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
-  .sub { font-size: 0.75rem; color: #94a3b8; margin-bottom: 28px; }
-  h3.rh { font-size: 0.78rem; font-weight: 700; color: #6366f1;
-           text-transform: uppercase; letter-spacing: 0.06em;
-           border-bottom: 1px solid #e0e3ff; padding-bottom: 4px;
-           margin: 22px 0 10px; }
-  p  { font-size: 0.86rem; line-height: 1.8; margin-bottom: 10px; }
-  strong { font-weight: 700; }
-  .charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
-  .chart-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-  .chart-card img { width: 100%; display: block; }
-  .insight { font-size: 0.72rem; color: #64748b; font-style: italic;
-             padding: 6px 10px 8px; border-top: 1px solid #f1f5f9; }
-  @media print {
-    body { padding: 20px 28px; }
-    .charts { grid-template-columns: repeat(2, 1fr); }
-    @page { margin: 1.5cm; size: A4; }
-  }
-</style>
-</head>
-<body>
-<h1>${varName} 的智能报告</h1>
-<div class="sub">生成时间：${now} · Dreaming Polar</div>
-${_cloneToHtml(clone)}
-</body>
-</html>`;
-
-  const win = window.open('', '_blank', 'width=900,height=700');
-  if (!win) { alert('请允许弹出窗口后重试'); return; }
-  win.document.write(html);
-  win.document.close();
-  // Auto-trigger print after images load
-  win.addEventListener('load', () => {
-    setTimeout(() => { win.focus(); win.print(); }, 300);
+function _loadPdfLibs() {
+  if (window.html2canvas && window.jspdf) return Promise.resolve();
+  if (_pdfLibsP) return _pdfLibsP;
+  const load = src => new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res;
+    s.onerror = () => rej(new Error(`加载失败: ${src}`));
+    document.head.appendChild(s);
   });
+  _pdfLibsP = load(_H2C_CDN).then(() => load(_JSPDF_CDN));
+  return _pdfLibsP;
 }
 
-function _cloneToHtml(el) {
-  // Convert the cloned DOM to a print-friendly HTML string
-  const tmp = document.createElement('div');
-  // Remap classes to inline-friendly equivalents
-  el.querySelectorAll('.report-h3').forEach(h => h.setAttribute('class', 'rh'));
-  el.querySelectorAll('.report-charts-grid').forEach(g => g.setAttribute('class', 'charts'));
-  el.querySelectorAll('.report-chart-card').forEach(c => c.setAttribute('class', 'chart-card'));
-  el.querySelectorAll('.report-chart-canvas-wrap').forEach(w => {
-    // wrap already has <img> from canvas replacement, remove the div wrapper
-    w.replaceWith(...w.childNodes);
-  });
-  el.querySelectorAll('.report-chart-insight').forEach(i => i.setAttribute('class', 'insight'));
-  el.querySelectorAll('.report-charts-section > h3').forEach(h => h.setAttribute('class', 'rh'));
-  tmp.appendChild(el);
-  return tmp.innerHTML;
+async function _exportPDF(varName, contentEl, pdfBtn) {
+  const orig = pdfBtn.innerHTML;
+  pdfBtn.disabled = true;
+  pdfBtn.innerHTML = '<i class="ti ti-loader-2 report-spin"></i> 生成中…';
+
+  try {
+    await _loadPdfLibs();
+    const { jsPDF } = window.jspdf;
+
+    // A4: 210×297mm → jsPDF default unit = pt (1mm = 2.835pt)
+    const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW   = pdf.internal.pageSize.getWidth();   // 210
+    const pageH   = pdf.internal.pageSize.getHeight();  // 297
+    const margin  = 14;
+    const contentW = pageW - margin * 2;
+
+    // ── Title block ──────────────────────────────────────────────────────────
+    const now = new Date().toLocaleString('zh-CN');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.setTextColor(15, 23, 42);
+    pdf.text(`${varName} 的智能报告`, margin, margin + 8);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(148, 163, 184);
+    pdf.text(`生成时间：${now} · Dreaming Polar`, margin, margin + 14);
+
+    let curY = margin + 22;
+
+    // ── Report text content ──────────────────────────────────────────────────
+    contentEl.querySelectorAll('.report-h3, .report-p').forEach(el => {
+      if (curY > pageH - margin - 10) { pdf.addPage(); curY = margin + 8; }
+
+      if (el.classList.contains('report-h3')) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.setTextColor(99, 102, 241);
+        pdf.text(el.textContent.toUpperCase(), margin, curY);
+        pdf.setDrawColor(224, 227, 255);
+        pdf.line(margin, curY + 1.5, margin + contentW, curY + 1.5);
+        curY += 8;
+      } else {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9.5);
+        pdf.setTextColor(30, 41, 59);
+        const lines = pdf.splitTextToSize(el.textContent, contentW);
+        lines.forEach(line => {
+          if (curY > pageH - margin - 6) { pdf.addPage(); curY = margin + 8; }
+          pdf.text(line, margin, curY);
+          curY += 5.5;
+        });
+        curY += 2;
+      }
+    });
+
+    // ── Charts (html2canvas each canvas) ─────────────────────────────────────
+    const canvases = contentEl.querySelectorAll('canvas');
+    if (canvases.length) {
+      if (curY > pageH - margin - 60) { pdf.addPage(); curY = margin + 8; }
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      pdf.setTextColor(99, 102, 241);
+      pdf.text('数据可视化', margin, curY);
+      pdf.setDrawColor(224, 227, 255);
+      pdf.line(margin, curY + 1.5, margin + contentW, curY + 1.5);
+      curY += 8;
+
+      // Two-column grid for charts
+      const colW = (contentW - 4) / 2;
+      let col = 0;
+      let rowStartY = curY;
+
+      for (const canvas of canvases) {
+        const imgData = canvas.toDataURL('image/png', 0.85);
+        const ratio   = canvas.height / canvas.width;
+        const w       = colW;
+        const h       = w * ratio;
+
+        const x = margin + col * (colW + 4);
+        if (curY + h > pageH - margin - 10) { pdf.addPage(); curY = margin + 8; rowStartY = curY; col = 0; }
+
+        pdf.addImage(imgData, 'PNG', x, curY, w, h, '', 'FAST');
+
+        // Insight text below chart
+        const card   = canvas.closest('.report-chart-card');
+        const insight = card?.querySelector('.report-chart-insight')?.textContent ?? '';
+        if (insight) {
+          pdf.setFont('helvetica', 'italic');
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(100, 116, 139);
+          const iLines = pdf.splitTextToSize(insight, colW);
+          iLines.slice(0, 2).forEach((l, li) =>
+            pdf.text(l, x, curY + h + 3.5 + li * 4)
+          );
+        }
+
+        col++;
+        if (col >= 2) {
+          col = 0;
+          curY = rowStartY + h + 14 + (insight ? 10 : 0);
+          rowStartY = curY;
+        }
+      }
+    }
+
+    pdf.save(`${varName}_智能报告.pdf`);
+    pdfBtn.innerHTML = '<i class="ti ti-check"></i> 已下载';
+    setTimeout(() => { pdfBtn.innerHTML = orig; pdfBtn.disabled = false; }, 2500);
+
+  } catch (err) {
+    console.error('[PDF]', err);
+    pdfBtn.innerHTML = '<i class="ti ti-alert-circle"></i> 生成失败';
+    setTimeout(() => { pdfBtn.innerHTML = orig; pdfBtn.disabled = false; }, 2500);
+  }
 }
 
 // ── Modal ────────────────────────────────────────────────────────────────────
@@ -458,7 +516,7 @@ export async function openReportModal(varName) {
   pdfBtn.innerHTML = '<i class="ti ti-file-type-pdf"></i> 导出 PDF';
   pdfBtn.disabled  = true;
   pdfBtn.title     = '报告生成完成后解锁';
-  pdfBtn.addEventListener('click', () => _exportPDF(varName, contentEl));
+  pdfBtn.addEventListener('click', () => _exportPDF(varName, contentEl, pdfBtn));
 
   const closeFooterBtn = document.createElement('button');
   closeFooterBtn.className = 'report-footer-btn';
