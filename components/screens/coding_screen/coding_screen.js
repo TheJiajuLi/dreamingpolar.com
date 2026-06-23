@@ -492,11 +492,7 @@ function setupCodingScreen() {
   restoreBtn.className = 'sc-btn nb-out-restore-btn';
   restoreBtn.title = 'Restore output panel';
   restoreBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
-  restoreBtn.hidden = true;
-  restoreBtn.addEventListener('click', () => {
-    nbOutputPanel.style.display = '';
-    restoreBtn.hidden = true;
-  });
+  restoreBtn.hidden = true; // output panel retired — button permanently hidden
   // Mount in the notebook toolbar so it stays in the left panel, never overlaps output header
   nbToolbar.appendChild(restoreBtn);
 
@@ -680,7 +676,7 @@ function setupCodingScreen() {
       // Only mark stale if user has NOT opted into caching — if they did, this IS the normal state
       // cacheNotebookOutput ON → no badge; OFF → show badge warning it's old data
     }
-    if (nbSections.size > 0) nbOutputPanel.style.display = '';
+    // Output panel is retired — sections live in mirror-out-pane inside each cell
   })();
 
   // Clear stale mark when the cell produces fresh output
