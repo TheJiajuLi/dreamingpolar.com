@@ -90,7 +90,17 @@
   box-shadow: 0 2px 12px rgba(99,102,241,0.1), 0 10px 36px rgba(99,102,241,0.05);
 }
 
-/* ARIA-generated cell: orange left accent line only — no chip, no forced toolbar */
+/* ARIA-generated cell: orange left accent line + orange cell number badge */
+.nb-cell[data-aria-source] .nb-cell-num {
+  background: rgba(249,115,22,0.12);
+  color: #f97316;
+}
+[data-theme="dark"] .nb-cell[data-aria-source] .nb-cell-num,
+[data-theme="grey"] .nb-cell[data-aria-source] .nb-cell-num {
+  background: rgba(249,115,22,0.18);
+  color: #fb923c;
+}
+
 .nb-cell[data-aria-source] .nb-body::before {
   top: 6px;
   bottom: 6px;
