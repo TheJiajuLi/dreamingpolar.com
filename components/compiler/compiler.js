@@ -166,15 +166,15 @@ if '_dp_kernel_ns' not in dir():
     _dp_kernel_ns = {'__name__': '__main__'}
 _ns = _dp_kernel_ns
 
-# Snapshot shapes BEFORE exec — diff is per-exec, not per-session.
-# This means viz-suggestion appears whenever THIS cell creates or modifies
-# a DataFrame/Series/ndarray, regardless of what happened in earlier runs.
+# Snapshot shapes AND object identity BEFORE exec.
+# Skip viz-suggestion only when the object is literally unchanged (same identity + shape).
+# Re-running df = pd.read_csv(...) reassigns df → new id → card reappears correctly.
 _pre_snap = {}
 for _pn, _pv in list(_dp_kernel_ns.items()):
     if _pn.startswith('_'): continue
     try:
         if hasattr(_pv, 'shape'):
-            _pre_snap[_pn] = list(_pv.shape)
+            _pre_snap[_pn] = (id(_pv), list(_pv.shape))
     except Exception: pass
 
 try:
@@ -239,7 +239,7 @@ try:
         except Exception:
             try: _sh = [int(len(_vo))]
             except Exception: continue
-        if _pre_snap.get(_vn) == _sh: continue   # pre-existing, unchanged — skip
+        if _pre_snap.get(_vn) == (id(_vo), _sh): continue  # same object, same shape — skip
         if _kind == 'DataFrame':
             _shape_str = f'{_sh[0]:,}\\u884c\\u00d7{_sh[1]}\\u5217' if len(_sh) > 1 else f'{_sh[0]:,}'
         elif _kind == 'Series':
