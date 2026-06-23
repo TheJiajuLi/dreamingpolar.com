@@ -345,23 +345,29 @@ async function _exportPDF(varName, contentEl, pdfBtn) {
     await _loadPdfLibs();
     const { jsPDF } = window.jspdf;
 
-    // ── Capture the already-rendered report-body (fonts are loaded + correct) ──
-    // Off-screen clones fail CJK font loading; the live DOM has it right.
-    const reportBody = contentEl.closest('.report-modal')?.querySelector('.report-body')
-                    ?? contentEl.parentElement;
+    // ── Capture the already-rendered report-body (fonts loaded + correct) ──────
+    const reportModal = contentEl.closest('.report-modal') ?? contentEl.parentElement.parentElement;
+    const reportBody  = reportModal.querySelector('.report-body') ?? contentEl.parentElement;
 
-    // Temporarily expand scroll area so html2canvas sees the full content
-    const saved = { overflow: reportBody.style.overflow, maxHeight: reportBody.style.maxHeight,
-                    height: reportBody.style.height };
-    reportBody.style.overflow  = 'visible';
-    reportBody.style.maxHeight = 'none';
-    reportBody.style.height    = 'auto';
+    // Temporarily remove ALL clipping constraints on modal + body so html2canvas
+    // captures the full scrollable content, not just the visible viewport.
+    const savedModal = { overflow: reportModal.style.overflow, maxHeight: reportModal.style.maxHeight,
+                         height: reportModal.style.height };
+    const savedBody  = { overflow: reportBody.style.overflow, maxHeight: reportBody.style.maxHeight,
+                         height: reportBody.style.height };
 
-    // Hide interactive areas that shouldn't appear in PDF
+    reportModal.style.overflow  = 'visible';
+    reportModal.style.maxHeight = 'none';
+    reportModal.style.height    = 'auto';
+    reportBody.style.overflow   = 'visible';
+    reportBody.style.maxHeight  = 'none';
+    reportBody.style.height     = 'auto';
+
+    // Hide interactive / transient elements from PDF
     const followup = reportBody.querySelector('.report-followup');
-    if (followup) followup.style.visibility = 'hidden';
     const loading  = reportBody.querySelector('.report-loading');
-    if (loading)  loading.style.display = 'none';
+    if (followup) followup.style.display = 'none';
+    if (loading)  loading.style.display  = 'none';
 
     const canvas = await window.html2canvas(reportBody, {
       scale: 1.5,
@@ -369,15 +375,18 @@ async function _exportPDF(varName, contentEl, pdfBtn) {
       logging: false,
       backgroundColor: '#ffffff',
       scrollX: 0,
-      scrollY: -window.scrollY,
+      scrollY: 0,
     });
 
-    // Restore
-    reportBody.style.overflow  = saved.overflow;
-    reportBody.style.maxHeight = saved.maxHeight;
-    reportBody.style.height    = saved.height;
-    if (followup) followup.style.visibility = '';
-    if (loading)  loading.style.display = '';
+    // Restore all constraints
+    reportModal.style.overflow  = savedModal.overflow;
+    reportModal.style.maxHeight = savedModal.maxHeight;
+    reportModal.style.height    = savedModal.height;
+    reportBody.style.overflow   = savedBody.overflow;
+    reportBody.style.maxHeight  = savedBody.maxHeight;
+    reportBody.style.height     = savedBody.height;
+    if (followup) followup.style.display = '';
+    if (loading)  loading.style.display  = '';
 
     // ── Tile canvas onto A4 pages ─────────────────────────────────────────────
     const a4W_px   = canvas.width;                         // at scale 1.5
