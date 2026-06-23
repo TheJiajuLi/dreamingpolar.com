@@ -148,7 +148,11 @@
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
+  /* direction:rtl moves the vertical scrollbar to the LEFT edge */
+  direction: rtl;
 }
+/* Restore LTR for all content inside — only the scroll position is RTL */
+.mirror-code-pane > * { direction: ltr; }
 .mirror-code-pane:hover {
   scrollbar-color: var(--border, #cbd5e1) transparent;
 }
@@ -220,7 +224,7 @@ body.mirror-dragging * {
   display: flex;
   flex-direction: column;
   /* Cap output pane height so expanding output scrolls inside, not stretching the cell */
-  max-height: 480px;
+  max-height: 680px;
 }
 .mirror-out-pane:hover {
   scrollbar-color: rgba(0,0,0,0.12) transparent;
