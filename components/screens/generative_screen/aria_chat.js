@@ -659,6 +659,13 @@ export function createAriaChat() {
     const question = input.value.trim();
     if (!question || _busy) return;
     _histPush(question);
+
+    // Ensure we have an active conversation (e.g. after refresh or first chip click)
+    if (!_activeConvName) {
+      const ds = getDataset();
+      if (ds?.name) _switchToConv(ds.name); // also triggers history restore
+    }
+
     _busy = true; input.value = ''; input.disabled = true; sendBtn.disabled = true;
     const dot = root.querySelector('#aria-chat-dot');
     if (dot) dot.classList.add('aria-chat-dot--active');
@@ -774,10 +781,14 @@ export function createAriaChat() {
   };
 
   // When user clicks a dataset tab: switch to that dataset's isolated conversation.
-  // No more dividers injected into a shared stream — each dataset owns its history.
   document.addEventListener('dataset-updated', ({ detail }) => {
-    if (!detail?.dataset || detail.source !== 'switch') return;
-    _switchToConv(detail.dataset.name);
+    if (!detail?.dataset) return;
+    if (detail.source === 'switch') {
+      _switchToConv(detail.dataset.name);
+    } else if (!_activeConvName) {
+      // Page load / restore — auto-switch so history can be loaded
+      _switchToConv(detail.dataset.name);
+    }
   });
 
   return root;
