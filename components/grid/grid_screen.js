@@ -398,15 +398,35 @@ function setupGridScreen() {
       const tabTrigger   = e.target.closest('.grid-tab');
       if (closeTrigger) { e.stopPropagation(); _closeTab(closeTrigger.dataset.close); return; }
       if (tabTrigger)   { _setActive(tabTrigger.dataset.tabId); return; }
-      if (e.target.closest('#grid-tab-add')) { _togglePicker(); }
+      if (e.target.closest('#grid-tab-add')) { _togglePicker(e.target.closest('#grid-tab-add')); }
     });
   }
 
   // ── Picker dropdown ────────────────────────────────────────────────────────
-  function _togglePicker() {
-    const wrap = document.getElementById('grid-picker-wrap');
-    if (!wrap) return;
-    if (pickerOpen) { wrap.innerHTML = ''; pickerOpen = false; return; }
+  function _togglePicker(anchorEl) {
+    // Close existing picker if open
+    const existing = document.getElementById('grid-picker-wrap');
+    if (pickerOpen) {
+      if (existing) existing.remove();
+      pickerOpen = false;
+      return;
+    }
+
+    // Create picker container anchored to the trigger element or topbar
+    const wrap = document.createElement('div');
+    wrap.id = 'grid-picker-wrap';
+    wrap.style.cssText = 'position:fixed;z-index:500';
+    document.body.appendChild(wrap);
+
+    // Position below the anchor element
+    const anchor = anchorEl ?? document.getElementById('grid-tab-add') ?? screen.querySelector('.grid-top-bar');
+    if (anchor) {
+      const r = anchor.getBoundingClientRect();
+      wrap.style.top  = (r.bottom + 4) + 'px';
+      wrap.style.left = r.left + 'px';
+    }
+
+    pickerOpen = true;
     pickerOpen = true;
 
     const sources = _getAvailableSources();
@@ -423,15 +443,15 @@ function setupGridScreen() {
         const varN = src.varName ?? src.name ?? '—';
         const cnt  = src.rows ? (Array.isArray(src.rows) ? src.rows.length : src.rows) : '?';
         item.innerHTML = `<div><div class="grid-picker-name">${name}</div><div class="grid-picker-meta">${varN} · ${cnt} 行</div></div>`;
-        item.addEventListener('click', () => { _openDataset(src); wrap.innerHTML = ''; pickerOpen = false; });
+        item.addEventListener('click', () => { _openDataset(src); wrap.remove(); pickerOpen = false; });
         picker.appendChild(item);
       });
     }
     wrap.appendChild(picker);
     setTimeout(() => {
       document.addEventListener('click', function _c(e) {
-        if (!picker.contains(e.target) && e.target.id !== 'grid-tab-add') {
-          wrap.innerHTML = ''; pickerOpen = false;
+        if (!picker.contains(e.target) && !e.target.closest('#grid-tab-add') && !e.target.closest('#grid-empty-open')) {
+          wrap.remove(); pickerOpen = false;
           document.removeEventListener('click', _c);
         }
       });
@@ -702,7 +722,9 @@ function setupGridScreen() {
   });
 
   // ── Empty state open btn ──────────────────────────────────────────────────
-  screen.querySelector('#grid-empty-open')?.addEventListener('click', _togglePicker);
+  screen.querySelector('#grid-empty-open')?.addEventListener('click', function(e) {
+    _togglePicker(e.currentTarget);
+  });
 
   // ── Init ──────────────────────────────────────────────────────────────────
   _renderTabs();
