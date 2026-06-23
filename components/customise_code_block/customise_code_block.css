@@ -143,7 +143,6 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  /* Cap height so long code scrolls inside the pane, not the entire page */
   max-height: 480px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -158,13 +157,14 @@
 .mirror-code-pane:hover::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); }
 
 .mirror-handle {
-  width: 0;           /* takes no layout space */
+  width: 6px;         /* thin physical gap — prevents scrollbar/pill overlap */
   flex-shrink: 0;
-  position: relative; /* pill absolutely positioned over the border */
+  position: relative;
   cursor: col-resize;
   user-select: none;
   touch-action: none;
   z-index: 2;
+  background: #f6f8fa;  /* matches mirror-out-pane so gap is invisible */
 }
 
 .mirror-handle-pill {
@@ -219,6 +219,8 @@ body.mirror-dragging * {
   scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
+  /* Cap output pane height so expanding output scrolls inside, not stretching the cell */
+  max-height: 480px;
 }
 .mirror-out-pane:hover {
   scrollbar-color: rgba(0,0,0,0.12) transparent;
@@ -246,9 +248,12 @@ body.mirror-dragging * {
 }
 
 /* Dark theme */
-[data-theme="dark"]   .mirror-out-pane { background: #0d1117; }  /* same as outer-bg → sinks into page */
-[data-theme="grey"]   .mirror-out-pane { background: #1c2128; }  /* darker than surface, lighter than outer-bg */
-[data-theme="aurora"] .mirror-out-pane { background: #07071a; }
+[data-theme="dark"]   .mirror-out-pane  { background: #0d1117; }
+[data-theme="dark"]   .mirror-handle    { background: #0d1117; }
+[data-theme="grey"]   .mirror-out-pane  { background: #1c2128; }
+[data-theme="grey"]   .mirror-handle    { background: #1c2128; }
+[data-theme="aurora"] .mirror-out-pane  { background: #07071a; }
+[data-theme="aurora"] .mirror-handle    { background: #07071a; }
 
 /* ── Lower row (gutter + body) ─────────────────────────── */
 .nb-cell-lower {
