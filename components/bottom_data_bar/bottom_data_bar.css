@@ -3,15 +3,15 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--bottom-bar-h, 44px);
+  height: var(--bottom-bar-h, 36px);  /* tighter — macOS-style thin status bar */
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 14px;
   background: var(--outer-bg, var(--surface, #c8d0da));
   box-sizing: border-box;
   user-select: none;
   z-index: 10;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* ── Shared slot base ─────────────────────────────────── */

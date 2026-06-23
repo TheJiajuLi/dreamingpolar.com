@@ -62,10 +62,15 @@
   padding: 12px 12px 24px;
   min-height: 0;
   scrollbar-width: thin;
+  scrollbar-color: transparent transparent;   /* invisible at rest */
+  scrollbar-gutter: stable;
+}
+.nb-cells:hover {
   scrollbar-color: var(--border, #cbd5e1) transparent;
 }
 .nb-cells::-webkit-scrollbar       { width: 4px; }
-.nb-cells::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); border-radius: 4px; }
+.nb-cells::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; }
+.nb-cells:hover::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); }
 
 /* ── Single cell — mirror split: code │ handle │ output ── */
 .nb-cell {
@@ -196,12 +201,16 @@ body.mirror-dragging * {
   min-height: 0;
   overflow-y: auto;
   position: relative;
-  background: #f6f8fa;   /* one step darker than cell white — color-diff separates from code */
-  border-left: none;     /* no hard line; color contrast does the work */
+  background: #f6f8fa;
+  border-left: none;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0,0,0,0.08) transparent;
+  scrollbar-color: transparent transparent;   /* invisible at rest */
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
+}
+.mirror-out-pane:hover {
+  scrollbar-color: rgba(0,0,0,0.12) transparent;
 }
 
 .mirror-out-placeholder {
