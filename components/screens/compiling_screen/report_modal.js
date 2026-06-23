@@ -344,102 +344,86 @@ async function _exportPDF(varName, contentEl, pdfBtn) {
   try {
     await _loadPdfLibs();
     const { jsPDF } = window.jspdf;
-
-    // A4: 210×297mm → jsPDF default unit = pt (1mm = 2.835pt)
-    const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pageW   = pdf.internal.pageSize.getWidth();   // 210
-    const pageH   = pdf.internal.pageSize.getHeight();  // 297
-    const margin  = 14;
-    const contentW = pageW - margin * 2;
-
-    // ── Title block ──────────────────────────────────────────────────────────
     const now = new Date().toLocaleString('zh-CN');
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    pdf.setTextColor(15, 23, 42);
-    pdf.text(`${varName} 的智能报告`, margin, margin + 8);
 
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    pdf.setTextColor(148, 163, 184);
-    pdf.text(`生成时间：${now} · Dreaming Polar`, margin, margin + 14);
+    // ── Build a standalone print container off-screen ────────────────────────
+    // html2canvas captures actual rendered pixels → no font embedding needed.
+    const printWrap = document.createElement('div');
+    printWrap.style.cssText =
+      'position:fixed;left:-9999px;top:0;width:794px;background:#fff;' +
+      'padding:40px 48px;box-sizing:border-box;color:#0f172a;' +
+      'font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB",sans-serif;' +
+      'font-size:14px;line-height:1.75';
 
-    let curY = margin + 22;
+    // Title
+    printWrap.innerHTML =
+      `<div style="font-size:22px;font-weight:700;margin-bottom:4px">${varName} 的智能报告</div>` +
+      `<div style="font-size:11px;color:#94a3b8;margin-bottom:28px;font-family:monospace">` +
+      `${now} · Dreaming Polar</div>`;
 
-    // ── Report text content ──────────────────────────────────────────────────
-    contentEl.querySelectorAll('.report-h3, .report-p').forEach(el => {
-      if (curY > pageH - margin - 10) { pdf.addPage(); curY = margin + 8; }
-
-      if (el.classList.contains('report-h3')) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(9);
-        pdf.setTextColor(99, 102, 241);
-        pdf.text(el.textContent.toUpperCase(), margin, curY);
-        pdf.setDrawColor(224, 227, 255);
-        pdf.line(margin, curY + 1.5, margin + contentW, curY + 1.5);
-        curY += 8;
-      } else {
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(9.5);
-        pdf.setTextColor(30, 41, 59);
-        const lines = pdf.splitTextToSize(el.textContent, contentW);
-        lines.forEach(line => {
-          if (curY > pageH - margin - 6) { pdf.addPage(); curY = margin + 8; }
-          pdf.text(line, margin, curY);
-          curY += 5.5;
-        });
-        curY += 2;
-      }
+    // Clone report content and replace canvas with images
+    const clone = contentEl.cloneNode(true);
+    const origCanvases = contentEl.querySelectorAll('canvas');
+    clone.querySelectorAll('canvas').forEach((cv, i) => {
+      const img = document.createElement('img');
+      try { img.src = origCanvases[i].toDataURL('image/png', 0.9); } catch {}
+      img.style.cssText = 'width:100%;display:block';
+      cv.replaceWith(img);
     });
 
-    // ── Charts (html2canvas each canvas) ─────────────────────────────────────
-    const canvases = contentEl.querySelectorAll('canvas');
-    if (canvases.length) {
-      if (curY > pageH - margin - 60) { pdf.addPage(); curY = margin + 8; }
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(9);
-      pdf.setTextColor(99, 102, 241);
-      pdf.text('数据可视化', margin, curY);
-      pdf.setDrawColor(224, 227, 255);
-      pdf.line(margin, curY + 1.5, margin + contentW, curY + 1.5);
-      curY += 8;
+    // Restyle cloned elements for print
+    clone.querySelectorAll('.report-h3').forEach(h => {
+      h.style.cssText = 'font-size:11px;font-weight:700;color:#6366f1;' +
+        'text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #e0e3ff;' +
+        'padding-bottom:5px;margin:24px 0 10px';
+    });
+    clone.querySelectorAll('.report-p').forEach(p => {
+      p.style.cssText = 'font-size:13.5px;line-height:1.82;margin-bottom:10px;color:#1e293b';
+    });
+    clone.querySelectorAll('.report-chart-canvas-wrap').forEach(w => w.replaceWith(...w.childNodes));
+    clone.querySelectorAll('.report-charts-grid').forEach(g => {
+      g.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:10px';
+    });
+    clone.querySelectorAll('.report-chart-card').forEach(c => {
+      c.style.cssText = 'border:1px solid #e2e8f0;border-radius:8px;overflow:hidden';
+    });
+    clone.querySelectorAll('.report-chart-insight').forEach(i => {
+      i.style.cssText = 'font-size:11px;color:#64748b;font-style:italic;padding:6px 10px 9px;' +
+        'border-top:1px solid #f1f5f9';
+    });
+    clone.querySelectorAll('.report-followup').forEach(f => f.remove());
 
-      // Two-column grid for charts
-      const colW = (contentW - 4) / 2;
-      let col = 0;
-      let rowStartY = curY;
+    printWrap.appendChild(clone);
+    document.body.appendChild(printWrap);
 
-      for (const canvas of canvases) {
-        const imgData = canvas.toDataURL('image/png', 0.85);
-        const ratio   = canvas.height / canvas.width;
-        const w       = colW;
-        const h       = w * ratio;
+    // Capture at 1.5× for sharpness; then tile into A4 pages
+    const canvas = await window.html2canvas(printWrap, {
+      scale: 1.5, useCORS: true, logging: false, backgroundColor: '#ffffff',
+    });
+    document.body.removeChild(printWrap);
 
-        const x = margin + col * (colW + 4);
-        if (curY + h > pageH - margin - 10) { pdf.addPage(); curY = margin + 8; rowStartY = curY; col = 0; }
+    // A4 in px at canvas scale (210mm → 794px print width → scale)
+    const a4W_px = canvas.width;                              // 794 * 1.5
+    const a4H_px = Math.round(a4W_px * 297 / 210);           // A4 height in same scale
 
-        pdf.addImage(imgData, 'PNG', x, curY, w, h, '', 'FAST');
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const totalPages = Math.ceil(canvas.height / a4H_px);
 
-        // Insight text below chart
-        const card   = canvas.closest('.report-chart-card');
-        const insight = card?.querySelector('.report-chart-insight')?.textContent ?? '';
-        if (insight) {
-          pdf.setFont('helvetica', 'italic');
-          pdf.setFontSize(7.5);
-          pdf.setTextColor(100, 116, 139);
-          const iLines = pdf.splitTextToSize(insight, colW);
-          iLines.slice(0, 2).forEach((l, li) =>
-            pdf.text(l, x, curY + h + 3.5 + li * 4)
-          );
-        }
+    for (let p = 0; p < totalPages; p++) {
+      if (p > 0) pdf.addPage();
+      const srcY   = p * a4H_px;
+      const cropH  = Math.min(a4H_px, canvas.height - srcY);
 
-        col++;
-        if (col >= 2) {
-          col = 0;
-          curY = rowStartY + h + 14 + (insight ? 10 : 0);
-          rowStartY = curY;
-        }
-      }
+      // Crop this page out of the full canvas
+      const pageCanvas     = document.createElement('canvas');
+      pageCanvas.width     = a4W_px;
+      pageCanvas.height    = a4H_px;
+      const ctx = pageCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, a4W_px, a4H_px);
+      ctx.drawImage(canvas, 0, srcY, a4W_px, cropH, 0, 0, a4W_px, cropH);
+
+      pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, 210, 297, '', 'FAST');
     }
 
     pdf.save(`${varName}_智能报告.pdf`);
