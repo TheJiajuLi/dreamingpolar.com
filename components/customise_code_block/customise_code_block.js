@@ -295,8 +295,8 @@ function cellLabel(cell) {
 // ── Ctrl+I inline AI completion ───────────────────────────────────────────────
 const _INLINE_AI_SYSTEM =
   'You are a Python code assistant embedded in a data science notebook.\n' +
-  'The user will describe what they want in natural language.\n' +
-  'Respond with ONLY raw Python code — no markdown fences, no explanations.\n' +
+  'CRITICAL: Output ONLY raw Python code. Absolutely no markdown code fences (no ``` or ```python). No explanations. No comments unless asked.\n' +
+  'The output will be inserted directly into a Python file. Any non-code characters will cause a SyntaxError.\n' +
   'Keep the code concise and idiomatic.';
 
 function _getCursorLine(editor) {
@@ -465,9 +465,17 @@ function _openInlineAI(cell, editor) {
     actRow.append(replBtn, insBtn, discBtn);
     popup.appendChild(actRow);
 
+    function _stripFences(raw) {
+      // Strip markdown code fences the model may output despite instructions
+      return raw
+        .replace(/^```[\w]*\n?/m, '')   // opening fence: ```python or ```
+        .replace(/\n?```\s*$/m, '')      // closing fence
+        .trim();
+    }
+
     function _apply(mode) {
       const lines    = editor.value.split('\n');
-      const genLines = _code.trim().split('\n');
+      const genLines = _stripFences(_code).split('\n');
       if (mode === 'replace') lines.splice(cursorLine, 1, ...genLines);
       else                    lines.splice(cursorLine + 1, 0, ...genLines);
       editor.value = lines.join('\n');
