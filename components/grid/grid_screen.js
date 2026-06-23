@@ -399,36 +399,21 @@ function setupGridScreen() {
 
   // ── Picker dropdown ────────────────────────────────────────────────────────
   function _togglePicker(anchorEl) {
-    // Close existing picker if open
-    const existing = document.getElementById('grid-picker-wrap');
+    // Close if already open
     if (pickerOpen) {
-      if (existing) existing.remove();
+      document.getElementById('dp-grid-picker')?.remove();
       pickerOpen = false;
       return;
     }
 
-    // Remove any stale picker-wrap before creating (dedup guard)
-    document.querySelectorAll('#grid-picker-wrap').forEach(el => el.remove());
-
-    const wrap = document.createElement('div');
-    wrap.id = 'grid-picker-wrap';
-    wrap.style.cssText = 'position:fixed;z-index:500';
-    document.body.appendChild(wrap);
-
-    // Position below the anchor element
-    const anchor = anchorEl ?? document.getElementById('grid-tab-add') ?? screen.querySelector('.grid-top-bar');
-    if (anchor) {
-      const r = anchor.getBoundingClientRect();
-      wrap.style.top  = (r.bottom + 4) + 'px';
-      wrap.style.left = r.left + 'px';
-    }
-
-    pickerOpen = true;
+    // Remove any stale picker
+    document.getElementById('dp-grid-picker')?.remove();
     pickerOpen = true;
 
     const sources = _getAvailableSources();
     const picker = document.createElement('div');
     picker.className = 'grid-picker';
+    picker.id = 'dp-grid-picker';
 
     if (!sources.length) {
       picker.innerHTML = '<div class="grid-picker-empty">暂无可用数据集<br>请先在文件中心导入 CSV 或通过 Notebook 运行 pd.read_csv()</div>';
@@ -440,15 +425,41 @@ function setupGridScreen() {
         const varN = src.varName ?? src.name ?? '—';
         const cnt  = src.rows ? (Array.isArray(src.rows) ? src.rows.length : src.rows) : '?';
         item.innerHTML = `<div><div class="grid-picker-name">${name}</div><div class="grid-picker-meta">${varN} · ${cnt} 行</div></div>`;
-        item.addEventListener('click', () => { _openDataset(src); wrap.remove(); pickerOpen = false; });
+        item.addEventListener('click', () => {
+          _openDataset(src);
+          document.getElementById('dp-grid-picker')?.remove();
+          pickerOpen = false;
+        });
         picker.appendChild(item);
       });
     }
-    wrap.appendChild(picker);
+
+    // Compute fixed position from trigger button
+    const triggerBtn = anchorEl
+      ?? document.getElementById('grid-empty-open')
+      ?? document.getElementById('grid-tab-add');
+    const rect = triggerBtn?.getBoundingClientRect() ?? { bottom: 100, left: 100 };
+
+    Object.assign(picker.style, {
+      position:  'fixed',
+      top:       (rect.bottom + 4) + 'px',
+      left:      rect.left + 'px',
+      zIndex:    '9999',
+      minWidth:  '240px',
+      maxHeight: '280px',
+      overflowY: 'auto',
+    });
+
+    document.body.appendChild(picker);
+
+    // Close on outside click
     setTimeout(() => {
       document.addEventListener('click', function _c(e) {
-        if (!picker.contains(e.target) && !e.target.closest('#grid-tab-add') && !e.target.closest('#grid-empty-open')) {
-          wrap.remove(); pickerOpen = false;
+        if (!picker.contains(e.target)
+            && !e.target.closest('#grid-tab-add')
+            && !e.target.closest('#grid-empty-open')) {
+          document.getElementById('dp-grid-picker')?.remove();
+          pickerOpen = false;
           document.removeEventListener('click', _c);
         }
       });
