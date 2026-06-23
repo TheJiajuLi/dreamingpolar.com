@@ -186,7 +186,7 @@
 .aa-bar-list { margin-top: 8px; }
 .aa-bar-row  { display: grid; grid-template-columns: 6em 1fr 2.5em; align-items: center; gap: 6px; padding: 3px 0; font-size: 0.65rem; color: #ffffff50; }
 .aa-bar-track { height: 4px; background: #ffffff08; border-radius: 2px; overflow: hidden; position: relative; }
-.aa-bar-fill  { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.aa-bar-fill  { height: 100%; border-radius: 2px; transition: width 0.5s cubic-bezier(0.16,1,0.3,1); will-change: width; }
 .aa-bar-q1    { position: absolute; top: 0; left: 0; height: 100%; }
 .aa-fill-blue  { background: #6366f1; }
 .aa-fill-green { background: #4ade80; }

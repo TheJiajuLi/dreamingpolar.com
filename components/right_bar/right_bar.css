@@ -21,7 +21,8 @@
   position: relative;
   border-radius: 14px;
   box-shadow: none;
-  transition: width 0.2s ease;
+  transition: width 280ms var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1));
+  will-change: width;
 }
 [data-theme="dark"]   #right-bar { background: #0d1117; }
 [data-theme="grey"]   #right-bar { background: #1c2128; }
@@ -175,21 +176,21 @@
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(0,0,0,0.08);
-  transition: left 0.28s cubic-bezier(0.25,1,0.5,1),
-              width 0.14s cubic-bezier(0.25,1,0.5,1);
+  transform: translateX(0) scaleX(1);
+  transform-origin: left center;
+  transition: transform 0.28s var(--ease-spring, cubic-bezier(0.34,1.56,0.64,1));
 }
-/* Checked state */
+/* Checked state — GPU: translateX replaces left: 21px (21-3=18px shift) */
 .dp-toggle input:checked ~ .dp-toggle-track {
   background: var(--accent, #6366f1);
 }
 .dp-toggle input:checked ~ .dp-toggle-track .dp-toggle-thumb {
-  left: 21px;
+  transform: translateX(18px) scaleX(1);
 }
-/* Stretch spring on press — jelly physics */
-.dp-toggle-track:active .dp-toggle-thumb { width: 24px; }
+/* Stretch spring on press — GPU: scaleX replaces width change */
+.dp-toggle-track:active .dp-toggle-thumb { transform: translateX(0) scaleX(1.33); }
 .dp-toggle input:checked ~ .dp-toggle-track:active .dp-toggle-thumb {
-  width: 24px;
-  left: 15px;
+  transform: translateX(12px) scaleX(1.33);   /* 15-3=12px, width was 24px≈18*1.33 */
 }
 
 /* Dark themes */

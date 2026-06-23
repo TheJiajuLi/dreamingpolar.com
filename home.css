@@ -1,3 +1,9 @@
+:root {
+  --ease-out-expo: cubic-bezier(0.16,1,0.3,1);   /* 先快后慢，位移类动画主缓动 */
+  --ease-spring:   cubic-bezier(0.34,1.56,0.64,1); /* 弹簧超出回弹，装饰性元素 */
+  --ease-in-out:   cubic-bezier(0.4,0,0.2,1);     /* 状态切换双向缓动 */
+}
+
 html {
   height: 100%;
   overflow: hidden;

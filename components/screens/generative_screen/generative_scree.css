@@ -151,13 +151,15 @@
   height: 2px;
   border-radius: 2px;
   background: rgba(255,255,255,0.1);
-  transition: width 0.2s, background 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), background 0.2s, box-shadow 0.2s;
+  transform-origin: center center;
 }
 .gen-editor-resize-handle:hover {
   background: rgba(96,165,250,0.08);
 }
 .gen-editor-resize-handle:hover::before {
-  width: 64px;
+  /* 64/40 = 1.6 — GPU scaleX replaces width: 64px */
+  transform: scaleX(1.6);
   background: rgba(96,165,250,0.6);
   box-shadow: 0 0 8px rgba(96,165,250,0.4);
 }
