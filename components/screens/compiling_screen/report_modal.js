@@ -344,77 +344,53 @@ async function _exportPDF(varName, contentEl, pdfBtn) {
   try {
     await _loadPdfLibs();
     const { jsPDF } = window.jspdf;
-    const now = new Date().toLocaleString('zh-CN');
 
-    // ── Build a standalone print container off-screen ────────────────────────
-    // html2canvas captures actual rendered pixels → no font embedding needed.
-    const printWrap = document.createElement('div');
-    printWrap.style.cssText =
-      'position:fixed;left:-9999px;top:0;width:794px;background:#fff;' +
-      'padding:40px 48px;box-sizing:border-box;color:#0f172a;' +
-      'font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB",sans-serif;' +
-      'font-size:14px;line-height:1.75';
+    // ── Capture the already-rendered report-body (fonts are loaded + correct) ──
+    // Off-screen clones fail CJK font loading; the live DOM has it right.
+    const reportBody = contentEl.closest('.report-modal')?.querySelector('.report-body')
+                    ?? contentEl.parentElement;
 
-    // Title
-    printWrap.innerHTML =
-      `<div style="font-size:22px;font-weight:700;margin-bottom:4px">${varName} 的智能报告</div>` +
-      `<div style="font-size:11px;color:#94a3b8;margin-bottom:28px;font-family:monospace">` +
-      `${now} · Dreaming Polar</div>`;
+    // Temporarily expand scroll area so html2canvas sees the full content
+    const saved = { overflow: reportBody.style.overflow, maxHeight: reportBody.style.maxHeight,
+                    height: reportBody.style.height };
+    reportBody.style.overflow  = 'visible';
+    reportBody.style.maxHeight = 'none';
+    reportBody.style.height    = 'auto';
 
-    // Clone report content and replace canvas with images
-    const clone = contentEl.cloneNode(true);
-    const origCanvases = contentEl.querySelectorAll('canvas');
-    clone.querySelectorAll('canvas').forEach((cv, i) => {
-      const img = document.createElement('img');
-      try { img.src = origCanvases[i].toDataURL('image/png', 0.9); } catch {}
-      img.style.cssText = 'width:100%;display:block';
-      cv.replaceWith(img);
+    // Hide interactive areas that shouldn't appear in PDF
+    const followup = reportBody.querySelector('.report-followup');
+    if (followup) followup.style.visibility = 'hidden';
+    const loading  = reportBody.querySelector('.report-loading');
+    if (loading)  loading.style.display = 'none';
+
+    const canvas = await window.html2canvas(reportBody, {
+      scale: 1.5,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: -window.scrollY,
     });
 
-    // Restyle cloned elements for print
-    clone.querySelectorAll('.report-h3').forEach(h => {
-      h.style.cssText = 'font-size:11px;font-weight:700;color:#6366f1;' +
-        'text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #e0e3ff;' +
-        'padding-bottom:5px;margin:24px 0 10px';
-    });
-    clone.querySelectorAll('.report-p').forEach(p => {
-      p.style.cssText = 'font-size:13.5px;line-height:1.82;margin-bottom:10px;color:#1e293b';
-    });
-    clone.querySelectorAll('.report-chart-canvas-wrap').forEach(w => w.replaceWith(...w.childNodes));
-    clone.querySelectorAll('.report-charts-grid').forEach(g => {
-      g.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:10px';
-    });
-    clone.querySelectorAll('.report-chart-card').forEach(c => {
-      c.style.cssText = 'border:1px solid #e2e8f0;border-radius:8px;overflow:hidden';
-    });
-    clone.querySelectorAll('.report-chart-insight').forEach(i => {
-      i.style.cssText = 'font-size:11px;color:#64748b;font-style:italic;padding:6px 10px 9px;' +
-        'border-top:1px solid #f1f5f9';
-    });
-    clone.querySelectorAll('.report-followup').forEach(f => f.remove());
+    // Restore
+    reportBody.style.overflow  = saved.overflow;
+    reportBody.style.maxHeight = saved.maxHeight;
+    reportBody.style.height    = saved.height;
+    if (followup) followup.style.visibility = '';
+    if (loading)  loading.style.display = '';
 
-    printWrap.appendChild(clone);
-    document.body.appendChild(printWrap);
+    // ── Tile canvas onto A4 pages ─────────────────────────────────────────────
+    const a4W_px   = canvas.width;                         // at scale 1.5
+    const a4H_px   = Math.round(a4W_px * 297 / 210);      // A4 aspect ratio
 
-    // Capture at 1.5× for sharpness; then tile into A4 pages
-    const canvas = await window.html2canvas(printWrap, {
-      scale: 1.5, useCORS: true, logging: false, backgroundColor: '#ffffff',
-    });
-    document.body.removeChild(printWrap);
-
-    // A4 in px at canvas scale (210mm → 794px print width → scale)
-    const a4W_px = canvas.width;                              // 794 * 1.5
-    const a4H_px = Math.round(a4W_px * 297 / 210);           // A4 height in same scale
-
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdf        = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const totalPages = Math.ceil(canvas.height / a4H_px);
 
     for (let p = 0; p < totalPages; p++) {
       if (p > 0) pdf.addPage();
-      const srcY   = p * a4H_px;
-      const cropH  = Math.min(a4H_px, canvas.height - srcY);
+      const srcY  = p * a4H_px;
+      const cropH = Math.min(a4H_px, canvas.height - srcY);
 
-      // Crop this page out of the full canvas
       const pageCanvas     = document.createElement('canvas');
       pageCanvas.width     = a4W_px;
       pageCanvas.height    = a4H_px;
