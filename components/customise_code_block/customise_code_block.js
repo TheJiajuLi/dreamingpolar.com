@@ -612,9 +612,10 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     buildImportCellCode:  _buildImportCellCode,
   });
 
-  // Mark mirror pane stale when code is edited after a run
+  // Mark mirror pane stale when code is edited after a run; clear ARIA badge on any edit
   editor.addEventListener('input', () => {
     if (el.dataset.hasOutput === '1') el.classList.add('mirror--stale');
+    delete el.dataset.ariaSource; // user modified the AI code — remove ARIA attribution
   }, { signal: outputAC.signal });
 
   // ── Per-cell ICM instances ────────────────────────────
@@ -951,22 +952,21 @@ export function init(container, externalTopbar) {
   document.addEventListener('ai-insert-and-run', async ({ detail: { code, lang, cellId } }) => {
     const st = window.screenController?.getState('coding');
     if (st !== 'normal' && st !== 'maximized') return;
-    // Flush any pending DataFrame injections so AI-generated code that
-    // references imported variables can find them in the kernel.
     await _flushPendingInjects();
     if (cellId) {
-      // Update existing cell and re-run it
       const cell = _cells.find(c => c.id === cellId);
       if (cell) {
         cell.editor.value = code;
         autoResize(cell.editor);
         cell.editor.dispatchEvent(new Event('input'));
         saveAll();
+        cell.el.dataset.ariaSource = '1'; // mark as ARIA-generated
         cell.el.querySelector('.nb-run')?.click();
       }
       return;
     }
-    addImportedCell(lang ?? 'python', code, { autoRun: true });
+    const newCell = addImportedCell(lang ?? 'python', code, { autoRun: true });
+    if (newCell) newCell.el.dataset.ariaSource = '1'; // mark as ARIA-generated
   });
 
   document.addEventListener('refactor-code', ({ detail: { code, cellId } }) => {
@@ -1029,7 +1029,7 @@ export function setCellCode(cellId, code) {
 }
 
 export function addImportedCell(lang, code, { autoRun = false } = {}) {
-  if (!_cellsEl) return;
+  if (!_cellsEl) return null;
   const cell = makeCell(lang, code, uid());
   _cells.push(cell);
 
@@ -1050,4 +1050,5 @@ export function addImportedCell(lang, code, { autoRun = false } = {}) {
       if (autoRun) cell.el.querySelector('.nb-run')?.click();
     });
   });
+  return cell;
 }

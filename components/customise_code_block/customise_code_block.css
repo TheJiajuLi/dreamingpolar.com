@@ -90,6 +90,41 @@
   box-shadow: 0 2px 12px rgba(99,102,241,0.1), 0 10px 36px rgba(99,102,241,0.05);
 }
 
+/* ARIA-generated cell: orange accent line always visible + toolbar badge */
+.nb-cell[data-aria-source] .nb-body::before {
+  top: 6px;
+  bottom: 6px;
+  background: #f97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.1);
+  opacity: 1;
+}
+/* Always show toolbar on ARIA cells (don't hide it) */
+.nb-cell[data-aria-source] .nb-toolbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* "ARIA" badge — floated after the cell-num in the toolbar */
+.nb-cell[data-aria-source] .nb-cell-num::after {
+  content: 'ARIA';
+  display: inline-flex;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(249,115,22,0.12);
+  color: #f97316;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  vertical-align: middle;
+  border: 1px solid rgba(249,115,22,0.25);
+}
+[data-theme="dark"] .nb-cell[data-aria-source] .nb-cell-num::after,
+[data-theme="grey"] .nb-cell[data-aria-source] .nb-cell-num::after {
+  background: rgba(249,115,22,0.16);
+  color: #fb923c;
+  border-color: rgba(249,115,22,0.35);
+}
+
 /* Navigation flash — cell just navigated to from file manager */
 @keyframes nb-cell-nav-flash {
   0%   { border-color: var(--accent, #6366f1); box-shadow: 0 0 0 3px rgba(99,102,241,0.25); }
