@@ -237,6 +237,7 @@ function setupGridScreen() {
     <div class="grid-toolbar">
       <button class="g-btn" id="g-sync-btn" disabled title="同步到内核">
         <i class="ti ti-refresh"></i> 同步到内核
+        <span id="g-sync-varname" style="font-weight:400;opacity:0.6;font-family:var(--code-font,'JetBrains Mono',monospace);font-size:0.6rem"></span>
       </button>
       <div class="g-sep"></div>
       <button class="g-btn" id="g-filter-btn"><i class="ti ti-filter"></i> 过滤</button>
@@ -324,6 +325,11 @@ function setupGridScreen() {
     saveBtn.disabled = !hasData;
     ariaBtn.disabled = !hasData;
     syncBtn.disabled = dirty === 0;
+
+    // Show target variable name next to sync button
+    const varnameEl = screen.querySelector('#g-sync-varname');
+    if (varnameEl) varnameEl.textContent = tab?.varName ? `→ ${tab.varName}` : '';
+    syncBtn.title = tab?.varName ? `同步到内核变量: ${tab.varName}` : '同步到内核';
   }
 
   function _hideDirty() {
