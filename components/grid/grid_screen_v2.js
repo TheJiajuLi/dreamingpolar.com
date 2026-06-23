@@ -734,7 +734,7 @@ function setupGridScreen() {
     const overlay = document.createElement('div');
     overlay.id = 'dp-grid-overlay';
     overlay.style.cssText =
-      'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.35);' +
+      'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.35);' +
       'display:flex;align-items:center;justify-content:center';
 
     const modal = document.createElement('div');
