@@ -194,6 +194,7 @@ function setupGridScreen() {
     window.screenController?.register('grid', screen, {
       label: 'Grid', group: 'hero', persisted: false, defaultOpen: false, noChip: true,
     });
+  });
 
   // ── VT button ──────────────────────────────────────────────────────────────
   const vtTop = document.querySelector('#vertical-toolbar .vt-top');
