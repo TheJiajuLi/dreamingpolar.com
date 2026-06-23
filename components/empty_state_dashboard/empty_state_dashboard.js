@@ -179,7 +179,7 @@ export function initDashboard() {
 
   // ── Visibility logic: show when ALL hero screens are closed/minimised ──────
   // Show dashboard only when every hero screen is closed / minimised
-  const HERO_IDS = ['content', 'coding', 'terminal', 'ai-chat'];
+  const HERO_IDS = ['content', 'coding', 'terminal', 'ai-chat', 'grid'];
   function _allClosed() {
     const sc = window.screenController;
     if (!sc) return false;
