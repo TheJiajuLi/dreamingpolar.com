@@ -480,31 +480,38 @@
 [data-theme="grey"]   .aria-data-card-col-chip  { background: #0d1117; border-color: rgba(255,255,255,0.08); }
 [data-theme="aurora"] .aria-data-card-col-chip  { background: #07071a; border-color: rgba(192,132,252,0.12); }
 
+/* ── Welcome card — same visual language as aria-data-card ── */
 .aria-chat-welcome {
-  padding: 8px 14px 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border, #e2e8f0);
+  margin: 6px 10px 6px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface, #ffffff);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
-/* ── Header row: title + collapse toggle ── */
+/* ── Header row: mirrors aria-data-card-hdr ── */
 .aria-chat-welcome-hdr {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 0 6px;
+  padding: 7px 10px 7px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
 }
+.aria-chat-welcome-hdr:hover { background: var(--bg, #f8fafc); }
+
 .aria-chat-welcome-title {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-muted, #64748b);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
 }
 .aria-chat-welcome-toggle {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -515,47 +522,58 @@
   border-radius: 4px;
   padding: 0;
   flex-shrink: 0;
-  transition: background 0.12s, color 0.12s;
 }
-.aria-chat-welcome-toggle:hover { background: rgba(0,0,0,0.06); color: var(--text, #0f172a); }
 .aria-chat-welcome-chevron {
-  font-size: 11px;
-  /* Expanded = pointing up (rotate 180°) */
-  transform: rotate(180deg);
-  transition: transform 0.22s cubic-bezier(0.16,1,0.3,1);
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  transform: rotate(180deg);  /* open = up */
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1);
   display: block;
 }
 
-/* ── Collapsible body ── */
+/* ── Collapsible body — separated by border-top like data-card-body ── */
 .aria-chat-welcome-body {
+  border-top: 1px solid var(--border, #e2e8f0);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 8px 12px 10px;
   overflow: hidden;
   max-height: 400px;
-  transition: max-height 0.28s cubic-bezier(0.16,1,0.3,1),
-              opacity    0.2s  ease,
-              padding    0.22s cubic-bezier(0.16,1,0.3,1);
   opacity: 1;
-  padding-bottom: 2px;
+  transition: max-height 0.28s cubic-bezier(0.16,1,0.3,1),
+              opacity    0.18s ease,
+              padding    0.22s cubic-bezier(0.16,1,0.3,1),
+              border-color 0.2s ease;
 }
 
 /* ── Collapsed state ── */
 .aria-chat-welcome--collapsed .aria-chat-welcome-body {
   max-height: 0;
   opacity: 0;
+  padding-top: 0;
   padding-bottom: 0;
+  border-top-color: transparent;
   pointer-events: none;
 }
 .aria-chat-welcome--collapsed .aria-chat-welcome-chevron {
-  transform: rotate(0deg);  /* pointing down = click to expand */
+  transform: rotate(0deg);
 }
-.aria-chat-welcome--collapsed { padding-bottom: 8px; }
+
+/* Dark theme */
+[data-theme="dark"]   .aria-chat-welcome { background: #161b22; border-color: rgba(255,255,255,0.07); }
+[data-theme="grey"]   .aria-chat-welcome { background: #2d333b; border-color: rgba(255,255,255,0.07); }
+[data-theme="aurora"] .aria-chat-welcome { background: #0d0d2e; border-color: rgba(192,132,252,0.15); }
+[data-theme="dark"]   .aria-chat-welcome-title,
+[data-theme="grey"]   .aria-chat-welcome-title { color: #e6edf3; }
+[data-theme="aurora"] .aria-chat-welcome-title { color: #e0e0ff; }
+[data-theme="dark"]   .aria-chat-welcome-hdr:hover,
+[data-theme="grey"]   .aria-chat-welcome-hdr:hover { background: rgba(255,255,255,0.04); }
 
 .aria-chat-welcome-hint {
   font-size: 0.62rem;
   color: var(--text-muted, #64748b);
-  opacity: 0.7;
+  opacity: 0.75;
   line-height: 1.6;
   max-width: 380px;
 }

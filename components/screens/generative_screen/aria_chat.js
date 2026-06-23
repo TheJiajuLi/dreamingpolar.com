@@ -541,10 +541,12 @@ export function createAriaChat() {
     try { localStorage.setItem(_WELCOME_COLLAPSED_KEY, collapsed ? '1' : '0'); } catch {}
   }
 
-  _toggleBtn.addEventListener('click', e => {
-    e.stopPropagation();
+  // Entire header row is clickable (like aria-data-card-hdr)
+  const _welcomeHdr = welcomeHeader.querySelector('.aria-chat-welcome-hdr');
+  _welcomeHdr.addEventListener('click', () => {
     _setWelcomeCollapsed(!welcomeHeader.classList.contains('aria-chat-welcome--collapsed'));
   });
+  _toggleBtn.addEventListener('click', e => e.stopPropagation()); // prevent double-fire
 
   // Restore persisted state
   try {
