@@ -457,13 +457,23 @@ async function _exportPDF(varName, contentEl, pdfBtn) {
     if (followup) followup.style.display = 'none';
     if (loading)  loading.style.display  = 'none';
 
+    // Capture at scale:2, constrain windowWidth to actual body width so text
+    // wraps correctly (default windowWidth = screen width → layout breaks).
+    const captureW = reportBody.offsetWidth;
+
     const canvas = await window.html2canvas(reportBody, {
-      scale: 1.5,
+      scale: 2,                         // 2× → sharper text at A4 print size
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
       scrollX: 0,
       scrollY: 0,
+      width:        captureW,           // fix capture width
+      windowWidth:  captureW,           // prevent html2canvas from using screen width
+      windowHeight: reportBody.scrollHeight,
+      ignoreElements: el =>
+        el.classList?.contains('report-followup') ||
+        el.classList?.contains('report-loading'),
     });
 
     // Restore all constraints
@@ -476,9 +486,9 @@ async function _exportPDF(varName, contentEl, pdfBtn) {
     if (followup) followup.style.display = '';
     if (loading)  loading.style.display  = '';
 
-    // ── Tile canvas onto A4 pages ─────────────────────────────────────────────
-    const a4W_px   = canvas.width;                         // at scale 1.5
-    const a4H_px   = Math.round(a4W_px * 297 / 210);      // A4 aspect ratio
+    // ── Tile canvas onto A4 pages (PNG — no JPEG artifacts on text) ───────────
+    const a4W_px   = canvas.width;                    // captureW * 2
+    const a4H_px   = Math.round(a4W_px * 297 / 210); // A4 aspect ratio
 
     const pdf        = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const totalPages = Math.ceil(canvas.height / a4H_px);
@@ -488,15 +498,16 @@ async function _exportPDF(varName, contentEl, pdfBtn) {
       const srcY  = p * a4H_px;
       const cropH = Math.min(a4H_px, canvas.height - srcY);
 
-      const pageCanvas     = document.createElement('canvas');
-      pageCanvas.width     = a4W_px;
-      pageCanvas.height    = a4H_px;
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width  = a4W_px;
+      pageCanvas.height = a4H_px;
       const ctx = pageCanvas.getContext('2d');
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, a4W_px, a4H_px);
       ctx.drawImage(canvas, 0, srcY, a4W_px, cropH, 0, 0, a4W_px, cropH);
 
-      pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, 210, 297, '', 'FAST');
+      // PNG: no compression artifacts on CJK text (larger file but correct rendering)
+      pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297, '', 'FAST');
     }
 
     pdf.save(`${varName}_智能报告.pdf`);
