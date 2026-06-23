@@ -100,6 +100,44 @@ function _makeCard(...rows) {
   return card;
 }
 
+// ── Settings categories (iOS-style drill-down) ────────────────────────────────
+const _CATEGORIES = [
+  {
+    id: 'cache',
+    label: '缓存',
+    icon: 'ti-database',
+    desc: '输出、历史记录、启动行为',
+    rows: s => [
+      _makeRow('Notebook 输出缓存', '刷新后自动恢复 Cell 输出，无需重新运行', 'cacheNotebookOutput', s),
+      _makeRow('ARIA 对话历史', '刷新后保留与 ARIA 的聊天记录，最多保存最近 40 条', 'cacheAriaHistory', s),
+      _makeRow('内核数据预载', '启动时将文件中心数据预写入 Python 运行环境', 'cacheKernelData', s),
+      _makeRow('侧边栏状态记忆', '记住文件管理/设置面板的展开状态', 'cacheRightBarState', s),
+      _makeRow('启动后自动运行全部 Cell', '内核就绪后自动执行所有 Cell，恢复变量和输出', 'autoRunOnLoad', s),
+    ],
+  },
+  {
+    id: 'interaction',
+    label: '交互',
+    icon: 'ti-cursor-text',
+    desc: '文件插入、导航、自动切换',
+    rows: s => [
+      _makeRow('插入文件后自动运行', '从文件中心点击插入时，自动运行对应 Cell', 'autoRunOnFileInsert', s),
+      _makeRow('文件智能导航', '已插入的文件点击后追踪跳转至对应 Cell，而非重复插入', 'smartFileNavigation', s),
+      _makeRow('文件管理自动切换', '光标停在 pd.read_csv() 行时自动切换到文件管理', 'autoSwitchFiles', s),
+    ],
+  },
+  {
+    id: 'grid',
+    label: 'DP Grid',
+    icon: 'ti-table',
+    desc: '数据集标签页、同步行为',
+    rows: s => [
+      _makeRow('记住打开的数据集', '刷新后自动恢复 Grid 中打开的数据集标签页', 'cacheGridState', s),
+      _makeRow('同步前确认', '将编辑同步到内核前弹出确认对话框，防止误操作', 'gridConfirmSync', s),
+    ],
+  },
+];
+
 // ── Main factory ───────────────────────────────────────────────────────────────
 export function createSettingsPanel(onSettingChange) {
   const settings = getSettings();
@@ -107,9 +145,15 @@ export function createSettingsPanel(onSettingChange) {
   const panel = document.createElement('div');
   panel.className = 'dp-settings-panel';
 
-  // ── Header ─────────────────────────────────────────────────────────────────
+  // ── Shared header ──────────────────────────────────────────────────────────
   const hdr = document.createElement('div');
   hdr.className = 'dp-settings-hdr';
+
+  const backBtn = document.createElement('button');
+  backBtn.className = 'rb-file-hdr-close dp-settings-back';
+  backBtn.innerHTML = `<i class="ti ti-chevron-left"></i>`;
+  backBtn.style.display = 'none';
+
   const hdrTitle = document.createElement('span');
   hdrTitle.className = 'dp-settings-hdr-title';
   hdrTitle.textContent = 'Settings';
@@ -119,81 +163,67 @@ export function createSettingsPanel(onSettingChange) {
   hdrClose.innerHTML = `<i class="ti ti-x"></i>`;
   hdrClose.style.marginLeft = 'auto';
 
-  hdr.append(hdrTitle, hdrClose);
+  hdr.append(backBtn, hdrTitle, hdrClose);
 
-  // ── Body ───────────────────────────────────────────────────────────────────
-  const body = document.createElement('div');
-  body.className = 'dp-settings-body';
+  // ── Sliding track (200% wide: main list | detail view) ─────────────────────
+  const track = document.createElement('div');
+  track.className = 'dp-settings-track';
 
-  const onChange = (key, val, s) => {
-    onSettingChange?.(key, val, s);
-  };
+  const mainPane   = document.createElement('div');
+  mainPane.className = 'dp-settings-pane dp-settings-body';
 
-  // ── Cache section ──────────────────────────────────────────────────────────
-  body.appendChild(_makeSection('缓存'));
-  body.appendChild(_makeCard(
-    _makeRow(
-      'Notebook 输出缓存',
-      '刷新后自动恢复 Cell 输出，无需重新运行',
-      'cacheNotebookOutput', settings, onChange
-    ),
-    _makeRow(
-      'ARIA 对话历史',
-      '刷新后保留与 ARIA 的聊天记录，最多保存最近 40 条',
-      'cacheAriaHistory', settings, onChange
-    ),
-    _makeRow(
-      '内核数据预载',
-      '启动时将文件中心数据预写入 Python 运行环境',
-      'cacheKernelData', settings, onChange
-    ),
-    _makeRow(
-      '侧边栏状态记忆',
-      '记住文件管理/设置面板的展开状态',
-      'cacheRightBarState', settings, onChange
-    ),
-    _makeRow(
-      '启动后自动运行全部 Cell',
-      '内核就绪后自动执行所有 Cell，恢复变量和输出（建议与"内核数据预载"配合使用）',
-      'autoRunOnLoad', settings, onChange
-    ),
-  ));
+  const detailPane = document.createElement('div');
+  detailPane.className = 'dp-settings-pane dp-settings-body';
 
-  // ── Interaction section ────────────────────────────────────────────────────
-  body.appendChild(_makeSection('交互'));
-  body.appendChild(_makeCard(
-    _makeRow(
-      '插入文件后自动运行',
-      '从文件中心点击插入时，自动运行对应 Cell',
-      'autoRunOnFileInsert', settings, onChange
-    ),
-    _makeRow(
-      '文件智能导航',
-      '已插入的文件点击后追踪跳转至对应 Cell，而非重复插入',
-      'smartFileNavigation', settings, onChange
-    ),
-    _makeRow(
-      '文件管理自动切换',
-      '光标停在 pd.read_csv() 行时自动切换到文件管理',
-      'autoSwitchFiles', settings, onChange
-    ),
-  ));
+  track.append(mainPane, detailPane);
 
-  // ── DP Grid section ────────────────────────────────────────────────────────
-  body.appendChild(_makeSection('DP Grid'));
-  body.appendChild(_makeCard(
-    _makeRow(
-      '记住打开的数据集',
-      '刷新后自动恢复 Grid 中打开的数据集标签页',
-      'cacheGridState', settings, onChange
-    ),
-    _makeRow(
-      '同步前确认',
-      '将编辑同步到内核前弹出确认对话框，防止误操作',
-      'gridConfirmSync', settings, onChange
-    ),
-  ));
+  // ── Build main category list ───────────────────────────────────────────────
+  const onChange = (key, val, s) => { onSettingChange?.(key, val, s); };
 
-  panel.append(hdr, body);
+  _CATEGORIES.forEach(cat => {
+    const row = document.createElement('button');
+    row.className = 'dp-settings-cat-row';
+    row.innerHTML =
+      `<span class="dp-settings-cat-icon"><i class="ti ${cat.icon}"></i></span>` +
+      `<span class="dp-settings-cat-text">` +
+        `<span class="dp-setting-name">${cat.label}</span>` +
+        `<span class="dp-setting-sub">${cat.desc}</span>` +
+      `</span>` +
+      `<i class="ti ti-chevron-right dp-settings-cat-arrow"></i>`;
+
+    row.addEventListener('click', () => {
+      // Populate detail pane
+      detailPane.innerHTML = '';
+      detailPane.appendChild(_makeSection(cat.label));
+      detailPane.appendChild(_makeCard(...cat.rows(settings).map(r => {
+        // wire onChange
+        const toggle = r.querySelector('input[type="checkbox"]');
+        if (toggle) {
+          toggle.addEventListener('change', () => {
+            settings[toggle.dataset.key] = toggle.checked;
+            try { localStorage.setItem('dp-settings', JSON.stringify(settings)); } catch {}
+            onChange(toggle.dataset.key, toggle.checked, settings);
+          });
+        }
+        return r;
+      })));
+
+      // Slide to detail
+      track.style.transform = 'translateX(-50%)';
+      hdrTitle.textContent = cat.label;
+      backBtn.style.display = '';
+    });
+
+    mainPane.appendChild(row);
+  });
+
+  // ── Back button ────────────────────────────────────────────────────────────
+  backBtn.addEventListener('click', () => {
+    track.style.transform = 'translateX(0)';
+    hdrTitle.textContent = 'Settings';
+    backBtn.style.display = 'none';
+  });
+
+  panel.append(hdr, track);
   return { panel, settings, hdrClose };
 }
