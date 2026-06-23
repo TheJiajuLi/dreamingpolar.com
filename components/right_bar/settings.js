@@ -9,6 +9,7 @@ const DEFAULTS = {
   cacheKernelData:      true,   // prewrite inject-store files to Pyodide FS at boot
   cacheRightBarState:   true,   // remember which panel (files/settings) was last open
   cacheAriaHistory:     true,   // persist ARIA chat history across page refreshes
+  autoRunOnLoad:        false,  // auto run all cells once kernel boots on page load
   autoSwitchFiles:      false,  // auto-switch to file manager when cursor is on pd.read_csv line
   autoRunOnFileInsert:  true,   // auto-run cell after inserting file from file manager
   smartFileNavigation:  true,   // clicking an already-inserted file navigates to its cell
@@ -147,6 +148,11 @@ export function createSettingsPanel(onSettingChange) {
       '侧边栏状态记忆',
       '记住文件管理/设置面板的展开状态',
       'cacheRightBarState', settings, onChange
+    ),
+    _makeRow(
+      '启动后自动运行全部 Cell',
+      '内核就绪后自动执行所有 Cell，恢复变量和输出（建议与"内核数据预载"配合使用）',
+      'autoRunOnLoad', settings, onChange
     ),
   ));
 

@@ -22,9 +22,21 @@ function setupCodingScreen() {
   // ── Screen controller ─────────────────────────────────
   requestAnimationFrame(() => {
     window.screenController?.register('coding', screen, { label: 'Code', persisted: true, noChip: true, group: 'hero' });
-    // Warm up the Python interpreter in the background so it's ready before
-    // the user clicks Run. This eliminates the KBS appearing mid-run.
     preloadPython();
+
+    // Auto-run all cells once kernel finishes booting (setting: autoRunOnLoad)
+    if (getSettings().autoRunOnLoad) {
+      // 'Notebook Editor' message = first-boot complete (distinct from cell-run 'Done')
+      document.addEventListener('compiler-status', function _onBoot({ detail }) {
+        if (detail.status === 'ready' && detail.message === 'Notebook Editor') {
+          document.removeEventListener('compiler-status', _onBoot);
+          // Small delay so cells are fully mounted before running
+          setTimeout(() => {
+            document.querySelector('.nb-run-all-btn')?.click();
+          }, 300);
+        }
+      });
+    }
   });
 
   const notebookView = document.getElementById('cds-notebook-view');
