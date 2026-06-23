@@ -1,5 +1,6 @@
 import { visualiseVar, previewClean, applyClean, exportDataFrame, diagnoseChart } from '../../compiler/compiler.js';
 import { downloadBlob, MIME } from '../../shared/file_download.js';
+import { openReportModal } from './report_modal.js';
 
 export function escHtml(s) {
   return String(s)
@@ -662,7 +663,20 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
           });
 
           exportSection.append(exportTitle, exportChipRow, exportStatus);
-          body.append(cleanSection, exportSection);
+
+          // ── 智能报告 section ──────────────────────────────────────────────
+          const reportSection = document.createElement('div');
+          reportSection.className = 'vsug-section vsug-section--report';
+
+          const reportBtn = document.createElement('button');
+          reportBtn.className = 'nb-report-btn';
+          reportBtn.type      = 'button';
+          reportBtn.innerHTML =
+            `<i class="ti ti-report-analytics"></i> 智能报告`;
+          reportBtn.addEventListener('click', () => openReportModal(o.varName));
+
+          reportSection.appendChild(reportBtn);
+          body.append(cleanSection, exportSection, reportSection);
           block.append(body);
         }
 
