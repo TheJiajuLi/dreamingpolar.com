@@ -388,11 +388,6 @@ function setupGridScreen() {
     addBtn.innerHTML = '<i class="ti ti-plus"></i> 打开';
     topBar.appendChild(addBtn);
 
-    const pickerWrap = document.createElement('div');
-    pickerWrap.style.position = 'relative';
-    pickerWrap.id = 'grid-picker-wrap';
-    topBar.appendChild(pickerWrap);
-
     topBar.addEventListener('click', e => {
       const closeTrigger = e.target.closest('[data-close]');
       const tabTrigger   = e.target.closest('.grid-tab');
@@ -412,7 +407,9 @@ function setupGridScreen() {
       return;
     }
 
-    // Create picker container anchored to the trigger element or topbar
+    // Remove any stale picker-wrap before creating (dedup guard)
+    document.querySelectorAll('#grid-picker-wrap').forEach(el => el.remove());
+
     const wrap = document.createElement('div');
     wrap.id = 'grid-picker-wrap';
     wrap.style.cssText = 'position:fixed;z-index:500';
