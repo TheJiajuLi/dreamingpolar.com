@@ -350,20 +350,37 @@ function _renderFollowupChunk(raw, container) {
       wrap.append(toolbar, pre);
       container.appendChild(wrap);
     } else {
-      // Plain text — same rendering as report body
+      // Plain text — headings / lists / bold / inline math
       const lines = part.split('\n');
       let pBuf = [];
+      const _md = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
       const flush = () => {
         if (!pBuf.length) return;
         const p = document.createElement('p');
         p.className = 'report-p';
-        p.innerHTML = pBuf.join('<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        p.innerHTML = pBuf.join('<br>');
         container.appendChild(p);
         pBuf = [];
       };
       lines.forEach(line => {
-        if (line.trim() === '') flush();
-        else pBuf.push(line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'));
+        const t = line.trim();
+        if (/^#{1,3} /.test(line)) {
+          flush();
+          const h = document.createElement('h3');
+          h.className = 'report-h3';
+          h.textContent = line.replace(/^#{1,3} /, '').trim();
+          container.appendChild(h);
+        } else if (/^[-*] /.test(t)) {
+          flush();
+          const li = document.createElement('p');
+          li.className = 'report-p report-li';
+          li.innerHTML = '• ' + _md(t.slice(2));
+          container.appendChild(li);
+        } else if (t === '') {
+          flush();
+        } else {
+          pBuf.push(_md(line));
+        }
       });
       flush();
     }
@@ -391,23 +408,33 @@ function _renderChunk(rawAccum, container) {
     pBuf = [];
   }
 
+  const _inlineMd = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
   lines.forEach(line => {
-    if (line.startsWith('## ')) {
+    const trimmed = line.trim();
+    // ## Heading or ### Sub-heading
+    if (/^#{1,3} /.test(line)) {
       _flushP();
-      const h = document.createElement('h3');
+      const level  = line.match(/^(#{1,3}) /)[1].length;
+      const h = document.createElement(level === 1 ? 'h2' : 'h3');
       h.className   = 'report-h3';
-      h.textContent = line.slice(3).trim();
+      h.textContent = line.replace(/^#{1,3} /, '').trim();
       container.appendChild(h);
-    } else if (line.trim() === '') {
+    // - List item or * list item
+    } else if (/^[-*] /.test(trimmed)) {
+      _flushP();
+      const li = document.createElement('p');
+      li.className = 'report-p report-li';
+      li.innerHTML = '• ' + _inlineMd(trimmed.slice(2));
+      container.appendChild(li);
+    } else if (trimmed === '') {
       _flushP();
     } else {
-      pBuf.push(line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'));
+      pBuf.push(_inlineMd(line));
     }
   });
   _flushP();
-  // Note: _typesetMath is NOT called here. During streaming this function is
-  // invoked per-chunk and clears innerHTML each time, which would destroy
-  // already-rendered MathJax SVG nodes. Call _typesetMath once after streaming ends.
+  // Note: _typesetMath called after streaming ends, not per-chunk.
 }
 
 function _typesetMath(el) {
