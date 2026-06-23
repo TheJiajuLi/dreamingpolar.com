@@ -393,77 +393,73 @@ function setupGridScreen() {
       const tabTrigger   = e.target.closest('.grid-tab');
       if (closeTrigger) { e.stopPropagation(); _closeTab(closeTrigger.dataset.close); return; }
       if (tabTrigger)   { _setActive(tabTrigger.dataset.tabId); return; }
-      if (e.target.closest('#grid-tab-add')) { _togglePicker(e.target.closest('#grid-tab-add')); }
+      if (e.target.closest('#grid-tab-add')) { _showDatasetOverlay(); }
     });
   }
 
   // ── Picker dropdown ────────────────────────────────────────────────────────
-  function _togglePicker(anchorEl) {
-    // Close if already open
-    if (pickerOpen) {
-      document.getElementById('dp-grid-picker')?.remove();
-      pickerOpen = false;
-      return;
-    }
-
-    // Remove any stale picker
-    document.getElementById('dp-grid-picker')?.remove();
-    pickerOpen = true;
+  function _togglePicker(triggerEl) {
+    const existing = document.getElementById('dp-grid-picker-overlay');
+    if (existing) { existing.remove(); return; }
 
     const sources = _getAvailableSources();
-    const picker = document.createElement('div');
-    picker.className = 'grid-picker';
-    picker.id = 'dp-grid-picker';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'dp-grid-picker-overlay';
+    overlay.style.cssText = [
+      'position:fixed','inset:0','z-index:99999',
+      'background:rgba(0,0,0,0.25)',
+      'display:flex','align-items:center','justify-content:center',
+    ].join(';');
+
+    const card = document.createElement('div');
+    card.style.cssText = [
+      'background:var(--surface,#fff)',
+      'border-radius:12px',
+      'padding:8px',
+      'min-width:280px',
+      'max-height:360px',
+      'overflow-y:auto',
+      'box-shadow:0 8px 32px rgba(0,0,0,0.18)',
+    ].join(';');
 
     if (!sources.length) {
-      picker.innerHTML = '<div class="grid-picker-empty">暂无可用数据集<br>请先在文件中心导入 CSV 或通过 Notebook 运行 pd.read_csv()</div>';
+      card.innerHTML = '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px">暂无可用数据集<br>请先在文件中心导入文件</div>';
     } else {
+      const title = document.createElement('div');
+      title.style.cssText = 'padding:8px 10px 6px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;text-transform:uppercase';
+      title.textContent = '选择数据集';
+      card.appendChild(title);
+
       sources.forEach(src => {
         const item = document.createElement('div');
-        item.className = 'grid-picker-item';
-        const name = src.name ?? src.filename ?? '—';
-        const varN = src.varName ?? src.name ?? '—';
-        const cnt  = src.rows ? (Array.isArray(src.rows) ? src.rows.length : src.rows) : '?';
-        item.innerHTML = `<div><div class="grid-picker-name">${name}</div><div class="grid-picker-meta">${varN} · ${cnt} 行</div></div>`;
-        item.addEventListener('click', () => {
+        item.style.cssText = ['padding:8px 10px','border-radius:7px','cursor:pointer',
+          'display:flex','flex-direction:column','gap:2px','transition:background 0.1s'].join(';');
+        item.onmouseover = () => { item.style.background = 'rgba(99,102,241,0.07)'; };
+        item.onmouseout  = () => { item.style.background = ''; };
+
+        const name = document.createElement('div');
+        name.style.cssText = 'font-size:13px;font-weight:600;color:var(--text,#0f172a)';
+        name.textContent = src.name ?? src.filename ?? '—';
+
+        const meta = document.createElement('div');
+        meta.style.cssText = 'font-size:11px;color:#94a3b8;font-family:monospace';
+        const cnt = Array.isArray(src.rows) ? src.rows.length : (src.rows ?? '?');
+        meta.textContent = `${src.varName ?? src.name} · ${cnt} 行`;
+
+        item.append(name, meta);
+        item.addEventListener('click', e => {
+          e.stopPropagation();
+          overlay.remove();
           _openDataset(src);
-          document.getElementById('dp-grid-picker')?.remove();
-          pickerOpen = false;
         });
-        picker.appendChild(item);
+        card.appendChild(item);
       });
     }
 
-    // Compute fixed position from trigger button
-    const triggerBtn = anchorEl
-      ?? document.getElementById('grid-empty-open')
-      ?? document.getElementById('grid-tab-add');
-    const rect = triggerBtn?.getBoundingClientRect() ?? { bottom: 100, left: 100 };
-
-    Object.assign(picker.style, {
-      position:  'fixed',
-      top:       (rect.bottom + 4) + 'px',
-      left:      rect.left + 'px',
-      zIndex:    '9999',
-      minWidth:  '240px',
-      maxHeight: '280px',
-      overflowY: 'auto',
-    });
-
-    document.body.appendChild(picker);
-
-    // Close on outside click
-    setTimeout(() => {
-      document.addEventListener('click', function _c(e) {
-        if (!picker.contains(e.target)
-            && !e.target.closest('#grid-tab-add')
-            && !e.target.closest('#grid-empty-open')) {
-          document.getElementById('dp-grid-picker')?.remove();
-          pickerOpen = false;
-          document.removeEventListener('click', _c);
-        }
-      });
-    }, 0);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   }
 
   // ── Render table & wire edit events ───────────────────────────────────────
@@ -729,14 +725,72 @@ function setupGridScreen() {
     });
   });
 
+  // ── Dataset selector overlay (fixed, centred, avoids overflow:hidden) ──────
+  function _showDatasetOverlay() {
+    document.getElementById('dp-grid-overlay')?.remove();
+
+    const sources = _getAvailableSources();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'dp-grid-overlay';
+    overlay.style.cssText =
+      'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.35);' +
+      'display:flex;align-items:center;justify-content:center';
+
+    const modal = document.createElement('div');
+    modal.style.cssText =
+      'background:#fff;border-radius:12px;padding:16px;min-width:280px;' +
+      'max-height:360px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)';
+
+    const title = document.createElement('div');
+    title.style.cssText = 'font-weight:600;font-size:0.88rem;margin-bottom:12px;color:#0f172a';
+    title.textContent = '选择数据集';
+    modal.appendChild(title);
+
+    if (!sources.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:0.78rem;color:#94a3b8;text-align:center;padding:16px 0';
+      empty.textContent = '暂无可用数据集，请先导入 CSV 或运行 pd.read_csv()';
+      modal.appendChild(empty);
+    } else {
+      sources.forEach(src => {
+        const item = document.createElement('div');
+        item.style.cssText =
+          'padding:10px 12px;border-radius:8px;cursor:pointer;' +
+          'transition:background 0.1s;margin-bottom:4px';
+        item.onmouseenter = () => { item.style.background = 'rgba(99,102,241,0.08)'; };
+        item.onmouseleave = () => { item.style.background = ''; };
+
+        const name = src.name ?? src.filename ?? '—';
+        const varN = src.varName ?? src.name ?? '—';
+        const cnt  = src.rows ? (Array.isArray(src.rows) ? src.rows.length : src.rows) : '?';
+
+        item.innerHTML =
+          `<div style="font-weight:600;font-size:0.82rem;color:#0f172a">${name}</div>` +
+          `<div style="font-size:0.68rem;color:#94a3b8;font-family:monospace">${varN} · ${cnt} 行</div>`;
+
+        item.addEventListener('click', () => {
+          overlay.remove();
+          _openDataset(src);
+        });
+        modal.appendChild(item);
+      });
+    }
+
+    overlay.appendChild(modal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  }
+
   // ── Empty state open btn ──────────────────────────────────────────────────
-  screen.querySelector('#grid-empty-open')?.addEventListener('click', function(e) {
-    _togglePicker(e.currentTarget);
-  });
+  screen.querySelector('#grid-empty-open')?.addEventListener('click', _showDatasetOverlay);
 
   // ── Init ──────────────────────────────────────────────────────────────────
   _renderTabs();
   _showEmpty();
+
+  // Expose for debugging / external use
+  window._gridOpenDataset = _openDataset;
 }
 
 if (document.readyState === 'loading') {
