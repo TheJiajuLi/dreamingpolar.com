@@ -423,12 +423,19 @@
   border-left: 1px solid rgba(99,102,241,0.15);
   background: transparent;
   cursor: pointer;
-  color: var(--text-muted, #94a3b8);
-  font-size: 9px;
+  color: var(--text-muted, #64748b);
+  font-size: 11px;
   line-height: 1;
   transition: background 0.1s, color 0.1s;
 }
-.g-chip-close:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+/* Light theme: muted text already dark enough; bump opacity slightly */
+[data-theme="light"] .g-chip-close  { color: #64748b; }
+/* Dark/grey: push to a lighter grey so it pops on the dark chip */
+[data-theme="dark"]  .g-chip-close  { color: #adbac7; }
+[data-theme="grey"]  .g-chip-close  { color: #a0aab4; }
+/* Aurora: use the indigo palette so it reads on the purple-tinted chip */
+[data-theme="aurora"] .g-chip-close { color: #a5b4fc; }
+.g-chip-close:hover { background: rgba(239,68,68,0.12); color: #ef4444; }
 
 .g-filter-add { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .g-filter-select {

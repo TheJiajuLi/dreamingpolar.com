@@ -596,7 +596,7 @@ function setupGridScreen() {
     if (activeTabId === id) activeTabId = tabs[Math.min(idx, tabs.length - 1)]?.id ?? null;
     _renderTabs();
     if (activeTabId) _setActive(activeTabId);
-    else _showEmpty();
+    else { _showEmpty(); _clearGridState(); }
   }
 
   // ── Filter ─────────────────────────────────────────────────────────────────
@@ -817,12 +817,17 @@ function setupGridScreen() {
 
   function _saveGridState() {
     if (!getSettings().cacheGridState) return;
+    if (tabs.length === 0) return;  // never overwrite good saved state with empty tabs
     try {
       localStorage.setItem(GRID_STATE_KEY, JSON.stringify({
-        tabs: tabs.map(t => ({ varName: t.varName, filename: t.filename, from: t.ds._from })),
+        tabs: tabs.map(t => ({ varName: t.varName, filename: t.filename })),
         activeFilename: _activeTab()?.filename ?? null,
       }));
     } catch {}
+  }
+
+  function _clearGridState() {
+    try { localStorage.removeItem(GRID_STATE_KEY); } catch {}
   }
 
   function _restoreGridState() {
@@ -840,20 +845,19 @@ function setupGridScreen() {
     } catch {}
   }
 
-  // Auto-save when tab opens/closes or active changes
-  const _origSetActive = _setActive;
-  // Patch _openDataset to save state
-  const origOpen = _openDataset;
-
   // ── Init ──────────────────────────────────────────────────────────────────
   _renderTabs();
   _showEmpty();
 
-  // Restore persisted grid state after a short delay (sources need to settle)
-  setTimeout(_restoreGridState, 400);
-
-  // Save state on visibility change (tab switch or close)
-  document.addEventListener('screen-opened',   () => _saveGridState());
+  // Restore on first grid open — sources in localStorage are always ready
+  let _gridRestored = false;
+  document.addEventListener('screen-opened', ({ detail }) => {
+    if (detail?.id === 'grid' && !_gridRestored) {
+      _gridRestored = true;
+      _restoreGridState();
+    }
+    if (tabs.length > 0) _saveGridState();
+  });
   document.addEventListener('nb-file-imported', () => {/* sources updated */});
 
   // Expose for debugging / external use
