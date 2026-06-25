@@ -1,6 +1,6 @@
 // ── DP Grid — Phase 2: edit, filter, sync to kernel, export, send to ARIA ─────
 import { getAllDatasets, setDataset } from '../shared/dataset_store.js';
-import { injectDataFrame }           from '../compiler/compiler.js';
+import { injectDataFrame, getPyodide } from '../compiler/compiler.js';
 import { downloadBlob }              from '../shared/file_download.js';
 import { getSettings }               from '../right_bar/settings.js';
 
@@ -680,20 +680,32 @@ function setupGridScreen() {
     syncBtn.disabled = true;
     syncBtn.innerHTML = '<i class="ti ti-loader-2"></i> 同步中…';
     try {
+      // Ensure kernel is reachable (this initialises Pyodide if needed)
+      const py = await getPyodide().catch(e => { throw new Error('内核未就绪: ' + e.message); });
+
       const csv = _rowsToCSV(tab.ds.columns, ed.rows);
-      await injectDataFrame(tab.varName, csv, 'csv', '', {});
+      // Pass tab.filename so injectDataFrame also updates the file in Pyodide FS.
+      // This ensures pd.read_csv('GE.csv') returns the edited data too.
+      await injectDataFrame(tab.varName, csv, 'csv', tab.filename ?? '', {});
+
+      // Verify the variable actually landed in the shared namespace
+      const confirmed = py.runPython(
+        `'${tab.varName}' in (_dp_kernel_ns if '_dp_kernel_ns' in dir() else {})`
+      );
+      if (!confirmed) throw new Error(`变量 "${tab.varName}" 注入后在内核中未找到`);
+
       ed.dirtyCount = 0;
       ed.dirtyIndices.clear();
       undoStack.length = 0;
       _renderTable(tab.id);
       _updateStatus();
-      syncBtn.innerHTML = '<i class="ti ti-check"></i> 已同步';
-      setTimeout(() => { syncBtn.innerHTML = '<i class="ti ti-refresh"></i> 同步到内核'; syncBtn.disabled = false; }, 2000);
+      syncBtn.innerHTML = `<i class="ti ti-check"></i> 已同步 → ${tab.varName}`;
+      setTimeout(() => { syncBtn.innerHTML = '<i class="ti ti-refresh"></i> 同步到内核'; _updateStatus(); }, 3000);
     } catch (err) {
-      console.warn('[DP Grid] sync failed:', err);
-      statDirty.textContent = '· 同步失败，请先运行一个 cell 初始化内核';
-      syncBtn.innerHTML = '<i class="ti ti-refresh"></i> 同步到内核';
-      syncBtn.disabled = false;
+      console.error('[DP Grid] sync failed:', err);
+      statDirty.textContent = `· 同步失败: ${err.message}`;
+      syncBtn.innerHTML = '<i class="ti ti-alert-triangle"></i> 同步失败';
+      setTimeout(() => { syncBtn.innerHTML = '<i class="ti ti-refresh"></i> 同步到内核'; syncBtn.disabled = false; _updateStatus(); }, 4000);
     }
   }
 

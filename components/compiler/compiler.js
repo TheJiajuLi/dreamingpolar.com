@@ -27,6 +27,83 @@ let _pyodide     = null;
 let _loading     = null;
 let _suppressKbs = false; // true during silent background preload
 
+// ── Execution queue ────────────────────────────────────────────────────────────
+// Ensures cells run one-at-a-time; multiple rapid Run clicks are serialised,
+// not interleaved. Shared by _runPython and injectDataFrame.
+const _queue   = [];
+let   _running = false;
+
+function _enqueue(taskFn) {
+  return new Promise((resolve, reject) => {
+    _queue.push({ taskFn, resolve, reject });
+    _drain();
+  });
+}
+
+async function _drain() {
+  if (_running || !_queue.length) return;
+  _running = true;
+  const { taskFn, resolve, reject } = _queue.shift();
+  try   { resolve(await taskFn()); }
+  catch (e) { reject(e); }
+  finally   { _running = false; _drain(); }
+}
+
+// ── Web Worker proxy ──────────────────────────────────────────────────────────
+// All Python execution goes through the Worker so the main thread stays free.
+// The main-thread _pyodide is kept for unmigrated helpers (getDataSample, etc.)
+// and will be removed in a later phase once those are also migrated.
+
+const _worker  = new Worker(new URL('./pyodide_worker.js', import.meta.url), { type: 'module' });
+const _pending = new Map();
+let   _workerReady = null;
+
+_worker.onmessage = ({ data: { id, result, error } }) => {
+  const p = _pending.get(id);
+  if (!p) return;
+  _pending.delete(id);
+  error ? p.reject(new Error(error)) : p.resolve(result);
+};
+_worker.onerror = e => console.error('[Pyodide Worker]', e.message ?? e);
+
+function _call(type, payload = {}) {
+  const id = Math.random().toString(36).slice(2);
+  return new Promise((resolve, reject) => {
+    _pending.set(id, { resolve, reject });
+    _worker.postMessage({ id, type, payload });
+  });
+}
+
+function _initWorker() {
+  if (_workerReady) return _workerReady;
+
+  // Read inject-store from localStorage (not available in Worker) and pass to init
+  let injectFiles = [];
+  try {
+    const s = JSON.parse(localStorage.getItem('dp-settings') ?? '{}');
+    if (s.cacheKernelData !== false) {
+      const store = JSON.parse(localStorage.getItem('dreaming-polar-inject-store') ?? '{}');
+      injectFiles = Object.values(store).filter(e => e?.filename && e?.data != null);
+    }
+  } catch (_) {}
+
+  _workerReady = _call('init', { base: window.BASE ?? '', injectFiles })
+    .then(() => {
+      _dispatch('ready', 'Notebook Editor', 100);
+      document.body.classList.add('dp-ready');
+      document.body.dispatchEvent(new Event('dp-ready-event'));
+    })
+    .catch(e => {
+      _workerReady = null; // allow retry
+      throw e;
+    });
+
+  return _workerReady;
+}
+
+// Pre-warm the Worker at module load so it's ready before the user clicks Run.
+_initWorker().catch(() => {});
+
 // ── Utilities ─────────────────────────────────────────────
 
 function _dispatch(status, message, percent, extra = {}) {
@@ -134,6 +211,12 @@ _warnings.filterwarnings('ignore', category=UserWarning)
 try:
     import matplotlib as _mpl
     _mpl.use('agg')
+    # Silence ALL matplotlib log messages below ERROR — covers font-substitution
+    # warnings that go through logging rather than the warnings module.
+    try:
+        import logging as _log
+        _log.getLogger('matplotlib').setLevel(_log.ERROR)
+    except Exception: pass
     # CJK font — set up once per kernel session; font file written to FS at boot.
     if not getattr(_mpl, '_dp_font_set', False):
         try:
@@ -142,6 +225,9 @@ try:
                 _fm.fontManager.addfont('/tmp/NotoSansSC.ttf')
                 _mpl.rcParams['font.family'] = 'Noto Sans SC'
         except Exception: pass
+        # Use Computer Modern (LaTeX-standard, always bundled with matplotlib)
+        # for math rendering so NotoSansSC's missing math glyphs don't warn.
+        _mpl.rcParams['mathtext.fontset'] = 'cm'
         _mpl._dp_font_set = True
     import matplotlib.pyplot as _plt
     _plt.show = lambda *a, **kw: None
@@ -279,10 +365,12 @@ except Exception:
 _j.dumps({'stdout': _out.getvalue(), 'stderr': _err.getvalue(), 'error': _exc, 'rich': _rich, 'viz_candidates': _viz_candidates})
 `;
 
-async function _runPython(code, context = {}) {
+async function _runPythonCore(code, context = {}) {
   try {
     const _t0 = Date.now();
-    _dispatch('running', `Running Python${_cellSuffix(context)}`, undefined, {
+    const _queued  = _queue.length;
+    const _qSuffix = _queued > 0 ? ` · ${_queued} task${_queued > 1 ? 's' : ''} queued` : '';
+    _dispatch('running', `Running Python${_cellSuffix(context)}${_qSuffix}`, undefined, {
       cellIndex: context.cellIndex,
       tip: 'Click to jump to cell output',
       action: 'scroll-to-cell',
@@ -291,10 +379,9 @@ async function _runPython(code, context = {}) {
     // Pre-flight: warn about Pyodide-specific pitfalls before execution
     const preflight = preflightWarnings(code);
 
-    const py  = await _getPyodide();
-    await py.loadPackagesFromImports(code, { messageCallback: () => {} });
-    py.globals.set('_user_code', code);
-    const raw = await py.runPythonAsync(RUNNER);
+    // Run in Worker — main thread stays unblocked during Python execution
+    await _initWorker();
+    const raw = await _call('run', { code });
     const d   = JSON.parse(raw);
     const _ms = Date.now() - _t0;
     _dispatch('ready', 'Done', undefined, {
@@ -348,6 +435,11 @@ async function _runPython(code, context = {}) {
     });
     return [{ type: 'error', content: String(e) }];
   }
+}
+
+// Public entry-point: enqueues execution so rapid multi-cell clicks are serialised.
+async function _runPython(code, context = {}) {
+  return _enqueue(() => _runPythonCore(code, context));
 }
 
 // ── Other modes ───────────────────────────────────────────
@@ -569,19 +661,18 @@ export async function compile(code, mode, context = {}) {
 }
 
 export function preloadPython() {
-  // Silently warm up the interpreter so it's ready before the user clicks Run.
-  // _suppressKbs prevents the boot-screen modal from appearing during this
-  // background phase — the KBS is reserved for user-initiated execution.
+  // Worker is already started at module load; this is a no-op kept for API compat.
+  // _suppressKbs still respected so KBS doesn't flash during background warm-up.
   _suppressKbs = true;
-  _getPyodide()
+  _initWorker()
     .catch(() => {})
     .finally(() => { _suppressKbs = false; });
 }
 
-// ── Restart kernel — clears shared namespace, all cell variables reset ────────
+// ── Restart kernel — clears shared namespace in Worker ────────────────────────
 export async function resetKernel() {
-  if (_pyodide) {
-    _pyodide.runPython('_dp_kernel_ns = {"__name__": "__main__"}');
+  if (_workerReady) {
+    await _call('reset');
     _dispatch('ready', 'Kernel restarted — variables cleared');
   }
 }
@@ -650,78 +741,22 @@ export function writeToFS(filename, data, fileType) {
 //   xlsx / xls → data is a Uint8Array (raw binary)
 //
 // Dispatches console.warn (not silent) on any load failure.
-export async function injectDataFrame(varName, data, fileType = 'csv', fileName = '', context = {}) {
-  const py = await _getPyodide();
+async function _injectDataFrameCore(varName, data, fileType, fileName, context) {
   const _displayName = fileName || varName;
-  _dispatch('running', `Loading ${fileType.toUpperCase()} "${_displayName}"${_cellSuffix(context)}`);
+  const _queued  = _queue.length;
+  const _qSuffix = _queued > 0 ? ` · ${_queued} queued` : '';
+  _dispatch('running', `Loading ${fileType.toUpperCase()} "${_displayName}"${_cellSuffix(context)}${_qSuffix}`);
 
-  // Load required packages
-  const pkgs = ['pandas'];
-  if (fileType === 'xlsx' || fileType === 'xls') pkgs.push('openpyxl');
-  if (fileType === 'xml') pkgs.push('lxml');
-  try {
-    await py.loadPackage(pkgs, { messageCallback: () => {} });
-  } catch (e) {
-    console.warn(`[injectDataFrame] Failed to load packages ${pkgs}:`, e);
-    throw e;
-  }
-
-  // Ensure shared namespace exists (mirrors RUNNER logic)
-  py.runPython(`
-if '_dp_kernel_ns' not in dir():
-    _dp_kernel_ns = {'__name__': '__main__'}
-`);
-
-  // Write raw file into Pyodide FS so user code can reference it by filename
-  // (e.g. pd.read_csv("GE.csv") without going through injectDataFrame).
-  if (fileName) writeToFS(fileName, data, fileType);
-
-  py.globals.set('_dp_inject_data', data);
-  py.globals.set('_dp_inject_name', varName);
-
-  let rows = 0;
-  try {
-    if (fileType === 'csv') {
-      py.runPython(`
-import pandas as _pd_inj, io as _io_inj
-_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_csv(_io_inj.StringIO(_dp_inject_data))
-del _pd_inj, _io_inj
-`);
-    } else if (fileType === 'json') {
-      py.runPython(`
-import pandas as _pd_inj, io as _io_inj
-_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_json(_io_inj.StringIO(_dp_inject_data))
-del _pd_inj, _io_inj
-`);
-    } else if (fileType === 'xlsx' || fileType === 'xls') {
-      py.runPython(`
-import pandas as _pd_inj, io as _io_inj
-_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_excel(
-    _io_inj.BytesIO(_dp_inject_data.to_py())
-)
-del _pd_inj, _io_inj
-`);
-    } else if (fileType === 'xml') {
-      py.runPython(`
-import pandas as _pd_inj, io as _io_inj
-_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_xml(_io_inj.StringIO(_dp_inject_data))
-del _pd_inj, _io_inj
-`);
-    } else {
-      throw new Error(`[injectDataFrame] Unsupported file type: "${fileType}"`);
-    }
-    rows = py.runPython(`len(_dp_kernel_ns[_dp_inject_name])`);
-  } catch (e) {
-    console.warn(`[injectDataFrame] Failed to inject "${varName}" (${fileType}):`, e);
-    throw e;
-  } finally {
-    py.globals.delete('_dp_inject_data');
-    py.globals.delete('_dp_inject_name');
-  }
+  await _initWorker();
+  const { rows } = await _call('inject', { varName, data, fileType, fileName: fileName ?? '' });
 
   _dispatch('ready', `"${varName}" ready — ${rows.toLocaleString()} rows${_cellSuffix(context)}`);
   afterKernelMutation(varName, 'inject');
   return { varName, rows };
+}
+
+export async function injectDataFrame(varName, data, fileType = 'csv', fileName = '', context = {}) {
+  return _enqueue(() => _injectDataFrameCore(varName, data, fileType, fileName, context));
 }
 
 export async function getPyodide() {
@@ -814,35 +849,9 @@ _jq.dumps(_dfs)
 // Returns [{varName, shape, columns, dtypes}] for every DataFrame/Series in
 // the kernel namespace.  Safe to call even before any cell has run (returns []).
 export async function queryKernelContext() {
-  if (!_pyodide) return [];
+  if (!_workerReady) return [];
   try {
-    const raw = _pyodide.runPython(`
-import json as _jkc
-_ctx = []
-for _kn, _kv in (_dp_kernel_ns if '_dp_kernel_ns' in dir() else {}).items():
-    if _kn.startswith('_'): continue
-    try:
-        _kt = type(_kv).__name__
-        if _kt == 'DataFrame':
-            _ctx.append({
-                'varName': _kn,
-                'kind': 'DataFrame',
-                'shape': list(_kv.shape),
-                'columns': list(_kv.columns.astype(str)),
-                'dtypes': {str(c): str(_kv[c].dtype) for c in _kv.columns},
-            })
-        elif _kt == 'Series':
-            _ctx.append({
-                'varName': _kn,
-                'kind': 'Series',
-                'shape': list(_kv.shape),
-                'columns': [],
-                'dtypes': {'values': str(_kv.dtype)},
-            })
-    except Exception: pass
-_jkc.dumps(_ctx)
-`);
-    return JSON.parse(raw);
+    return await _call('query');
   } catch (_) {
     return [];
   }

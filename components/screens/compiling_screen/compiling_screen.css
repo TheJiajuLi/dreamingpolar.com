@@ -126,6 +126,9 @@
   white-space: pre-wrap;
   word-break: break-word;
   color: #b91c1c;
+  max-height: 760px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .output-info {
