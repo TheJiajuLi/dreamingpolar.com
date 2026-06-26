@@ -137,7 +137,7 @@ function _initUI() {
     : go();
 
   // ── Reset-password page: detect ?token= in URL ────────────────────────────
-  const _resetToken = new URLSearchParams(location.search).get('reset_token');
+  const _resetToken = new URLSearchParams(location.search).get('token');
   if (_resetToken) {
     const _doReset = () => _buildResetPage(_resetToken);
     document.readyState === 'loading'
