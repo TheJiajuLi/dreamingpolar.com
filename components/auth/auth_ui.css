@@ -197,6 +197,19 @@
 }
 .au-err.show { display: block; }
 
+.au-success {
+  font-size: 0.71rem;
+  color: #16a34a;
+  padding: 7px 10px;
+  background: rgba(22,163,74,0.07);
+  border: 1px solid rgba(22,163,74,0.2);
+  border-radius: 7px;
+}
+.au-rp-resend {
+  border: none; background: none; color: #6366f1; cursor: pointer;
+  font-size: inherit; text-decoration: underline; padding: 0;
+}
+
 .au-submit {
   padding: 10px;
   border-radius: 9px;

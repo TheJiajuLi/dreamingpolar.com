@@ -1,11 +1,11 @@
-/* ── User Screen — Apple HIG aesthetic ───────────────────────────────────── */
+/* ── User Screen — macOS seamless canvas ─────────────────────────────────── */
 #user-screen { display: none; }
 #user-screen[data-screen-state="normal"],
 #user-screen[data-screen-state="maximized"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #F5F5F7;
+  background: #ffffff;
 }
 
 [data-theme="dark"]   #user-screen[data-screen-state="normal"],
@@ -15,178 +15,173 @@
 [data-theme="aurora"] #user-screen[data-screen-state="normal"],
 [data-theme="aurora"] #user-screen[data-screen-state="maximized"]   { background: #07071a; }
 
+/* ── Content area — no cards, no frames ─────────────────────────────────── */
 .user-screen-inner {
   width: 100%;
-  max-width: 400px;
-  padding: 0 16px 40px;
+  max-width: 480px;
+  padding: 0 40px 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 0;
 }
 
-/* ── Profile card ─────────────────────────────────────────────────────────── */
+/* ── Avatar ───────────────────────────────────────────────────────────────── */
 .usr-card {
-  width: 100%;
-  background: #fff;
-  border-radius: 20px;
-  padding: 32px 24px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  gap: 0;
+  padding: 0 0 32px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  width: 100%;
 }
-[data-theme="dark"]   .usr-card { background: #2C2C2E; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-[data-theme="grey"]   .usr-card { background: #2D333B; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-[data-theme="aurora"] .usr-card { background: rgba(255,255,255,0.05); box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
 
 .usr-avatar {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: #007AFF;   /* iOS System Blue */
+  background: #007AFF;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 16px rgba(0,122,255,0.3);
 }
+[data-theme="aurora"] .usr-avatar { background: #7c3aed; }
 
 .usr-name {
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: #1D1D1F;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  margin-bottom: 8px;
 }
-[data-theme="dark"]   .usr-name,
-[data-theme="grey"]   .usr-name   { color: #F5F5F7; }
-[data-theme="aurora"] .usr-name   { color: #e0e0ff; }
+[data-theme="dark"]   .usr-name { color: #F5F5F7; }
+[data-theme="grey"]   .usr-name { color: #adbac7; }
+[data-theme="aurora"] .usr-name { color: #e0e0ff; }
 
 .usr-email {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: #86868B;
-  letter-spacing: 0.01em;
-  margin-top: 2px;
+  letter-spacing: 0.005em;
+  margin-bottom: 5px;
 }
 
 .usr-joined {
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: #AEAEB2;
-  letter-spacing: 0.01em;
-  margin-top: 1px;
+  letter-spacing: 0.005em;
 }
 
-/* ── Features list ───────────────────────────────────────────────────────── */
+/* ── Features — full-width, no card, just dividers ──────────────────────── */
 .usr-features {
   width: 100%;
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 0;
 }
-[data-theme="dark"]   .usr-features { background: #2C2C2E; }
-[data-theme="grey"]   .usr-features { background: #2D333B; }
-[data-theme="aurora"] .usr-features { background: rgba(255,255,255,0.05); }
+[data-theme="dark"]   .usr-features,
+[data-theme="grey"]   .usr-features   { border-top-color: rgba(255,255,255,0.06); }
+[data-theme="aurora"] .usr-features   { border-top-color: rgba(255,255,255,0.04); }
 
 .usr-feature-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 13px 18px;
-  border-bottom: 0.5px solid rgba(0,0,0,0.06);
-  font-size: 0.84rem;
-}
-.usr-feature-row:last-child { border-bottom: none; }
-[data-theme="dark"]   .usr-feature-row,
-[data-theme="grey"]   .usr-feature-row   { border-bottom-color: rgba(255,255,255,0.06); }
-
-.usr-feature-label {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-size: 0.88rem;
   color: #1D1D1F;
   font-weight: 400;
+  background: transparent;
 }
-[data-theme="dark"]   .usr-feature-label,
-[data-theme="grey"]   .usr-feature-label { color: #F5F5F7; }
-[data-theme="aurora"] .usr-feature-label { color: #c8c8e8; }
+[data-theme="dark"]   .usr-feature-row { color: #F5F5F7; border-bottom-color: rgba(255,255,255,0.05); }
+[data-theme="grey"]   .usr-feature-row { color: #adbac7; border-bottom-color: rgba(255,255,255,0.05); }
+[data-theme="aurora"] .usr-feature-row { color: #c8c8e8; border-bottom-color: rgba(255,255,255,0.04); }
 
 .usr-badge {
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 20px;
-  background: rgba(0,122,255,0.1);
-  color: #007AFF;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: #AEAEB2;   /* subtle gray — no pill, no color */
   letter-spacing: 0.01em;
+  background: none;
+  padding: 0;
+  border-radius: 0;
 }
 
-/* ── Logout ───────────────────────────────────────────────────────────────── */
+/* ── Logout — plain text link, not a button ──────────────────────────────── */
 .usr-logout-btn {
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 13px;
+  gap: 6px;
+  padding: 14px 0 0;
   border: none;
-  border-radius: 16px;
-  background: #fff;
-  color: #FF3B30;   /* iOS destructive red */
-  font-size: 0.84rem;
-  font-weight: 500;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #AEAEB2;          /* neutral gray by default — quiet */
+  font-size: 0.82rem;
+  font-weight: 400;
   cursor: pointer;
   letter-spacing: 0.01em;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
-  transition: background 0.15s;
-}
-.usr-logout-btn:hover { background: #FFF0EF; }
-[data-theme="dark"]   .usr-logout-btn { background: #2C2C2E; }
-[data-theme="dark"]   .usr-logout-btn:hover { background: #3A1F1F; }
-[data-theme="grey"]   .usr-logout-btn { background: #2D333B; }
-[data-theme="aurora"] .usr-logout-btn { background: rgba(255,255,255,0.05); }
-
-/* ── Guest ────────────────────────────────────────────────────────────────── */
-.usr-guest {
+  transition: color 0.15s;
   width: 100%;
-  background: #fff;
-  border-radius: 20px;
-  padding: 40px 24px 32px;
+}
+.usr-logout-btn:hover {
+  color: #FF3B30;          /* iOS red only on hover */
+  background: transparent;
+}
+
+/* ── Guest state ─────────────────────────────────────────────────────────── */
+.usr-guest {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
   text-align: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 0 32px;
 }
-[data-theme="dark"]   .usr-guest { background: #2C2C2E; }
-[data-theme="grey"]   .usr-guest { background: #2D333B; }
-[data-theme="aurora"] .usr-guest { background: rgba(255,255,255,0.05); }
 
 .usr-guest-icon {
   font-size: 52px;
   color: #AEAEB2;
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  opacity: 0.6;
 }
 .usr-guest-title {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: #1D1D1F;
-  margin: 0;
-  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+  letter-spacing: -0.015em;
 }
-[data-theme="dark"]   .usr-guest-title,
-[data-theme="grey"]   .usr-guest-title { color: #F5F5F7; }
+[data-theme="dark"]   .usr-guest-title { color: #F5F5F7; }
+[data-theme="grey"]   .usr-guest-title { color: #adbac7; }
+[data-theme="aurora"] .usr-guest-title { color: #e0e0ff; }
 
 .usr-guest-sub {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: #86868B;
-  margin: 0;
-  line-height: 1.55;
-  max-width: 260px;
+  margin: 0 0 24px;
+  line-height: 1.6;
+  max-width: 280px;
 }
 
 .usr-login-btn {
@@ -195,40 +190,36 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 13px;
+  padding: 14px;
   background: #007AFF;
   color: #fff;
   border: none;
-  border-radius: 14px;
-  font-size: 0.88rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
-  letter-spacing: 0.01em;
-  transition: background 0.15s, opacity 0.15s;
-  margin-top: 8px;
+  letter-spacing: 0.005em;
+  transition: background 0.15s;
 }
 .usr-login-btn:hover { background: #0071EB; }
 
 .usr-reg-btn {
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   border: none;
-  border-radius: 14px;
-  background: rgba(0,0,0,0.05);
-  color: #1D1D1F;
-  font-size: 0.88rem;
-  font-weight: 500;
+  border-radius: 0;
+  background: transparent;
+  color: #86868B;
+  font-size: 0.84rem;
+  font-weight: 400;
   cursor: pointer;
-  letter-spacing: 0.01em;
-  transition: background 0.15s;
+  letter-spacing: 0.005em;
+  transition: color 0.15s;
 }
-.usr-reg-btn:hover { background: rgba(0,0,0,0.09); }
-[data-theme="dark"]   .usr-reg-btn { background: rgba(255,255,255,0.08); color: #F5F5F7; }
-[data-theme="grey"]   .usr-reg-btn { background: rgba(255,255,255,0.08); color: #adbac7; }
+.usr-reg-btn:hover { color: #007AFF; background: transparent; }
 
-/* ── Header avatar button ─────────────────────────────────────────────────── */
-.usr-vt-avatar,
-.au-vt-avatar {
+/* ── Header avatar ───────────────────────────────────────────────────────── */
+.au-vt-avatar, .usr-vt-avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -237,7 +228,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -255,5 +246,4 @@
   color: var(--text-muted, #86868B);
   transition: background 0.15s;
 }
-.usr-hdr-btn:hover { background: rgba(0,0,0,0.06); }
-.usr-hdr-btn.au-logged-in .au-vt-avatar { box-shadow: 0 0 0 2px rgba(0,122,255,0.3); }
+.usr-hdr-btn:hover { background: rgba(0,0,0,0.05); }

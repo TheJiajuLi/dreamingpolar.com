@@ -38,9 +38,15 @@
 .rb-settings-toggle-btn { width: 26px; height: 26px; }
 
 /* ── Outer clip container ─────────────────────────────────────────────── */
+/* Fixed full width, anchored to right edge. The right-bar's overflow:hidden
+   clips it during the width transition — panel content stays at full layout
+   width so nothing reflows: it slides in as one unit from right to left. */
 .rb-panel-outer {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--rb-w-expanded);
   overflow: hidden;
   border-radius: 14px;
 }

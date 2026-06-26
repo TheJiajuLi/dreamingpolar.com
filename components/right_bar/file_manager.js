@@ -293,11 +293,9 @@ export function initFileManager() {
     settingsBtn.classList.remove('rb-btn--active');
     if (getSettings().cacheRightBarState) {
       localStorage.setItem('dp-rb-open', '1');
-      const saved = localStorage.getItem('dp-rb-pane');
-      _slideToPane(saved === 'settings' ? 'settings' : defaultPane);
-    } else {
-      _slideToPane(defaultPane);
     }
+    // Always respect the explicitly requested pane — never let localStorage override
+    _slideToPane(defaultPane);
     if (defaultPane === 'files') _refresh();
   }
   function _close() {
@@ -314,7 +312,8 @@ export function initFileManager() {
 
   // ── Auto-restore on page load if state memory is ON ──────────────────────
   if (getSettings().cacheRightBarState && localStorage.getItem('dp-rb-open') === '1') {
-    requestAnimationFrame(() => _open_());
+    const savedPane = localStorage.getItem('dp-rb-pane') === 'settings' ? 'settings' : 'files';
+    requestAnimationFrame(() => _open_(savedPane));
   }
 
   toggleBtn.addEventListener('click', () => {

@@ -248,6 +248,7 @@ export function createSettingsPanel(onSettingChange) {
   _CATEGORIES.forEach(cat => {
     const row = document.createElement('button');
     row.className = 'dp-settings-cat-row';
+    row.dataset.cat = cat.id;
     row.innerHTML =
       `<span class="dp-settings-cat-icon"><i class="ti ${cat.icon}"></i></span>` +
       `<span class="dp-settings-cat-text">` +
@@ -292,3 +293,4 @@ export function createSettingsPanel(onSettingChange) {
   panel.append(hdr, track);
   return { panel, settings, hdrClose };
 }
+
