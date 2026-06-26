@@ -12,6 +12,14 @@ export function getPageHeader() {
 
 function setupPageHeader() {
   _header = document.querySelector('header.page-header');
+  // Remove legacy AI header button (created by an older script no longer in use)
+  document.getElementById('ai-header-btn')?.remove();
+  // Also observe for late-mounted instances
+  const _obs = new MutationObserver(() => {
+    const btn = document.getElementById('ai-header-btn');
+    if (btn) { btn.remove(); }
+  });
+  if (_header) _obs.observe(_header, { childList: true, subtree: true });
 }
 
 if (document.readyState === 'loading') {

@@ -60,6 +60,7 @@ function setFullscreen(on) {
     _fsMaximizedId = null;
   }
 
+  _syncExitPill(on);
   if (on) {
     showToast();
   } else {
@@ -68,30 +69,29 @@ function setFullscreen(on) {
   }
 }
 
-// ── Mount into header ────────────────────────────────────
-function mount() {
-  const header = document.querySelector('.page-header');
-  if (!header) return;
+// ── Persistent fullscreen exit pill (always visible in fullscreen) ────────────
+let _exitPill = null;
 
-  _btn = document.createElement('button');
-  _btn.className = 'dp-fullscreen-btn';
-  _btn.title     = 'Fullscreen';
-  _btn.setAttribute('aria-label', 'Toggle fullscreen');
-  _btn.innerHTML = SVG_EXPAND;
-  _btn.addEventListener('click', () => setFullscreen(!_active));
+function _buildExitPill() {
+  if (_exitPill) return;
+  _exitPill = document.createElement('button');
+  _exitPill.className = 'dp-fs-exit-pill';
+  _exitPill.title = 'Exit fullscreen (Esc)';
+  _exitPill.innerHTML = `${SVG_COLLAPSE}<span>退出全屏</span>`;
+  _exitPill.addEventListener('click', () => setFullscreen(false));
+  document.body.appendChild(_exitPill);
+}
 
-  const dropdown = header.querySelector('.mob-hdr-btns-dropdown');
-  if (dropdown) {
-    dropdown.insertBefore(_btn, dropdown.firstChild);
-  } else {
-    const wrapper = header.querySelector('.mob-hdr-btns-wrapper');
-    wrapper ? header.insertBefore(_btn, wrapper) : header.appendChild(_btn);
+function _syncExitPill(on) {
+  if (on) {
+    _buildExitPill();
+    requestAnimationFrame(() => _exitPill?.classList.add('dp-fs-exit-pill--visible'));
+  } else if (_exitPill) {
+    _exitPill.classList.remove('dp-fs-exit-pill--visible');
   }
 }
 
 function setup() {
-  requestAnimationFrame(() => requestAnimationFrame(mount));
-
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
 
@@ -104,6 +104,10 @@ function setup() {
     setFullscreen(!_active);   // toggle — Esc both exits and re-enters
   });
 }
+
+// Expose so other components (right bar, keyboard shortcuts) can toggle without importing
+window._dpToggleFullscreen = () => setFullscreen(!_active);
+window._dpIsFullscreen     = () => _active;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', setup);

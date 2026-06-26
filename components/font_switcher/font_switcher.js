@@ -93,49 +93,22 @@ function applyFont(font) {
 }
 
 function setupFontSwitcher() {
-  const header = document.querySelector('.page-header');
-  if (!header) return;
-
-  // Read saved font, default to index 0
   const savedId = localStorage.getItem(STORAGE_KEY);
   let currentIndex = FONTS.findIndex(f => f.id === savedId);
   if (currentIndex === -1) currentIndex = 0;
 
-  // Apply on load
   loadGoogleFont(FONTS[currentIndex]);
   applyFont(FONTS[currentIndex]);
 
-  // Build button
-  const btn = document.createElement('button');
-  btn.className = 'font-switcher-btn';
-  btn.setAttribute('aria-label', 'Switch font');
-  btn.setAttribute('title', `Font: ${FONTS[currentIndex].label}`);
-  btn.textContent = 'Aa';
-
-  btn.addEventListener('click', () => {
+  // Expose cycle function for Settings panel
+  window._dpCycleFont = () => {
     currentIndex = (currentIndex + 1) % FONTS.length;
     const next = FONTS[currentIndex];
     loadGoogleFont(next);
     applyFont(next);
-    btn.setAttribute('title', `Font: ${next.label}`);
-    showToast(next.label);
-  });
-
-  header.appendChild(btn);
-
-  // Toast — shows the font name briefly
-  const toast = document.createElement('div');
-  toast.className = 'font-switcher-toast';
-  toast.setAttribute('aria-live', 'polite');
-  document.body.appendChild(toast);
-
-  let toastTimer;
-  function showToast(name) {
-    toast.textContent = name;
-    toast.classList.add('visible');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('visible'), 1800);
-  }
+    document.dispatchEvent(new CustomEvent('dp-font-changed', { detail: { label: next.label } }));
+  };
+  window._dpFontLabel = () => FONTS[currentIndex].label;
 }
 
 if (document.readyState === 'loading') {

@@ -59,6 +59,7 @@
   <link rel="stylesheet" href="components/screens/compiling_screen/compiling_screen.css">
   <link rel="stylesheet" href="components/compiler/compiler.css">
   <link rel="stylesheet" href="components/compiler/compiler_mode_switcher/compiler_mode_switcher.css">
+  <link rel="stylesheet" href="components/auth/auth_screen.css">
   <link rel="stylesheet" href="components/start_coding/start_coding.css">
   <link rel="stylesheet" href="components/terminal/terminal.css">
   <link rel="stylesheet" href="components/screens/generative_screen/generative_scree.css">
@@ -152,6 +153,7 @@
         <section id="generative-screen" class="hero-screen"></section>
         <section id="ai-chat-screen"   class="hero-screen"></section>
         <section id="grid-screen"      class="hero-screen"></section>
+        <section id="user-screen"      class="hero-screen"></section>
       </div>
     </main>
     <div id="right-bar">
@@ -206,6 +208,19 @@
   <script src="components/mobile/preload_config.js" type="module"></script>
   <script src="components/vertical_toolbar/vertical_toolbar.js" type="module"></script>
   <script src="components/auth/auth_client.js" type="module"></script>
+
+  <script type="module">
+    // Handle ?token= reset-password link (fallback if auth_client loads late)
+    const _rt = new URLSearchParams(location.search).get('reset_token');
+    if (_rt) {
+      // auth_client.js sets window.authClient — wait for it via DOMContentLoaded
+      // then call showResetPassword; guard in _buildResetPage prevents double render
+      const _show = () => window.authClient?.showResetPassword(_rt);
+      document.readyState === 'loading'
+        ? document.addEventListener('DOMContentLoaded', _show)
+        : _show();
+    }
+  </script>
 
 </body>
 </html>

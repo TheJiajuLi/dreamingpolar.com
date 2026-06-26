@@ -81,8 +81,24 @@ export async function authedFetch(url, opts = {}) {
 export const isLoggedIn = () => !!_accessToken;
 export const getAccessToken = () => _accessToken;
 
+export async function forgotPassword(email) {
+  return authFetch('/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token, newPassword) {
+  return authFetch('/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
+
 window.authClient = { register, login, logout, getMe, authedFetch,
-                      silentRefresh, isLoggedIn, getAccessToken };
+                      silentRefresh, isLoggedIn, getAccessToken,
+                      forgotPassword, resetPassword,
+                      showResetPassword: (token) => _buildResetPage(token) };
 
 // ══════════════════════════════════════════════════════════════
 //  AUTH UI  — vertical toolbar button + modal + profile panel
@@ -100,6 +116,7 @@ function _initUI() {
   _buildOverlay();
   _buildProfile();
   const go = () => {
+    setupUserScreen();
     _buildVtBtn();
     // Restore UI immediately from cache, then verify with silentRefresh
     const cached = loadUserCache();
@@ -118,35 +135,42 @@ function _initUI() {
   document.readyState === 'loading'
     ? document.addEventListener('DOMContentLoaded', go)
     : go();
+
+  // ── Reset-password page: detect ?token= in URL ────────────────────────────
+  const _resetToken = new URLSearchParams(location.search).get('reset_token');
+  if (_resetToken) {
+    const _doReset = () => _buildResetPage(_resetToken);
+    document.readyState === 'loading'
+      ? document.addEventListener('DOMContentLoaded', _doReset)
+      : _doReset();
+  }
 }
 
-// ── Header button ─────────────────────────────────────────────
+// ── Auth button is now in the VT bottom, set up by setupUserScreen() ──────────
 function _buildVtBtn() {
-  const target = document.querySelector('.mob-hdr-btns-dropdown') ||
-                 document.body;
-  if (!target) return;
-  const btn = document.createElement('button');
-  btn.className = 'au-hdr-btn';
-  btn.id = 'au-vt-btn';
-  btn.title = 'Account';
-  btn.innerHTML = _USER_SVG;
-  btn.addEventListener('click', () => isLoggedIn() ? _toggleProfile() : _openModal('login'));
-  target.appendChild(btn);
+  // Button is in VT bottom, set up by setupUserScreen() below
+  document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: _uiUser } }));
 }
 
 function _updateVtBtn() {
-  const btn = document.getElementById('au-vt-btn');
-  if (!btn) return;
-  if (_uiUser) {
-    btn.innerHTML = `<span class="au-vt-avatar">${_esc(_uiUser.username).slice(0, 2).toUpperCase()}</span>`;
-    btn.title = _uiUser.username;
-    btn.classList.add('au-logged-in');
-  } else {
-    btn.innerHTML = _USER_SVG;
-    btn.title = 'Account';
-    btn.classList.remove('au-logged-in');
-  }
+  // Dispatch state so any listener (right bar) can update
+  document.dispatchEvent(new CustomEvent('dp-auth-state', {
+    detail: { user: _uiUser }
+  }));
 }
+
+// Expose for other modules to call directly
+window._dpAuthOpenPanel  = () => window.screenController?.open('user');
+window._dpAuthOpenLogin  = (tab = 'login') => _openModal(tab);
+window._dpGetAuthUser    = () => _uiUser;
+window._dpAuthLogout     = async () => {
+  await logout();
+  clearUserCache();
+  _uiUser = null;
+  _updateVtBtn();
+  _renderProfile();
+  document.dispatchEvent(new CustomEvent('dp-auth-logout'));
+};
 
 // ── Modal ─────────────────────────────────────────────────────
 function _buildOverlay() {
@@ -174,7 +198,19 @@ function _buildOverlay() {
         </div>
         <div class="au-err" id="au-l-err"></div>
         <button class="au-submit" type="submit">Sign in</button>
+        <p class="au-footer-link"><button type="button" data-switch="forgot">忘记密码？</button></p>
         <p class="au-footer-link">No account? <button type="button" data-switch="register">Create one →</button></p>
+      </form>
+
+      <form class="au-form" id="au-forgot-form" style="display:none">
+        <div class="au-field">
+          <label class="au-lbl" for="au-f-email">注册邮箱</label>
+          <input class="au-input" id="au-f-email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="au-err" id="au-f-err"></div>
+        <div class="au-success" id="au-f-ok" style="display:none"></div>
+        <button class="au-submit" type="submit">发送重置链接</button>
+        <p class="au-footer-link">想起来了？<button type="button" data-switch="login">返回登录 →</button></p>
       </form>
 
       <form class="au-form" id="au-reg-form" style="display:none">
@@ -202,6 +238,7 @@ function _buildOverlay() {
   _uiOverlay.querySelectorAll('[data-switch]').forEach(b => b.addEventListener('click', () => _switchTab(b.dataset.switch)));
   _uiOverlay.querySelector('#au-login-form').addEventListener('submit', _handleLogin);
   _uiOverlay.querySelector('#au-reg-form').addEventListener('submit', _handleReg);
+  _uiOverlay.querySelector('#au-forgot-form').addEventListener('submit', _handleForgot);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeModal(); });
   document.body.appendChild(_uiOverlay);
 }
@@ -210,7 +247,8 @@ function _openModal(tab = 'login') {
   _switchTab(tab);
   _uiOverlay.classList.add('au-open');
   requestAnimationFrame(() => {
-    _uiOverlay.querySelector(tab === 'login' ? '#au-l-email' : '#au-r-name')?.focus();
+    const focusMap = { login: '#au-l-email', register: '#au-r-name', forgot: '#au-f-email' };
+    _uiOverlay.querySelector(focusMap[tab] ?? '#au-l-email')?.focus();
   });
 }
 function _closeModal() {
@@ -219,9 +257,12 @@ function _closeModal() {
 }
 function _switchTab(tab) {
   _uiOverlay.querySelectorAll('.au-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  _uiOverlay.querySelector('#au-login-form').style.display = tab === 'login' ? '' : 'none';
-  _uiOverlay.querySelector('#au-reg-form').style.display   = tab === 'register' ? '' : 'none';
+  _uiOverlay.querySelector('#au-login-form').style.display  = tab === 'login'    ? '' : 'none';
+  _uiOverlay.querySelector('#au-reg-form').style.display    = tab === 'register' ? '' : 'none';
+  _uiOverlay.querySelector('#au-forgot-form').style.display = tab === 'forgot'   ? '' : 'none';
   _uiOverlay.querySelectorAll('.au-err').forEach(e => e.classList.remove('show'));
+  const okEl = _uiOverlay.querySelector('#au-f-ok');
+  if (okEl) okEl.style.display = 'none';
 }
 
 // ── Form handlers ─────────────────────────────────────────────
@@ -247,6 +288,97 @@ async function _handleReg(e) {
     await _fetchUser(); _closeModal();
   } catch (ex) { err.textContent = ex.message || 'Registration failed'; err.classList.add('show'); }
   finally { btn.disabled = false; btn.textContent = 'Create account'; }
+}
+
+async function _handleForgot(e) {
+  e.preventDefault();
+  const f   = e.target;
+  const btn = f.querySelector('.au-submit');
+  const err = f.querySelector('.au-err');
+  const ok  = f.querySelector('#au-f-ok');
+  btn.disabled = true; btn.textContent = '发送中…'; err.classList.remove('show');
+  ok.style.display = 'none';
+  try {
+    await forgotPassword(f.querySelector('#au-f-email').value.trim());
+    ok.textContent = '✓ 重置链接已发送，请查收邮件';
+    ok.style.display = '';
+    btn.style.display = 'none';
+  } catch (ex) {
+    err.textContent = ex.message || '发送失败，请稍后重试';
+    err.classList.add('show');
+    btn.disabled = false; btn.textContent = '发送重置链接';
+  }
+}
+
+// ── Reset password page (detected from URL ?token=) ──────────────────────────
+function _buildResetPage(token) {
+  if (document.getElementById('au-reset-overlay')) return; // guard: already shown
+  const overlay = document.createElement('div');
+  overlay.id = 'au-reset-overlay';
+  overlay.className = 'au-overlay au-open';
+  overlay.innerHTML = `
+    <div class="au-modal" role="dialog" aria-modal="true">
+      <div class="au-modal-top">
+        <span class="au-brand-tag">Dreaming Polar</span>
+      </div>
+      <form class="au-form" id="au-reset-form">
+        <div class="au-field">
+          <label class="au-lbl" for="au-rp-pass">新密码</label>
+          <input class="au-input" id="au-rp-pass" type="password" placeholder="至少 8 位" minlength="8" autocomplete="new-password" required>
+        </div>
+        <div class="au-field">
+          <label class="au-lbl" for="au-rp-pass2">确认新密码</label>
+          <input class="au-input" id="au-rp-pass2" type="password" placeholder="再输一次" minlength="8" autocomplete="new-password" required>
+        </div>
+        <div class="au-err" id="au-rp-err"></div>
+        <div class="au-success" id="au-rp-ok" style="display:none"></div>
+        <button class="au-submit" type="submit" id="au-rp-btn">重置密码</button>
+      </form>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#au-reset-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn  = overlay.querySelector('#au-rp-btn');
+    const err  = overlay.querySelector('#au-rp-err');
+    const ok   = overlay.querySelector('#au-rp-ok');
+    const p1   = overlay.querySelector('#au-rp-pass').value;
+    const p2   = overlay.querySelector('#au-rp-pass2').value;
+    err.classList.remove('show');
+
+    if (p1 !== p2) {
+      err.textContent = '两次密码不一致';
+      err.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = '重置中…';
+    try {
+      await resetPassword(token, p1);
+      ok.textContent = '✓ 密码已重置，3 秒后跳转登录';
+      ok.style.display = '';
+      btn.style.display = 'none';
+      setTimeout(() => {
+        overlay.remove();
+        const url = new URL(location.href);
+        url.searchParams.delete('token');
+        history.replaceState(null, '', url.toString());
+        _openModal('login');
+      }, 3000);
+    } catch (ex) {
+      const expired = /expired|invalid|used/i.test(ex.message ?? '');
+      err.innerHTML = expired
+        ? `链接已失效，请重新申请 — <button type="button" class="au-rp-resend">重新发送</button>`
+        : (ex.message || '重置失败');
+      err.classList.add('show');
+      err.querySelector('.au-rp-resend')?.addEventListener('click', () => {
+        overlay.remove();
+        _openModal('forgot');
+      });
+      btn.disabled = false; btn.textContent = '重置密码';
+    }
+  });
 }
 
 // ── Profile panel ─────────────────────────────────────────────
@@ -314,6 +446,82 @@ async function _fetchUser() {
 
 function _esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setupUserScreen() {
+  const screen = document.getElementById('user-screen');
+  if (!screen) return;
+
+  // Register with screenController — same pattern as other hero screens
+  // Double rAF ensures screenController exists before registering
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    window.screenController?.register('user', screen, {
+      label: '账号', group: 'hero', persisted: false, defaultOpen: false, noChip: true
+    });
+    // Force closed so it doesn't appear in split view on load
+    window.screenController?.close('user');
+  }));
+
+  screen.className += ' user-screen';
+
+  const inner = document.createElement('div');
+  inner.className = 'user-screen-inner';
+  screen.appendChild(inner);
+
+  function _render() {
+    const user = _uiUser;
+    if (user) {
+      const initials = (user.username ?? '?').slice(0, 2).toUpperCase();
+      const joined   = new Date((user.created_at ?? 0) * 1000)
+        .toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+      inner.innerHTML = `
+        <div class="usr-card">
+          <div class="usr-avatar">${initials}</div>
+          <div class="usr-name">${_esc(user.username)}</div>
+          <div class="usr-email">${_esc(user.email)}</div>
+          <div class="usr-joined">加入于 ${joined}</div>
+        </div>
+        <div class="usr-features">
+          <div class="usr-feature-row">
+            <span class="usr-feature-label">Notebooks</span>
+            <span class="usr-badge">Phase 2</span>
+          </div>
+          <div class="usr-feature-row">
+            <span class="usr-feature-label">Templates</span>
+            <span class="usr-badge">Phase 2</span>
+          </div>
+        </div>
+        <button class="usr-logout-btn" id="usr-logout">
+          <i class="ti ti-logout"></i> 退出登录
+        </button>`;
+      inner.querySelector('#usr-logout')?.addEventListener('click', async () => {
+        await window._dpAuthLogout?.();
+        _render();
+      });
+    } else {
+      inner.innerHTML = `
+        <div class="usr-guest">
+          <div class="usr-guest-icon"><i class="ti ti-user-circle"></i></div>
+          <h3 class="usr-guest-title">登录 Dreaming Polar</h3>
+          <p class="usr-guest-sub">保存 Notebook，同步数据，解锁更多功能</p>
+          <button class="usr-login-btn" id="usr-login">
+            <i class="ti ti-login"></i> 登录
+          </button>
+          <button class="usr-reg-btn" id="usr-reg">
+            创建账号
+          </button>
+        </div>`;
+      inner.querySelector('#usr-login')?.addEventListener('click', () => window._dpAuthOpenLogin?.('login'));
+      inner.querySelector('#usr-reg')?.addEventListener('click',   () => window._dpAuthOpenLogin?.('register'));
+    }
+  }
+
+  _render();
+  document.addEventListener('dp-auth-state', () => _render());
+
+  // VT user button is now created in file_manager.js (same pattern as fullscreen btn)
+
+  window._dpAuthOpenPanel = () => window.screenController?.open('user');
 }
 
 _initUI();

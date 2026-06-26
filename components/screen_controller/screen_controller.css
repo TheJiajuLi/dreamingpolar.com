@@ -40,24 +40,40 @@
 
 /* ── Restore chip (appears in header when a screen is minimized) ── */
 .sc-restore-chip {
+  /* Centered in page header, invisible until hovered */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 4px 10px 4px 7px;
-  border: 1px solid #d7e1eb;
-  background: #ffffff;
+  border: 1px solid transparent;
+  background: transparent;
   border-radius: 20px;
   cursor: pointer;
-  color: #475569;
+  color: transparent;         /* invisible text by default */
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   line-height: 1;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   flex-shrink: 0;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  opacity: 0.25;              /* ghost state: barely visible */
+}
+
+/* Reveal fully on hover */
+.sc-restore-chip:hover {
+  opacity: 1;
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #1e293b;
 }
 
 .sc-restore-chip:hover {
@@ -68,10 +84,7 @@
 
 .sc-restore-chip svg { flex-shrink: 0; }
 
-[data-theme="dark"] .sc-restore-chip             { background: #161b22; border-color: #30363d; color: #3fb950; }
-[data-theme="dark"] .sc-restore-chip:hover       { background: #1c2128; border-color: #3fb950; color: #56d364; }
-
-[data-theme="grey"]   .sc-restore-chip         { background: #22272e; border-color: #444c56; color: #57ab5a; }
-[data-theme="grey"]   .sc-restore-chip:hover   { background: #2d333b; border-color: #57ab5a; color: #6bc46e; }
-[data-theme="aurora"] .sc-restore-chip         { background: rgba(7,7,26,0.9); border: 1px solid rgba(192,132,252,0.35); color: #c084fc; }
-[data-theme="aurora"] .sc-restore-chip:hover   { background: rgba(192,132,252,0.1); border-color: #c084fc; color: #d8a2fc; }
+/* Dark/grey/aurora: ghost by default, full color on hover */
+[data-theme="dark"]   .sc-restore-chip:hover { background: #1c2128; border-color: #3fb950; color: #56d364; }
+[data-theme="grey"]   .sc-restore-chip:hover { background: #2d333b; border-color: #57ab5a; color: #6bc46e; }
+[data-theme="aurora"] .sc-restore-chip:hover { background: rgba(192,132,252,0.1); border-color: #c084fc; color: #d8a2fc; }

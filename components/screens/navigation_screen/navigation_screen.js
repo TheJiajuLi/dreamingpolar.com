@@ -1,86 +1,103 @@
-import { PAGES }          from '../../../content_pages/pages.js';
-import { setupNavSearch } from '../../search_bar/search_bar.js';
+import { PAGES, FLAT_PAGES } from '../../../content_pages/pages.js';
 
-const RENDER_SOURCE_TAG = 'buildTree-v2';
+// ── Sidebar nav tree ────────────────────────────────────────────────────────────
 
-// ── Card grid builder (for Docs sections) ─────────────
-function buildCardGrid(cards) {
-  return `<div class="doc-card-grid">${cards.map(({ title, desc, dataFile, icon }) => `
-    <button class="doc-card" data-file="${dataFile || ''}">
-      <div class="doc-card-icon">${icon || ''}</div>
-      <div class="doc-card-title">${title}</div>
-      <div class="doc-card-desc">${desc || ''}</div>
-    </button>`).join('')}</div>`;
-}
+let _activeFile = null;
 
-// ── Section label resolver ─────────────────────────────
-function resolveSectionLabel(section) {
-  if (!section.title) {
-    console.error('[navigation_screen] 分组缺少 title 字段：', section);
-    return '(未命名分组)';
-  }
-  return section.title;
-}
+function _makeItem(item, depth = 0) {
+  const li = document.createElement('li');
+  li.className = 'docs-nav-item' + (depth > 0 ? ' docs-nav-item--child' : '');
 
-// ── Tree builder ───────────────────────────────────────
-function buildTree(pages, depth = 0) {
-  if (!pages?.length) return '';
+  if (item.children?.length) {
+    // Parent with children (expandable)
+    const header = document.createElement('div');
+    header.className = 'docs-nav-parent';
+    header.innerHTML =
+      `<span class="docs-nav-parent-label">${item.title}</span>` +
+      `<i class="ti ti-chevron-right docs-nav-chevron"></i>`;
 
-  const items = pages.map((section) => {
-    const { href, title, children, dataFile, cardGrid, cards } = section;
-    if (cardGrid && cards?.length) {
-      const label = resolveSectionLabel(section);
-      return `<li class="nav-item nav-item--cards" data-render-source="${RENDER_SOURCE_TAG}">
-        <div class="nav-section-label nav-section-label--docs">${label}</div>
-        ${buildCardGrid(cards)}
-      </li>`;
+    const childList = document.createElement('ul');
+    childList.className = 'docs-nav-children';
+    item.children.forEach(child => childList.appendChild(_makeItem(child, depth + 1)));
+
+    header.addEventListener('click', () => {
+      const open = li.classList.toggle('docs-nav-item--open');
+      header.querySelector('.docs-nav-chevron').style.transform = open ? 'rotate(90deg)' : '';
+    });
+
+    li.append(header, childList);
+  } else if (item.dataFile) {
+    // Leaf with dataFile
+    const a = document.createElement('button');
+    a.className = 'docs-nav-link';
+    a.dataset.file  = item.dataFile;
+    a.dataset.title = item.title;
+    a.dataset.group = item.group ?? '';
+
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = item.title;
+    a.appendChild(labelSpan);
+
+    if (item.badge) {
+      const badge = document.createElement('span');
+      badge.className = 'docs-nav-badge';
+      badge.textContent = item.badge;
+      a.appendChild(badge);
     }
-    const hasChildren = !!children?.length;
-    return `
-      <li class="nav-item" data-render-source="${RENDER_SOURCE_TAG}">
-        <div class="nav-row">
-          <a class="nav-link" href="${href || '#'}" ${dataFile ? `data-file="${dataFile}"` : ''}>${title}</a>
-          ${hasChildren
-            ? `<button class="nav-toggle" aria-expanded="false">›</button>`
-            : ''}
-        </div>
-        ${hasChildren
-          ? `<div class="nav-children" hidden>${buildTree(children, depth + 1)}</div>`
-          : ''}
-      </li>`;
-  }).join('');
 
-  return `<ul class="nav-list" data-depth="${depth}" data-render-source="${RENDER_SOURCE_TAG}">${items}</ul>`;
+    a.addEventListener('click', () => _loadPage(item.dataFile, item.title, item.group));
+    li.appendChild(a);
+  }
+
+  return li;
 }
 
-// ── Main setup ─────────────────────────────────────────
+function _buildTree(container) {
+  container.innerHTML = '';
+  for (const group of PAGES) {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'docs-nav-group';
+
+    const label = document.createElement('div');
+    label.className = 'docs-nav-group-label';
+    label.textContent = group.group;
+    groupEl.appendChild(label);
+
+    const ul = document.createElement('ul');
+    ul.className = 'docs-nav-list';
+    group.items.forEach(item => ul.appendChild(_makeItem(item)));
+    groupEl.appendChild(ul);
+
+    container.appendChild(groupEl);
+  }
+}
+
+function _setActive(file) {
+  _activeFile = file;
+  document.querySelectorAll('.docs-nav-link').forEach(btn => {
+    const isActive = btn.dataset.file === file;
+    btn.classList.toggle('docs-nav-link--active', isActive);
+    // Auto-expand parent when child is active
+    if (isActive) {
+      let parent = btn.closest('.docs-nav-item--child')?.closest('li.docs-nav-item');
+      if (parent && !parent.classList.contains('docs-nav-item--open')) {
+        parent.classList.add('docs-nav-item--open');
+        const chev = parent.querySelector('.docs-nav-chevron');
+        if (chev) chev.style.transform = 'rotate(90deg)';
+      }
+    }
+  });
+}
+
+function _loadPage(file, title, group) {
+  _setActive(file);
+  window.contentScreen?.renderFromJson(file, { title, group });
+}
+
+// ── Main setup ──────────────────────────────────────────────────────────────────
 function setupNavigationScreen() {
   const menuBtn = document.getElementById('navigation-button');
   if (!menuBtn) return;
-
-  window.renderPages    = PAGES;
-  window.renderSections = [];
-
-  const navInner = document.createElement('div');
-  navInner.className = 'cs-nav-inner';
-  navInner.innerHTML = `
-    <div class="nav-search-container" id="nav-search-mount"></div>
-    <div class="nav-sections">
-      <div id="nav-pages-tree"></div>
-    </div>
-  `;
-
-  let _built = false;
-
-  function _buildNav() {
-    if (_built) return;
-    _built = true;
-    const cs = window.contentScreen;
-    if (!cs) return;
-    cs.getNavSlot().appendChild(navInner);
-    const searchMount = navInner.querySelector('#nav-search-mount');
-    if (searchMount) setupNavSearch(searchMount, window.renderPages ?? PAGES);
-  }
 
   function _isContentOpen() {
     const s = window.screenController?.getState('content');
@@ -93,116 +110,47 @@ function setupNavigationScreen() {
     menuBtn.setAttribute('aria-expanded', String(open));
   }
 
-  function open() {
-    window.screenController?.open('content');
-    requestAnimationFrame(() => {
-      _buildNav();
-      window.contentScreen?.showNav();
-      refreshTree();
-    });
-  }
+  menuBtn.addEventListener('click', () => {
+    if (_isContentOpen()) {
+      window.screenController?.close('content');
+    } else {
+      window.screenController?.open('content');
+    }
+  });
 
-  function close() {
-    window.screenController?.close('content');
-  }
-
-  menuBtn.addEventListener('click', () => (_isContentOpen() ? close() : open()));
-
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _isContentOpen()) close(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && _isContentOpen()) window.screenController?.close('content');
+  });
 
   for (const evt of ['screen-opened', 'screen-closed', 'screen-minimized']) {
     document.addEventListener(evt, e => { if (e.detail?.id === 'content') _syncBtn(); });
   }
 
-  const contentEl = document.getElementById('content-screen');
-  if (contentEl) {
-    new MutationObserver(_syncBtn).observe(contentEl, {
-      attributes: true,
-      attributeFilter: ['data-screen-state'],
-    });
+  // Build nav tree once content screen is ready
+  function _initTree() {
+    const treeEl = document.getElementById('docs-nav-tree');
+    if (!treeEl || treeEl.dataset.built) return;
+    treeEl.dataset.built = '1';
+    _buildTree(treeEl);
+
+    // Auto-load first page
+    const first = FLAT_PAGES[0];
+    if (first) _loadPage(first.dataFile, first.title, first.group);
   }
 
-  document.addEventListener('cs-back-to-nav', () => open());
+  // Try immediately (content screen may already be mounted)
+  requestAnimationFrame(() => {
+    _initTree();
+    _syncBtn();
+  });
 
-  setTimeout(_syncBtn, 300);
-
-  // ── Tree ──────────────────────────────────────────────
-  function refreshTree() {
-    const tree = navInner.querySelector('#nav-pages-tree');
-    if (!tree) return;
-    const data = window.renderPages ?? PAGES;
-    console.log('[navigation_screen] refreshTree 渲染数据:',
-      data.map(s => ({ title: s.title, cardGrid: s.cardGrid })));
-    tree.innerHTML = data.map(section => `
-  <li class="nav-item nav-item--cards" data-render-source="buildTree-v2">
-    <div class="nav-section-label nav-section-label--docs">${section.title}</div>
-    <div class="doc-card-grid">${(section.cards || []).map(c => `
-      <button class="doc-card" data-file="${c.dataFile || ''}">
-        <div class="doc-card-icon">${c.icon || ''}</div>
-        <div class="doc-card-title">${c.title}</div>
-        <div class="doc-card-desc">${c.desc || ''}</div>
-      </button>`).join('')}
-    </div>
-  </li>`).join('');
-
-    const path = window.location.pathname;
-    tree.querySelectorAll('.nav-link').forEach(a => {
-      const active = a.getAttribute('href') === path;
-      a.classList.toggle('active', active);
-      if (active) {
-        let el = a.closest('.nav-children');
-        while (el) {
-          el.hidden = false;
-          const item = el.closest('.nav-item');
-          item?.classList.add('open');
-          const btn = item?.querySelector(':scope > .nav-row > .nav-toggle');
-          if (btn) btn.setAttribute('aria-expanded', 'true');
-          el = item?.parentElement?.closest('.nav-children');
-        }
-      }
-    });
-
-    tree.querySelectorAll('.nav-row').forEach(row => {
-      const link   = row.querySelector('.nav-link:not([data-file])');
-      const toggle = row.querySelector('.nav-toggle');
-      if (link && toggle) {
-        link.addEventListener('click', e => { e.preventDefault(); toggle.click(); });
-      }
-    });
-
-    tree.querySelectorAll('.nav-link[data-file]').forEach(a => {
-      a.addEventListener('click', e => {
-        e.preventDefault();
-        tree.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        a.classList.add('active');
-        window.contentScreen?.renderFromJson(a.dataset.file, { title: a.textContent.trim() });
-      });
-    });
-
-    tree.querySelectorAll('.doc-card[data-file]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        tree.querySelectorAll('.doc-card').forEach(c => c.classList.remove('active'));
-        tree.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        btn.classList.add('active');
-        const title = btn.querySelector('.doc-card-title')?.textContent.trim() ?? '';
-        window.contentScreen?.renderFromJson(btn.dataset.file, { title });
-      });
-    });
-
-    tree.querySelectorAll('.nav-toggle').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item     = btn.closest('.nav-item');
-        const children = item.querySelector(':scope > .nav-children');
-        const opening  = children.hidden;
-        children.hidden = !opening;
-        btn.setAttribute('aria-expanded', String(opening));
-        item.classList.toggle('open', opening);
-      });
-    });
-  }
+  // Also try when content screen opens
+  document.addEventListener('screen-opened', e => {
+    if (e.detail?.id === 'content') _initTree();
+  });
 }
 
-// ── Init ───────────────────────────────────────────────
+// ── Init ────────────────────────────────────────────────────────────────────────
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', setupNavigationScreen);
 } else {

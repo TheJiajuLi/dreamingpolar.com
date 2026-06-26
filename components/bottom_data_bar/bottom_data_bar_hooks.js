@@ -1,6 +1,6 @@
 import { getAllDatasets } from '../shared/dataset_store.js';
 import { getCellDatasetInfo } from '../customise_code_block/customise_code_block.js';
-import { installPackage } from '../compiler/compiler.js';
+import { installPackage, queryKernelContext } from '../compiler/compiler.js';
 
 function getAiSlot()       { return document.getElementById('bdb-ai-slot'); }
 function getCompilerSlot() { return document.getElementById('bdb-compiler-slot'); }
@@ -108,8 +108,6 @@ document.addEventListener('compiler-status', ({ detail }) => {
     ? `<span class="status-spinner"><i></i><i></i><i></i></span>${detail.message}${pctLabel}`
     : `${detail.message}${elapsed}`;
 
-  // Make slot clickable — cursor hint
-  slot.style.cursor = 'default';
   slot.title = '';
 
   // Close any open popover when status changes
@@ -160,7 +158,7 @@ function _updateSummary() {
     const cols = allDs.reduce((s, d) => s + d.columns.length, 0);
     slot.removeAttribute('hidden');
     const n = allDs.length;
-    _summaryEl.textContent = `${n} dataset${n === 1 ? '' : 's'} · ${rows.toLocaleString()} rows · ${cols} cols`;
+    _summaryEl.textContent = `${n} df · ${rows.toLocaleString()} 行 · ${cols} 列`;
     return;
   }
 
@@ -168,41 +166,108 @@ function _updateSummary() {
   const totalCols = items.reduce((s, i) => s + i.columns, 0);
   const n = items.length;
   slot.removeAttribute('hidden');
-  _summaryEl.textContent = `${n} dataset${n === 1 ? '' : 's'} · ${totalRows.toLocaleString()} rows · ${totalCols} cols`;
+  _summaryEl.textContent = `${n} df · ${totalRows.toLocaleString()} 行 · ${totalCols} 列`;
 }
 
-// Rebuild popover rows from both import-button datasets and kernel-detected dfs.
-function _refreshFlyout() {
+// ── Rich kernel panel ─────────────────────────────────────────────────────────
+function _makeSection(title, icon) {
+  const hdr = document.createElement('div');
+  hdr.className = 'bdf-section-hdr';
+  hdr.innerHTML = `<i class="ti ${icon}"></i><span>${title}</span>`;
+  return hdr;
+}
+
+function _makeDfRow(varName, shape, extra = '') {
+  const row = document.createElement('div');
+  row.className = 'bdf-row bdf-row--df';
+  const shapeStr = Array.isArray(shape) ? shape.join(' × ') : shape;
+  row.innerHTML =
+    `<i class="ti ti-table-options bdf-type-icon" style="color:#6366f1"></i>` +
+    `<span class="bdf-var">${varName}</span>` +
+    `<span class="bdf-shape">${shapeStr}</span>` +
+    (extra ? `<span class="bdf-extra">${extra}</span>` : '') +
+    `<button class="bdf-grid-btn" title="在 Grid 中打开" data-var="${varName}">` +
+      `<i class="ti ti-table"></i>` +
+    `</button>`;
+  row.querySelector('.bdf-grid-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    _closePopover();
+    window._gridOpenDataset?.({ _from: 'kernel', varName, filename: varName + '.csv' });
+    window.screenController?.open('grid');
+  });
+  return row;
+}
+
+function _makeVarRow(varName, kindLabel, shapeStr) {
+  const row = document.createElement('div');
+  row.className = 'bdf-row';
+  const iconMap = { ndarray: 'ti-vector-triangle', Series: 'ti-chart-line', number: 'ti-number' };
+  const colorMap = { ndarray: '#f59e0b', Series: '#10b981', number: '#64748b' };
+  const icon  = iconMap[kindLabel]  ?? 'ti-variable';
+  const color = colorMap[kindLabel] ?? '#94a3b8';
+  row.innerHTML =
+    `<i class="ti ${icon} bdf-type-icon" style="color:${color}"></i>` +
+    `<span class="bdf-var" style="color:var(--text,#0f172a)">${varName}</span>` +
+    `<span class="bdf-shape">${shapeStr}</span>`;
+  return row;
+}
+
+function _makeFileRow(entry) {
+  const row = document.createElement('div');
+  row.className = 'bdf-row';
+  const { filename, varName, rows, columns } = entry;
+  row.innerHTML =
+    `<i class="ti ti-file-type-csv bdf-type-icon" style="color:#10b981"></i>` +
+    `<span class="bdf-var" style="color:var(--text,#0f172a)">${filename ?? varName}</span>` +
+    `<span class="bdf-shape">${rows != null ? rows.toLocaleString() + ' × ' + columns : varName}</span>`;
+  return row;
+}
+
+async function _refreshFlyout() {
   if (!_flyoutEl) return;
+  _flyoutEl.innerHTML = `<div class="bdf-loading"><i class="ti ti-loader-2 bdf-spin"></i> 读取内核状态…</div>`;
+
+  // Fetch live kernel context from Worker
+  let kernelVars = [];
+  try { kernelVars = await queryKernelContext(); } catch (_) {}
+
   _flyoutEl.innerHTML = '';
 
-  const importItems = _cellItems();
-  const activeEl    = document.activeElement;
-  const activeCellId = activeEl?.closest?.('.nb-cell')?.dataset?.nbId ?? null;
+  const dfs     = kernelVars.filter(v => v.kind === 'DataFrame');
+  const others  = kernelVars.filter(v => v.kind !== 'DataFrame');
 
-  if (importItems.length) {
-    // Import-button datasets with cell info and active-cell highlight
-    importItems.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'bdf-row' + (activeCellId === item.cellId ? ' bdf-row--active' : '');
-      row.innerHTML =
-        `<span class="bdf-var">${item.varName}</span>` +
-        `<span class="bdf-sep">·</span>` +
-        `<span class="bdf-rows">${item.rows.toLocaleString()} rows, ${item.columns} cols</span>` +
-        `<span class="bdf-cell-tag">cell ${item.cellNum}</span>`;
-      _flyoutEl.appendChild(row);
+  // ── Section: DataFrames ────────────────────────────────────────────────────
+  if (dfs.length) {
+    _flyoutEl.appendChild(_makeSection('DataFrames', 'ti-table-options'));
+    dfs.forEach(v => {
+      const [r, c] = v.shape ?? [];
+      _flyoutEl.appendChild(_makeDfRow(v.varName, [r?.toLocaleString(), c], ''));
     });
-  } else {
-    // Kernel-detected DataFrames (Python code path, no import button used)
-    Object.entries(_kernelDfs).forEach(([name, { rows, cols }]) => {
-      const row = document.createElement('div');
-      row.className = 'bdf-row';
-      row.innerHTML =
-        `<span class="bdf-var">${name}</span>` +
-        `<span class="bdf-sep">·</span>` +
-        `<span class="bdf-rows">${rows.toLocaleString()} rows, ${cols} cols</span>`;
-      _flyoutEl.appendChild(row);
+  }
+
+  // ── Section: Other variables ───────────────────────────────────────────────
+  if (others.length) {
+    _flyoutEl.appendChild(_makeSection('其他变量', 'ti-variable'));
+    others.forEach(v => {
+      const shapeStr = v.shape ? v.shape.map(n => n?.toLocaleString?.() ?? n).join(' × ') : '—';
+      _flyoutEl.appendChild(_makeVarRow(v.varName, v.kind, shapeStr));
     });
+  }
+
+  // ── Section: Loaded files (inject-store) ───────────────────────────────────
+  const importItems = _cellItems();
+  const allDs = getAllDatasets();
+  const fileEntries = importItems.length
+    ? importItems.map(i => ({ filename: i.filename, varName: i.varName, rows: i.rows, columns: i.columns }))
+    : allDs.map(d => ({ filename: d.name, varName: d.varName ?? d.name, rows: null, columns: null }));
+
+  if (fileEntries.length) {
+    _flyoutEl.appendChild(_makeSection('已加载文件', 'ti-database'));
+    fileEntries.forEach(e => _flyoutEl.appendChild(_makeFileRow(e)));
+  }
+
+  if (!dfs.length && !others.length && !fileEntries.length) {
+    _flyoutEl.innerHTML = `<div class="bdf-empty">还没有变量 — 运行一个 Python cell 开始分析</div>`;
   }
 }
 
@@ -213,17 +278,15 @@ function _refreshFlyout() {
 
 let _popoverOpen = false;
 
-function _openPopover() {
+async function _openPopover() {
   if (!_summaryEl) return;
-  _refreshFlyout();
-  if (!_flyoutEl.children.length) return; // nothing to show
-
   const rect = _summaryEl.getBoundingClientRect();
   _flyoutEl.style.right  = `${window.innerWidth - rect.right}px`;
   _flyoutEl.style.bottom = `${window.innerHeight - rect.top + 6}px`;
   _flyoutEl.style.top    = '';
   _flyoutEl.classList.add('bdb-df-flyout--open');
   _popoverOpen = true;
+  await _refreshFlyout(); // async: fetches kernel context from Worker
 }
 
 function _closePopover() {
@@ -302,7 +365,7 @@ function _updateKernelDfSummary() {
   const n = entries.length;
   slot.removeAttribute('hidden');
   _summaryEl.textContent =
-    `${n} df${n === 1 ? '' : 's'} · ${totalRows.toLocaleString()} rows · ${totalCols} cols`;
+    `${n} df · ${totalRows.toLocaleString()} 行 · ${totalCols} 列`;
 
 }
 

@@ -1,0 +1,259 @@
+/* ── User Screen — Apple HIG aesthetic ───────────────────────────────────── */
+#user-screen { display: none; }
+#user-screen[data-screen-state="normal"],
+#user-screen[data-screen-state="maximized"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F5F5F7;
+}
+
+[data-theme="dark"]   #user-screen[data-screen-state="normal"],
+[data-theme="dark"]   #user-screen[data-screen-state="maximized"]   { background: #1C1C1E; }
+[data-theme="grey"]   #user-screen[data-screen-state="normal"],
+[data-theme="grey"]   #user-screen[data-screen-state="maximized"]   { background: #1C2128; }
+[data-theme="aurora"] #user-screen[data-screen-state="normal"],
+[data-theme="aurora"] #user-screen[data-screen-state="maximized"]   { background: #07071a; }
+
+.user-screen-inner {
+  width: 100%;
+  max-width: 400px;
+  padding: 0 16px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── Profile card ─────────────────────────────────────────────────────────── */
+.usr-card {
+  width: 100%;
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+}
+[data-theme="dark"]   .usr-card { background: #2C2C2E; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+[data-theme="grey"]   .usr-card { background: #2D333B; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+[data-theme="aurora"] .usr-card { background: rgba(255,255,255,0.05); box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+
+.usr-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #007AFF;   /* iOS System Blue */
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 16px rgba(0,122,255,0.3);
+}
+
+.usr-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1D1D1F;
+  letter-spacing: -0.01em;
+}
+[data-theme="dark"]   .usr-name,
+[data-theme="grey"]   .usr-name   { color: #F5F5F7; }
+[data-theme="aurora"] .usr-name   { color: #e0e0ff; }
+
+.usr-email {
+  font-size: 0.78rem;
+  color: #86868B;
+  letter-spacing: 0.01em;
+  margin-top: 2px;
+}
+
+.usr-joined {
+  font-size: 0.72rem;
+  color: #AEAEB2;
+  letter-spacing: 0.01em;
+  margin-top: 1px;
+}
+
+/* ── Features list ───────────────────────────────────────────────────────── */
+.usr-features {
+  width: 100%;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+}
+[data-theme="dark"]   .usr-features { background: #2C2C2E; }
+[data-theme="grey"]   .usr-features { background: #2D333B; }
+[data-theme="aurora"] .usr-features { background: rgba(255,255,255,0.05); }
+
+.usr-feature-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.06);
+  font-size: 0.84rem;
+}
+.usr-feature-row:last-child { border-bottom: none; }
+[data-theme="dark"]   .usr-feature-row,
+[data-theme="grey"]   .usr-feature-row   { border-bottom-color: rgba(255,255,255,0.06); }
+
+.usr-feature-label {
+  color: #1D1D1F;
+  font-weight: 400;
+}
+[data-theme="dark"]   .usr-feature-label,
+[data-theme="grey"]   .usr-feature-label { color: #F5F5F7; }
+[data-theme="aurora"] .usr-feature-label { color: #c8c8e8; }
+
+.usr-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: rgba(0,122,255,0.1);
+  color: #007AFF;
+  letter-spacing: 0.01em;
+}
+
+/* ── Logout ───────────────────────────────────────────────────────────────── */
+.usr-logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px;
+  border: none;
+  border-radius: 16px;
+  background: #fff;
+  color: #FF3B30;   /* iOS destructive red */
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  transition: background 0.15s;
+}
+.usr-logout-btn:hover { background: #FFF0EF; }
+[data-theme="dark"]   .usr-logout-btn { background: #2C2C2E; }
+[data-theme="dark"]   .usr-logout-btn:hover { background: #3A1F1F; }
+[data-theme="grey"]   .usr-logout-btn { background: #2D333B; }
+[data-theme="aurora"] .usr-logout-btn { background: rgba(255,255,255,0.05); }
+
+/* ── Guest ────────────────────────────────────────────────────────────────── */
+.usr-guest {
+  width: 100%;
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+}
+[data-theme="dark"]   .usr-guest { background: #2C2C2E; }
+[data-theme="grey"]   .usr-guest { background: #2D333B; }
+[data-theme="aurora"] .usr-guest { background: rgba(255,255,255,0.05); }
+
+.usr-guest-icon {
+  font-size: 52px;
+  color: #AEAEB2;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.usr-guest-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1D1D1F;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+[data-theme="dark"]   .usr-guest-title,
+[data-theme="grey"]   .usr-guest-title { color: #F5F5F7; }
+
+.usr-guest-sub {
+  font-size: 0.78rem;
+  color: #86868B;
+  margin: 0;
+  line-height: 1.55;
+  max-width: 260px;
+}
+
+.usr-login-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  background: #007AFF;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, opacity 0.15s;
+  margin-top: 8px;
+}
+.usr-login-btn:hover { background: #0071EB; }
+
+.usr-reg-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.05);
+  color: #1D1D1F;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.15s;
+}
+.usr-reg-btn:hover { background: rgba(0,0,0,0.09); }
+[data-theme="dark"]   .usr-reg-btn { background: rgba(255,255,255,0.08); color: #F5F5F7; }
+[data-theme="grey"]   .usr-reg-btn { background: rgba(255,255,255,0.08); color: #adbac7; }
+
+/* ── Header avatar button ─────────────────────────────────────────────────── */
+.usr-vt-avatar,
+.au-vt-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #007AFF;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.usr-hdr-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted, #86868B);
+  transition: background 0.15s;
+}
+.usr-hdr-btn:hover { background: rgba(0,0,0,0.06); }
+.usr-hdr-btn.au-logged-in .au-vt-avatar { box-shadow: 0 0 0 2px rgba(0,122,255,0.3); }

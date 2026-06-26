@@ -147,7 +147,7 @@ p {
 
 :root {
   --vt-w: 33px;
-  --header-height: var(--bottom-bar-h, 44px);  /* matches bottom data bar */
+  --header-height: 44px;
   --bottom-bar-h:  30px;    /* slimmer status bar */
   --screen-header-h: 32px;  /* slimmer panel headers */
   --status-bar-h: 22px;

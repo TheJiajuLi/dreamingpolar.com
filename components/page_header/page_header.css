@@ -10,16 +10,22 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 16px;
-  /* Right padding = right-bar width + layout gap + layout padding = stops at right-bar left edge */
-  padding: 0 calc(var(--rb-w, 33px) + 12px) 0 3px;
-  background: #ffffffee;
+  gap: 8px;
+  padding: 0 10px 0 3px;
+  background: var(--surface, #ffffff);
   backdrop-filter: blur(8px);
   user-select: none;
   flex-shrink: 0;
 }
 
 .page-header::after { display: none; }
+
+/* Hide legacy mob-hdr wrapper — user btn goes directly into header */
+.mob-hdr-btns-wrapper { display: none !important; }
+/* Remove legacy AI/auth header buttons */
+#ai-header-btn, .ai-header-btn { display: none !important; }
+/* Remove sc-restore-chip from header (centered abs position, no longer needed here) */
+.sc-restore-chip { display: none !important; }
 
 /* ── App logo ────────────────────────────────────────────────────────────── */
 
@@ -50,7 +56,6 @@
 /* ── Fullscreen toggle button ────────────────────────────────────────────── */
 
 .dp-fullscreen-btn {
-  margin-left: 4px;
   flex-shrink: 0;
   width: 32px;
   height: 32px;
@@ -63,6 +68,15 @@
   color: var(--hdr-btn-fg, #3d4451);
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+
+/* Centered in page header via absolute positioning */
+.dp-fullscreen-btn--centered {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
 }
 .dp-fullscreen-btn:hover { background: rgba(0,0,0,0.055); color: var(--text, #102040); transform: scale(1.08); }
 
@@ -114,6 +128,37 @@
   from { opacity: 1; transform: translateX(-50%) translateY(0); }
   to   { opacity: 0; transform: translateX(-50%) translateY(-6px); }
 }
+
+/* ── Fullscreen exit pill — always visible in fullscreen ──────────────────── */
+.dp-fs-exit-pill {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-48px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  background: rgba(18,18,24,0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(230,230,240,0.95);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.dp-fs-exit-pill--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+.dp-fs-exit-pill:hover { background: rgba(30,30,40,0.92); }
 
 /* ── Fullscreen mode ─────────────────────────────────────────────────────── */
 

@@ -214,6 +214,13 @@ async function _handleInit(payload) {
     }
   }
 
+  // Restore saved code files so `import my_analysis` works after page refresh
+  if (Array.isArray(payload.codeFiles)) {
+    for (const e of payload.codeFiles) {
+      try { _writeToFS(e.filename, e.code, 'text'); } catch (_) {}
+    }
+  }
+
   // Shared namespace — always present from session start
   _py.runPython('_dp_kernel_ns = {"__name__": "__main__"}');
   return 'ready';
@@ -320,6 +327,73 @@ function _handleReset() {
   return 'reset';
 }
 
+function _handleWriteFS(payload) {
+  const { filename, data, fileType = 'text' } = payload;
+  _writeToFS(filename, data, fileType);
+  return 'ok';
+}
+
+async function _handleVisualise(payload) {
+  const { varName } = payload;
+  if (!_py) throw new Error('Kernel not ready');
+
+  await _py.loadPackage(['matplotlib'], { messageCallback: () => {} });
+
+  _py.globals.set('_dp_viz_varname', varName);
+  try {
+    const raw = await _py.runPythonAsync(`
+import matplotlib as _mpl_v
+_mpl_v.use('agg')
+try:
+    import logging as _log_v
+    _log_v.getLogger('matplotlib').setLevel(_log_v.ERROR)
+except Exception: pass
+if not getattr(_mpl_v, '_dp_font_set', False):
+    try:
+        import os as _os_v, matplotlib.font_manager as _fm_v
+        if _os_v.path.exists('/tmp/NotoSansSC.ttf'):
+            _fm_v.fontManager.addfont('/tmp/NotoSansSC.ttf')
+            _mpl_v.rcParams['font.family'] = 'Noto Sans SC'
+    except Exception: pass
+    _mpl_v.rcParams['mathtext.fontset'] = 'cm'
+    _mpl_v._dp_font_set = True
+
+import matplotlib.pyplot as _plt_v, io as _io_v, base64 as _b64_v, json as _jv
+
+_fig_v, _ax_v = _plt_v.subplots(figsize=(7, 3.8))
+_ns_v = _dp_kernel_ns if '_dp_kernel_ns' in dir() else {}
+_obj_v = _ns_v.get(_dp_viz_varname)
+if _obj_v is None:
+    raise ValueError(f"Variable '{_dp_viz_varname}' not found in kernel namespace")
+
+_type_v = type(_obj_v).__name__
+if _type_v == 'DataFrame':
+    _num_v = _obj_v.select_dtypes(include='number')
+    if not _num_v.empty:
+        _num_v.iloc[:, :6].plot(ax=_ax_v, title=_dp_viz_varname)
+    else:
+        _plt_v.close(_fig_v)
+        raise ValueError('__NO_NUMERIC__')
+elif _type_v == 'Series':
+    _obj_v.plot(ax=_ax_v, title=_dp_viz_varname)
+else:
+    _flat_v = _obj_v.flatten()[:2000] if hasattr(_obj_v, 'flatten') else _obj_v
+    _ax_v.plot(_flat_v)
+    _ax_v.set_title(_dp_viz_varname)
+
+_fig_v.tight_layout()
+_buf_v = _io_v.BytesIO()
+_fig_v.savefig(_buf_v, format='png', dpi=130, bbox_inches='tight')
+_buf_v.seek(0)
+_plt_v.close(_fig_v)
+_jv.dumps({'img': _b64_v.b64encode(_buf_v.read()).decode()})
+`);
+    return JSON.parse(raw).img;
+  } finally {
+    _py.globals.delete('_dp_viz_varname');
+  }
+}
+
 // ── Message dispatcher ────────────────────────────────────────────────────────
 self.onmessage = async ({ data: { id, type, payload } }) => {
   try {
@@ -329,7 +403,9 @@ self.onmessage = async ({ data: { id, type, payload } }) => {
       case 'run':    result = await _handleRun(payload);        break;
       case 'inject': result = await _handleInject(payload);     break;
       case 'query':  result = _handleQuery();                   break;
-      case 'reset':  result = _handleReset();                   break;
+      case 'reset':   result = _handleReset();                   break;
+      case 'writeFS':    result = _handleWriteFS(payload);              break;
+      case 'visualise':  result = await _handleVisualise(payload);     break;
       default: throw new Error(`[Worker] Unknown message type: ${type}`);
     }
     self.postMessage({ id, result });

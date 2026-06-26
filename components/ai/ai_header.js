@@ -1,17 +1,8 @@
-// ── AI Chat button in the vertical toolbar ────────────────────────────────────
-// Opens / closes the #ai-chat-screen panel via screenController,
-// matching the same open↔close toggle pattern used by start_coding.js.
+// ── AI Chat button — disabled (button removed from UI, screen accessible via VT) ──
 
 function setup() {
-  const vtTop = document.querySelector('#vertical-toolbar .vt-top');
-  if (!vtTop) return;
-
-  const btn = document.createElement('button');
-  btn.className = 'ai-chat-btn';
-  btn.id        = 'ai-chat-btn';
-  btn.title     = 'Open AI chat';
-  btn.setAttribute('aria-label', 'Toggle AI chat');
-  btn.innerHTML = `<img src="${window.BASE}/assets/buttons/chat_ai.png" alt="AI" class="ai-header-icon">`;
+  // Button removed — AI chat opened from the vertical toolbar icon instead.
+  return;
 
   vtTop.appendChild(btn);
 

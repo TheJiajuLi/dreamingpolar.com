@@ -191,8 +191,8 @@ setupMobHeaderWrapper();
 // auth_client.js loads after this module, so auth state is read via events.
 
 (function setupMobAuth() {
-  const header = document.querySelector('header.page-header');
-  if (!header) return;
+  // User account is now in the vertical toolbar — this mobile panel is not needed
+  return;
 
   const _USER_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
   const _OUT_SVG  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`;

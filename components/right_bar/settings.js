@@ -16,6 +16,8 @@ const DEFAULTS = {
   // ── DP Grid ──────────────────────────────────────────────────────────────
   cacheGridState:       true,   // remember open datasets across page refreshes
   gridConfirmSync:      true,   // show confirm dialog before syncing edits to kernel
+  // ── Notebook 文件 ────────────────────────────────────────────────────────
+  saveFileRemoveCell:   true,   // remove cell from notebook after saving as file
 };
 
 export function getSettings() {
@@ -78,6 +80,46 @@ function _makeRow(title, subtitle, key, settings, onChange) {
   return row;
 }
 
+// ── Cycle row (theme / font) ───────────────────────────────────────────────────
+function _makeCycleRow(title, subtitle, getLabel, onCycle) {
+  const row = document.createElement('div');
+  row.className = 'dp-setting-row dp-setting-row--cycle';
+
+  const text = document.createElement('div');
+  text.className = 'dp-setting-text';
+  const name = document.createElement('div');
+  name.className = 'dp-setting-name';
+  name.textContent = title;
+  text.appendChild(name);
+  if (subtitle) {
+    const sub = document.createElement('div');
+    sub.className = 'dp-setting-sub';
+    sub.textContent = subtitle;
+    text.appendChild(sub);
+  }
+
+  const valBtn = document.createElement('button');
+  valBtn.className = 'dp-setting-cycle-btn';
+
+  const _refresh = () => {
+    valBtn.textContent = getLabel();
+  };
+  _refresh();
+
+  valBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    onCycle();
+    _refresh();
+  });
+
+  // Re-sync if changed externally (e.g. from another Settings row)
+  document.addEventListener('dp-theme-changed', _refresh);
+  document.addEventListener('dp-font-changed',  _refresh);
+
+  row.append(text, valBtn);
+  return row;
+}
+
 // ── Section header ─────────────────────────────────────────────────────────────
 function _makeSection(title) {
   const h = document.createElement('div');
@@ -102,6 +144,20 @@ function _makeCard(...rows) {
 
 // ── Settings categories (iOS-style drill-down) ────────────────────────────────
 const _CATEGORIES = [
+  {
+    id: 'appearance',
+    label: '外观',
+    icon: 'ti-palette',
+    desc: '主题色、界面字体',
+    rows: () => [
+      _makeCycleRow('主题',   '点击切换：Light → Dark → Grey → Aurora',
+        () => window._dpThemeLabel?.() ?? '—',
+        () => window._dpCycleTheme?.()),
+      _makeCycleRow('界面字体', '点击切换代码与正文字体',
+        () => window._dpFontLabel?.()  ?? '—',
+        () => window._dpCycleFont?.()),
+    ],
+  },
   {
     id: 'cache',
     label: '缓存',
@@ -134,6 +190,15 @@ const _CATEGORIES = [
     rows: s => [
       _makeRow('记住打开的数据集', '刷新后自动恢复 Grid 中打开的数据集标签页', 'cacheGridState', s),
       _makeRow('同步前确认', '将编辑同步到内核前弹出确认对话框，防止误操作', 'gridConfirmSync', s),
+    ],
+  },
+  {
+    id: 'notebook-files',
+    label: 'Notebook 文件',
+    icon: 'ti-file-code',
+    desc: 'Cell 文件化、保存行为',
+    rows: s => [
+      _makeRow('保存后移出 Cell 列表', '保存为文件后，Cell 从编辑区移出，进入左侧文件树', 'saveFileRemoveCell', s),
     ],
   },
 ];

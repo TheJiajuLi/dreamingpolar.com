@@ -1,5 +1,74 @@
 /* ── Empty State Dashboard ───────────────────────────────── */
-/* .doc-card / .doc-card-grid reused from navigation_screen.css */
+
+/* ── Card grid (self-contained — no longer relies on navigation_screen.css) ── */
+.doc-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.doc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 12px 11px;
+  border-radius: 10px;
+  background: var(--bg, #f3f5f8);
+  border: 1px solid var(--border, #e2e8f0);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+}
+.doc-card:hover {
+  transform: translateY(-2px);
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.12);
+}
+.doc-card.active {
+  border-color: #6366f1;
+  background: rgba(99,102,241,0.06);
+}
+
+.doc-card-icon {
+  width: 26px;
+  height: 26px;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+.doc-card-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.doc-card-title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text, #102040);
+  line-height: 1.3;
+}
+.doc-card-desc {
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--text-muted, #64748b);
+}
+
+/* Dark / grey / aurora */
+[data-theme="dark"]   .doc-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+[data-theme="dark"]   .doc-card:hover { background: rgba(99,102,241,0.1); border-color: #818cf8; }
+[data-theme="dark"]   .doc-card-icon  { color: #818cf8; }
+[data-theme="dark"]   .doc-card-title { color: #e6edf3; }
+[data-theme="grey"]   .doc-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+[data-theme="grey"]   .doc-card:hover { background: rgba(87,171,90,0.08); border-color: #57ab5a; }
+[data-theme="grey"]   .doc-card-icon  { color: #57ab5a; }
+[data-theme="grey"]   .doc-card-title { color: #adbac7; }
+[data-theme="aurora"] .doc-card { background: rgba(192,132,252,0.05); border-color: rgba(192,132,252,0.15); }
+[data-theme="aurora"] .doc-card:hover { background: rgba(192,132,252,0.1); border-color: #c084fc; }
+[data-theme="aurora"] .doc-card-icon  { color: #c084fc; }
+[data-theme="aurora"] .doc-card-title { color: #e0e0ff; }
+
+@media (max-width: 640px) { .doc-card-grid { grid-template-columns: 1fr; } }
 
 .empty-state-dashboard {
   flex: 1;
@@ -13,8 +82,18 @@
 
 /* ── Greeting ─────────────────────────────────────────────── */
 .esd-greeting {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   margin-bottom: 48px;
+}
+.esd-greeting-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 
 .esd-greeting-text {

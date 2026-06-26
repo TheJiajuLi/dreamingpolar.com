@@ -8,7 +8,31 @@ import { ensureXlsx, parseToDataset }    from '../import/import_data.js';
 import { writeToFS }                     from '../compiler/compiler.js';
 import { createSettingsPanel, getSettings } from './settings.js';
 
-const INJECT_KEY = 'dreaming-polar-inject-store';
+const INJECT_KEY    = 'dreaming-polar-inject-store';
+const CODE_FILE_KEY = 'dp-code-file-store';
+
+const LANG_ICON = {
+  python:   'ti-brand-python',
+  markdown: 'ti-markdown',
+  latex:    'ti-math',
+  mathjax:  'ti-code',
+};
+const LANG_COLOR = {
+  python:   '#3b82f6',
+  markdown: '#10b981',
+  latex:    '#8b5cf6',
+  mathjax:  '#f59e0b',
+};
+const LANG_EXT = {
+  python: '.py', markdown: '.md', latex: '.tex', mathjax: '.html',
+};
+
+function _loadCodeStore() {
+  try { return JSON.parse(localStorage.getItem(CODE_FILE_KEY) ?? '{}'); } catch { return {}; }
+}
+function _saveCodeStore(store) {
+  try { localStorage.setItem(CODE_FILE_KEY, JSON.stringify(store)); } catch {}
+}
 
 const TYPE_ICON = {
   csv:  'ti-file-type-csv',
@@ -133,6 +157,70 @@ export function initFileManager() {
   rbTop?.appendChild(toggleBtn);
   rbTop?.appendChild(settingsBtn);
 
+  // ── Fullscreen shortcut button (rb-bottom) ────────────────────────────────
+  const fsBtn = document.createElement('button');
+  fsBtn.className = 'rb-btn rb-fs-btn';
+  fsBtn.title = '全屏 (Esc)';
+  fsBtn.innerHTML = `<i class="ti ti-arrows-maximize" style="font-size:14px"></i>`;
+  fsBtn.addEventListener('click', () => {
+    window._dpToggleFullscreen?.();
+    // Sync icon
+    requestAnimationFrame(() => {
+      const isFs = window._dpIsFullscreen?.() ?? false;
+      fsBtn.innerHTML = isFs
+        ? `<i class="ti ti-arrows-minimize" style="font-size:14px"></i>`
+        : `<i class="ti ti-arrows-maximize" style="font-size:14px"></i>`;
+      fsBtn.title = isFs ? '退出全屏 (Esc)' : '全屏 (Esc)';
+    });
+  });
+  // Sync icon when fullscreen changes externally (e.g. Esc key)
+  document.addEventListener('keydown', () => requestAnimationFrame(() => {
+    const isFs = window._dpIsFullscreen?.() ?? false;
+    fsBtn.innerHTML = isFs
+      ? `<i class="ti ti-arrows-minimize" style="font-size:14px"></i>`
+      : `<i class="ti ti-arrows-maximize" style="font-size:14px"></i>`;
+    fsBtn.title = isFs ? '退出全屏 (Esc)' : '全屏 (Esc)';
+  }));
+  rightBar.querySelector('.rb-bottom')?.appendChild(fsBtn);
+
+  // ── User account button — page header right side (GitHub-style) ─────────
+  const userBtn = document.createElement('button');
+  userBtn.className = 'au-hdr-btn usr-hdr-btn';
+  userBtn.id        = 'au-vt-btn';
+  userBtn.title     = '账号';
+  userBtn.innerHTML = `<i class="ti ti-user-circle" style="font-size:18px"></i>`;
+  userBtn.addEventListener('click', () => {
+    const state = window.screenController?.getState('user');
+    if (!state || state === 'closed') window.screenController?.open('user');
+    else window.screenController?.close('user');
+  });
+  // Append to page header at the far right
+  const pageHdr = document.querySelector('header.page-header');
+  if (pageHdr) {
+    userBtn.style.marginLeft = 'auto';
+    pageHdr.appendChild(userBtn);
+  }
+
+  function _syncUserBtn() {
+    const user  = window._dpGetAuthUser?.();
+    const state = window.screenController?.getState('user');
+    if (user) {
+      const initials = (user.username ?? '?').slice(0, 2).toUpperCase();
+      userBtn.innerHTML = `<span class="au-vt-avatar">${initials}</span>`;
+      userBtn.title = user.username ?? '账号';
+      userBtn.classList.add('au-logged-in');
+    } else {
+      userBtn.innerHTML = `<i class="ti ti-user-circle" style="font-size:18px"></i>`;
+      userBtn.title = '登录 / 注册';
+      userBtn.classList.remove('au-logged-in');
+    }
+    userBtn.classList.toggle('active', state === 'normal' || state === 'maximized');
+  }
+  document.addEventListener('dp-auth-state', _syncUserBtn);
+  for (const evt of ['screen-opened', 'screen-closed']) {
+    document.addEventListener(evt, e => { if (e.detail?.id === 'user') _syncUserBtn(); });
+  }
+
   // ── Outer container — clips the two-panel slide ───────────────────────────
   const panelOuter = document.createElement('div');
   panelOuter.className = 'rb-panel-outer';
@@ -149,7 +237,7 @@ export function initFileManager() {
   panel.className = 'rb-file-panel rb-slide-pane';
   panelTrack.appendChild(panel);
 
-  // ── Settings panel (appended to track after files) ────────────────────────
+  // ── Settings panel ────────────────────────────────────────────────────────
   const { panel: settingsPanel, settings: initialSettings, hdrClose: settingsClose } = createSettingsPanel(
     (key, val) => _onSettingChange(key, val)
   );
@@ -164,7 +252,6 @@ export function initFileManager() {
     panelTrack.style.transform = pane === 'settings' ? 'translateX(-50%)' : 'translateX(0)';
     toggleBtn.classList.toggle('rb-btn--active',   pane === 'files');
     settingsBtn.classList.toggle('rb-btn--active', pane === 'settings');
-    // Save state if setting is on
     if (getSettings().cacheRightBarState) {
       localStorage.setItem('dp-rb-pane', pane);
     }
@@ -198,20 +285,20 @@ export function initFileManager() {
 
   let _open = false;
 
-  function _open_() {
+  function _open_(defaultPane = 'files') {
     _open = true;
     panelOuter.hidden = false;
     rightBar.classList.add('rb--expanded');
     toggleBtn.classList.add('rb-btn--active');
     settingsBtn.classList.remove('rb-btn--active');
     if (getSettings().cacheRightBarState) {
-      localStorage.setItem('dp-rb-open', '1');          // ← persist open state
+      localStorage.setItem('dp-rb-open', '1');
       const saved = localStorage.getItem('dp-rb-pane');
-      if (saved === 'settings') { _slideToPane('settings'); } else { _slideToPane('files'); }
+      _slideToPane(saved === 'settings' ? 'settings' : defaultPane);
     } else {
-      _slideToPane('files');
+      _slideToPane(defaultPane);
     }
-    _refresh();
+    if (defaultPane === 'files') _refresh();
   }
   function _close() {
     _open = false;
@@ -220,25 +307,24 @@ export function initFileManager() {
     toggleBtn.classList.remove('rb-btn--active');
     settingsBtn.classList.remove('rb-btn--active');
     if (getSettings().cacheRightBarState) {
-      localStorage.removeItem('dp-rb-open');             // ← persist closed state
+      localStorage.removeItem('dp-rb-open');
     }
     _exitSelectMode();
   }
 
   // ── Auto-restore on page load if state memory is ON ──────────────────────
   if (getSettings().cacheRightBarState && localStorage.getItem('dp-rb-open') === '1') {
-    // Defer so DOM is fully set up first
     requestAnimationFrame(() => _open_());
   }
 
   toggleBtn.addEventListener('click', () => {
-    if (!_open) { _open_(); _slideToPane('files'); }
+    if (!_open) { _open_('files'); }
     else if (_activePane === 'files') { _close(); }
     else { _slideToPane('files'); }
   });
 
   settingsBtn.addEventListener('click', () => {
-    if (!_open) { _open_(); _slideToPane('settings'); }
+    if (!_open) { _open_('settings'); }
     else if (_activePane === 'settings') { _close(); }
     else { _slideToPane('settings'); }
   });
@@ -476,20 +562,31 @@ export function initFileManager() {
 
     const dedupedEntries = [...byFilename.values()];
 
-    if (!dedupedEntries.length) {
-      const empty = document.createElement('div');
-      empty.className = 'rb-file-empty';
-      empty.innerHTML =
-        `<i class="ti ti-inbox" style="font-size:28px;opacity:.3"></i>` +
-        `<span>还没有导入文件<br><small>点击上方"导入"按钮添加文件</small></span>`;
-      body.appendChild(empty);
-      return;
-    }
-
     // Section: 数据文件
-    const sec = _makeSection('数据文件', 'ti-database');
-    dedupedEntries.forEach(({ key, entry }) => sec.body.appendChild(_makeFileItem(key, entry)));
+    const sec = _makeSection('数据文件', 'ti-database', dedupedEntries.length === 0);
+    if (dedupedEntries.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'rb-file-placeholder';
+      empty.textContent = '还没有导入文件 — 点击上方"导入"按钮添加';
+      sec.body.appendChild(empty);
+    } else {
+      dedupedEntries.forEach(({ key, entry }) => sec.body.appendChild(_makeFileItem(key, entry)));
+    }
     body.appendChild(sec.el);
+
+    // Section: 代码文件 (from cell save-as-file)
+    const codeFiles = Object.values(_loadCodeStore());
+    const codeSec = _makeSection('代码文件', 'ti-file-code', codeFiles.length === 0);
+    if (codeFiles.length === 0) {
+      const ph = document.createElement('div');
+      ph.className = 'rb-file-placeholder';
+      ph.textContent = '在 Cell 里按 Ctrl+S 保存为代码文件';
+      codeSec.body.appendChild(ph);
+    } else {
+      codeFiles.sort((a, b) => b.savedAt - a.savedAt)
+               .forEach(entry => codeSec.body.appendChild(_makeCodeFileItem(entry)));
+    }
+    body.appendChild(codeSec.el);
 
     // Section: 模型 & 配置 (placeholder)
     const modelSec = _makeSection('模型 & 配置', 'ti-brain', true);
@@ -498,6 +595,61 @@ export function initFileManager() {
     placeholder.textContent = '开发中 — 保存训练好的模型';
     modelSec.body.appendChild(placeholder);
     body.appendChild(modelSec.el);
+  }
+
+  function _makeCodeFileItem(entry) {
+    const { filename, language, code, savedAt } = entry;
+    const item = document.createElement('div');
+    item.className = 'rb-file-item rb-code-file-item';
+
+    const iconEl = document.createElement('i');
+    iconEl.className = `ti ${LANG_ICON[language] ?? 'ti-file-code'} rb-file-item-icon`;
+    iconEl.style.color = LANG_COLOR[language] ?? '#6366f1';
+
+    const info = document.createElement('div');
+    info.className = 'rb-file-item-info';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'rb-file-item-name';
+    nameEl.textContent = filename;
+
+    const metaEl = document.createElement('div');
+    metaEl.className = 'rb-file-item-meta';
+    const ext = LANG_EXT[language] ?? '';
+    const timeStr = savedAt ? new Date(savedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '';
+    metaEl.textContent = `${language}${ext ? ' · ' + ext : ''}${timeStr ? ' · ' + timeStr : ''}`;
+
+    info.append(nameEl, metaEl);
+
+    // Insert into cell button
+    const insertBtn = document.createElement('button');
+    insertBtn.className = 'rb-file-action-btn';
+    insertBtn.title = '插入到 Notebook';
+    insertBtn.innerHTML = `<i class="ti ti-corner-down-left"></i>`;
+
+    function _doInsert() {
+      document.dispatchEvent(new CustomEvent('nb-code-file-click', {
+        detail: { filename, language, code },
+      }));
+      item.classList.add('rb-file-item--flash');
+      setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
+    }
+
+    insertBtn.addEventListener('click', e => { e.stopPropagation(); _doInsert(); });
+    item.addEventListener('click', _doInsert);
+
+    // Delete via right-click context menu (simple confirm)
+    item.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      if (!confirm(`删除代码文件 "${filename}"？`)) return;
+      const store = _loadCodeStore();
+      delete store[filename];
+      _saveCodeStore(store);
+      _refresh();
+    });
+
+    item.append(iconEl, info, insertBtn);
+    return item;
   }
 
   function _makeSection(title, icon, collapsed = false) {
@@ -631,7 +783,8 @@ export function initFileManager() {
   }
 
   // ── Event listeners ────────────────────────────────────────────────────────
-  document.addEventListener('nb-file-imported',  () => { if (_open) _refresh(); });
+  document.addEventListener('nb-file-imported',    () => { if (_open) _refresh(); });
+  document.addEventListener('nb-code-file-saved', () => { if (_open) _refresh(); });
   document.addEventListener('kernel-restarted', () => {
     if (_open) _refresh();
     // Show reload banner if there are any tracked files

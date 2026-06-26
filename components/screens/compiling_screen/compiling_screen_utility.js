@@ -196,6 +196,8 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
             return;
           }
           vizBtn.disabled = true;
+          const _vizBtnOrig = vizBtn.innerHTML;
+          vizBtn.innerHTML = `<i class="ti ti-loader-2"></i>`;
           vizBtn.classList.add('vsug-icon-btn--loading');
           try {
             const img = await visualiseVar(o.varName);
@@ -211,10 +213,12 @@ export function renderBlocks(outputs, container, { onAskAI, chartContainer } = {
             } else {
               block.insertAdjacentElement('afterend', _chartBlock);
             }
+            vizBtn.innerHTML = _vizBtnOrig;
             vizBtn.classList.remove('vsug-icon-btn--loading');
             vizBtn.classList.add('vsug-icon-btn--active');
             vizBtn.disabled = false;
           } catch (err) {
+            vizBtn.innerHTML = _vizBtnOrig;
             vizBtn.classList.remove('vsug-icon-btn--loading');
             vizBtn.disabled = false;
             const isNoNumeric = String(err?.message ?? err).includes('__NO_NUMERIC__');

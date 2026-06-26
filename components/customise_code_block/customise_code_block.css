@@ -428,6 +428,37 @@ body.mirror-dragging * {
   color: var(--accent, #6366f1);
 }
 
+/* ── Save-as-file button ─────────────────────────────────────────────────── */
+.nb-save-file-btn { color: var(--text-muted, #64748b); }
+.nb-save-file-btn:hover { background: rgba(16,185,129,0.1); color: #10b981; }
+
+/* Inline filename input row (expands inside toolbar) */
+.nb-save-inline {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.nb-save-input {
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--accent, #6366f1);
+  border-radius: 5px;
+  background: var(--surface, #fff);
+  color: var(--text, #0f172a);
+  font-size: 0.76rem;
+  font-family: var(--code-font, monospace);
+  outline: none;
+  width: 160px;
+}
+.nb-save-confirm-btn { color: #10b981; }
+.nb-save-confirm-btn:hover { background: rgba(16,185,129,0.1); }
+.nb-save-cancel-btn  { color: var(--text-muted, #94a3b8); }
+.nb-save-cancel-btn:hover { background: rgba(239,68,68,0.08); color: #ef4444; }
+
+/* ── Code file items in file manager (visual distinction from data files) ── */
+.rb-code-file-item .rb-file-item-name { font-family: var(--code-font, monospace); font-size: 0.78rem; }
+.rb-code-file-item .rb-file-item-meta { font-size: 0.68rem; }
+
 /* Output copy button — lives in nb-output-section-label */
 .nb-output-copy-btn {
   width: 22px;

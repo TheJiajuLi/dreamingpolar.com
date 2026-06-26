@@ -87,7 +87,14 @@ function _initWorker() {
     }
   } catch (_) {}
 
-  _workerReady = _call('init', { base: window.BASE ?? '', injectFiles })
+  // Also restore saved code files to Pyodide FS so `import my_module` works after refresh
+  let codeFiles = [];
+  try {
+    const codeStore = JSON.parse(localStorage.getItem('dp-code-file-store') ?? '{}');
+    codeFiles = Object.values(codeStore).filter(e => e?.filename && e?.code != null);
+  } catch (_) {}
+
+  _workerReady = _call('init', { base: window.BASE ?? '', injectFiles, codeFiles })
     .then(() => {
       _dispatch('ready', 'Notebook Editor', 100);
       document.body.classList.add('dp-ready');
@@ -592,9 +599,11 @@ function _latexBodyToHtml(body) {
 }
 
 function _runLatex(code) {
-  const bodyMatch = code.match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/);
-  if (bodyMatch) {
-    return [{ type: 'html', content: _latexBodyToHtml(bodyMatch[1].trim()) }];
+  // Full document: extract body (tolerates missing \end{document})
+  const bodyFull  = code.match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/);
+  const bodyOpen  = bodyFull ?? code.match(/\\begin\{document\}([\s\S]*)/);
+  if (bodyOpen) {
+    return [{ type: 'html', content: _latexBodyToHtml(bodyOpen[1].trim()) }];
   }
   // Bare math / snippet — normalize math notation and render directly
   const normalized = _normalizeLatexMath(code.trim());
@@ -710,27 +719,36 @@ else:
 // relative paths in Python (pd.read_csv("GE.csv"), open("data.json"), etc.).
 // Overwrites silently if file already exists (latest data wins).
 export function writeToFS(filename, data, fileType) {
-  if (!_pyodide || !filename) return;
-  const path = `/home/pyodide/${filename}`;
-  try {
-    const isExcel = fileType === 'xlsx' || fileType === 'xls';
-    if (isExcel) {
-      let bytes;
-      if (typeof data === 'string') {
-        // base64-encoded binary (from inject-store isBase64 path)
-        const bin = atob(data);
-        bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  if (!filename) return;
+  // Main thread path: kept for backward compat, no-op when _pyodide is null.
+  if (_pyodide) {
+    const path = `/home/pyodide/${filename}`;
+    try {
+      const isExcel = fileType === 'xlsx' || fileType === 'xls';
+      if (isExcel) {
+        let bytes;
+        if (typeof data === 'string') {
+          const bin = atob(data);
+          bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        } else {
+          bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+        }
+        _pyodide.FS.writeFile(path, bytes);
       } else {
-        bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+        const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
+        _pyodide.FS.writeFile(path, text);
       }
-      _pyodide.FS.writeFile(path, bytes);
-    } else {
-      const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
-      _pyodide.FS.writeFile(path, text);
+    } catch (e) {
+      console.warn(`[writeToFS] Failed to write "${filename}" to main-thread FS:`, e);
     }
-  } catch (e) {
-    console.warn(`[writeToFS] Failed to write "${filename}" to Pyodide FS:`, e);
+  }
+  // Worker path: always write to the Worker's Pyodide FS so pd.read_csv() works.
+  // _workerReady is a Promise — chain so we wait for init if still loading.
+  if (_workerReady) {
+    Promise.resolve(_workerReady)
+      .then(() => _call('writeFS', { filename, data, fileType }))
+      .catch(() => {});
   }
 }
 
@@ -759,6 +777,12 @@ export async function injectDataFrame(varName, data, fileType = 'csv', fileName 
   return _enqueue(() => _injectDataFrameCore(varName, data, fileType, fileName, context));
 }
 
+// Write a code file (text) to the Worker's Pyodide FS so `import my_module` works.
+export async function writeCodeFileToFS(filename, code) {
+  if (!_workerReady) return;
+  await _call('writeFS', { filename, data: code, fileType: 'text' }).catch(() => {});
+}
+
 export async function getPyodide() {
   return _getPyodide();
 }
@@ -767,58 +791,8 @@ export async function getPyodide() {
 // varName: the Python variable name (string, passed via globals, never eval'd)
 // Returns a base64-encoded PNG string, or throws on failure.
 export async function visualiseVar(varName) {
-  const py = await _getPyodide();
-  if (!py.runPython('"_dp_kernel_ns" in globals()')) throw new Error('Run the cell first to load data into the kernel');
-  await py.loadPackage(['matplotlib'], { messageCallback: () => {} });
-
-  py.globals.set('_dp_viz_varname', varName);
-  try {
-    const raw = await py.runPythonAsync(`
-import matplotlib as _mpl_v
-_mpl_v.use('agg')
-if not getattr(_mpl_v, '_dp_font_set', False):
-    try:
-        import os as _os_v, matplotlib.font_manager as _fm_v
-        if _os_v.path.exists('/tmp/NotoSansSC.ttf'):
-            _fm_v.fontManager.addfont('/tmp/NotoSansSC.ttf')
-            _mpl_v.rcParams['font.family'] = 'Noto Sans SC'
-    except Exception: pass
-    _mpl_v._dp_font_set = True
-
-import matplotlib.pyplot as _plt_v, io as _io_v, base64 as _b64_v, json as _jv
-
-_fig_v, _ax_v = _plt_v.subplots(figsize=(7, 3.8))
-_obj_v = _dp_kernel_ns.get(_dp_viz_varname); _obj_v = _obj_v if _obj_v is not None else globals().get(_dp_viz_varname)
-if _obj_v is None:
-    raise ValueError(f"Variable '{_dp_viz_varname}' not found in kernel namespace")
-
-_type_v = type(_obj_v).__name__
-if _type_v == 'DataFrame':
-    _num_v = _obj_v.select_dtypes(include='number')
-    if not _num_v.empty:
-        _num_v.iloc[:, :6].plot(ax=_ax_v, title=_dp_viz_varname)
-    else:
-        # Don't render a blank axes — raise so JS can show a friendly message instead
-        _plt_v.close(_fig_v)
-        raise ValueError('__NO_NUMERIC__')
-elif _type_v == 'Series':
-    _obj_v.plot(ax=_ax_v, title=_dp_viz_varname)
-else:
-    _flat_v = _obj_v.flatten()[:2000] if hasattr(_obj_v, 'flatten') else _obj_v
-    _ax_v.plot(_flat_v)
-    _ax_v.set_title(_dp_viz_varname)
-
-_fig_v.tight_layout()
-_buf_v = _io_v.BytesIO()
-_fig_v.savefig(_buf_v, format='png', dpi=130, bbox_inches='tight')
-_buf_v.seek(0)
-_plt_v.close(_fig_v)
-_jv.dumps({'img': _b64_v.b64encode(_buf_v.read()).decode()})
-`);
-    return JSON.parse(raw).img;
-  } finally {
-    py.globals.delete('_dp_viz_varname');
-  }
+  await _initWorker();
+  return _call('visualise', { varName });
 }
 
 // ── Query kernel for DataFrames ───────────────────────────────────────────────

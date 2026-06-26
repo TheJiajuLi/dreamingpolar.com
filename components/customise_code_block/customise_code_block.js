@@ -13,7 +13,7 @@ import { createImportBtn } from '../import/import_btn.js';
 import { getSettings } from '../right_bar/settings.js';
 import { createLoadDataBtn } from '../import/import_data.js';
 import { setDataset } from '../shared/dataset_store.js';
-import { injectDataFrame, queryKernelDataframes } from '../compiler/compiler.js';
+import { injectDataFrame, queryKernelDataframes, writeCodeFileToFS } from '../compiler/compiler.js';
 
 const ICON_COPY  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -21,6 +21,9 @@ const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" 
 const CELLS_KEY      = 'dreaming-polar-cells';
 const OLD_CODE_KEY   = 'dreaming-polar-code';
 const INJECT_KEY     = 'dreaming-polar-inject-store'; // persists pending inject data across page loads
+const CODE_FILE_KEY  = 'dp-code-file-store';
+
+const LANG_EXT = { python: '.py', markdown: '.md', latex: '.tex', mathjax: '.html' };
 
 // ── Inject-store helpers ──────────────────────────────────
 // Stores { [cellId]: { varName, fileType, filename, rows, columns, data, isBase64 } }
@@ -660,7 +663,72 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   csvBtn.className = 'nb-btn nb-csv-btn';
   csvBtn.title     = 'Load CSV / Excel as DataFrame into this cell';
 
-  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, dsLabel, dsClearBtn, importBtn);
+  // ── Save as file button ────────────────────────────────────────────────
+  const saveFileBtn = mkBtn('nb-save-file-btn', '保存为文件 (Ctrl+S)',
+    `<i class="ti ti-device-floppy"></i>`);
+
+  // Inline filename input (hidden by default)
+  const saveInlineWrap = document.createElement('div');
+  saveInlineWrap.className = 'nb-save-inline';
+  saveInlineWrap.style.display = 'none';
+
+  const saveInput = document.createElement('input');
+  saveInput.type = 'text';
+  saveInput.className = 'nb-save-input';
+  saveInput.autocomplete = 'off';
+  saveInput.spellcheck = false;
+
+  const saveConfirmBtn = mkBtn('nb-save-confirm-btn', '确认保存', `<i class="ti ti-check"></i>`);
+  const saveCancelBtn  = mkBtn('nb-save-cancel-btn',  '取消',     `<i class="ti ti-x"></i>`);
+
+  saveInlineWrap.append(saveInput, saveConfirmBtn, saveCancelBtn);
+  cell._savedFilename = null;
+
+  function _showSaveInput() {
+    const ext = LANG_EXT[cell.lang] ?? '.py';
+    saveInput.value = cell._savedFilename ?? `untitled_${_cells.indexOf(cell) + 1}${ext}`;
+    saveInlineWrap.style.display = '';
+    saveFileBtn.style.display = 'none';
+    requestAnimationFrame(() => { saveInput.select(); saveInput.focus(); });
+  }
+
+  function _hideSaveInput() {
+    saveInlineWrap.style.display = 'none';
+    saveFileBtn.style.display = '';
+  }
+
+  function _doSaveFile(filename) {
+    filename = filename.trim();
+    if (!filename) return;
+    const store = JSON.parse(localStorage.getItem(CODE_FILE_KEY) ?? '{}');
+    store[filename] = { filename, language: cell.lang, cellId: cell.id, code: cell.editor.value, savedAt: Date.now() };
+    localStorage.setItem(CODE_FILE_KEY, JSON.stringify(store));
+    writeCodeFileToFS(filename, cell.editor.value);
+    cell._savedFilename = filename;
+    _hideSaveInput();
+    document.dispatchEvent(new CustomEvent('nb-code-file-saved', { detail: { filename, language: cell.lang } }));
+    if (getSettings().saveFileRemoveCell) {
+      const cells = getCells();
+      if (cells.length > 1) {
+        cell._outputAC?.abort();
+        setCells(cells.filter(c => c !== cell));
+        rebuildCells();
+        saveAll();
+      }
+    }
+  }
+
+  saveFileBtn.addEventListener('click', () => {
+    if (cell._savedFilename) { _doSaveFile(cell._savedFilename); } else { _showSaveInput(); }
+  });
+  saveConfirmBtn.addEventListener('click', () => _doSaveFile(saveInput.value));
+  saveCancelBtn.addEventListener('click',  _hideSaveInput);
+  saveInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); _doSaveFile(saveInput.value); }
+    if (e.key === 'Escape') { e.preventDefault(); _hideSaveInput(); }
+  });
+
+  toolbar.append(numEl, sel, runBtn, upBtn, downBtn, delBtn, copyBtn, dsLabel, dsClearBtn, importBtn, saveFileBtn, saveInlineWrap);
 
   const editor = document.createElement('textarea');
   editor.className    = 'nb-editor';
@@ -846,10 +914,15 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   }, { signal: outputAC.signal });
 
   // Ctrl+I / Cmd+I — open inline AI completion popup
+  // Ctrl+S / Cmd+S — save cell as file
   editor.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
       e.preventDefault();
       _openInlineAI(cell, editor);
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      if (cell._savedFilename) { _doSaveFile(cell._savedFilename); } else { _showSaveInput(); }
     }
   }, { signal: outputAC.signal });
 
@@ -1180,6 +1253,35 @@ export function init(container, externalTopbar) {
     if (getSettings().autoRunOnFileInsert) {
       requestAnimationFrame(() => target.el.querySelector('.nb-run')?.click());
     }
+  });
+
+  // Code file click from file manager → inject code into focused/empty cell
+  document.addEventListener('nb-code-file-click', ({ detail: { filename, language, code } }) => {
+    const lang = language ?? 'python';
+    const focusedCell = _lastFocusedCellId ? _cells.find(c => c.id === _lastFocusedCellId) : null;
+    const emptyCell   = _cells.find(c => !c.editor.value.trim());
+    const target = (focusedCell && !focusedCell.editor.value.trim() ? focusedCell : null)
+                ?? emptyCell
+                ?? (() => {
+                     const c = makeCell(lang, '');
+                     _cells.push(c);
+                     rebuildCells();
+                     return c;
+                   })();
+    target.lang = lang;
+    const selEl = target.el.querySelector('.nb-lang-select');
+    if (selEl) selEl.value = lang;
+    target.editor.value = code;
+    autoResize(target.editor);
+    target.editor.dispatchEvent(new Event('input'));
+    saveAll();
+    window.screenController?.open('coding');
+    setTimeout(() => {
+      target.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.editor.focus();
+      target.el.classList.add('nb-cell--nav-flash');
+      setTimeout(() => target.el.classList.remove('nb-cell--nav-flash'), 900);
+    }, 80);
   });
 
   // When AI generates code while the Customise tab is active, the notebook

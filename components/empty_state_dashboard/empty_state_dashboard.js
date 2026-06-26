@@ -72,7 +72,10 @@ function _buildDashboard() {
   greeting.className = 'esd-greeting';
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? '上午好' : hour < 18 ? '下午好' : '晚上好';
-  greeting.innerHTML = `<span class="esd-greeting-text">${timeOfDay}，今天想做什么分析？</span>`;
+  const base = window.BASE ?? '';
+  greeting.innerHTML =
+    `<img src="${base}/assets/app_logo/dreaming_polar.png" class="esd-greeting-logo" alt="Dreaming Polar">` +
+    `<span class="esd-greeting-text">${timeOfDay}，今天想做什么分析？</span>`;
   wrap.appendChild(greeting);
 
   // ── Quick-start cards ─────────────────────────────────────────────────────
@@ -179,7 +182,7 @@ export function initDashboard() {
 
   // ── Visibility logic: show when ALL hero screens are closed/minimised ──────
   // Show dashboard only when every hero screen is closed / minimised
-  const HERO_IDS = ['content', 'coding', 'terminal', 'ai-chat', 'grid'];
+  const HERO_IDS = ['content', 'coding', 'terminal', 'ai-chat', 'grid', 'user'];
   function _allClosed() {
     const sc = window.screenController;
     if (!sc) return false;

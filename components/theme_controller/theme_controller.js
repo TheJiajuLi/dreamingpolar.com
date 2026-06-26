@@ -41,36 +41,15 @@ function setupThemeController() {
   _idx = Math.max(0, THEMES.indexOf(saved));
   applyTheme(THEMES[_idx]);
 
-  const header = document.querySelector('.page-header');
-  if (!header) return;
-
-  const btn = document.createElement('button');
-  btn.className = 'theme-controller';
-  btn.title     = `Theme: ${THEMES[_idx]}`;
-  btn.setAttribute('aria-label', `Cycle theme — current: ${THEMES[_idx]}`);
-
-  const wrap = document.createElement('span');
-  wrap.className = 'theme-icon-wrap';
-  wrap.setAttribute('aria-hidden', 'true');
-  wrap.innerHTML = SVG_PALETTE;
-
-  btn.appendChild(wrap);
-
-  btn.addEventListener('click', () => {
+  // Expose cycle function for Settings panel
+  window._dpCycleTheme = () => {
     _idx = (_idx + 1) % THEMES.length;
     const key = THEMES[_idx];
-
     applyTheme(key);
     localStorage.setItem('theme', key);
-    btn.title = `Theme: ${key}`;
-    btn.setAttribute('aria-label', `Cycle theme — current: ${key}`);
-
-    _animateIcon(wrap.querySelector('svg'));
-  });
-
-  const searchContainer = header.querySelector('.search-bar-container');
-  if (searchContainer) header.insertBefore(btn, searchContainer);
-  else                 header.appendChild(btn);
+    document.dispatchEvent(new CustomEvent('dp-theme-changed', { detail: { theme: key } }));
+  };
+  window._dpThemeLabel = () => THEMES[_idx];
 }
 
 if (document.readyState === 'loading') {
