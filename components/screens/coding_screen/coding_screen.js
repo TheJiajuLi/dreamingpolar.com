@@ -1,4 +1,5 @@
 import { getCurrentMode } from '../../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
+import { recordRecentItem } from '../../empty_state_dashboard/empty_state_dashboard.js';
 import { init as initNotebook, addImportedCell, setVarNameResolver, clearAllDatasetLabels, getPersistedVarNames, getCellOrder, getCellDatasetInfo } from '../../customise_code_block/customise_code_block.js';
 import { createClearCellsBtn } from './coding_screen_utility.js';
 import { renderBlocks, parseAIResponse } from '../compiling_screen/compiling_screen_utility.js';
@@ -23,6 +24,12 @@ function setupCodingScreen() {
   requestAnimationFrame(() => {
     window.screenController?.register('coding', screen, { label: 'Code', persisted: true, noChip: true, group: 'hero' });
     preloadPython();
+
+    document.addEventListener('screen-opened', ({ detail }) => {
+      if (detail?.id === 'coding') {
+        recordRecentItem({ id: 'notebook', name: 'Notebook', type: 'notebook' });
+      }
+    });
 
     // Auto-run all cells once kernel finishes booting (setting: autoRunOnLoad)
     if (getSettings().autoRunOnLoad) {
@@ -59,7 +66,22 @@ function setupCodingScreen() {
   restartKernelBtn.title       = 'Restart kernel — clears all variables (click twice to confirm)';
   restartKernelBtn.innerHTML   = _RESTART_SVG;
 
-  nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn);
+  // ── Toolbar bookend slots (filled by file_manager) ───────────────────────
+  const userSlot = document.createElement('div');
+  userSlot.id = 'cds-toolbar-user-slot';
+  userSlot.className = 'cds-toolbar-side-slot';
+
+  const dividerL = document.createElement('div');
+  dividerL.className = 'cds-toolbar-divider';
+
+  const dividerR = document.createElement('div');
+  dividerR.className = 'cds-toolbar-divider';
+
+  const fsSlot = document.createElement('div');
+  fsSlot.id = 'cds-toolbar-fs-slot';
+  fsSlot.className = 'cds-toolbar-side-slot';
+
+  nbToolbar.append(userSlot, dividerL, runAllSlot, clearCellsBtn, restartKernelBtn);
 
   // ── Variable name resolver — shared across all cell import buttons ──
   // Seed with persisted varNames so new imports don't collide with restored data.
@@ -117,7 +139,7 @@ function setupCodingScreen() {
   // ── Mode label ────────────────────────────────────────
   const cdsModeLabel = document.createElement('span');
   cdsModeLabel.className   = 'cds-mode-label';
-  nbToolbar.appendChild(cdsModeLabel);
+  nbToolbar.append(cdsModeLabel, dividerR, fsSlot);
 
   nbLeft.appendChild(nbToolbar);
   notebookView.appendChild(nbLeft);
