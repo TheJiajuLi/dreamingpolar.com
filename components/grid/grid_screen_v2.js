@@ -3,6 +3,7 @@ import { getAllDatasets, setDataset } from '../shared/dataset_store.js';
 import { injectDataFrame, getPyodide } from '../compiler/compiler.js';
 import { downloadBlob }              from '../shared/file_download.js';
 import { getSettings }               from '../right_bar/settings.js';
+import { recordRecentItem }          from '../empty_state_dashboard/empty_state_dashboard.js';
 
 const INJECT_KEY = 'dreaming-polar-inject-store';
 const MAX_TABS   = 8;
@@ -218,7 +219,7 @@ function setupGridScreen() {
     document.addEventListener('vt-btn-activated', ({ detail: { id } }) => { if (id !== 'grid') btn.classList.remove('active'); });
     document.addEventListener('screen-closed',    ({ detail }) => { if (detail.id === 'grid') btn.classList.remove('active'); });
     document.addEventListener('screen-minimized', ({ detail }) => { if (detail.id === 'grid') btn.classList.remove('active'); });
-    document.addEventListener('screen-opened',    ({ detail }) => { if (detail.id === 'grid') { btn.classList.add('active'); document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'grid' } })); } });
+    document.addEventListener('screen-opened',    ({ detail }) => { if (detail.id === 'grid') { btn.classList.add('active'); document.dispatchEvent(new CustomEvent('vt-btn-activated', { detail: { id: 'grid' } })); recordRecentItem({ id: 'grid', name: 'DP Grid', type: 'grid', screenId: 'grid' }); } });
     vtTop.appendChild(btn);
   }
 

@@ -9,8 +9,18 @@ import { writeToFS }                     from '../compiler/compiler.js';
 import { createSettingsPanel, getSettings } from './settings.js';
 import { logActivity } from '../shared/activity_logger.js';
 
-const INJECT_KEY    = 'dreaming-polar-inject-store';
-const CODE_FILE_KEY = 'dp-code-file-store';
+const INJECT_KEY      = 'dreaming-polar-inject-store';
+const CODE_FILE_KEY   = 'dp-code-file-store';
+const RECENT_FILES_KEY = 'dp_recent_files';
+const MAX_RECENT_FILES = 10;
+
+function _recordRecentFile({ name, varName, size, fileType }) {
+  let files;
+  try { files = JSON.parse(localStorage.getItem(RECENT_FILES_KEY) ?? '[]'); } catch { files = []; }
+  files = files.filter(f => f.name !== name);
+  files.unshift({ name, varName, size, fileType, openedAt: Date.now() });
+  try { localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(files.slice(0, MAX_RECENT_FILES))); } catch (_) {}
+}
 
 const LANG_ICON = {
   python:   'ti-brand-python',
@@ -621,6 +631,7 @@ export function initFileManager() {
           detail: { varName, rows, columns, filename: file.name, fileType, cellId },
         }));
         logActivity('import', `导入 ${file.name}`);
+        _recordRecentFile({ name: file.name, varName, size: file.size, fileType });
 
       _refresh();
     } catch (err) {

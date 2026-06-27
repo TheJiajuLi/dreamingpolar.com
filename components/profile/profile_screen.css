@@ -547,3 +547,31 @@
 .prof-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .prof-edit-err { font-size: 0.7rem; color: #ef4444; min-height: 0; }
+
+/* ── Recent files list ───────────────────────────────────────────────────── */
+.prof-files-list { display: flex; flex-direction: column; gap: 2px; }
+
+.prof-file-row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  transition: background 0.1s;
+  cursor: default;
+}
+.prof-file-row:hover { background: var(--bg-2, rgba(0,0,0,0.04)); }
+[data-theme="dark"] .prof-file-row:hover { background: rgba(255,255,255,0.05); }
+[data-theme="grey"] .prof-file-row:hover { background: rgba(255,255,255,0.05); }
+
+.prof-file-icon { color: var(--accent, #6366f1); display: flex; align-items: center; }
+.prof-file-name { font-size: 0.78rem; font-weight: 500; color: var(--text, #0f172a); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+[data-theme="dark"] .prof-file-name,
+[data-theme="grey"] .prof-file-name { color: #e6edf3; }
+.prof-file-meta { font-size: 0.7rem; color: var(--accent, #6366f1); font-family: var(--code-font, monospace); white-space: nowrap; }
+.prof-file-badge { font-size: 0.62rem; font-weight: 600; padding: 1px 5px; border-radius: 4px; background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); white-space: nowrap; }
+[data-theme="dark"] .prof-file-badge,
+[data-theme="grey"] .prof-file-badge { background: rgba(99,102,241,0.15); color: #818cf8; }
+.prof-file-size { font-size: 0.68rem; color: var(--text-muted, #94a3b8); white-space: nowrap; }
+.prof-file-time { font-size: 0.68rem; color: var(--text-muted, #94a3b8); white-space: nowrap; }

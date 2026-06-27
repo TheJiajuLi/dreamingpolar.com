@@ -1,4 +1,5 @@
 import { createAriaChat } from './aria_chat.js';
+import { recordRecentItem } from '../../empty_state_dashboard/empty_state_dashboard.js';
 
 // ── Add VT navigation button (open / minimize Quick Analysis) ────────────────
 function _addVtButtons(switchView, getActiveView, isScreenOpen) {
@@ -84,7 +85,10 @@ function setupGenerativeScreen() {
 
   // Reset to chat view whenever the generative screen is re-opened
   document.addEventListener('screen-opened', ({ detail }) => {
-    if (detail?.id === 'terminal') switchView('gen-terminal');
+    if (detail?.id === 'terminal') {
+      switchView('gen-terminal');
+      recordRecentItem({ id: 'generative', name: 'ARIA 智能助手', type: 'generative', screenId: 'terminal' });
+    }
   });
 
   // ── Quick Analysis import (lightweight JS path) ──────────────────────────
