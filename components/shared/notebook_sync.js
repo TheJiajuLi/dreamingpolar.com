@@ -42,7 +42,7 @@ document.addEventListener('compiler-status', ({ detail }) => {
 export async function initSync() {
   if (!window.authClient?.isLoggedIn()) return;
   try {
-    const res = await _fetch('/notebooks');
+    const res = await _fetch('/auth/notebooks');
     if (!res?.ok) return;
     const list = await res.json();
 
@@ -50,7 +50,7 @@ export async function initSync() {
       _notebookId = list[0].id;
       await _restoreFromCloud();
     } else {
-      const r = await _fetch('/notebooks', {
+      const r = await _fetch('/auth/notebooks', {
         method: 'POST',
         body: JSON.stringify({ name: 'My Notebook' }),
       });
@@ -66,7 +66,7 @@ export async function initSync() {
 async function _restoreFromCloud() {
   if (!_notebookId) return;
   try {
-    const res = await _fetch(`/notebooks/${_notebookId}/cells`);
+    const res = await _fetch(`/auth/notebooks/${_notebookId}/cells`);
     if (!res?.ok) return;
     const cells = await res.json();
     if (!Array.isArray(cells) || !cells.length) return;
@@ -88,7 +88,7 @@ export async function syncToCloud() {
       code:        el.querySelector('.nb-editor')?.value ?? '',
     }));
 
-    const res = await _fetch(`/notebooks/${_notebookId}/cells`, {
+    const res = await _fetch(`/auth/notebooks/${_notebookId}/cells`, {
       method: 'PUT',
       body:   JSON.stringify({ cells }),
     });
