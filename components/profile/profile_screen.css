@@ -450,22 +450,6 @@
   min-height: 0;
 }
 
-.prof-save-btn {
-  width: 100%;
-  padding: 8px;
-  border: none;
-  border-radius: 7px;
-  background: #6366f1;
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s;
-  font-family: inherit;
-}
-.prof-save-btn:hover:not(:disabled) { background: #4f46e5; }
-.prof-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
 /* ── activity dot (replaces colored icon) ─────────────────────────────────── */
 .prof-activity-icon { display: none; }
 .prof-activity-dot {

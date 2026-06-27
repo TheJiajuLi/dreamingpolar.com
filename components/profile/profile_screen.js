@@ -258,8 +258,9 @@ function _renderProfile(screen) {
   editForm.append(editInput, editErr, editActions);
 
   // Toggle edit mode — name row hides entirely, replaced by inline input
+  // Note: use style.display instead of .hidden because display:flex overrides [hidden]
   function _openEdit() {
-    nameRow.hidden = true;
+    nameRow.style.display = 'none';
     editForm.hidden = false;
     editInput.value = nameEl.textContent;
     editInput.focus();
@@ -267,7 +268,7 @@ function _renderProfile(screen) {
   }
   function _closeEdit() {
     editForm.hidden = true;
-    nameRow.hidden = false;
+    nameRow.style.display = '';
     editErr.textContent = '';
   }
 
