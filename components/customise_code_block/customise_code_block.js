@@ -12,6 +12,7 @@ import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
 import { getSettings } from '../right_bar/settings.js';
 import { createLoadDataBtn } from '../import/import_data.js';
+import { scheduleSave as _cloudScheduleSave, syncToCloud as _cloudSync } from '../shared/notebook_sync.js';
 import { setDataset } from '../shared/dataset_store.js';
 import { injectDataFrame, queryKernelDataframes, writeCodeFileToFS } from '../compiler/compiler.js';
 
@@ -911,6 +912,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   editor.addEventListener('input', () => {
     if (el.dataset.hasOutput === '1') el.classList.add('mirror--stale');
     delete el.dataset.ariaSource;
+    _cloudScheduleSave();
   }, { signal: outputAC.signal });
 
   // Ctrl+I / Cmd+I — open inline AI completion popup
@@ -923,6 +925,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
       if (cell._savedFilename) { _doSaveFile(cell._savedFilename); } else { _showSaveInput(); }
+      _cloudSync();
     }
   }, { signal: outputAC.signal });
 
@@ -1096,6 +1099,15 @@ export function init(container, externalTopbar) {
   document.addEventListener('notebook-cell-deleted', ({ detail: { cellId } }) => {
     _removeFromInjectStore(cellId);
     FileTracker.untrackCell(cellId); // remove file→cell mapping so next click re-inserts
+  });
+
+  // Cloud restore — replace all cells with cloud data (fires after login)
+  document.addEventListener('dp-cloud-restore', ({ detail: { cells } }) => {
+    if (!Array.isArray(cells) || !cells.length) return;
+    const sorted = [...cells].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    _cells = sorted.map(d => makeCell(d.language ?? 'python', d.code ?? '', d.id ?? uid()));
+    rebuildCells();
+    saveAll(); // persist to localStorage so next cold load also gets the cloud data
   });
 
   const nb = document.createElement('div');

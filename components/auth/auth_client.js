@@ -1,6 +1,7 @@
 // ── Dreaming Polar Auth Client ────────────────────────────────
 // Access Token 存内存，Refresh Token 由后端以 httpOnly Cookie 管理
 import { saveUserCache, loadUserCache, clearUserCache } from './auth_hooks.js';
+import { initSync } from '../shared/notebook_sync.js';
 
 const BASE = 'https://dp-auth-backend.onrender.com/auth';
 
@@ -451,6 +452,7 @@ async function _fetchUser() {
   _updateVtBtn();
   _renderProfile();
   document.dispatchEvent(new CustomEvent('dp-auth-login', { detail: _uiUser }));
+  if (_uiUser) initSync();
 }
 
 function _esc(s) {
