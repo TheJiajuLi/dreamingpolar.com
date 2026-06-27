@@ -78,7 +78,7 @@ async function _restoreFromCloud() {
 
 /** Push all cells to cloud. */
 export async function syncToCloud() {
-  if (!_notebookId || !window.authClient?.isLoggedIn()) return;
+  if (!_notebookId || !window.authClient?.isLoggedIn() || !_syncEnabled()) return;
   try {
     const cellEls = [...document.querySelectorAll('.nb-cell[data-nb-id]')];
     const cells = cellEls.map((el, i) => ({
@@ -104,9 +104,16 @@ export async function syncToCloud() {
   }
 }
 
+function _syncEnabled() {
+  try {
+    const s = JSON.parse(localStorage.getItem('dp-settings') ?? '{}');
+    return s.cloudSyncEnabled !== false; // default true
+  } catch { return true; }
+}
+
 /** Schedule a debounced cloud sync (called on every editor input). */
 export function scheduleSave() {
-  if (!window.authClient?.isLoggedIn() || !_notebookId) return;
+  if (!window.authClient?.isLoggedIn() || !_notebookId || !_syncEnabled()) return;
   clearTimeout(_syncTimer);
   _syncTimer = setTimeout(syncToCloud, DEBOUNCE_MS);
 }

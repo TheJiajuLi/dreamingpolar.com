@@ -18,6 +18,8 @@ const DEFAULTS = {
   gridConfirmSync:      true,   // show confirm dialog before syncing edits to kernel
   // ── Notebook 文件 ────────────────────────────────────────────────────────
   saveFileRemoveCell:   true,   // remove cell from notebook after saving as file
+  // ── 云同步 ───────────────────────────────────────────────────────────────
+  cloudSyncEnabled:     true,   // auto-save notebook cells to cloud (3s debounce)
 };
 
 export function getSettings() {
@@ -199,6 +201,7 @@ const _CATEGORIES = [
     desc: 'Cell 文件化、保存行为',
     rows: s => [
       _makeRow('保存后移出 Cell 列表', '保存为文件后，Cell 从编辑区移出，进入左侧文件树', 'saveFileRemoveCell', s),
+      _makeRow('自动同步至云端', '编辑停止 3 秒后自动保存 Notebook 到云端，Ctrl+S 立即同步', 'cloudSyncEnabled', s),
     ],
   },
 ];
