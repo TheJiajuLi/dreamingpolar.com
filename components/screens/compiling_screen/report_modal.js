@@ -4,6 +4,7 @@
 
 import { streamChat, ask }                               from '../../ai/ai_client.js';
 import { getDataFrameSchema, queryKernelContext, getDataSample } from '../../compiler/compiler.js';
+import { logActivity } from '../../shared/activity_logger.js';
 
 // ── Chart.js 懒加载（复用 ARIA 同一 window.Chart 单例）────────────────────────
 const _CHART_CDN = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
@@ -736,6 +737,7 @@ export async function openReportModal(varName) {
 
     chartBtn.innerHTML = '<i class="ti ti-chart-bar"></i> 已生成';
     chartBtn.disabled = false;
+    logActivity('report', `生成 ${varName} 智能报告`);
   });
 
   // ── Followup conversation area (hidden until report done) ───────────────────
@@ -813,8 +815,8 @@ export async function openReportModal(varName) {
         _renderFollowupChunk(fuAccum, responseDiv);
         body.scrollTop = body.scrollHeight;
       }
-      // Typeset math once after streaming completes (not per-chunk)
-      _typesetMath(responseDiv);
+      // MathJax typesetting skipped — AI followup text may contain $ symbols
+      // that clash with LaTeX delimiters, causing visual overlap.
     } catch (err) {
       responseDiv.innerHTML =
         `<p class="report-error"><i class="ti ti-alert-circle"></i> ${err.message}</p>`;
@@ -868,8 +870,10 @@ export async function openReportModal(varName) {
       body.scrollTop = body.scrollHeight;
     }
 
-    // Typeset math once after report finishes streaming
-    _typesetMath(contentEl);
+    // Note: MathJax typesetting intentionally skipped for AI-generated report text.
+    // The AI narrative may contain "$25.48" or stock tickers that MathJax would
+    // misparse as LaTeX, causing visual text overlap. Math rendering is handled
+    // by the dedicated LaTeX/MathJax cell modes instead.
 
     // Done — unlock action buttons; cache schema; show followup
     try { _cachedSchema = await getDataFrameSchema(varName); } catch {}

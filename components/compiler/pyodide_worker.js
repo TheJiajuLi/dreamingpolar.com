@@ -321,6 +321,47 @@ _jkc.dumps(_ctx)
   }
 }
 
+function _handleSchema({ varName }) {
+  if (!_py) throw new Error('KERNEL_NOT_READY');
+  if (!_py.runPython(`'_dp_kernel_ns' in dir()`)) throw new Error('KERNEL_NOT_READY');
+  _py.globals.set('_dp_schema_var', varName);
+  try {
+    return JSON.parse(_py.runPython(`
+import json as _j
+_df = _dp_kernel_ns.get(_dp_schema_var)
+if _df is None: raise ValueError(f"Variable '{_dp_schema_var}' not found")
+import pandas as _pd
+_rows = []
+for _col in _df.columns:
+    _null_pct = round(float(_df[_col].isnull().mean() * 100), 1)
+    _sample = str(_df[_col].dropna().iloc[0]) if len(_df[_col].dropna()) > 0 else ''
+    _rows.append({'col': str(_col), 'dtype': str(_df[_col].dtype), 'nullPct': _null_pct, 'sample': _sample[:40]})
+_j.dumps({'rows': _rows, 'shape': [int(_df.shape[0]), int(_df.shape[1])]})
+`));
+  } finally {
+    _py.globals.delete('_dp_schema_var');
+  }
+}
+
+function _handleSample({ varName, n = 300 }) {
+  if (!_py) throw new Error('KERNEL_NOT_READY');
+  const ns = _py.runPython(`'_dp_kernel_ns' in dir()`);
+  if (!ns) throw new Error('KERNEL_NOT_READY');
+  _py.globals.set('_dp_sample_var', varName);
+  _py.globals.set('_dp_sample_n', n);
+  try {
+    return JSON.parse(_py.runPython(`
+import json as _j
+_df = _dp_kernel_ns.get(_dp_sample_var)
+if _df is None: raise ValueError(f"Variable '{_dp_sample_var}' not found")
+_j.dumps(_df.head(int(_dp_sample_n)).to_dict(orient='records'))
+`));
+  } finally {
+    _py.globals.delete('_dp_sample_var');
+    _py.globals.delete('_dp_sample_n');
+  }
+}
+
 function _handleReset() {
   if (!_py) return;
   _py.runPython('_dp_kernel_ns = {"__name__": "__main__"}');
@@ -406,6 +447,8 @@ self.onmessage = async ({ data: { id, type, payload } }) => {
       case 'reset':   result = _handleReset();                   break;
       case 'writeFS':    result = _handleWriteFS(payload);              break;
       case 'visualise':  result = await _handleVisualise(payload);     break;
+      case 'schema':     result = _handleSchema(payload);              break;
+      case 'sample':     result = _handleSample(payload);              break;
       default: throw new Error(`[Worker] Unknown message type: ${type}`);
     }
     self.postMessage({ id, result });

@@ -6,6 +6,7 @@ import {
   parseError,
   preflightWarnings,
 } from '../screens/coding_screen/coding_screen_python/pyodide_error_handling.js';
+import { logActivity } from '../shared/activity_logger.js';
 
 const PYODIDE_VERSION = '314.0.0';
 const PYODIDE_INDEX   = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
@@ -397,6 +398,8 @@ async function _runPythonCore(code, context = {}) {
       tip: `Cell ${context.cellIndex ?? '?'} · ${_ms < 1000 ? _ms + ' ms' : (_ms/1000).toFixed(1) + ' s'}`,
       action: 'scroll-to-cell',
     });
+
+    logActivity('run', `运行 Cell ${context.cellIndex ?? '?'}`);
 
     const out = [];
     for (const w of preflight) out.push({ type: 'info', content: w });
@@ -849,25 +852,8 @@ export async function queryKernelContext() {
 
 // Returns column schema: [{ col, dtype, nullPct, sample }]
 export async function getDataFrameSchema(varName) {
-  if (!_pyodide) throw new Error('Kernel not ready');
-  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');
-  _pyodide.globals.set('_dp_schema_var', varName);
-  try {
-    return JSON.parse(_pyodide.runPython(`
-import json as _j
-_df = _dp_kernel_ns.get(_dp_schema_var); _df = _df if _df is not None else globals().get(_dp_schema_var)
-if _df is None: raise ValueError(f"Variable '{_dp_schema_var}' not found")
-import pandas as _pd
-_rows = []
-for _col in _df.columns:
-    _null_pct = round(float(_df[_col].isnull().mean() * 100), 1)
-    _sample = str(_df[_col].dropna().iloc[0]) if len(_df[_col].dropna()) > 0 else ''
-    _rows.append({'col': str(_col), 'dtype': str(_df[_col].dtype), 'nullPct': _null_pct, 'sample': _sample[:40]})
-_j.dumps({'rows': _rows, 'shape': [int(_df.shape[0]), int(_df.shape[1])]})
-`));
-  } finally {
-    _pyodide.globals.delete('_dp_schema_var');
-  }
+  await _initWorker();
+  return _call('schema', { varName });
 }
 
 export function notifyKernelChanged(varName) {
@@ -876,21 +862,8 @@ export function notifyKernelChanged(varName) {
 
 /** Return up to `n` rows of a DataFrame as a plain JS array-of-objects. */
 export async function getDataSample(varName, n = 300) {
-  if (!_pyodide) throw new Error('KERNEL_NOT_READY');
-  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');
-  _pyodide.globals.set('_dp_sample_var', varName);
-  _pyodide.globals.set('_dp_sample_n',   n);
-  try {
-    return JSON.parse(_pyodide.runPython(`
-import json as _j
-_df = _dp_kernel_ns.get(_dp_sample_var); _df = _df if _df is not None else globals().get(_dp_sample_var)
-if _df is None: raise ValueError(f"Variable '{_dp_sample_var}' not found")
-_j.dumps(_df.head(int(_dp_sample_n)).to_dict(orient='records'))
-`));
-  } finally {
-    _pyodide.globals.delete('_dp_sample_var');
-    _pyodide.globals.delete('_dp_sample_n');
-  }
+  await _initWorker();
+  return _call('sample', { varName, n });
 }
 
 export async function previewClean(varName, op) {
