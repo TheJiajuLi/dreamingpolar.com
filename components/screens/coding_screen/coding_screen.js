@@ -66,22 +66,7 @@ function setupCodingScreen() {
   restartKernelBtn.title       = 'Restart kernel — clears all variables (click twice to confirm)';
   restartKernelBtn.innerHTML   = _RESTART_SVG;
 
-  // ── Toolbar bookend slots (filled by file_manager) ───────────────────────
-  const userSlot = document.createElement('div');
-  userSlot.id = 'cds-toolbar-user-slot';
-  userSlot.className = 'cds-toolbar-side-slot';
-
-  const dividerL = document.createElement('div');
-  dividerL.className = 'cds-toolbar-divider';
-
-  const dividerR = document.createElement('div');
-  dividerR.className = 'cds-toolbar-divider';
-
-  const fsSlot = document.createElement('div');
-  fsSlot.id = 'cds-toolbar-fs-slot';
-  fsSlot.className = 'cds-toolbar-side-slot';
-
-  nbToolbar.append(userSlot, dividerL, runAllSlot, clearCellsBtn, restartKernelBtn);
+  nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn);
 
   // ── Variable name resolver — shared across all cell import buttons ──
   // Seed with persisted varNames so new imports don't collide with restored data.
@@ -139,7 +124,7 @@ function setupCodingScreen() {
   // ── Mode label ────────────────────────────────────────
   const cdsModeLabel = document.createElement('span');
   cdsModeLabel.className   = 'cds-mode-label';
-  nbToolbar.append(cdsModeLabel, dividerR, fsSlot);
+  nbToolbar.appendChild(cdsModeLabel);
 
   nbLeft.appendChild(nbToolbar);
   notebookView.appendChild(nbLeft);

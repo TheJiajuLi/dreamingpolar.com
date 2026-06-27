@@ -17,13 +17,11 @@
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
-/* Pinned to viewport: horizontally centred in right-bar, vertically centred in page-header */
+/* Lives in #vertical-toolbar .vt-bottom */
 #au-vt-btn {
-  position: fixed;
-  right: calc(var(--rb-w, 33px) / 2 + 4px - 15px);
-  top:   calc(var(--header-height, 38px) / 2 - 15px);
-  z-index: 35;
   margin: 0;
+  width: 28px;
+  height: 28px;
 }
 .au-hdr-btn:hover {
   background: var(--bg-2, rgba(0,0,0,0.05));

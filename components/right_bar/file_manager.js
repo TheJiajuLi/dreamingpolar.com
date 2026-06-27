@@ -7,6 +7,7 @@ import { setDataset, removeDataset }      from '../shared/dataset_store.js';
 import { ensureXlsx, parseToDataset }    from '../import/import_data.js';
 import { writeToFS }                     from '../compiler/compiler.js';
 import { createSettingsPanel, getSettings } from './settings.js';
+import { logActivity } from '../shared/activity_logger.js';
 
 const INJECT_KEY    = 'dreaming-polar-inject-store';
 const CODE_FILE_KEY = 'dp-code-file-store';
@@ -190,19 +191,31 @@ export function initFileManager() {
   userBtn.title     = '账号';
   userBtn.innerHTML = `<i class="ti ti-user-circle" style="font-size:18px"></i>`;
   userBtn.addEventListener('click', () => {
-    if (!_open) { _open_('profile'); }
-    else if (_activePane === 'profile') { _close(); }
-    else { _slideToPane('profile'); }
+    const user = window._dpGetAuthUser?.();
+    if (user) {
+      // Logged in → open profile hero screen
+      const state = window.screenController?.getState('profile');
+      if (!state || state === 'closed') window.screenController?.open('profile');
+      else window.screenController?.close('profile');
+    } else {
+      // Not logged in → open login modal
+      window._dpAuthOpenLogin?.('login');
+    }
   });
-  // Append to page header at the far right
-  const pageHdr = document.querySelector('header.page-header');
-  if (pageHdr) {
-    userBtn.style.marginLeft = 'auto';
-    pageHdr.appendChild(userBtn);
+  // Place in vertical toolbar bottom — symmetric with fullscreen in rb-bottom
+  const vtBottom = document.querySelector('#vertical-toolbar .vt-bottom');
+  if (vtBottom) {
+    vtBottom.appendChild(userBtn);
+  } else {
+    requestAnimationFrame(() => {
+      const vt = document.querySelector('#vertical-toolbar .vt-bottom');
+      if (vt) vt.appendChild(userBtn);
+    });
   }
 
   function _syncUserBtn() {
-    const user = window._dpGetAuthUser?.();
+    const user  = window._dpGetAuthUser?.();
+    const state = window.screenController?.getState('profile');
     if (user) {
       const initials = (user.username ?? '?').slice(0, 2).toUpperCase();
       userBtn.innerHTML = `<span class="au-vt-avatar">${initials}</span>`;
@@ -213,7 +226,10 @@ export function initFileManager() {
       userBtn.title = '登录 / 注册';
       userBtn.classList.remove('au-logged-in');
     }
-    userBtn.classList.toggle('active', _open && _activePane === 'profile');
+    userBtn.classList.toggle('active', state === 'normal' || state === 'maximized');
+  }
+  for (const evt of ['screen-opened', 'screen-closed']) {
+    document.addEventListener(evt, e => { if (e.detail?.id === 'profile') _syncUserBtn(); });
   }
   document.addEventListener('dp-auth-state', () => {
     _syncUserBtn();
@@ -317,15 +333,26 @@ export function initFileManager() {
       saveBtn.disabled = true; saveBtn.textContent = '保存中…';
       try {
         await updateMe({ username: newName });
-        // Update cached user
         const updatedUser = { ...window._dpGetAuthUser(), username: newName };
         document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: updatedUser } }));
         window._dpGetAuthUser = () => updatedUser;
-        _renderProfilePane();
+        // 成功：绿色"✓ 已保存"，1.5秒后恢复
+        saveBtn.textContent = '✓ 已保存';
+        saveBtn.style.background = '#16a34a';
+        saveBtn.style.boxShadow  = '0 4px 12px rgba(22,163,74,0.35)';
+        setTimeout(() => {
+          saveBtn.disabled = false;
+          saveBtn.textContent = '保存';
+          saveBtn.style.background = '';
+          saveBtn.style.boxShadow  = '';
+        }, 1500);
+        _syncUserBtn();
       } catch (e) {
+        // 失败：显示错误信息，3秒后自动清除
         errEl.textContent = e.message || '保存失败';
         errEl.classList.add('show');
         saveBtn.disabled = false; saveBtn.textContent = '保存';
+        setTimeout(() => errEl.classList.remove('show'), 3000);
       }
     });
 
@@ -589,10 +616,11 @@ export function initFileManager() {
         console.warn('[file-manager] setDataset failed:', e);
       }
 
-      // Notify listeners
-      document.dispatchEvent(new CustomEvent('nb-file-imported', {
-        detail: { varName, rows, columns, filename: file.name, fileType, cellId },
-      }));
+        // Notify listeners
+        document.dispatchEvent(new CustomEvent('nb-file-imported', {
+          detail: { varName, rows, columns, filename: file.name, fileType, cellId },
+        }));
+        logActivity('import', `导入 ${file.name}`);
 
       _refresh();
     } catch (err) {
@@ -884,6 +912,8 @@ export function initFileManager() {
   // ── Event listeners ────────────────────────────────────────────────────────
   document.addEventListener('nb-file-imported',    () => { if (_open) _refresh(); });
   document.addEventListener('nb-code-file-saved', () => { if (_open) _refresh(); });
+  // "修改资料" button in profile screen → open right bar profile pane
+  document.addEventListener('dp-open-profile-pane', () => { _open_('profile'); });
   document.addEventListener('kernel-restarted', () => {
     if (_open) _refresh();
     // Show reload banner if there are any tracked files

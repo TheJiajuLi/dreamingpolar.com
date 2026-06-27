@@ -13,15 +13,18 @@
   min-height: 0;
 }
 
-/* ── Notebook toolbar (Run All + cell count + actions) ─────────────── */
+/* ── Notebook toolbar — Apple card aesthetic ───────────────────────── */
 .cds-notebook-toolbar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 16px;
-  height: 34px;     /* matches rb-file-hdr (34px) for horizontal grid alignment */
+  padding: 0 12px;
+  height: 40px;
   flex-shrink: 0;
-  box-shadow: 0 0.5px 0 rgba(0,0,0,0.05);
+  margin: 6px 8px;
+  border-radius: 10px;
+  background: var(--bg-1, #ffffff);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.07);
 }
 
 .cds-runall-slot {
@@ -235,18 +238,30 @@ body.cs-resizing * {
 /* Dark / grey / aurora theme backgrounds */
 [data-theme="dark"]   .cds-output-panel,
 [data-theme="dark"]   .cds-output-body      { background: #0d1117; }
-[data-theme="dark"]   .cds-output-panel-hdr,
-[data-theme="dark"]   .cds-notebook-toolbar { background: #0d1117; /* border removed - color difference sufficient */ }
+[data-theme="dark"]   .cds-output-panel-hdr { background: #0d1117; }
+[data-theme="dark"]   .cds-notebook-toolbar {
+  background: #1a1f2e;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06);
+}
+[data-theme="dark"]   .cds-toolbar-divider  { background: rgba(255,255,255,0.08); }
 
 [data-theme="grey"]   .cds-output-panel,
 [data-theme="grey"]   .cds-output-body      { background: #22272e; }
-[data-theme="grey"]   .cds-output-panel-hdr,
-[data-theme="grey"]   .cds-notebook-toolbar { background: #22272e; /* border removed - color difference sufficient */ }
+[data-theme="grey"]   .cds-output-panel-hdr { background: #22272e; }
+[data-theme="grey"]   .cds-notebook-toolbar {
+  background: #2d333b;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.07);
+}
+[data-theme="grey"]   .cds-toolbar-divider  { background: rgba(255,255,255,0.08); }
 
 [data-theme="aurora"] .cds-output-panel,
 [data-theme="aurora"] .cds-output-body      { background: #07071a; }
-[data-theme="aurora"] .cds-output-panel-hdr,
-[data-theme="aurora"] .cds-notebook-toolbar { background: #07071a; /* border removed */ }
+[data-theme="aurora"] .cds-output-panel-hdr { background: #07071a; }
+[data-theme="aurora"] .cds-notebook-toolbar {
+  background: #0f0f2a;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(167,139,250,0.12);
+}
+[data-theme="aurora"] .cds-toolbar-divider  { background: rgba(167,139,250,0.12); }
 [data-theme="dark"]   .cds-output-body .output-block,
 [data-theme="dark"]   .mirror-out-pane .output-block { border-bottom-color: rgba(255,255,255,0.04); }
 [data-theme="grey"]   .cds-output-body .output-block,
