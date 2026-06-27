@@ -291,8 +291,16 @@ function _renderProfile(screen) {
       window._dpGetAuthUser = () => updatedUser;
       nameEl.textContent = newName;
       avatarEl.textContent = newName.slice(0, 2).toUpperCase();
-      _closeEdit();
-      saveBtn.disabled = false; saveBtn.textContent = '保存';
+      // Brief ✓ confirmation before closing
+      saveBtn.textContent = '✓';
+      setTimeout(() => {
+        _closeEdit();
+        saveBtn.disabled = false;
+        saveBtn.textContent = '保存';
+        // Flash the pencil button so user knows they can edit again
+        editPencil.classList.add('prof-name-edit-btn--flash');
+        setTimeout(() => editPencil.classList.remove('prof-name-edit-btn--flash'), 1500);
+      }, 500);
     } catch (e) {
       editErr.textContent = e.message || '保存失败';
       saveBtn.disabled = false; saveBtn.textContent = '保存';
