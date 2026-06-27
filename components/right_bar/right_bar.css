@@ -52,10 +52,10 @@
 }
 .rb-panel-outer[hidden] { display: none; }
 
-/* ── Sliding track — two panes side by side ─────────────────────────────── */
+/* ── Sliding track — three panes: files | settings | profile ────────────── */
 .rb-panel-track {
   display: flex;
-  width: 200%;
+  width: 300%;
   height: 100%;
   transform: translateX(0);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -63,7 +63,7 @@
 
 /* ── Each slide pane = 100% of the visible panel area ──────────────────── */
 .rb-slide-pane {
-  width: 50%;
+  width: 33.333%;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -881,6 +881,122 @@
 [data-theme="dark"] .rb-account-reg-btn { border-color: rgba(255,255,255,0.1); color: #c9d1d9; }
 [data-theme="grey"]  .rb-account-stats,
 [data-theme="grey"]  .rb-account-row { border-color: rgba(255,255,255,0.06); }
+
+/* ── Profile panel ───────────────────────────────────────────────────────── */
+.rb-profile-pane { }
+
+.rb-profile-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 0 16px;
+  scrollbar-width: thin;
+}
+
+.rb-profile-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 20px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.06);
+}
+[data-theme="dark"]  .rb-profile-avatar-wrap,
+[data-theme="grey"]  .rb-profile-avatar-wrap { border-bottom-color: rgba(255,255,255,0.06); }
+
+.rb-profile-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent, #6366f1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.rb-profile-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+  margin-bottom: 3px;
+}
+[data-theme="dark"]  .rb-profile-name { color: #e6edf3; }
+[data-theme="grey"]  .rb-profile-name { color: #adbac7; }
+
+.rb-profile-email {
+  font-size: 0.72rem;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 3px;
+  word-break: break-all;
+}
+
+.rb-profile-joined {
+  font-size: 0.66rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.rb-profile-section {
+  padding: 14px 14px 10px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+[data-theme="dark"]  .rb-profile-section,
+[data-theme="grey"]  .rb-profile-section { border-bottom-color: rgba(255,255,255,0.05); }
+
+.rb-profile-section-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted, #94a3b8);
+}
+
+.rb-profile-username-input {
+  font-size: 0.82rem !important;
+  padding: 7px 10px !important;
+}
+
+.rb-profile-save-btn {
+  width: 100%;
+  padding: 9px !important;
+  font-size: 0.78rem !important;
+}
+
+.rb-profile-danger { border-bottom: none; }
+
+.rb-profile-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  background: transparent;
+  color: #ef4444;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.rb-profile-logout-btn:hover { background: rgba(239,68,68,0.06); }
+
+.rb-profile-guest {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.rb-profile-guest-hint { font-size: 0.78rem; color: var(--text-muted, #94a3b8); margin: 0; }
+.rb-profile-login-btn { width: 100%; }
 
 /* ── Mobile: hide bar, zero CSS var ─────────────────────────────────────── */
 

@@ -95,7 +95,16 @@ export async function resetPassword(token, newPassword) {
   });
 }
 
-window.authClient = { register, login, logout, getMe, authedFetch,
+export async function updateMe(data) {
+  if (!_accessToken) throw new Error('未登录');
+  return authFetch('/me', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${_accessToken}` },
+    body: JSON.stringify(data),
+  });
+}
+
+window.authClient = { register, login, logout, getMe, updateMe, authedFetch,
                       silentRefresh, isLoggedIn, getAccessToken,
                       forgotPassword, resetPassword,
                       showResetPassword: (token) => _buildResetPage(token) };

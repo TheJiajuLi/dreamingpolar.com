@@ -190,9 +190,9 @@ export function initFileManager() {
   userBtn.title     = '账号';
   userBtn.innerHTML = `<i class="ti ti-user-circle" style="font-size:18px"></i>`;
   userBtn.addEventListener('click', () => {
-    const state = window.screenController?.getState('user');
-    if (!state || state === 'closed') window.screenController?.open('user');
-    else window.screenController?.close('user');
+    if (!_open) { _open_('profile'); }
+    else if (_activePane === 'profile') { _close(); }
+    else { _slideToPane('profile'); }
   });
   // Append to page header at the far right
   const pageHdr = document.querySelector('header.page-header');
@@ -202,8 +202,7 @@ export function initFileManager() {
   }
 
   function _syncUserBtn() {
-    const user  = window._dpGetAuthUser?.();
-    const state = window.screenController?.getState('user');
+    const user = window._dpGetAuthUser?.();
     if (user) {
       const initials = (user.username ?? '?').slice(0, 2).toUpperCase();
       userBtn.innerHTML = `<span class="au-vt-avatar">${initials}</span>`;
@@ -214,12 +213,12 @@ export function initFileManager() {
       userBtn.title = '登录 / 注册';
       userBtn.classList.remove('au-logged-in');
     }
-    userBtn.classList.toggle('active', state === 'normal' || state === 'maximized');
+    userBtn.classList.toggle('active', _open && _activePane === 'profile');
   }
-  document.addEventListener('dp-auth-state', _syncUserBtn);
-  for (const evt of ['screen-opened', 'screen-closed']) {
-    document.addEventListener(evt, e => { if (e.detail?.id === 'user') _syncUserBtn(); });
-  }
+  document.addEventListener('dp-auth-state', () => {
+    _syncUserBtn();
+    if (_open && _activePane === 'profile') _renderProfilePane();
+  });
 
   // ── Outer container — clips the two-panel slide ───────────────────────────
   const panelOuter = document.createElement('div');
@@ -227,17 +226,17 @@ export function initFileManager() {
   panelOuter.hidden = true;
   rightBar.appendChild(panelOuter);
 
-  // ── Inner sliding track — contains FILES panel + SETTINGS panel ───────────
+  // ── Inner sliding track — files | settings | profile ─────────────────────
   const panelTrack = document.createElement('div');
   panelTrack.className = 'rb-panel-track';
   panelOuter.appendChild(panelTrack);
 
-  // ── Files panel ───────────────────────────────────────────────────────────
+  // ── Files panel (pane 0) ──────────────────────────────────────────────────
   const panel = document.createElement('div');
   panel.className = 'rb-file-panel rb-slide-pane';
   panelTrack.appendChild(panel);
 
-  // ── Settings panel ────────────────────────────────────────────────────────
+  // ── Settings panel (pane 1) ───────────────────────────────────────────────
   const { panel: settingsPanel, settings: initialSettings, hdrClose: settingsClose } = createSettingsPanel(
     (key, val) => _onSettingChange(key, val)
   );
@@ -245,14 +244,114 @@ export function initFileManager() {
   settingsClose?.addEventListener('click', _close);
   panelTrack.appendChild(settingsPanel);
 
-  let _activePane = 'files'; // 'files' | 'settings'
+  // ── Profile panel (pane 2) ────────────────────────────────────────────────
+  const profilePane = document.createElement('div');
+  profilePane.className = 'rb-slide-pane rb-profile-pane';
+
+  const profileHdr = document.createElement('div');
+  profileHdr.className = 'rb-file-hdr';
+  const profileBack = document.createElement('button');
+  profileBack.className = 'rb-file-hdr-close';
+  profileBack.innerHTML = `<i class="ti ti-chevron-left"></i>`;
+  profileBack.addEventListener('click', _close);
+  const profileTitle = document.createElement('span');
+  profileTitle.className = 'rb-file-hdr-title';
+  profileTitle.textContent = '账号信息';
+  profileHdr.append(profileBack, profileTitle);
+
+  const profileBody = document.createElement('div');
+  profileBody.className = 'rb-profile-body';
+
+  profilePane.append(profileHdr, profileBody);
+  panelTrack.appendChild(profilePane);
+
+  function _renderProfilePane() {
+    const user = window._dpGetAuthUser?.();
+    if (!user) {
+      profileBody.innerHTML = `
+        <div class="rb-profile-guest">
+          <p class="rb-profile-guest-hint">请先登录</p>
+          <button class="au-submit rb-profile-login-btn" id="rb-profile-login-btn">登录</button>
+        </div>`;
+      profileBody.querySelector('#rb-profile-login-btn')?.addEventListener('click', () => {
+        _close();
+        window._dpAuthOpenLogin?.('login');
+      });
+      return;
+    }
+    const initials = (user.username ?? '?').slice(0, 2).toUpperCase();
+    const joined   = user.created_at
+      ? new Date(user.created_at * 1000).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '—';
+    profileBody.innerHTML = `
+      <div class="rb-profile-avatar-wrap">
+        <div class="rb-profile-avatar">${initials}</div>
+        <div class="rb-profile-name">${_esc(user.username ?? '')}</div>
+        <div class="rb-profile-email">${_esc(user.email ?? '')}</div>
+        <div class="rb-profile-joined">注册于 ${joined}</div>
+      </div>
+      <div class="rb-profile-section">
+        <div class="rb-profile-section-title">修改昵称</div>
+        <div class="au-field">
+          <input class="au-input rb-profile-username-input" id="rb-uname-input"
+            type="text" value="${_esc(user.username ?? '')}" maxlength="20" autocomplete="off">
+        </div>
+        <div class="au-err" id="rb-uname-err"></div>
+        <button class="au-submit rb-profile-save-btn" id="rb-uname-save">保存</button>
+      </div>
+      <div class="rb-profile-section rb-profile-danger">
+        <button class="rb-profile-logout-btn" id="rb-profile-logout">
+          <i class="ti ti-logout"></i> 退出登录
+        </button>
+      </div>`;
+
+    const input   = profileBody.querySelector('#rb-uname-input');
+    const saveBtn = profileBody.querySelector('#rb-uname-save');
+    const errEl   = profileBody.querySelector('#rb-uname-err');
+
+    saveBtn.addEventListener('click', async () => {
+      const newName = input.value.trim();
+      errEl.classList.remove('show');
+      if (!newName) { errEl.textContent = '昵称不能为空'; errEl.classList.add('show'); return; }
+      if (newName.length > 20) { errEl.textContent = '昵称不超过 20 字'; errEl.classList.add('show'); return; }
+      saveBtn.disabled = true; saveBtn.textContent = '保存中…';
+      try {
+        await updateMe({ username: newName });
+        // Update cached user
+        const updatedUser = { ...window._dpGetAuthUser(), username: newName };
+        document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: updatedUser } }));
+        window._dpGetAuthUser = () => updatedUser;
+        _renderProfilePane();
+      } catch (e) {
+        errEl.textContent = e.message || '保存失败';
+        errEl.classList.add('show');
+        saveBtn.disabled = false; saveBtn.textContent = '保存';
+      }
+    });
+
+    profileBody.querySelector('#rb-profile-logout')?.addEventListener('click', async () => {
+      await window._dpAuthLogout?.();
+      _close();
+      _renderProfilePane();
+    });
+  }
+
+  function _esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function updateMe(data) {
+    return window.authClient?.updateMe(data) ?? Promise.reject(new Error('auth not ready'));
+  }
+
+  let _activePane = 'files'; // 'files' | 'settings' | 'profile'
 
   function _slideToPane(pane) {
     _activePane = pane;
-    panelTrack.style.transform = pane === 'settings' ? 'translateX(-50%)' : 'translateX(0)';
+    const offsets = { files: '0', settings: '-33.333%', profile: '-66.666%' };
+    panelTrack.style.transform = `translateX(${offsets[pane] ?? '0'})`;
     toggleBtn.classList.toggle('rb-btn--active',   pane === 'files');
     settingsBtn.classList.toggle('rb-btn--active', pane === 'settings');
-    if (getSettings().cacheRightBarState) {
+    if (pane === 'profile') _renderProfilePane();
+    if (getSettings().cacheRightBarState && pane !== 'profile') {
       localStorage.setItem('dp-rb-pane', pane);
     }
   }
@@ -304,6 +403,7 @@ export function initFileManager() {
     rightBar.classList.remove('rb--expanded');
     toggleBtn.classList.remove('rb-btn--active');
     settingsBtn.classList.remove('rb-btn--active');
+    userBtn?.classList.remove('active');
     if (getSettings().cacheRightBarState) {
       localStorage.removeItem('dp-rb-open');
     }
