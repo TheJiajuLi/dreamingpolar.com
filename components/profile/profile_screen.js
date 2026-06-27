@@ -284,27 +284,32 @@ function _renderProfile(screen) {
     editErr.textContent = '';
     if (!newName) { editErr.textContent = '昵称不能为空'; return; }
     if (newName.length > 20) { editErr.textContent = '不超过 20 字'; return; }
-    saveBtn.disabled = true; saveBtn.textContent = '保存中…';
+
+    // ── Optimistic update: close the form immediately, then sync to server ──
+    nameEl.textContent = newName;
+    avatarEl.textContent = newName.slice(0, 2).toUpperCase();
+    saveBtn.textContent = '✓';
+
+    // Close form after brief ✓ confirmation
+    setTimeout(() => {
+      _closeEdit();
+      saveBtn.textContent = '保存';
+      saveBtn.disabled = false;
+      editPencil.classList.add('prof-name-edit-btn--flash');
+      setTimeout(() => editPencil.classList.remove('prof-name-edit-btn--flash'), 1500);
+    }, 400);
+
+    // Persist to server in background — failure just logs, doesn't revert UI
     try {
       await window.authClient?.updateMe({ username: newName });
       const updatedUser = { ...window._dpGetAuthUser(), username: newName };
-      document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: updatedUser } }));
       window._dpGetAuthUser = () => updatedUser;
-      nameEl.textContent = newName;
-      avatarEl.textContent = newName.slice(0, 2).toUpperCase();
-      // Brief ✓ confirmation before closing
-      saveBtn.textContent = '✓';
+      // Dispatch AFTER form is closed so _renderProfile re-render doesn't interfere
       setTimeout(() => {
-        _closeEdit();
-        saveBtn.disabled = false;
-        saveBtn.textContent = '保存';
-        // Flash the pencil button so user knows they can edit again
-        editPencil.classList.add('prof-name-edit-btn--flash');
-        setTimeout(() => editPencil.classList.remove('prof-name-edit-btn--flash'), 1500);
+        document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: updatedUser } }));
       }, 500);
     } catch (e) {
-      editErr.textContent = e.message || '保存失败';
-      saveBtn.disabled = false; saveBtn.textContent = '保存';
+      console.warn('[profile] updateMe failed:', e.message);
     }
   });
 
