@@ -231,7 +231,7 @@ function _renderProfile(screen) {
   // Hidden edit form — only shown when pencil is clicked
   const editForm = document.createElement('div');
   editForm.className = 'prof-edit-form';
-  editForm.hidden = true;
+  editForm.style.display = 'none';
 
   const editInput = document.createElement('input');
   editInput.className = 'prof-edit-input';
@@ -261,13 +261,13 @@ function _renderProfile(screen) {
   // Note: use style.display instead of .hidden because display:flex overrides [hidden]
   function _openEdit() {
     nameRow.style.display = 'none';
-    editForm.hidden = false;
+    editForm.style.display = 'flex';
     editInput.value = nameEl.textContent;
     editInput.focus();
     editInput.select();
   }
   function _closeEdit() {
-    editForm.hidden = true;
+    editForm.style.display = 'none';
     nameRow.style.display = '';
     editErr.textContent = '';
   }
