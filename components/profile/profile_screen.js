@@ -217,17 +217,17 @@ function _renderProfile(screen) {
   editActions.append(cancelBtn, saveBtn);
   editForm.append(editInput, editErr, editActions);
 
-  // Toggle edit mode
+  // Toggle edit mode — name row hides entirely, replaced by inline input
   function _openEdit() {
+    nameRow.hidden = true;
     editForm.hidden = false;
-    editPencil.style.display = 'none';
     editInput.value = nameEl.textContent;
     editInput.focus();
     editInput.select();
   }
   function _closeEdit() {
     editForm.hidden = true;
-    editPencil.style.display = '';
+    nameRow.hidden = false;
     editErr.textContent = '';
   }
 
