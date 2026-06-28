@@ -1,5 +1,6 @@
 import { escapeHtml, renderJson } from './content_screen_utility.js';
 import { FLAT_PAGES }            from '../../../content_pages/pages.js';
+import { setupNavSearch }        from '../../search_bar/search_bar.js';
 
 // ── Setup ───────────────────────────────────────────────────────────────────────
 function setupContentScreen() {
@@ -10,12 +11,13 @@ function setupContentScreen() {
 
   // ── Build split layout ───────────────────────────────────────────────────────
   hero.innerHTML = `
-    <aside class="docs-sidebar" id="docs-sidebar">
+    <aside class="docs-sidebar nav-sidebar-inner" id="docs-sidebar">
       <div class="docs-sidebar-header">
         <i class="ti ti-book-2"></i>
         <span>文档</span>
       </div>
-      <div class="docs-nav-scroll">
+      <div class="nav-search-container" id="docs-search-container"></div>
+      <div class="docs-nav-scroll nav-sections">
         <div id="docs-nav-tree"></div>
       </div>
     </aside>
@@ -115,6 +117,10 @@ function setupContentScreen() {
       if (window.MathJax?.typesetPromise) MathJax.typesetPromise([bodyEl]).catch(() => {});
     },
   };
+
+  // Mount search bar into docs sidebar
+  const searchContainer = document.getElementById('docs-search-container');
+  if (searchContainer) setupNavSearch(searchContainer, FLAT_PAGES);
 
   // Register screen
   requestAnimationFrame(() => {
