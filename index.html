@@ -4,16 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>
-    // Redirect unauthenticated users to landing page
-    // Exception: ?from=landing means user clicked login on landing page
     (function() {
-      var p = location.pathname;
-      var isLanding = p === '/landing.html';
-      var isChangelog = p === '/changelog.html';
-      var fromLanding = location.search.indexOf('from=landing') !== -1;
+      var params = new URLSearchParams(location.search);
+      var fromLanding = params.get('from') === 'landing';
       var hasUser = localStorage.getItem('dp-auth-user');
-      if (!isLanding && !isChangelog && !fromLanding && !hasUser) {
+
+      // Only redirect to landing if NOT coming from landing and NOT logged in
+      if (!fromLanding && !hasUser) {
         window.location.replace('/landing.html');
+        return;
+      }
+
+      // Clean URL to avoid re-triggering on refresh
+      if (fromLanding) {
+        history.replaceState({}, '', '/index.html');
+      }
+
+      // Auto-open login modal if login=1
+      if (params.get('login') === '1') {
+        window.addEventListener('DOMContentLoaded', function() {
+          setTimeout(function() {
+            window._dpAuthOpenLogin?.('login');
+          }, 500);
+        });
       }
     })();
   </script>
