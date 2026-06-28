@@ -1,223 +1,287 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dreaming Polar — 数据分析，从未如此直接</title>
-  <meta name="description" content="浏览器原生 Python · AI 真正理解你的数据。不需要安装环境，不需要配置服务器。">
-  <link rel="icon" href="assets/app_logo/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="components/landing/landing_page.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dreaming Polar — 数据分析，从未如此直接</title>
+<meta name="description" content="不用装环境，不用配服务器。打开浏览器，导入数据，用中文问 ARIA 或者写 Python——它真的懂你的数据。">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --a:#6366f1;--a2:#4f46e5;--t:#0f172a;--m:#64748b;
+  --bd:#e2e8f0;--bg:#f8fafc;--s:#fff;--r:12px;--w:1080px;
+  --green:#16a34a;--blue:#2563eb;
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--t);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+.w{max-width:var(--w);margin:0 auto;padding:0 24px}
+
+/* Nav */
+nav{border-bottom:1px solid var(--bd);background:var(--s)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:var(--w);margin:0 auto}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem}
+.logo-mark{width:26px;height:26px;background:var(--a);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo-mark i{color:#fff;font-size:14px}
+.ver{font-size:.7rem;color:var(--m);background:var(--bg);border:1px solid var(--bd);border-radius:20px;padding:2px 8px;font-weight:500}
+.nav-btns{display:flex;gap:8px}
+.btn-o{padding:7px 16px;border:1px solid var(--bd);border-radius:8px;background:var(--s);font-size:.86rem;color:var(--t);transition:border-color .15s}
+.btn-o:hover{border-color:var(--a);color:var(--a)}
+.btn-f{padding:7px 16px;border:none;border-radius:8px;background:var(--t);color:#fff;font-size:.86rem;font-weight:500;transition:opacity .15s}
+.btn-f:hover{opacity:.83}
+
+/* Hero */
+.hero{text-align:center;padding:72px 24px 56px;max-width:var(--w);margin:0 auto}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--a);background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.18);border-radius:20px;padding:4px 14px;margin-bottom:24px}
+.h1{font-size:clamp(2.2rem,5vw,3.4rem);font-weight:800;letter-spacing:-.022em;line-height:1.14;margin-bottom:18px}
+.accent{color:var(--a)}
+.sub{font-size:1.02rem;color:var(--m);max-width:500px;margin:0 auto 32px;line-height:1.7}
+.ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.cta-main{padding:11px 28px;background:var(--t);color:#fff;border:none;border-radius:10px;font-size:.93rem;font-weight:600;transition:opacity .15s}
+.cta-main:hover{opacity:.83}
+.cta-sec{padding:11px 28px;background:var(--s);color:var(--t);border:1px solid var(--bd);border-radius:10px;font-size:.93rem;transition:border-color .15s}
+.cta-sec:hover{border-color:var(--a)}
+
+/* Section */
+.sec{padding:60px 0}
+.sec-label{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--a);margin-bottom:8px}
+.sec-title{font-size:1.8rem;font-weight:800;letter-spacing:-.015em;margin-bottom:8px}
+.sec-sub{color:var(--m);margin-bottom:36px}
+
+/* Cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--s);border:1px solid var(--bd);border-radius:var(--r);padding:26px;transition:box-shadow .18s}
+.card:hover{box-shadow:0 4px 18px rgba(0,0,0,.07)}
+.card-icon{width:42px;height:42px;background:rgba(99,102,241,.09);border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--a);font-size:1.15rem}
+.card-title{font-size:1rem;font-weight:700;margin-bottom:7px}
+.card-desc{font-size:.86rem;color:var(--m);line-height:1.65;margin-bottom:12px}
+.tag{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:20px;background:rgba(22,163,74,.09);color:var(--green)}
+
+/* Compare */
+.table-wrap{background:var(--s);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th,td{padding:13px 20px;font-size:.86rem;text-align:left}
+thead th{color:var(--m);font-weight:500;background:var(--bg);border-bottom:1px solid var(--bd)}
+tbody tr:not(:last-child) td{border-bottom:1px solid var(--bd)}
+td:not(:first-child),th:not(:first-child){text-align:center}
+.chk{color:var(--a);font-weight:700}
+.dp{font-weight:700;color:var(--a)}
+.no{color:#cbd5e1}
+.pt{color:var(--m);font-size:.8rem}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:28px;text-align:center}
+.step-n{width:42px;height:42px;border-radius:50%;background:rgba(99,102,241,.1);color:var(--a);font-size:1.05rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.step-t{font-size:.98rem;font-weight:700;margin-bottom:6px}
+.step-d{font-size:.86rem;color:var(--m)}
+
+/* Updates */
+.updates-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.updates-title{font-weight:700;font-size:1rem}
+.updates-meta{font-size:.8rem;color:var(--m)}
+.cl-link{font-size:.84rem;color:var(--a);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:6px 14px;transition:background .15s}
+.cl-link:hover{background:rgba(99,102,241,.06)}
+.items-list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:flex-start;gap:10px;background:var(--s);border:1px solid var(--bd);border-radius:9px;padding:12px 16px;font-size:.88rem}
+.itag{flex-shrink:0;font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-top:2px}
+.t-new{background:rgba(22,163,74,.1);color:var(--green)}
+.t-improve{background:rgba(37,99,235,.1);color:var(--blue)}
+.t-fix{background:rgba(100,116,139,.1);color:var(--m)}
+
+/* CTA block */
+.cta-block{background:var(--t);color:#fff;border-radius:16px;padding:52px 36px;text-align:center}
+.cta-block h2{font-size:1.8rem;font-weight:800;margin-bottom:10px}
+.cta-block p{color:rgba(255,255,255,.6);margin-bottom:26px;font-size:.95rem}
+.cta-w{display:inline-block;padding:12px 30px;background:#fff;color:var(--t);border-radius:10px;font-size:.93rem;font-weight:600;transition:opacity .15s}
+.cta-w:hover{opacity:.88}
+
+/* Footer */
+footer{border-top:1px solid var(--bd);padding:24px;text-align:center;font-size:.8rem;color:var(--m)}
+footer a{color:var(--m)}footer a:hover{color:var(--a)}
+</style>
 </head>
 <body>
 
-<!-- ── Nav ───────────────────────────────────────────────────────────────────── -->
 <nav>
-  <div class="lp-nav">
-    <div class="lp-logo">
-      <svg class="lp-logo-icon" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="12" fill="#6366f1" opacity="0.15"/>
-        <path d="M8 14c0-3.31 2.69-6 6-6s6 2.69 6 6-2.69 6-6 6" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round"/>
-        <circle cx="14" cy="14" r="2.5" fill="#6366f1"/>
-      </svg>
+  <div class="nav-inner">
+    <div class="logo">
+      <div class="logo-mark"><i class="ti ti-snowflake"></i></div>
       Dreaming Polar
-      <span class="lp-version-badge" id="lp-app-version">v1.2.0</span>
+      <span class="ver" id="ver">v1.2.0</span>
     </div>
-    <div class="lp-nav-actions">
-      <a href="/app" class="lp-btn-ghost">登录</a>
-      <a href="/app" class="lp-btn-primary">免费开始</a>
+    <div class="nav-btns">
+      <a href="/app" class="btn-o">登录</a>
+      <a href="/app" class="btn-f">免费开始</a>
     </div>
   </div>
 </nav>
 
-<!-- ── Hero ──────────────────────────────────────────────────────────────────── -->
-<section class="lp-hero">
-  <div class="lp-hero-badge">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
-    浏览器原生 Python · AI 真正理解你的数据
-  </div>
-  <h1 class="lp-hero-title">数据分析，从未如此<span class="lp-hero-accent">直接</span></h1>
-  <p class="lp-hero-sub">不需要安装环境，不需要配置服务器。打开浏览器，导入数据，用自然语言提问或写 Python 代码——AI 知道你的数据里有什么。</p>
-  <div class="lp-hero-cta">
-    <a href="/app" class="lp-cta-main">免费开始使用 →</a>
-    <a href="/changelog" class="lp-cta-secondary">查看更新日志</a>
+<section class="hero">
+  <div class="badge"><i class="ti ti-sparkles" style="font-size:12px"></i> 浏览器原生 Python · AI 真正理解你的数据</div>
+  <h1 class="h1">数据分析，从未如此<span class="accent">直接</span></h1>
+  <p class="sub">不用装环境，不用配服务器。打开浏览器，导入你的数据，用中文问 ARIA 或者写 Python 代码——它真的知道你的数据里有什么。</p>
+  <div class="ctas">
+    <a href="/app" class="cta-main">免费开始使用 →</a>
+    <a href="/changelog" class="cta-sec">查看更新日志</a>
   </div>
 </section>
 
-<!-- ── Features ──────────────────────────────────────────────────────────────── -->
-<div class="lp-container">
-  <section class="lp-section">
-    <div class="lp-section-label">核心差异化</div>
-    <h2 class="lp-section-title">别的工具做不到的事</h2>
-    <p class="lp-section-sub">Dreaming Polar 不是"带 AI 的 Jupyter"，而是重新想象了数据分析工作台应该是什么样子。</p>
+<div class="w">
 
-    <div class="lp-features-grid">
-      <div class="lp-feature-card">
-        <div class="lp-feature-icon">🐍</div>
-        <h3 class="lp-feature-title">浏览器原生 Python 执行</h3>
-        <p class="lp-feature-desc">Pyodide 在你的浏览器里跑，零服务器，零安装，pandas、matplotlib、scipy 开箱即用。</p>
-        <span class="lp-feature-tag">QuickBI 做不到</span>
+  <section class="sec">
+    <div class="sec-label">核心差异化</div>
+    <h2 class="sec-title">别的工具做不到的事</h2>
+    <p class="sec-sub">不是"带 AI 的 Jupyter"，是重新想象数据分析该长什么样。</p>
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-icon"><i class="ti ti-brand-python"></i></div>
+        <div class="card-title">浏览器里跑 Python</div>
+        <div class="card-desc">pandas、matplotlib、scipy，装都不用装，在浏览器里直接跑。没有服务器，没有等待安装。</div>
+        <span class="tag">QuickBI 做不到</span>
       </div>
 
-      <div class="lp-feature-card">
-        <div class="lp-feature-icon">🧠</div>
-        <h3 class="lp-feature-title">AI 真正理解你的数据</h3>
-        <p class="lp-feature-desc">ARIA 知道你的 DataFrame 里有哪些列、哪些变量。"帮我分析 open 列趋势"——它直接做，不是给你解释怎么做。</p>
-        <span class="lp-feature-tag">Copilot 做不到</span>
+      <div class="card">
+        <div class="card-icon"><i class="ti ti-message-chatbot"></i></div>
+        <div class="card-title">AI 真的懂你的数据</div>
+        <div class="card-desc">ARIA 知道你 DataFrame 里有哪些列。"帮我看看 open 列的趋势"，它直接做，不是给你讲怎么做。</div>
+        <span class="tag">Copilot 做不到</span>
       </div>
 
-      <div class="lp-feature-card">
-        <div class="lp-feature-icon">⊞</div>
-        <h3 class="lp-feature-title">镜像分屏 · 代码与输出并排</h3>
-        <p class="lp-feature-desc">每个 Cell 左侧写代码，右侧实时看输出。拖动手柄调比例，再也不用上下滚动对照。</p>
-        <span class="lp-feature-tag">Jupyter 做不到</span>
+      <div class="card">
+        <div class="card-icon"><i class="ti ti-layout-columns"></i></div>
+        <div class="card-title">代码和结果并排</div>
+        <div class="card-desc">左边写代码，右边实时看输出，拖动中间的线调比例。再也不用上下翻找对应关系。</div>
+        <span class="tag">Jupyter 做不到</span>
       </div>
 
-      <div class="lp-feature-card">
-        <div class="lp-feature-icon">⊟</div>
-        <h3 class="lp-feature-title">DP Grid · 可视化编辑数据</h3>
-        <p class="lp-feature-desc">双击编辑 DataFrame，过滤排序，一键同步回 Python 内核。Excel 能做的事，不用离开平台。</p>
-        <span class="lp-feature-tag">FineBI 做不到</span>
+      <div class="card">
+        <div class="card-icon"><i class="ti ti-table"></i></div>
+        <div class="card-title">DP Grid · 直接改数据</div>
+        <div class="card-desc">双击就能改 DataFrame，改完一键同步回 Python，不用再来回倒腾数据。</div>
+        <span class="tag">FineBI 做不到</span>
       </div>
 
-      <div class="lp-feature-card">
-        <div class="lp-feature-icon">📊</div>
-        <h3 class="lp-feature-title">智能报告 · 一键 PDF</h3>
-        <p class="lp-feature-desc">AI 叙事性分析 + 自动生成图表 + 追问对话 + PDF 导出。数据汇报从小时级压缩到分钟级。</p>
-        <span class="lp-feature-tag">PowerBI 的弱项</span>
+      <div class="card">
+        <div class="card-icon"><i class="ti ti-chart-bar"></i></div>
+        <div class="card-title">智能报告</div>
+        <div class="card-desc">AI 帮你写分析报告，自动生成图表，追问几句，导出 PDF。汇报材料不用再手动拼。</div>
+        <span class="tag">PowerBI 的弱项</span>
       </div>
 
-      <div class="lp-feature-card">
-        <div class="lp-feature-icon">✦</div>
-        <h3 class="lp-feature-title">ICM · 感知数据的代码补全</h3>
-        <p class="lp-feature-desc">不只是通用 Python 补全，ICM 知道你的 DataFrame 列名，Ghost Text 预测的是 df_ge['open'].plot()，不是抽象代码。</p>
-        <span class="lp-feature-tag">VS Code 做不到</span>
+      <div class="card">
+        <div class="card-icon"><i class="ti ti-cpu"></i></div>
+        <div class="card-title">ICM 代码补全</div>
+        <div class="card-desc">停止输入 0.8 秒，自动预测下一行，Tab 接受。不是通用补全，知道你的 DataFrame 列名。</div>
+        <span class="tag">VS Code 做不到</span>
       </div>
+
     </div>
   </section>
 
-  <!-- ── Compare ──────────────────────────────────────────────────────────────── -->
-  <section class="lp-section">
-    <div class="lp-section-label">竞品对比</div>
-    <h2 class="lp-section-title">为什么选 Dreaming Polar</h2>
-    <p class="lp-section-sub">我们不是要替代所有工具，而是填补那个没有人占据的空间。</p>
-    <div class="lp-compare-wrap">
-      <table class="lp-compare-table">
+  <section class="sec">
+    <div class="sec-label">竞品对比</div>
+    <h2 class="sec-title">为什么选 Dreaming Polar</h2>
+    <p class="sec-sub">填补那个没有人占据的空间：写代码 + AI 理解数据 + 零配置。</p>
+    <div class="table-wrap">
+      <table>
         <thead>
           <tr>
             <th>能力</th>
-            <th class="lp-compare-dp">Dreaming Polar</th>
+            <th class="dp">Dreaming Polar</th>
             <th>Jupyter</th>
             <th>FineBI</th>
             <th>PowerBI</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><strong>浏览器原生 Python</strong></td>
-            <td class="lp-check lp-compare-dp">✓</td>
-            <td class="lp-partial">需安装</td>
-            <td class="lp-cross">✗</td>
-            <td class="lp-cross">✗</td>
-          </tr>
-          <tr>
-            <td><strong>AI 理解数据上下文</strong></td>
-            <td class="lp-check lp-compare-dp">✓</td>
-            <td class="lp-cross">✗</td>
-            <td class="lp-partial">有限</td>
-            <td class="lp-partial">有限</td>
-          </tr>
-          <tr>
-            <td><strong>代码 + 可视化并排</strong></td>
-            <td class="lp-check lp-compare-dp">✓</td>
-            <td class="lp-cross">✗</td>
-            <td class="lp-cross">✗</td>
-            <td class="lp-cross">✗</td>
-          </tr>
-          <tr>
-            <td><strong>可视化编辑 DataFrame</strong></td>
-            <td class="lp-check lp-compare-dp">✓</td>
-            <td class="lp-cross">✗</td>
-            <td class="lp-check">✓</td>
-            <td class="lp-check">✓</td>
-          </tr>
-          <tr>
-            <td><strong>自然语言分析</strong></td>
-            <td class="lp-check lp-compare-dp">✓</td>
-            <td class="lp-cross">✗</td>
-            <td class="lp-partial">有限</td>
-            <td class="lp-partial">有限</td>
-          </tr>
-          <tr>
-            <td><strong>零配置启动</strong></td>
-            <td class="lp-check lp-compare-dp">✓</td>
-            <td class="lp-cross">✗</td>
-            <td class="lp-cross">✗</td>
-            <td class="lp-cross">✗</td>
-          </tr>
+          <tr><td><strong>浏览器原生 Python</strong></td><td class="chk dp">✓</td><td class="pt">需安装</td><td class="no">✗</td><td class="no">✗</td></tr>
+          <tr><td><strong>AI 理解数据上下文</strong></td><td class="chk dp">✓</td><td class="no">✗</td><td class="pt">有限</td><td class="pt">有限</td></tr>
+          <tr><td><strong>代码 + 输出并排</strong></td><td class="chk dp">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
+          <tr><td><strong>可视化编辑 DataFrame</strong></td><td class="chk dp">✓</td><td class="no">✗</td><td class="chk">✓</td><td class="chk">✓</td></tr>
+          <tr><td><strong>自然语言分析</strong></td><td class="chk dp">✓</td><td class="no">✗</td><td class="pt">有限</td><td class="pt">有限</td></tr>
+          <tr><td><strong>零配置，打开即用</strong></td><td class="chk dp">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <!-- ── Steps ────────────────────────────────────────────────────────────────── -->
-  <section class="lp-section">
-    <div class="lp-section-label">上手流程</div>
-    <h2 class="lp-section-title">三步开始分析</h2>
-    <p class="lp-section-sub">不需要环境配置，不需要教程。</p>
-    <div class="lp-steps-grid">
+  <section class="sec">
+    <div class="sec-label">上手流程</div>
+    <h2 class="sec-title">三步开始分析</h2>
+    <p class="sec-sub">不需要环境配置，不需要教程。</p>
+    <div class="steps">
       <div>
-        <div class="lp-step-num">1</div>
-        <h3 class="lp-step-title">导入数据</h3>
-        <p class="lp-step-desc">拖入 CSV、Excel、JSON 或 XML，自动注入 Python 内核，变量名即时可用。</p>
+        <div class="step-n">1</div>
+        <div class="step-t">导入数据</div>
+        <div class="step-d">拖入 CSV、Excel、JSON 或 XML，自动注入 Python 内核，变量名即时可用。</div>
       </div>
       <div>
-        <div class="lp-step-num">2</div>
-        <h3 class="lp-step-title">选择模式</h3>
-        <p class="lp-step-desc">用自然语言问 ARIA，或在 Notebook 里写 Python。两者共享同一份数据，随时切换。</p>
+        <div class="step-n">2</div>
+        <div class="step-t">选择模式</div>
+        <div class="step-d">用中文问 ARIA，或者在 Notebook 里写 Python。两边共享同一份数据，随时切换。</div>
       </div>
       <div>
-        <div class="lp-step-num">3</div>
-        <h3 class="lp-step-title">导出成果</h3>
-        <p class="lp-step-desc">一键生成 AI 分析报告，导出 PDF，或把数据保存为任意格式。</p>
+        <div class="step-n">3</div>
+        <div class="step-t">导出成果</div>
+        <div class="step-d">一键生成 AI 分析报告，导出 PDF，或把数据保存为任意格式。</div>
       </div>
     </div>
   </section>
 
-  <!-- ── Version info ──────────────────────────────────────────────────────────── -->
-  <section class="lp-section">
-    <div class="lp-version-section">
+  <section class="sec">
+    <div class="updates-header">
       <div>
-        <div class="lp-version-main" id="lp-version-main">Dreaming Polar 1.2.0</div>
-        <div class="lp-version-sub" id="lp-version-sub">小梦 ARIA 2.1 · Power Notebook 1.4 · DP Grid 1.1</div>
-        <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px">发布于 <span id="lp-released">2026-06-28</span></div>
+        <div class="updates-title">最近更新 · <span id="upd-ver">v1.2.0</span></div>
+        <div class="updates-meta" id="upd-date">2026-06-28</div>
       </div>
-      <a href="/changelog" class="lp-changelog-link">查看完整更新日志 →</a>
+      <a href="/changelog" class="cl-link">查看完整更新日志 →</a>
     </div>
+    <div class="items-list" id="upd-list"></div>
+  </section>
 
-    <div style="margin-top:20px">
-      <div style="font-size:0.88rem;color:#64748b;margin-bottom:4px;font-weight:600">近期更新</div>
-      <div class="lp-updates-list" id="lp-updates-list"></div>
+  <section class="sec">
+    <div class="cta-block">
+      <h2>现在就开始，免费用</h2>
+      <p>不需要信用卡，不需要安装任何东西。打开浏览器就行。</p>
+      <a href="/app" class="cta-w">打开 Dreaming Polar →</a>
     </div>
   </section>
 
-  <!-- ── CTA ───────────────────────────────────────────────────────────────────── -->
-  <section class="lp-section">
-    <div class="lp-cta-block">
-      <h2>现在就开始，免费使用</h2>
-      <p>不需要信用卡，不需要安装任何东西。打开浏览器即可开始。</p>
-      <a href="/app" class="lp-cta-white">打开 Dreaming Polar →</a>
-    </div>
-  </section>
 </div>
 
-<!-- ── Footer ────────────────────────────────────────────────────────────────── -->
-<footer class="lp-footer">
-  <p>© 2026 Dreaming Polar &nbsp;·&nbsp;
-     <a href="/changelog">更新日志</a> &nbsp;·&nbsp;
-     <a href="/app">进入应用</a>
-  </p>
+<footer>
+  <p>Dreaming Polar · 持续更新中 &nbsp;·&nbsp; <span id="ft-ver"></span> &nbsp;·&nbsp; <a href="/changelog">更新日志</a> &nbsp;·&nbsp; <a href="/app">进入应用</a></p>
 </footer>
 
-<script src="components/landing/landing_page.js"></script>
+<script>
+// Redirect logged-in users immediately
+try {
+  const u = JSON.parse(localStorage.getItem('dp-auth-user') || 'null');
+  if (u?.email) { window.location.replace('/app'); }
+} catch(_) {}
+
+// Load releases.json and render
+fetch('/content_pages/releases/releases.json')
+  .then(r => r.json())
+  .then(data => {
+    const c = data.current;
+    const v0 = data.changelog?.[0] ?? { items: [] };
+
+    document.getElementById('ver').textContent = 'v' + c.app;
+    document.getElementById('upd-ver').textContent = 'v' + c.app;
+    document.getElementById('upd-date').textContent = c.released;
+    document.getElementById('ft-ver').textContent = 'v' + c.app + ' · ' + c.released;
+
+    const TAG = { new: ['t-new','新功能'], improve: ['t-improve','优化'], fix: ['t-fix','修复'] };
+    document.getElementById('upd-list').innerHTML = v0.items.slice(0, 3).map(item => {
+      const [cls, label] = TAG[item.type] ?? ['t-fix','修复'];
+      return `<div class="item"><span class="itag ${cls}">${label}</span><span>${item.text}</span></div>`;
+    }).join('');
+  })
+  .catch(() => {});
+</script>
 </body>
 </html>

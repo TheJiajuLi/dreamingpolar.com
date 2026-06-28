@@ -1,109 +1,117 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>更新日志 — Dreaming Polar</title>
-  <link rel="icon" href="assets/app_logo/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="components/landing/landing_page.css">
-  <style>
-    /* ── Changelog-specific styles ── */
-    .cl-header {
-      border-bottom: 1px solid var(--border);
-      padding: 20px 24px;
-      max-width: var(--max-w);
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .cl-back {
-      font-size: 0.88rem;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .cl-back:hover { color: var(--accent); }
-    .cl-page-title {
-      font-size: 1.9rem;
-      font-weight: 800;
-      letter-spacing: -0.015em;
-      margin-bottom: 6px;
-    }
-    .cl-current-ver { font-size: 0.88rem; color: var(--muted); }
-    .cl-list { display: flex; flex-direction: column; gap: 32px; margin-top: 40px; }
-    .cl-version {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .cl-version-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg);
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .cl-ver-num {
-      font-size: 1rem;
-      font-weight: 800;
-      color: var(--accent);
-      margin-right: 12px;
-    }
-    .cl-highlights { font-size: 0.88rem; color: var(--muted); }
-    .cl-date { font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
-    .cl-items { list-style: none; padding: 16px 24px; display: flex; flex-direction: column; gap: 10px; }
-    .cl-item { display: flex; align-items: flex-start; gap: 12px; }
-    .cl-tag {
-      flex-shrink: 0;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 4px;
-      margin-top: 2px;
-    }
-    .cl-tag-new     { background: rgba(22,163,74,0.1);  color: #16a34a; }
-    .cl-tag-improve { background: rgba(37,99,235,0.1);  color: #2563eb; }
-    .cl-tag-fix     { background: rgba(100,116,139,0.1); color: #64748b; }
-    .cl-item-text { font-size: 0.9rem; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>更新日志 — Dreaming Polar</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --a:#6366f1;--t:#0f172a;--m:#64748b;
+  --bd:#e2e8f0;--bg:#f8fafc;--s:#fff;--r:12px;--w:720px;
+  --green:#16a34a;--blue:#2563eb;
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--t);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* Header */
+.hdr{border-bottom:1px solid var(--bd);background:var(--s)}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:var(--w);margin:0 auto}
+.back{display:flex;align-items:center;gap:6px;font-size:.86rem;color:var(--m);transition:color .15s}
+.back:hover{color:var(--a)}
+.btn-f{padding:7px 16px;border:none;border-radius:8px;background:var(--t);color:#fff;font-size:.86rem;font-weight:500}
+.btn-f:hover{opacity:.83}
+
+/* Page */
+.page{max-width:var(--w);margin:0 auto;padding:48px 24px 80px}
+.page-title{font-size:2rem;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.cur-ver{font-size:.88rem;color:var(--m);margin-bottom:40px}
+
+/* Version blocks */
+.cl-list{display:flex;flex-direction:column;gap:24px}
+.cl-ver{background:var(--s);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+.cl-ver-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:18px 22px;background:var(--bg);border-bottom:1px solid var(--bd)}
+.ver-num{font-size:1rem;font-weight:800;color:var(--a)}
+.highlights{font-size:.84rem;color:var(--m);margin-left:10px}
+.rel-date{font-size:.8rem;color:var(--m)}
+.items{list-style:none;padding:14px 22px;display:flex;flex-direction:column;gap:9px}
+.item{display:flex;align-items:flex-start;gap:10px}
+.itag{flex-shrink:0;font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-top:3px}
+.t-new{background:rgba(22,163,74,.1);color:var(--green)}
+.t-improve{background:rgba(37,99,235,.1);color:var(--blue)}
+.t-fix{background:rgba(100,116,139,.1);color:var(--m)}
+.item-text{font-size:.9rem}
+
+/* Component versions */
+.comp-vers{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px}
+.comp-badge{font-size:.78rem;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.18);color:var(--a);border-radius:20px;padding:4px 12px;font-weight:500}
+
+/* Footer */
+footer{border-top:1px solid var(--bd);padding:22px;text-align:center;font-size:.8rem;color:var(--m)}
+footer a{color:var(--m)}footer a:hover{color:var(--a)}
+.end-note{text-align:center;padding:32px 0 0;font-size:.88rem;color:var(--m)}
+</style>
 </head>
 <body>
 
-<header>
-  <div class="cl-header">
-    <a href="/" class="cl-back">← 返回首页</a>
-    <a href="/app" class="lp-btn-primary">打开应用</a>
+<header class="hdr">
+  <div class="hdr-inner">
+    <a href="/" class="back"><i class="ti ti-arrow-left"></i> 返回首页</a>
+    <a href="/app" class="btn-f">打开应用</a>
   </div>
 </header>
 
-<div class="lp-container">
-  <div style="padding: 48px 0 0">
-    <h1 class="cl-page-title">更新日志</h1>
-    <div class="cl-current-ver" id="cl-current-ver">Dreaming Polar · 加载中…</div>
-  </div>
+<div class="page">
+  <h1 class="page-title">更新日志</h1>
+  <div class="cur-ver" id="cur-ver">Dreaming Polar · 加载中…</div>
+
+  <div class="comp-vers" id="comp-vers"></div>
+
   <div class="cl-list" id="cl-list">
-    <div style="color:#94a3b8;text-align:center;padding:40px">加载中…</div>
+    <div style="color:#94a3b8;text-align:center;padding:40px 0">加载中…</div>
   </div>
-  <div style="padding:48px 0;text-align:center">
-    <a href="/app" class="lp-cta-main">打开 Dreaming Polar →</a>
-  </div>
+
+  <div class="end-note">持续更新中，下个版本见 👋</div>
 </div>
 
-<footer class="lp-footer">
-  <p>© 2026 Dreaming Polar &nbsp;·&nbsp;
-     <a href="/">首页</a> &nbsp;·&nbsp;
-     <a href="/app">进入应用</a>
-  </p>
+<footer>
+  <p><a href="/">首页</a> &nbsp;·&nbsp; <a href="/app">进入应用</a></p>
 </footer>
 
-<script src="components/landing/changelog.js"></script>
+<script>
+const TAG = { new: ['t-new','新功能'], improve: ['t-improve','优化'], fix: ['t-fix','修复'] };
+
+fetch('/content_pages/releases/releases.json')
+  .then(r => r.json())
+  .then(data => {
+    const c = data.current;
+
+    document.getElementById('cur-ver').textContent =
+      `Dreaming Polar v${c.app} · 最新发布：${c.released}`;
+
+    document.getElementById('comp-vers').innerHTML = [
+      c.aria, c.notebook, c.grid
+    ].map(v => `<span class="comp-badge">${v}</span>`).join('');
+
+    document.getElementById('cl-list').innerHTML = data.changelog.map(v => {
+      const items = v.items.map(item => {
+        const [cls, label] = TAG[item.type] ?? ['t-fix','修复'];
+        return `<li class="item"><span class="itag ${cls}">${label}</span><span class="item-text">${item.text}</span></li>`;
+      }).join('');
+      return `<div class="cl-ver">
+        <div class="cl-ver-hdr">
+          <div><span class="ver-num">v${v.version}</span><span class="highlights">${v.highlights}</span></div>
+          <span class="rel-date">${v.date}</span>
+        </div>
+        <ul class="items">${items}</ul>
+      </div>`;
+    }).join('');
+  })
+  .catch(() => {
+    document.getElementById('cl-list').textContent = '暂时无法加载';
+  });
+</script>
 </body>
 </html>
