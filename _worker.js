@@ -3,9 +3,12 @@ export default {
     const url  = new URL(request.url);
     const path = url.pathname;
 
-    // Build a fresh GET Request for the target asset
-    const rewrite = (target) =>
-      env.ASSETS.fetch(new Request(new URL(target, url.origin)));
+    const rewrite = async (target) => {
+      const response = await env.ASSETS.fetch(new Request(new URL(target, url.origin)));
+      const newResponse = new Response(response.body, response);
+      newResponse.headers.set('Cache-Control', 'no-store');
+      return newResponse;
+    };
 
     if (path === '/' || path === '')         return rewrite('/landing.html');
     if (path === '/app')                     return rewrite('/index.html');
