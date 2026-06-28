@@ -17,15 +17,16 @@
 
       // Clean URL to avoid re-triggering on refresh
       if (fromLanding) {
-        history.replaceState({}, '', '/index.html');
+        history.replaceState({}, '', location.pathname);
       }
 
-      // Auto-open login modal if login=1
-      if (params.get('login') === '1') {
-        window.addEventListener('DOMContentLoaded', function() {
-          setTimeout(function() {
-            window._dpAuthOpenLogin?.('login');
-          }, 500);
+      // Open login modal via sessionStorage flag (set by landing page login button).
+      // Wait for dp-auth-state event so _dpAuthOpenLogin is guaranteed to exist.
+      if (sessionStorage.getItem('dp-open-login') === '1') {
+        sessionStorage.removeItem('dp-open-login');
+        document.addEventListener('dp-auth-state', function once() {
+          document.removeEventListener('dp-auth-state', once);
+          window._dpAuthOpenLogin?.('login');
         });
       }
     })();
