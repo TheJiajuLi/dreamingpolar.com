@@ -12,6 +12,7 @@ import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
 import { getSettings } from '../right_bar/settings.js';
 import { createLoadDataBtn } from '../import/import_data.js';
+import { attachGhostText }  from './nb_ghost.js';
 import { scheduleSave as _cloudScheduleSave, syncToCloud as _cloudSync } from '../shared/notebook_sync.js';
 import { setDataset } from '../shared/dataset_store.js';
 import { injectDataFrame, queryKernelDataframes, writeCodeFileToFS } from '../compiler/compiler.js';
@@ -741,6 +742,8 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   cell.editor = editor;
 
   body.append(editor);
+  // Ghost text prediction overlay (ICM-gated, Python only)
+  attachGhostText({ body, editor, cell, icmEnabled, icmOnChange });
   // Ensure editor height is correct on first paint (autoResize needs the element in DOM)
   requestAnimationFrame(() => autoResize(editor));
   const lowerRow = document.createElement('div');

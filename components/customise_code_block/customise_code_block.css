@@ -1053,3 +1053,38 @@ body.mirror-dragging * {
 [data-theme="grey"] .nb-inline-ai-actions { background: #0d1117; }
 [data-theme="dark"] .nb-inline-ai-act,
 [data-theme="grey"] .nb-inline-ai-act { background: #161b22; border-color: #30363d; color: #e6edf3; }
+
+/* ── Ghost Text overlay ─────────────────────────────────────────────────────── */
+.nb-ghost-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 3;   /* above PSH highlight layer (z:2) but below ICM popup (z:9+) */
+}
+
+/* <pre> must exactly mirror .nb-editor font metrics */
+.nb-ghost-pre {
+  margin: 0;
+  padding: 10px;                /* matches .nb-editor padding */
+  font-family: var(--code-font, "JetBrains Mono", "Courier New", monospace);
+  font-size: 0.84rem;           /* matches .nb-editor font-size */
+  line-height: 1.6;             /* matches .nb-editor line-height */
+  tab-size: 4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  color: transparent;           /* existing code is invisible — editor shows through */
+  background: transparent;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.nb-ghost-text {
+  color: rgba(140, 145, 165, 0.65);
+  font-style: italic;
+}
+
+[data-theme="dark"] .nb-ghost-text,
+[data-theme="grey"] .nb-ghost-text  { color: rgba(180, 185, 205, 0.5); }
+[data-theme="aurora"] .nb-ghost-text { color: rgba(167, 139, 250, 0.45); }
