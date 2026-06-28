@@ -297,11 +297,26 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
 </footer>
 
 <script>
-// Redirect logged-in users immediately
-try {
-  const u = JSON.parse(localStorage.getItem('dp-auth-user') || 'null');
-  if (u?.email) { window.location.replace('/app'); }
-} catch(_) {}
+// Verify token is still valid before redirecting to app
+(async () => {
+  try {
+    const cached = localStorage.getItem('dp-auth-user');
+    if (cached) {
+      const res = await fetch(
+        'https://dp-auth-backend.onrender.com/auth/refresh',
+        { method: 'POST', credentials: 'include' }
+      );
+      if (res.ok) {
+        window.location.replace('/app');
+        return;
+      } else {
+        localStorage.removeItem('dp-auth-user');
+      }
+    }
+  } catch (_) {
+    // Network error — show landing page
+  }
+})();
 
 // Load releases.json and render
 fetch('/content_pages/releases/releases.json')
