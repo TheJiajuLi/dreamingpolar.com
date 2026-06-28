@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>
     // Redirect unauthenticated users to landing page
+    // Exception: ?from=landing means user clicked login on landing page
     (function() {
       var p = location.pathname;
       var isLanding = p === '/landing.html';
       var isChangelog = p === '/changelog.html';
+      var fromLanding = location.search.indexOf('from=landing') !== -1;
       var hasUser = localStorage.getItem('dp-auth-user');
-      if (!isLanding && !isChangelog && !hasUser) {
+      if (!isLanding && !isChangelog && !fromLanding && !hasUser) {
         window.location.replace('/landing.html');
       }
     })();
