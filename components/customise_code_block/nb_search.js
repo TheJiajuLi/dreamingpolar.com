@@ -21,7 +21,7 @@ export function mountNbSearch(toolbar, insertBeforeEl) {
   const input   = document.createElement('input');
   input.type        = 'text';
   input.className   = 'nb-search-input';
-  input.placeholder = '搜索 Cells…';
+  input.placeholder = '搜索 Cell…';
   input.autocomplete = 'off';
   input.spellcheck  = false;
   input.setAttribute('aria-label', '搜索所有 Cell');
@@ -60,7 +60,7 @@ export function mountNbSearch(toolbar, insertBeforeEl) {
 
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter')  { e.preventDefault(); _navigate(e.shiftKey ? -1 : 1); }
-    if (e.key === 'Escape') { e.preventDefault(); _clear(); input.blur(); }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); _clear(); input.blur(); }
     if (e.key === 'ArrowDown') { e.preventDefault(); _navigate(1); }
     if (e.key === 'ArrowUp')   { e.preventDefault(); _navigate(-1); }
   });
