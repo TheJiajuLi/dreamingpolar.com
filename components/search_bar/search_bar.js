@@ -66,7 +66,16 @@ export async function setupNavSearch(wrapEl, pages) {
     document.querySelectorAll('.nav-link').forEach(a => {
       a.classList.toggle('active', a.dataset.file === dataFile);
     });
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Wait two frames so the render fully paints before measuring positions
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const target  = document.getElementById(id);
+      const scroller = document.getElementById('docs-main');
+      if (!target || !scroller) return;
+      // Scroll so the heading title aligns with the top of the content area
+      const targetTop   = target.getBoundingClientRect().top;
+      const scrollerTop = scroller.getBoundingClientRect().top;
+      scroller.scrollBy({ top: targetTop - scrollerTop - 16, behavior: 'smooth' });
+    }));
   }
 
   function clearSearch() {

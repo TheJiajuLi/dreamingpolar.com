@@ -150,7 +150,8 @@ function _renderDocs(data, body) {
   }
 
   for (const block of blocks) {
-    html += `<h2 class="docs-h2">${escapeHtml(block.label ?? '')}</h2>`;
+    const blockId = (block.label ?? '').toLowerCase().replace(/\s+/g, '-');
+    html += `<h2 class="docs-h2" id="${blockId}">${escapeHtml(block.label ?? '')}</h2>`;
 
     if (block.intro) {
       html += `<p class="docs-p">${escapeHtml(block.intro)}</p>`;

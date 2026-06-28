@@ -1,0 +1,67 @@
+{
+  "title": "DP Grid",
+  "blocks": [
+    {
+      "label": "DP Grid 定位",
+      "intro": "DP Grid 是 Dreaming Polar 内置的交互式数据表格，专为快速浏览、编辑和探索 DataFrame 设计。",
+      "code": "# 打开方式：左侧工具栏最下方的表格图标\n# 或在 Notebook cell 输出区点击 df 名称旁的「⊞」图标\n#\n# DP Grid 与 Notebook 共享同一个 Pyodide 内核\n# Grid 里修改的数据可以同步回 Python 变量",
+      "result": "DP Grid 适合需要直接看数据、做轻量编辑或快速对比多个 DataFrame 的场景。对于复杂分析，回到 Power Notebook 用代码处理更灵活。",
+      "resultType": "text"
+    },
+    {
+      "label": "打开数据集",
+      "intro": "将 DataFrame 载入 Grid 有两种方式：",
+      "examples": [
+        {
+          "code": "# 方式一：在 Notebook 里运行含有 df 的 cell\n# cell 输出区会出现「在 Grid 中打开」按钮\nimport pandas as pd\ndf = pd.read_csv('GE.csv')\ndf.head()",
+          "result": "点击「在 Grid 中打开」后，Grid 会自动以新标签页展示该 DataFrame，并记录变量名。",
+          "resultType": "text"
+        },
+        {
+          "code": "# 方式二：在 Grid 界面点击「+ 打开」按钮\n# 从当前内核的变量列表中选择 DataFrame",
+          "result": "只有已在 Pyodide 内核中注册的 DataFrame 才能在列表中找到。先在 Notebook 里 run cell 定义变量。",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
+      "label": "标签页与多数据集",
+      "intro": "DP Grid 支持同时打开多个 DataFrame，每个数据集独占一个标签页。",
+      "code": "# 同时打开多个 df，分别在 cell 里运行：\ndf_ge  = pd.read_csv('GE.csv')\ndf_org = pd.read_csv('organizations-100.csv')\n# 然后在 Grid 里分别点击「在 Grid 中打开」",
+      "result": "标签页之间切换不会重新加载数据，Grid 状态可跨刷新保持（Settings → DP Grid → 记住打开的数据集）。",
+      "resultType": "text"
+    },
+    {
+      "label": "编辑单元格与同步到内核",
+      "intro": "Grid 中的单元格可以直接双击编辑，修改后可以一键同步回 Python 变量。",
+      "examples": [
+        {
+          "code": "# 在 Grid 中编辑单元格后，点击「同步到内核」按钮\n# 等价于在 Notebook 里执行：\ndf.at[row_index, 'column_name'] = new_value\n\n# 同步后即可继续在 Notebook 里引用修改后的 df",
+          "result": "同步前会弹出确认框（可在 Settings → DP Grid → 同步前确认 中关闭）。同步操作不可撤销，建议在重要修改前先备份变量。",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
+      "label": "过滤与排序",
+      "intro": "在 Grid 顶部工具栏可以对当前数据集进行过滤和列选择，无需写代码。",
+      "code": "# Grid 过滤器使用 Python 表达式\n# 示例：只显示 close > 25 的行\nclose > 25\n\n# 多条件：date >= '2010-01-01' and open < 30\ndate >= '2010-01-01' and open < 30",
+      "result": "过滤结果仅影响 Grid 视图，不修改底层变量。如需将过滤结果保存为新变量，点击「另存为」后在 Notebook 里使用。",
+      "resultType": "text"
+    },
+    {
+      "label": "导出数据",
+      "intro": "Grid 支持将当前视图导出为多种格式。",
+      "code": "# Grid 工具栏「另存为」支持：\n# · CSV  — 通用格式，Excel 可直接打开\n# · xlsx — Excel 工作表\n# · JSON — 适合程序间传递\n# · Parquet — 高效列式存储（大数据集推荐）\n\n# 导出的是当前视图（含过滤），不一定是完整 df",
+      "result": "导出文件会直接下载到本地。如果设置了过滤器，导出的将是过滤后的数据子集。",
+      "resultType": "text"
+    },
+    {
+      "label": "发送给 ARIA",
+      "intro": "在 Grid 里找到感兴趣的数据后，可以一键发送给 ARIA 做 AI 分析。",
+      "code": "# 点击 Grid 工具栏的「发送给 ARIA」按钮\n# ARIA 会接收当前数据集的结构和前几行\n# 然后你可以用自然语言提问：\n# 「这份数据的趋势是什么？」\n# 「帮我找出 close 价格最高的 10 天」",
+      "result": "ARIA 和 Grid 共享同一个 Pyodide 内核，ARIA 生成的 Python 代码可以直接操作 Grid 里打开的 df 变量。",
+      "resultType": "text"
+    }
+  ]
+}

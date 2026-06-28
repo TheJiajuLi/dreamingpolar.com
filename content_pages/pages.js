@@ -56,7 +56,7 @@ export const PAGES = [
       {
         title: 'DP Grid',
         badge: '新',
-        dataFile: `${B}/content_pages/docs/notebook/notebook_guide.json`,
+        dataFile: `${B}/content_pages/docs/grid/dp_grid_guide.json`,
       },
     ],
   },
