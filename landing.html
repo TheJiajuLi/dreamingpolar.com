@@ -20,11 +20,10 @@ button{cursor:pointer;font-family:inherit}
 .w{max-width:var(--w);margin:0 auto;padding:0 24px}
 
 /* Nav */
-nav{border-bottom:1px solid var(--bd);background:var(--s)}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:var(--w);margin:0 auto}
+nav{border-bottom:1px solid var(--bd);background:var(--s);position:sticky;top:0;z-index:100}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;max-width:var(--w);margin:0 auto}
 .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem}
-.logo-mark{width:26px;height:26px;background:var(--a);border-radius:6px;display:flex;align-items:center;justify-content:center}
-.logo-mark i{color:#fff;font-size:14px}
+.logo img{display:block;flex-shrink:0}
 .ver{font-size:.7rem;color:var(--m);background:var(--bg);border:1px solid var(--bd);border-radius:20px;padding:2px 8px;font-weight:500}
 .nav-btns{display:flex;gap:8px}
 .btn-o{padding:7px 16px;border:1px solid var(--bd);border-radius:8px;background:var(--s);font-size:.86rem;color:var(--t);transition:border-color .15s}
@@ -33,7 +32,7 @@ nav{border-bottom:1px solid var(--bd);background:var(--s)}
 .btn-f:hover{opacity:.83}
 
 /* Hero */
-.hero{text-align:center;padding:72px 24px 56px;max-width:var(--w);margin:0 auto}
+.hero{text-align:center;padding:56px 24px 48px;max-width:var(--w);margin:0 auto}
 .badge{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--a);background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.18);border-radius:20px;padding:4px 14px;margin-bottom:24px}
 .h1{font-size:clamp(2.2rem,5vw,3.4rem);font-weight:800;letter-spacing:-.022em;line-height:1.14;margin-bottom:18px}
 .accent{color:var(--a)}
@@ -107,7 +106,7 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
 <nav>
   <div class="nav-inner">
     <div class="logo">
-      <img src="assets/app_logo/dreaming_polar.png" alt="Dreaming Polar" style="width:26px;height:26px;border-radius:6px">
+      <img src="assets/app_logo/dreaming_polar.png" alt="" style="width:24px;height:24px;object-fit:contain;display:block">
       Dreaming Polar
       <span class="ver" id="ver">v1.2.0</span>
     </div>
@@ -165,18 +164,17 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
         <span class="tag">Copilot 做不到</span>
       </div>
 
-      <!-- Mirror split — two columns with handle -->
+      <!-- Ctrl+I inline AI -->
       <div class="card">
         <div class="card-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="9" height="18" rx="1.5"/>
-            <rect x="13" y="3" width="9" height="18" rx="1.5"/>
-            <line x1="11.5" y1="3" x2="11.5" y2="21" stroke-width="1" stroke-dasharray="2 2"/>
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            <path d="m15 5 3 3" stroke-width="1.4" opacity=".6"/>
           </svg>
         </div>
-        <div class="card-title">代码和结果并排</div>
-        <div class="card-desc">左边写代码，右边实时看输出，拖动中间的线调比例。再也不用上下翻找对应关系。</div>
-        <span class="tag">Jupyter 做不到</span>
+        <div class="card-title">Ctrl+I · 直接改代码</div>
+        <div class="card-desc">光标停在哪里就在哪里改。按 Ctrl+I，用中文说"把这个函数改成支持批量处理"，AI 直接给你写好，不用离开编辑器。</div>
+        <span class="tag">Cursor 做不到（无数据上下文）</span>
       </div>
 
       <!-- DP Grid — table grid (same as VT grid button) -->
