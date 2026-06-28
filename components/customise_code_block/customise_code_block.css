@@ -47,12 +47,39 @@
 
 .nb-cell-count {
   font-size: 0.68rem;
-  color: var(--text-muted, #94a3b8);
+  color: rgba(180, 195, 215, 0.55);
   font-family: inherit;
   margin-left: 4px;
   user-select: none;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  transition: color 0.2s;
 }
+
+/* ── Run All progress: breathing dots ───────────────────── */
+.nb-count-dots {
+  display: inline-flex;
+  gap: 1px;
+  margin-left: 1px;
+  line-height: 1;
+}
+.nb-count-dots span {
+  opacity: 0;
+  animation: nb-dot-breathe 1.5s ease-in-out infinite;
+  font-size: 0.72rem;
+}
+.nb-count-dots span:nth-child(2) { animation-delay: 0.28s; }
+.nb-count-dots span:nth-child(3) { animation-delay: 0.56s; }
+
+@keyframes nb-dot-breathe {
+  0%, 60%, 100% { opacity: 0; transform: translateY(0); }
+  30%            { opacity: 0.9; transform: translateY(-1.5px); }
+}
+
+/* Completion tick — soft success colour */
+.nb-cell-count--done { color: rgba(134, 239, 172, 0.75); }
 
 /* ── Cells scroll area ─────────────────────────────────── */
 .nb-cells {

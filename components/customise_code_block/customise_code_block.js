@@ -1062,6 +1062,7 @@ async function runAll(btn) {
     }
 
     done++;
+    document.dispatchEvent(new CustomEvent('run-all-cell-start', { detail: { done, total } }));
     cell.counter.textContent = '*';
     const cellRunBtn = cell.el.querySelector('.nb-run');
     if (cellRunBtn) cellRunBtn.disabled = true;
@@ -1225,19 +1226,51 @@ export function init(container, externalTopbar) {
     runAllBtn.disabled = false;
     runAllBtn.onclick  = null;  // restore listener from attachNotebookHooks
     const n = _cells.length;
+    cellCount.className   = 'nb-cell-count';
     cellCount.textContent = `${n} cell${n === 1 ? '' : 's'}`;
   }
 
+  // ── Progress display helpers ──────────────────────────────────────────────────
+  const _DOTS_HTML = `<span class="nb-count-dots" aria-hidden="true">` +
+    `<span>·</span><span>·</span><span>·</span></span>`;
+
+  function _setCountRunning(text) {
+    cellCount.className = 'nb-cell-count';
+    cellCount.innerHTML = text + _DOTS_HTML;
+  }
+  function _setCountDone(text) {
+    cellCount.className = 'nb-cell-count nb-cell-count--done';
+    cellCount.textContent = text;
+  }
+
+  let _progressTimer = null;
+
   document.addEventListener('run-all-start', ({ detail: { total } }) => {
     _setRunAllRunning(total);
-    cellCount.textContent = `第 1 / ${total} 个 Cell`;
+    _setCountRunning('正在初始化');
+  });
+
+  document.addEventListener('run-all-cell-start', ({ detail: { done, total } }) => {
+    clearTimeout(_progressTimer);
+    _setCountRunning(`第 ${done} / ${total} 个 Cell`);
   });
 
   document.addEventListener('run-all-progress', ({ detail: { done, total } }) => {
-    cellCount.textContent = `第 ${done} / ${total} 个 Cell`;
+    clearTimeout(_progressTimer);
+    _setCountDone(`✓ Cell ${done} 完成`);
+    if (done < total) {
+      // After 200 ms show the next cell's running state
+      _progressTimer = setTimeout(() => {
+        _setCountRunning(`第 ${done + 1} / ${total} 个 Cell`);
+      }, 200);
+    }
   });
 
-  document.addEventListener('run-all-done', () => _setRunAllIdle());
+  document.addEventListener('run-all-done', () => {
+    clearTimeout(_progressTimer);
+    _progressTimer = null;
+    _setRunAllIdle();
+  });
 
   // Sep-hint reload: patch the active cell's import code to add sep argument
   document.addEventListener('sep-hint-reload', ({ detail: { varName, sepArg } }) => {
