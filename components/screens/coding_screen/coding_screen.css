@@ -13,7 +13,7 @@
   min-height: 0;
 }
 
-/* ── Notebook toolbar — Apple card aesthetic ───────────────────────── */
+/* ── Notebook toolbar — 陨石灰磨砂 ───────────────────────────────────── */
 .cds-notebook-toolbar {
   display: flex;
   align-items: center;
@@ -21,11 +21,43 @@
   padding: 0 12px;
   height: 40px;
   flex-shrink: 0;
-  margin: 0 8px 6px;
+  /* Width matches .nb-cells padding (12px) so toolbar and cells share the same edge */
+  margin: 0 12px 6px;
   border-radius: 10px;
-  background: var(--bg-1, #ffffff);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.07);
+  position: relative;
+
+  /* Meteorite grey matte — dark neutral charcoal, applied in all themes */
+  background: #1e2028;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+
+  /* 1px transparent border — gradient shows through via ::before */
+  border: 1px solid transparent;
+  background-clip: padding-box;
+
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
+
+/* Gradient border: blue-indigo (left) → warm amber (right) — meteorite mineral tones */
+.cds-notebook-toolbar::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: 11px;
+  background: linear-gradient(
+    110deg,
+    rgba(90, 120, 220, 0.65) 0%,
+    rgba(80, 85, 110, 0.15) 45%,
+    rgba(210, 150, 55, 0.55) 100%
+  );
+  pointer-events: none;
+}
+
+/* Ensure toolbar content sits above the ::before gradient layer */
+.cds-notebook-toolbar > * { position: relative; z-index: 1; }
 
 .cds-runall-slot {
   display: flex;
@@ -240,28 +272,31 @@ body.cs-resizing * {
 [data-theme="dark"]   .cds-output-body      { background: #0d1117; }
 [data-theme="dark"]   .cds-output-panel-hdr { background: #0d1117; }
 [data-theme="dark"]   .cds-notebook-toolbar {
-  background: #1a1f2e;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.06);
+  background: #14161e;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
 }
-[data-theme="dark"]   .cds-toolbar-divider  { background: rgba(255,255,255,0.08); }
+[data-theme="dark"]   .cds-toolbar-divider  { background: rgba(255,255,255,0.07); }
 
 [data-theme="grey"]   .cds-output-panel,
 [data-theme="grey"]   .cds-output-body      { background: #22272e; }
 [data-theme="grey"]   .cds-output-panel-hdr { background: #22272e; }
 [data-theme="grey"]   .cds-notebook-toolbar {
-  background: #2d333b;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.07);
+  background: #181c22;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
 }
-[data-theme="grey"]   .cds-toolbar-divider  { background: rgba(255,255,255,0.08); }
+[data-theme="grey"]   .cds-toolbar-divider  { background: rgba(255,255,255,0.07); }
 
 [data-theme="aurora"] .cds-output-panel,
 [data-theme="aurora"] .cds-output-body      { background: #07071a; }
 [data-theme="aurora"] .cds-output-panel-hdr { background: #07071a; }
 [data-theme="aurora"] .cds-notebook-toolbar {
-  background: #0f0f2a;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(167,139,250,0.12);
+  background: #0c0c1e;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(167,139,250,0.06);
 }
-[data-theme="aurora"] .cds-toolbar-divider  { background: rgba(167,139,250,0.12); }
+[data-theme="aurora"] .cds-notebook-toolbar::before {
+  background: linear-gradient(110deg, rgba(120,90,220,0.6) 0%, rgba(60,60,100,0.1) 45%, rgba(170,110,220,0.5) 100%);
+}
+[data-theme="aurora"] .cds-toolbar-divider  { background: rgba(167,139,250,0.1); }
 [data-theme="dark"]   .cds-output-body .output-block,
 [data-theme="dark"]   .mirror-out-pane .output-block { border-bottom-color: rgba(255,255,255,0.04); }
 [data-theme="grey"]   .cds-output-body .output-block,

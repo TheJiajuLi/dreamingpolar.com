@@ -544,13 +544,12 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 [data-theme="light"] .cds-output-panel .sc-btn:hover  { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); }
 
 /* Notebook toolbar (RUN ALL bar above cells) */
-[data-theme="light"] .cds-notebook-toolbar                         { background: #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.07); }
-/* light: nb-run-all-btn uses base accent (#6366f1) solid fill — no override needed */
-[data-theme="light"] .cds-notebook-toolbar .nb-cell-count          { color: var(--text-muted, #425366); }
-[data-theme="light"] .cds-notebook-toolbar .sc-btn                 { color: var(--text-muted, #425366); }
-[data-theme="light"] .cds-notebook-toolbar .sc-btn:hover           { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); }
-[data-theme="light"] .cds-notebook-toolbar .sc-btn--danger         { color: #dc2626; opacity: 0.6; }
-[data-theme="light"] .cds-notebook-toolbar .sc-btn--danger:hover   { background: #fef2f2; color: #dc2626; opacity: 1; }
+/* light theme: toolbar uses same dark meteorite look — override back to neutral/light elements */
+[data-theme="light"] .cds-notebook-toolbar .nb-cell-count     { color: rgba(190, 200, 220, 0.55); }
+[data-theme="light"] .cds-notebook-toolbar .sc-btn            { color: rgba(190, 200, 220, 0.5); }
+[data-theme="light"] .cds-notebook-toolbar .sc-btn:hover      { background: rgba(255,255,255,0.09); color: rgba(220,230,245,0.9); }
+[data-theme="light"] .cds-notebook-toolbar .sc-btn--danger    { color: rgba(239,68,68,0.65); }
+[data-theme="light"] .cds-notebook-toolbar .sc-btn--danger:hover { background: rgba(239,68,68,0.1); color: #ef4444; opacity: 1; }
 
 /* Notebook cells */
 /* light theme: notebook panel background matches cells so no white gap below */
