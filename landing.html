@@ -99,6 +99,63 @@ td:not(:first-child),th:not(:first-child){text-align:center}
 /* Footer */
 footer{border-top:1px solid var(--bd);padding:24px;text-align:center;font-size:.8rem;color:var(--m)}
 footer a{color:var(--m)}footer a:hover{color:var(--a)}
+
+/* ── Auth Modal ──────────────────────────────────────────────────────────────── */
+#lp-auth-overlay{
+  position:fixed;inset:0;background:rgba(15,23,42,.45);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;backdrop-filter:blur(4px);
+  opacity:0;transition:opacity .18s;
+}
+#lp-auth-overlay.open{opacity:1}
+#lp-auth-modal{
+  background:#fff;border-radius:14px;padding:32px 28px 28px;
+  width:100%;max-width:380px;position:relative;
+  box-shadow:0 20px 60px rgba(15,23,42,.18),0 4px 16px rgba(15,23,42,.1);
+  transform:translateY(8px);transition:transform .18s;
+}
+#lp-auth-overlay.open #lp-auth-modal{transform:translateY(0)}
+.lp-auth-close{
+  position:absolute;top:14px;right:14px;
+  width:28px;height:28px;border:none;border-radius:50%;
+  background:rgba(0,0,0,.06);color:var(--m);font-size:14px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background .12s;
+}
+.lp-auth-close:hover{background:rgba(0,0,0,.1)}
+.lp-auth-logo{display:flex;align-items:center;gap:8px;margin-bottom:22px}
+.lp-auth-logo img{height:22px;width:auto}
+.lp-auth-tabs{display:flex;gap:0;border-bottom:1px solid var(--bd);margin-bottom:22px}
+.lp-tab{
+  padding:8px 20px;border:none;background:none;font-size:.88rem;
+  color:var(--m);cursor:pointer;font-family:inherit;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .12s,border-color .12s;
+}
+.lp-tab.active{color:var(--a);border-bottom-color:var(--a);font-weight:600}
+.lp-auth-field{
+  width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;
+  font-size:.9rem;font-family:inherit;outline:none;box-sizing:border-box;
+  transition:border-color .15s;margin-bottom:10px;
+}
+.lp-auth-field:focus{border-color:var(--a);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.lp-auth-submit{
+  width:100%;padding:11px;border:none;border-radius:8px;
+  background:var(--a);color:#fff;font-size:.93rem;font-weight:600;
+  cursor:pointer;font-family:inherit;margin-top:4px;
+  transition:opacity .15s;
+}
+.lp-auth-submit:hover{opacity:.86}
+.lp-auth-submit:disabled{opacity:.5;cursor:not-allowed}
+.lp-auth-err{font-size:.8rem;color:#ef4444;min-height:18px;margin-bottom:6px}
+.lp-auth-note{font-size:.8rem;color:var(--m);text-align:center;margin-top:12px}
+.lp-auth-note a{color:var(--a);cursor:pointer}
+.lp-auth-note a:hover{text-decoration:underline}
+.lp-auth-success{
+  font-size:.86rem;color:#16a34a;background:rgba(22,163,74,.08);
+  border:1px solid rgba(22,163,74,.2);border-radius:8px;
+  padding:10px 14px;margin-top:10px;display:none;
+}
 </style>
 </head>
 <body>
@@ -110,8 +167,8 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
       <span class="ver" id="ver">v1.2.0</span>
     </div>
     <div class="nav-btns">
-      <a href="/index.html?from=landing" class="btn-o" onclick="sessionStorage.setItem('dp-open-login','1')">登录</a>
-      <a href="/index.html?from=landing" class="btn-f">免费开始</a>
+      <button class="btn-o" onclick="lpAuthOpen('login')">登录</button>
+      <button class="btn-f" onclick="lpAuthOpen('register')">免费开始</button>
     </div>
   </div>
 </nav>
@@ -121,7 +178,7 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
   <h1 class="h1">数据分析，从未如此<span class="accent">直接</span></h1>
   <p class="sub">不用装环境，不用配服务器。打开浏览器，导入你的数据，用中文问 ARIA 或者写 Python 代码——它真的知道你的数据里有什么。</p>
   <div class="ctas">
-    <a href="/index.html?from=landing" class="cta-main">免费开始使用 →</a>
+    <button class="cta-main" onclick="lpAuthOpen('register')">免费开始使用 →</button>
     <a href="/changelog.html" class="cta-sec">查看更新日志</a>
   </div>
 </section>
@@ -285,36 +342,187 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
     <div class="cta-block">
       <h2>现在就开始，免费用</h2>
       <p>不需要信用卡，不需要安装任何东西。打开浏览器就行。</p>
-      <a href="/index.html?from=landing" class="cta-w">打开 Dreaming Polar →</a>
+      <button class="cta-w" onclick="lpAuthOpen('register')" style="border:none;cursor:pointer">打开 Dreaming Polar →</button>
     </div>
   </section>
 
 </div>
 
 <footer>
-  <p>Dreaming Polar · 持续更新中 &nbsp;·&nbsp; <span id="ft-ver"></span> &nbsp;·&nbsp; <a href="/changelog.html">更新日志</a> &nbsp;·&nbsp; <a href="/index.html?from=landing">进入应用</a></p>
+  <p>Dreaming Polar · 持续更新中 &nbsp;·&nbsp; <span id="ft-ver"></span> &nbsp;·&nbsp; <a href="/changelog.html">更新日志</a> &nbsp;·&nbsp; <a href="#" onclick="lpAuthOpen('login');return false">登录 / 注册</a></p>
 </footer>
 
+<!-- ── Auth Modal ─────────────────────────────────────────────────────────── -->
+<div id="lp-auth-overlay">
+  <div id="lp-auth-modal">
+    <button class="lp-auth-close" id="lp-auth-close" aria-label="关闭">✕</button>
+    <div class="lp-auth-logo">
+      <img src="assets/home_page/imgs/dp_logo.png" alt="Dreaming Polar">
+    </div>
+    <div class="lp-auth-tabs">
+      <button class="lp-tab active" data-tab="login">登录</button>
+      <button class="lp-tab" data-tab="register">注册</button>
+    </div>
+
+    <!-- 登录 -->
+    <div id="lp-panel-login">
+      <div class="lp-auth-err" id="lp-login-err"></div>
+      <input class="lp-auth-field" id="lp-login-email" type="email" placeholder="邮箱" autocomplete="email">
+      <input class="lp-auth-field" id="lp-login-pw" type="password" placeholder="密码" autocomplete="current-password">
+      <button class="lp-auth-submit" id="lp-login-btn">登录</button>
+      <div class="lp-auth-note"><a id="lp-to-forgot">忘记密码？</a></div>
+    </div>
+
+    <!-- 注册 -->
+    <div id="lp-panel-register" style="display:none">
+      <div class="lp-auth-err" id="lp-reg-err"></div>
+      <input class="lp-auth-field" id="lp-reg-name" type="text" placeholder="昵称" autocomplete="username">
+      <input class="lp-auth-field" id="lp-reg-email" type="email" placeholder="邮箱" autocomplete="email">
+      <input class="lp-auth-field" id="lp-reg-pw" type="password" placeholder="密码（至少 8 位）" autocomplete="new-password">
+      <button class="lp-auth-submit" id="lp-reg-btn">创建账号</button>
+    </div>
+
+    <!-- 忘记密码 -->
+    <div id="lp-panel-forgot" style="display:none">
+      <p style="font-size:.86rem;color:var(--m);margin-bottom:12px">输入注册邮箱，我们发送重置链接</p>
+      <div class="lp-auth-err" id="lp-forgot-err"></div>
+      <input class="lp-auth-field" id="lp-forgot-email" type="email" placeholder="邮箱">
+      <button class="lp-auth-submit" id="lp-forgot-btn">发送重置链接</button>
+      <div class="lp-auth-success" id="lp-forgot-ok">✓ 重置链接已发送，请查收邮件</div>
+      <div class="lp-auth-note" style="margin-top:10px"><a id="lp-back-login">← 返回登录</a></div>
+    </div>
+  </div>
+</div>
+
 <script>
-// Verify token is still valid before redirecting to app
+const _AUTH = 'https://dp-auth-backend.onrender.com';
+
+// ── Modal open/close ───────────────────────────────────────────────────────────
+function lpAuthOpen(tab) {
+  const overlay = document.getElementById('lp-auth-overlay');
+  overlay.style.display = 'flex';
+  requestAnimationFrame(() => overlay.classList.add('open'));
+  lpAuthTab(tab);
+}
+function lpAuthClose() {
+  const overlay = document.getElementById('lp-auth-overlay');
+  overlay.classList.remove('open');
+  setTimeout(() => { overlay.style.display = 'none'; }, 180);
+}
+document.getElementById('lp-auth-close').addEventListener('click', lpAuthClose);
+document.getElementById('lp-auth-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('lp-auth-overlay')) lpAuthClose();
+});
+
+// ── Tab switching ──────────────────────────────────────────────────────────────
+function lpAuthTab(tab) {
+  ['login','register','forgot'].forEach(t => {
+    document.getElementById('lp-panel-' + t).style.display = t === tab ? '' : 'none';
+  });
+  document.querySelectorAll('.lp-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  ['lp-login-err','lp-reg-err','lp-forgot-err'].forEach(id => {
+    document.getElementById(id).textContent = '';
+  });
+  document.getElementById('lp-forgot-ok').style.display = 'none';
+}
+document.querySelectorAll('.lp-tab').forEach(btn => {
+  btn.addEventListener('click', () => lpAuthTab(btn.dataset.tab));
+});
+document.getElementById('lp-to-forgot').addEventListener('click', e => {
+  e.preventDefault(); lpAuthTab('forgot');
+});
+document.getElementById('lp-back-login').addEventListener('click', e => {
+  e.preventDefault(); lpAuthTab('login');
+});
+
+// ── API helpers ────────────────────────────────────────────────────────────────
+async function lpPost(path, body) {
+  const r = await fetch(_AUTH + path, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.message || '请求失败');
+  return data;
+}
+
+function lpGoApp(userData) {
+  try { localStorage.setItem('dp-auth-user', JSON.stringify(userData)); } catch (_) {}
+  window.location.replace('/index.html?from=landing');
+}
+
+// ── Login ──────────────────────────────────────────────────────────────────────
+document.getElementById('lp-login-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('lp-login-btn');
+  const err = document.getElementById('lp-login-err');
+  const email = document.getElementById('lp-login-email').value.trim();
+  const pw    = document.getElementById('lp-login-pw').value;
+  err.textContent = '';
+  if (!email || !pw) { err.textContent = '请填写邮箱和密码'; return; }
+  btn.disabled = true; btn.textContent = '登录中…';
+  try {
+    const data = await lpPost('/auth/login', { email, password: pw });
+    lpGoApp(data.user ?? { email });
+  } catch (e) {
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = '登录';
+  }
+});
+
+// ── Register ───────────────────────────────────────────────────────────────────
+document.getElementById('lp-reg-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('lp-reg-btn');
+  const err = document.getElementById('lp-reg-err');
+  const name  = document.getElementById('lp-reg-name').value.trim();
+  const email = document.getElementById('lp-reg-email').value.trim();
+  const pw    = document.getElementById('lp-reg-pw').value;
+  err.textContent = '';
+  if (!name || !email || !pw) { err.textContent = '请填写所有字段'; return; }
+  if (pw.length < 8) { err.textContent = '密码至少 8 位'; return; }
+  btn.disabled = true; btn.textContent = '创建中…';
+  try {
+    await lpPost('/auth/register', { username: name, email, password: pw });
+    // Auto login after register
+    const data = await lpPost('/auth/login', { email, password: pw });
+    lpGoApp(data.user ?? { email, username: name });
+  } catch (e) {
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = '创建账号';
+  }
+});
+
+// ── Forgot password ────────────────────────────────────────────────────────────
+document.getElementById('lp-forgot-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('lp-forgot-btn');
+  const err = document.getElementById('lp-forgot-err');
+  const email = document.getElementById('lp-forgot-email').value.trim();
+  err.textContent = '';
+  if (!email) { err.textContent = '请输入邮箱'; return; }
+  btn.disabled = true; btn.textContent = '发送中…';
+  try {
+    await lpPost('/auth/forgot-password', { email });
+    document.getElementById('lp-forgot-ok').style.display = '';
+    btn.style.display = 'none';
+  } catch (e) {
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = '发送重置链接';
+  }
+});
+
+// ── Auto-redirect logged-in users ─────────────────────────────────────────────
 (async () => {
   try {
     const cached = localStorage.getItem('dp-auth-user');
     if (cached) {
-      const res = await fetch(
-        'https://dp-auth-backend.onrender.com/auth/refresh',
-        { method: 'POST', credentials: 'include' }
-      );
-      if (res.ok) {
-        window.location.replace('/app');
-        return;
-      } else {
-        localStorage.removeItem('dp-auth-user');
-      }
+      const res = await fetch(_AUTH + '/auth/refresh',
+        { method: 'POST', credentials: 'include' });
+      if (res.ok) { window.location.replace('/index.html?from=landing'); return; }
+      else { localStorage.removeItem('dp-auth-user'); }
     }
-  } catch (_) {
-    // Network error — show landing page
-  }
+  } catch (_) {}
 })();
 
 // Load releases.json and render

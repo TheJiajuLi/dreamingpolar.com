@@ -20,15 +20,7 @@
         history.replaceState({}, '', location.pathname);
       }
 
-      // Open login modal via sessionStorage flag (set by landing page login button).
-      // Wait for dp-auth-state event so _dpAuthOpenLogin is guaranteed to exist.
-      if (sessionStorage.getItem('dp-open-login') === '1') {
-        sessionStorage.removeItem('dp-open-login');
-        document.addEventListener('dp-auth-state', function once() {
-          document.removeEventListener('dp-auth-state', once);
-          window._dpAuthOpenLogin?.('login');
-        });
-      }
+      // (login modal is now handled directly in landing.html)
     })();
   </script>
 
