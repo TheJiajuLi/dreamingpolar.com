@@ -1062,8 +1062,6 @@ async function runAll(btn) {
     }
 
     done++;
-    document.dispatchEvent(new CustomEvent('run-all-progress', { detail: { done, total } }));
-
     cell.counter.textContent = '*';
     const cellRunBtn = cell.el.querySelector('.nb-run');
     if (cellRunBtn) cellRunBtn.disabled = true;
@@ -1074,6 +1072,10 @@ async function runAll(btn) {
       if (cellRunBtn) cellRunBtn.disabled = false;
       break;
     }
+
+    // Dispatch progress AFTER compile so each step is visible; rAF ensures paint.
+    document.dispatchEvent(new CustomEvent('run-all-progress', { detail: { done, total } }));
+    await new Promise(r => requestAnimationFrame(r));
 
     // Ensure import-button cells get a viz-suggestion (RUNNER diff misses these)
     const _ownDs = _cellInjectDs.get(cell.id);
@@ -1144,7 +1146,7 @@ export function init(container, externalTopbar) {
   const runAllBtn = document.createElement('button');
   runAllBtn.className = 'nb-run-all-btn';
   runAllBtn.innerHTML =
-    `<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 2.5l10 5.5-10 5.5V2.5z"/><path d="M13 2h1.5v12H13V2z"/></svg>` +
+    `<svg width="11" height="10" viewBox="0 0 22 16" fill="currentColor" aria-hidden="true"><path d="M1 2.5l8 5.5-8 5.5V2.5z"/><path d="M11 2.5l8 5.5-8 5.5V2.5z"/></svg>` +
     `<span class="nb-run-all-label">Run All</span>`;
   runAllBtn.title = 'Run all cells in order (⌘⏎)';
 
