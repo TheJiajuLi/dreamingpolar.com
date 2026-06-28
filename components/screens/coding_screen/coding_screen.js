@@ -67,7 +67,16 @@ function setupCodingScreen() {
   restartKernelBtn.title       = 'Restart kernel — clears all variables (click twice to confirm)';
   restartKernelBtn.innerHTML   = _RESTART_SVG;
 
-  nbToolbar.append(runAllSlot, clearCellsBtn, restartKernelBtn);
+  // ── Trim empty cells button ───────────────────────────────
+  const trimEmptyBtn = document.createElement('button');
+  trimEmptyBtn.className = 'sc-btn';
+  trimEmptyBtn.title     = '清理空白 Cell（删除内容为空的 Cell）';
+  trimEmptyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
+  trimEmptyBtn.addEventListener('click', () =>
+    document.dispatchEvent(new CustomEvent('trim-empty-cells'))
+  );
+
+  nbToolbar.append(runAllSlot, trimEmptyBtn, clearCellsBtn, restartKernelBtn);
 
   // ── Variable name resolver — shared across all cell import buttons ──
   // Seed with persisted varNames so new imports don't collide with restored data.

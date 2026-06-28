@@ -1132,6 +1132,20 @@ export function init(container, externalTopbar) {
     FileTracker.untrackCell(cellId); // remove file→cell mapping so next click re-inserts
   });
 
+  // Trim empty cells — remove cells with no code, keep at least one
+  document.addEventListener('trim-empty-cells', () => {
+    const before = _cells.length;
+    const removed = _cells.filter(c => !c.editor.value.trim());
+    _cells = _cells.filter(c => c.editor.value.trim());
+    if (!_cells.length) _cells = [makeCell('python', '', uid())]; // always keep ≥1
+    removed.forEach(c => {
+      _removeFromInjectStore(c.id);
+      FileTracker.untrackCell(c.id);
+      document.dispatchEvent(new CustomEvent('notebook-cell-deleted', { detail: { cellId: c.id } }));
+    });
+    if (_cells.length !== before) { rebuildCells(); saveAll(); }
+  });
+
   // Cloud restore — replace all cells with cloud data (fires after login)
   document.addEventListener('dp-cloud-restore', ({ detail: { cells } }) => {
     if (!Array.isArray(cells) || !cells.length) return;
