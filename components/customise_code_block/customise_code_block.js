@@ -1143,7 +1143,12 @@ export function init(container, externalTopbar) {
       FileTracker.untrackCell(c.id);
       document.dispatchEvent(new CustomEvent('notebook-cell-deleted', { detail: { cellId: c.id } }));
     });
-    if (_cells.length !== before) { rebuildCells(); saveAll(); }
+    if (_cells.length !== before) {
+      rebuildCells();
+      saveAll();
+      // Also push to cloud immediately so refresh doesn't restore old empty cells
+      window._dpSync?.syncToCloud();
+    }
   });
 
   // Cloud restore — replace all cells with cloud data (fires after login)

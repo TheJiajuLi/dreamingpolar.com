@@ -23,6 +23,7 @@
   flex-shrink: 0;
   margin: 0 12px 4px;
   background: transparent;
+  position: relative; /* needed for search absolute centering */
 }
 
 .cds-runall-slot {
