@@ -47,7 +47,7 @@
 
 .nb-cell-count {
   font-size: 0.68rem;
-  color: rgba(180, 195, 215, 0.55);
+  color: var(--text-muted, #64748b);
   font-family: inherit;
   margin-left: 4px;
   user-select: none;

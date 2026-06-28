@@ -64,23 +64,23 @@
   transition: opacity 0.12s;
 }
 
-/* ── Toolbar is dark in ALL themes — search box adapts accordingly ───────────── */
-.nb-search-wrap {
-  background: rgba(255,255,255,0.06);
+/* ── Toolbar is transparent — search box uses panel-aware colours ────────────── */
+[data-theme="dark"] .nb-search-wrap,
+[data-theme="grey"] .nb-search-wrap  {
+  background: rgba(255,255,255,0.04);
   border-color: rgba(255,255,255,0.1);
 }
-.nb-search-input { color: rgba(220, 230, 245, 0.85); }
-.nb-search-input::placeholder { color: rgba(180,195,215,0.35); opacity: 1; }
-.nb-search-count  { color: rgba(180,195,215,0.5); }
-.nb-search-nav-btn { color: rgba(180,195,215,0.5); }
-.nb-search-wrap:focus-within {
-  border-color: rgba(129,140,248,0.55);
-  box-shadow: 0 0 0 2px rgba(129,140,248,0.18);
-  background: rgba(129,140,248,0.06);
+[data-theme="dark"] .nb-search-input,
+[data-theme="grey"] .nb-search-input { color: #e6edf3; }
+[data-theme="dark"] .nb-search-wrap:focus-within,
+[data-theme="grey"] .nb-search-wrap:focus-within {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 2px rgba(129,140,248,0.15);
+  background: rgba(129,140,248,0.04);
 }
 [data-theme="aurora"] .nb-search-wrap:focus-within {
-  border-color: rgba(167,139,250,0.6);
-  box-shadow: 0 0 0 2px rgba(167,139,250,0.22);
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 2px rgba(167,139,250,0.2);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
