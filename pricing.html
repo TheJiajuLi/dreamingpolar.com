@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>定价 — Dreaming Polar</title>
+<meta name="description" content="Dreaming Polar 定价方案：免费版永久可用，Pro 版解锁云同步、无限 AI 分析和更多高级功能。">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --a:#6366f1;--t:#0f172a;--m:#64748b;
+  --bd:#e2e8f0;--bg:#f8fafc;--s:#fff;--r:14px;--w:960px;
+  --green:#16a34a;
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--t);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+.w{max-width:var(--w);margin:0 auto;padding:0 24px}
+
+/* Nav */
+nav{border-bottom:1px solid var(--bd);background:var(--s);position:sticky;top:0;z-index:100}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;max-width:960px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700}
+.logo img{height:26px;width:auto}
+.nav-links{display:flex;align-items:center;gap:24px;font-size:.88rem;color:var(--m)}
+.nav-links a:hover{color:var(--a)}
+.nav-links a.active{color:var(--a);font-weight:600}
+.nav-btns{display:flex;gap:8px}
+.btn-o{padding:7px 16px;border:1px solid var(--bd);border-radius:8px;background:var(--s);font-size:.86rem;color:var(--t);transition:border-color .15s}
+.btn-o:hover{border-color:var(--a);color:var(--a)}
+.btn-f{padding:7px 16px;border:none;border-radius:8px;background:var(--t);color:#fff;font-size:.86rem;font-weight:500}
+.btn-f:hover{opacity:.83}
+
+/* Hero */
+.hero{text-align:center;padding:60px 24px 48px}
+.hero h1{font-size:2.4rem;font-weight:800;letter-spacing:-.022em;margin-bottom:12px}
+.hero p{font-size:1rem;color:var(--m);max-width:460px;margin:0 auto 32px}
+
+/* Billing toggle */
+.toggle-wrap{display:inline-flex;align-items:center;gap:12px;background:var(--s);border:1px solid var(--bd);border-radius:40px;padding:4px 6px}
+.toggle-opt{font-size:.86rem;color:var(--m);padding:6px 16px;border-radius:32px;cursor:pointer;transition:all .18s;user-select:none}
+.toggle-opt.active{background:var(--t);color:#fff;font-weight:500}
+.badge-save{font-size:.68rem;font-weight:700;color:var(--green);background:rgba(22,163,74,.1);border-radius:10px;padding:2px 7px;margin-left:4px}
+
+/* Cards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:var(--w);margin:48px auto 0;padding:0 24px}
+@media(max-width:640px){.cards{grid-template-columns:1fr}}
+.card{background:var(--s);border:1.5px solid var(--bd);border-radius:var(--r);padding:32px;position:relative}
+.card.featured{border-color:var(--a);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.card-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--a);color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.05em;padding:3px 14px;border-radius:20px;white-space:nowrap}
+.plan-name{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--m);margin-bottom:8px}
+.price-wrap{display:flex;align-items:baseline;gap:4px;margin-bottom:4px}
+.price{font-size:2.8rem;font-weight:800;letter-spacing:-.02em}
+.price-unit{font-size:.9rem;color:var(--m)}
+.price-note{font-size:.8rem;color:var(--m);margin-bottom:20px;min-height:18px}
+.card-desc{font-size:.88rem;color:var(--m);margin-bottom:24px;line-height:1.6}
+.card-btn{display:block;width:100%;padding:11px;border-radius:10px;font-size:.93rem;font-weight:600;text-align:center;transition:opacity .15s;border:none}
+.btn-outline{background:transparent;border:1.5px solid var(--bd);color:var(--t)}
+.btn-outline:hover{border-color:var(--a);color:var(--a)}
+.btn-accent{background:var(--a);color:#fff}
+.btn-accent:hover{opacity:.86}
+.feats{list-style:none;margin-top:28px;display:flex;flex-direction:column;gap:11px}
+.feats li{display:flex;align-items:flex-start;gap:10px;font-size:.88rem}
+.feats li svg{flex-shrink:0;margin-top:2px}
+.feat-check{color:var(--green)}
+.feat-x{color:#cbd5e1}
+
+/* Compare table */
+.compare-section{padding:64px 24px 0;max-width:var(--w);margin:0 auto}
+.compare-section h2{font-size:1.6rem;font-weight:800;margin-bottom:32px;text-align:center}
+.compare-wrap{background:var(--s);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th,td{padding:13px 20px;font-size:.86rem;text-align:left}
+thead th{background:var(--bg);color:var(--m);font-weight:500;border-bottom:1px solid var(--bd)}
+tbody tr:not(:last-child) td{border-bottom:1px solid var(--bd)}
+td:not(:first-child),th:not(:first-child){text-align:center}
+.chk{color:var(--a);font-size:1rem}
+.no{color:#cbd5e1;font-size:1rem}
+.lim{font-size:.8rem;color:var(--m)}
+.col-pro{color:var(--a);font-weight:700}
+
+/* FAQ */
+.faq-section{padding:64px 24px;max-width:680px;margin:0 auto}
+.faq-section h2{font-size:1.6rem;font-weight:800;margin-bottom:32px;text-align:center}
+.faq-item{border-bottom:1px solid var(--bd);padding:20px 0}
+.faq-item:first-of-type{border-top:1px solid var(--bd)}
+.faq-q{font-size:.95rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:12px}
+.faq-icon{font-size:1.1rem;color:var(--m);flex-shrink:0;transition:transform .18s}
+.faq-a{font-size:.88rem;color:var(--m);line-height:1.7;margin-top:10px;display:none}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+.faq-item.open .faq-a{display:block}
+
+/* CTA */
+.cta-block{background:var(--t);color:#fff;border-radius:16px;padding:52px 36px;text-align:center;margin:0 24px 64px;max-width:var(--w);margin-left:auto;margin-right:auto}
+.cta-block h2{font-size:1.8rem;font-weight:800;margin-bottom:10px}
+.cta-block p{color:rgba(255,255,255,.6);margin-bottom:26px}
+.cta-w{display:inline-block;padding:12px 30px;background:#fff;color:var(--t);border-radius:10px;font-size:.93rem;font-weight:600;border:none;cursor:pointer}
+.cta-w:hover{opacity:.9}
+
+/* Footer */
+footer{border-top:1px solid var(--bd);padding:22px 24px;text-align:center;font-size:.8rem;color:var(--m)}
+footer a{color:var(--m)}footer a:hover{color:var(--a)}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <div class="logo">
+      <img src="assets/home_page/imgs/dp_logo.png" alt="Dreaming Polar">
+    </div>
+    <div class="nav-links">
+      <a href="/landing.html">首页</a>
+      <a href="/pricing.html" class="active">定价</a>
+      <a href="/changelog.html">更新日志</a>
+    </div>
+    <div class="nav-btns">
+      <button class="btn-o" onclick="document.getElementById('lp-auth-ref').href='/landing.html#login'">登录</button>
+      <a href="/landing.html" class="btn-f">免费开始</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <h1>简单透明，<span style="color:var(--a)">没有套路</span></h1>
+  <p>免费版能做的事已经够多了。Pro 版是给真的重度用户准备的。</p>
+  <div class="toggle-wrap">
+    <div class="toggle-opt active" id="tog-month" onclick="setBilling('month')">按月</div>
+    <div class="toggle-opt" id="tog-year" onclick="setBilling('year')">按年 <span class="badge-save">省 20%</span></div>
+  </div>
+</section>
+
+<!-- ── Price Cards ───────────────────────────────────────────────────────────── -->
+<div class="cards">
+
+  <!-- Free -->
+  <div class="card">
+    <div class="plan-name">免费版</div>
+    <div class="price-wrap">
+      <span class="price">¥0</span>
+    </div>
+    <div class="price-note">永久免费，无需信用卡</div>
+    <div class="card-desc">够用的功能，直接上手。没有试用期，不会突然消失。</div>
+    <button class="card-btn btn-outline" onclick="window.location='/landing.html'">免费开始</button>
+    <ul class="feats">
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>浏览器原生 Python，无限 Cell</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>ARIA 智能助手（每天 20 次提问）</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>镜像分屏 · 代码与输出并排</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>DP Grid 数据表格编辑</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>ICM 代码补全（含 Ghost Text）</li>
+      <li><svg class="feat-x" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span style="color:var(--m)">Notebook 云同步</span></li>
+      <li><svg class="feat-x" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span style="color:var(--m)">智能报告 PDF 导出</span></li>
+      <li><svg class="feat-x" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span style="color:var(--m)">优先客服支持</span></li>
+    </ul>
+  </div>
+
+  <!-- Pro -->
+  <div class="card featured">
+    <div class="card-badge">推荐</div>
+    <div class="plan-name" style="color:var(--a)">Pro 版</div>
+    <div class="price-wrap">
+      <span class="price" id="pro-price">¥29</span>
+      <span class="price-unit">/ 月</span>
+    </div>
+    <div class="price-note" id="pro-note">按月付款</div>
+    <div class="card-desc">重度使用数据分析的人。换设备不丢进度，ARIA 不限次，报告一键导出。</div>
+    <button class="card-btn btn-accent" onclick="window.location='/landing.html'">开始 14 天免费试用</button>
+    <ul class="feats">
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><strong>免费版全部功能</strong></li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>ARIA 提问无限次</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Notebook 云同步，多设备同步代码</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>智能报告 PDF 一键导出</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>更大文件上限（100MB/文件）</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>优先客服，工作日 24h 内响应</li>
+      <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>新功能优先体验资格</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ── Compare Table ─────────────────────────────────────────────────────────── -->
+<div class="compare-section">
+  <h2>详细对比</h2>
+  <div class="compare-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>功能</th>
+          <th>免费版</th>
+          <th class="col-pro">Pro 版</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>浏览器原生 Python</strong></td><td class="chk">✓</td><td class="chk col-pro">✓</td></tr>
+        <tr><td>Cell 数量</td><td class="lim">无限</td><td class="lim col-pro">无限</td></tr>
+        <tr><td><strong>ARIA AI 助手</strong></td><td class="lim">20 次 / 天</td><td class="col-pro">无限次</td></tr>
+        <tr><td><strong>Ctrl+I 行内 AI 改代码</strong></td><td class="chk">✓</td><td class="chk col-pro">✓</td></tr>
+        <tr><td>ICM Ghost Text 预测</td><td class="chk">✓</td><td class="chk col-pro">✓</td></tr>
+        <tr><td>镜像分屏</td><td class="chk">✓</td><td class="chk col-pro">✓</td></tr>
+        <tr><td>DP Grid 可视化编辑</td><td class="chk">✓</td><td class="chk col-pro">✓</td></tr>
+        <tr><td><strong>Notebook 云同步</strong></td><td class="no">✗</td><td class="chk col-pro">✓</td></tr>
+        <tr><td><strong>智能报告 PDF 导出</strong></td><td class="no">✗</td><td class="chk col-pro">✓</td></tr>
+        <tr><td>文件大小上限</td><td class="lim">10 MB</td><td class="lim col-pro">100 MB</td></tr>
+        <tr><td>优先客服</td><td class="no">✗</td><td class="chk col-pro">✓</td></tr>
+        <tr><td>新功能优先体验</td><td class="no">✗</td><td class="chk col-pro">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── FAQ ──────────────────────────────────────────────────────────────────── -->
+<div class="faq-section">
+  <h2>常见问题</h2>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      免费版会一直免费吗？
+      <span class="faq-icon">+</span>
+    </div>
+    <div class="faq-a">会。免费版不是"试用版"，它是我们的正式产品形态之一。你今天免费能用的功能，未来不会突然变成收费。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Pro 版 14 天试用结束后会自动扣费吗？
+      <span class="faq-icon">+</span>
+    </div>
+    <div class="faq-a">不会。试用期结束后账号自动降回免费版，不会扣任何费用。你需要主动升级才会产生付费。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      我的数据存在哪里？
+      <span class="faq-icon">+</span>
+    </div>
+    <div class="faq-a">代码文件存在你的浏览器本地（localStorage）。如果开启了 Pro 云同步，代码还会加密备份到我们的服务器。导入的数据文件也是本地处理，不会上传到服务器。</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      可以随时取消订阅吗？
+      <span class="faq-icon">+</span>
+    </div>
+    <div class="faq-a">可以。随时在账号设置里取消，不需要联系客服，当前订阅周期结束后不再续费，数据不会丢失。</div>
+  </div>
+</div>
+
+<!-- ── CTA ───────────────────────────────────────────────────────────────────── -->
+<div class="w" style="padding-bottom:64px">
+  <div class="cta-block">
+    <h2>先免费用用看</h2>
+    <p>不需要信用卡，打开浏览器就能开始。</p>
+    <button class="cta-w" onclick="window.location='/landing.html'">免费开始 →</button>
+  </div>
+</div>
+
+<!-- ── Footer ────────────────────────────────────────────────────────────────── -->
+<footer>
+  <p>Dreaming Polar &nbsp;·&nbsp; <a href="/landing.html">首页</a> &nbsp;·&nbsp; <a href="/pricing.html">定价</a> &nbsp;·&nbsp; <a href="/changelog.html">更新日志</a></p>
+</footer>
+
+<script>
+// Billing toggle
+var billing = 'month';
+function setBilling(type) {
+  billing = type;
+  document.getElementById('tog-month').classList.toggle('active', type === 'month');
+  document.getElementById('tog-year').classList.toggle('active', type === 'year');
+  if (type === 'year') {
+    document.getElementById('pro-price').textContent = '¥23';
+    document.getElementById('pro-note').textContent = '按年付 ¥276 / 年';
+  } else {
+    document.getElementById('pro-price').textContent = '¥29';
+    document.getElementById('pro-note').textContent = '按月付款';
+  }
+}
+
+// FAQ accordion
+function toggleFaq(el) {
+  var item = el.parentElement;
+  item.classList.toggle('open');
+}
+</script>
+</body>
+</html>
