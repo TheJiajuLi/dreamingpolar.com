@@ -1,33 +1,17 @@
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
+    const url  = new URL(request.url);
     const path = url.pathname;
 
-    if (path === '/favicon.ico') {
-      return env.ASSETS.fetch(
-        new Request(new URL('/assets/app_logo/favicon.png', url.origin), request)
-      );
-    }
-    if (path === '/app') {
-      return env.ASSETS.fetch(
-        new Request(new URL('/index.html', url.origin), request)
-      );
-    }
-    if (path === '/changelog') {
-      return env.ASSETS.fetch(
-        new Request(new URL('/changelog.html', url.origin), request)
-      );
-    }
-    if (path.startsWith('/reset-password')) {
-      return env.ASSETS.fetch(
-        new Request(new URL('/index.html', url.origin), request)
-      );
-    }
-    if (path === '/' || path === '') {
-      return env.ASSETS.fetch(
-        new Request(new URL('/landing.html', url.origin), request)
-      );
-    }
+    const rewrite = (target) =>
+      env.ASSETS.fetch(new URL(target, url.origin).toString());
+
+    if (path === '/' || path === '')         return rewrite('/landing.html');
+    if (path === '/app')                     return rewrite('/index.html');
+    if (path === '/changelog')               return rewrite('/changelog.html');
+    if (path.startsWith('/reset-password'))  return rewrite('/index.html');
+    if (path === '/favicon.ico')             return rewrite('/assets/app_logo/favicon.png');
+
     return env.ASSETS.fetch(request);
   }
 };
