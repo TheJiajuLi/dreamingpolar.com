@@ -31,7 +31,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;   /* push danger actions to the right */
+  flex: 0;   /* spacers in nb_search.css now handle centering */
 }
 
 /* Cell count — slightly heavier, balanced against Run All */

@@ -9,6 +9,7 @@ import { createSourceWidget } from '../../look_up_source/look_up_source.js';
 import { resetKernel, preloadPython, getDataFrameSchema, queryKernelContext } from '../../compiler/compiler.js';
 import { clearDataset, getAllDatasets } from '../../shared/dataset_store.js';
 import { getSettings } from '../../right_bar/settings.js';
+import { mountNbSearch } from '../../customise_code_block/nb_search.js';
 
 function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
@@ -125,6 +126,9 @@ function setupCodingScreen() {
   const cdsModeLabel = document.createElement('span');
   cdsModeLabel.className   = 'cds-mode-label';
   nbToolbar.appendChild(cdsModeLabel);
+
+  // ── Global cell search (centred in toolbar) ───────────
+  mountNbSearch(nbToolbar, clearCellsBtn);
 
   nbLeft.appendChild(nbToolbar);
   notebookView.appendChild(nbLeft);

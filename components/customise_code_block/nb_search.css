@@ -1,0 +1,138 @@
+/* ── Notebook Global Search ── toolbar-embedded, cell highlight overlay ─────── */
+
+/* ── Spacers that centre the search box ─────────────────────────────────────── */
+.nb-search-spacer { flex: 1; }
+
+/* ── Search wrapper (capsule, same visual language as search_bar.css) ────────── */
+.nb-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0,0,0,0.03);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  padding: 0 4px;
+  height: 26px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  flex-shrink: 0;
+}
+.nb-search-wrap:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+  background: rgba(99,102,241,0.03);
+}
+
+/* ── Input ───────────────────────────────────────────────────────────────────── */
+.nb-search-input {
+  width: 180px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--code-font, "JetBrains Mono", "Courier New", monospace);
+  font-size: 0.72rem;
+  color: var(--text, #0f172a);
+  caret-color: #6366f1;
+  letter-spacing: 0.01em;
+  padding: 0 4px;
+}
+.nb-search-input::placeholder { color: var(--text-muted, #94a3b8); opacity: 0.6; }
+
+/* ── Match count ─────────────────────────────────────────────────────────────── */
+.nb-search-count {
+  font-size: 0.65rem;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  white-space: nowrap;
+  padding: 0 2px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* ── Nav + clear buttons (reuse sc-btn base, override size) ──────────────────── */
+.nb-search-nav-btn,
+.nb-search-clear {
+  font-size: 0.68rem;
+  font-family: inherit;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* ── Clear button hidden state ───────────────────────────────────────────────── */
+.nb-search-clear {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+
+/* ── Dark / grey / aurora theme overrides ────────────────────────────────────── */
+[data-theme="dark"] .nb-search-wrap,
+[data-theme="grey"] .nb-search-wrap  {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .nb-search-input,
+[data-theme="grey"] .nb-search-input { color: #e6edf3; }
+[data-theme="dark"] .nb-search-wrap:focus-within,
+[data-theme="grey"] .nb-search-wrap:focus-within {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 2px rgba(129,140,248,0.15);
+  background: rgba(129,140,248,0.04);
+}
+[data-theme="aurora"] .nb-search-wrap:focus-within {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 2px rgba(167,139,250,0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HIGHLIGHT OVERLAY
+   .nb-search-hl-layer lives inside .nb-body (position:relative, overflow:hidden)
+   and sits visually over the textarea — pointer-events:none so editing still works.
+═══════════════════════════════════════════════════════════════════════════════ */
+.nb-search-hl-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;  /* above textarea (z-index:1 in some themes) but below ICM popups */
+}
+
+/* <pre> must mirror .nb-editor's exact font metrics */
+.nb-hl-pre {
+  margin: 0;
+  padding: 10px;                /* matches .nb-editor padding */
+  font-family: var(--code-font, "JetBrains Mono", "Courier New", monospace);
+  font-size: 0.84rem;           /* matches .nb-editor font-size */
+  line-height: 1.6;             /* matches .nb-editor line-height */
+  tab-size: 4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  color: transparent;           /* text is invisible; only <mark> backgrounds show */
+  background: transparent;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* All match highlights */
+.nb-hl {
+  background: rgba(255, 213, 0, 0.35);
+  border-radius: 2px;
+  color: transparent;           /* keep text invisible */
+  box-shadow: inset 0 0 0 1px rgba(200, 160, 0, 0.25);
+}
+
+/* Current / active match — stronger accent */
+.nb-hl--active {
+  background: rgba(255, 160, 0, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(200, 100, 0, 0.35);
+  border-radius: 2px;
+}
+
+/* Dark themes — brighter highlights for visibility */
+[data-theme="dark"] .nb-hl,
+[data-theme="grey"] .nb-hl  { background: rgba(255,220,50,0.2); box-shadow: inset 0 0 0 1px rgba(255,220,50,0.15); }
+[data-theme="dark"] .nb-hl--active,
+[data-theme="grey"] .nb-hl--active { background: rgba(255,180,0,0.4); box-shadow: inset 0 0 0 1px rgba(255,180,0,0.3); }
+
+[data-theme="aurora"] .nb-hl        { background: rgba(167,139,250,0.25); box-shadow: inset 0 0 0 1px rgba(167,139,250,0.2); }
+[data-theme="aurora"] .nb-hl--active { background: rgba(167,139,250,0.5);  box-shadow: inset 0 0 0 1px rgba(167,139,250,0.4); }
