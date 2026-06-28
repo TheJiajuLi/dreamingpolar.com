@@ -1031,6 +1031,10 @@ async function runAll(btn) {
 
   const total = _cells.filter(c => c.editor.value.trim()).length;
   document.dispatchEvent(new CustomEvent('run-all-start', { detail: { total } }));
+  // Force a browser paint so the red stop-button is visible before the loop starts.
+  // Without this, microtask-resolved Promises can complete the whole loop before
+  // the browser has a chance to repaint the updated DOM.
+  await new Promise(r => requestAnimationFrame(r));
 
   document.dispatchEvent(new CustomEvent('notebook-clear-output'));
 
