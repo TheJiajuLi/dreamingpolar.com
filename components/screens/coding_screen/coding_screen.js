@@ -76,7 +76,7 @@ function setupCodingScreen() {
     document.dispatchEvent(new CustomEvent('trim-empty-cells'))
   );
 
-  nbToolbar.append(runAllSlot, trimEmptyBtn, clearCellsBtn, restartKernelBtn);
+  nbToolbar.append(runAllSlot, clearCellsBtn, trimEmptyBtn, restartKernelBtn);
 
   // ── Variable name resolver — shared across all cell import buttons ──
   // Seed with persisted varNames so new imports don't collide with restored data.

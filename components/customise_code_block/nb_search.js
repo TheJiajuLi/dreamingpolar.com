@@ -13,10 +13,8 @@ let _clearBtnEl = null;
 // ── Public ────────────────────────────────────────────────────────────────────
 
 export function mountNbSearch(toolbar, insertBeforeEl) {
-  // Two flex:1 spacers bracket the search box to centre it.
-  const spacerL = _el('div', 'nb-search-spacer');
-  const spacerR = _el('div', 'nb-search-spacer');
-  const wrap    = _el('div', 'nb-search-wrap');
+  // wrap is flex:1 — fills all space between the left cluster and right buttons
+  const wrap = _el('div', 'nb-search-wrap');
 
   const input   = document.createElement('input');
   input.type        = 'text';
@@ -44,11 +42,9 @@ export function mountNbSearch(toolbar, insertBeforeEl) {
   wrap.append(input, count, prevBtn, nextBtn, clearBtn);
 
   if (insertBeforeEl && toolbar.contains(insertBeforeEl)) {
-    toolbar.insertBefore(spacerL, insertBeforeEl);
-    toolbar.insertBefore(wrap,    insertBeforeEl);
-    toolbar.insertBefore(spacerR, insertBeforeEl);
+    toolbar.insertBefore(wrap, insertBeforeEl);
   } else {
-    toolbar.append(spacerL, wrap, spacerR);
+    toolbar.appendChild(wrap);
   }
 
   // ── Events ─────────────────────────────────────────────────────────────────

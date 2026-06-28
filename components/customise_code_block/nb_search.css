@@ -1,9 +1,6 @@
 /* ── Notebook Global Search ── toolbar-embedded, cell highlight overlay ─────── */
 
-/* ── Spacers that centre the search box ─────────────────────────────────────── */
-.nb-search-spacer { flex: 1; }
-
-/* ── Search wrapper (capsule, same visual language as search_bar.css) ────────── */
+/* ── Search wrapper — fills all space between left and right toolbar clusters ── */
 .nb-search-wrap {
   display: flex;
   align-items: center;
@@ -14,7 +11,9 @@
   padding: 0 4px;
   height: 26px;
   transition: border-color 0.18s, box-shadow 0.18s;
-  flex-shrink: 0;
+  flex: 1;          /* fill available space */
+  min-width: 120px;
+  max-width: 560px; /* don't expand indefinitely on very wide screens */
 }
 .nb-search-wrap:focus-within {
   border-color: #6366f1;
@@ -24,7 +23,8 @@
 
 /* ── Input ───────────────────────────────────────────────────────────────────── */
 .nb-search-input {
-  width: 180px;
+  flex: 1;
+  min-width: 60px;
   border: none;
   outline: none;
   background: transparent;

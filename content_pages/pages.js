@@ -69,7 +69,7 @@ export const PAGES = [
       },
       {
         title: 'LaTeX / MathJax',
-        dataFile: `${B}/content_pages/tutorials/python_with_mathematics/sympy/sympy_tutorials.json`,
+        dataFile: `${B}/content_pages/docs/latex/latex_guide.json`,
       },
       {
         title: '数据可视化',
