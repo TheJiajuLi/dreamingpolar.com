@@ -7,7 +7,7 @@ const SETTINGS_KEY = 'dp-settings';
 const DEFAULTS = {
   cacheNotebookOutput:  true,   // persist output blocks across page refreshes
   cacheKernelData:      true,   // prewrite inject-store files to Pyodide FS at boot
-  cacheRightBarState:   true,   // remember which panel (files/settings) was last open
+  cacheRightBarState:   false,  // right bar closed by default; user can enable state memory
   cacheAriaHistory:     true,   // persist ARIA chat history across page refreshes
   autoRunOnLoad:        false,  // auto run all cells once kernel boots on page load
   autoSwitchFiles:      false,  // auto-switch to file manager when cursor is on pd.read_csv line
