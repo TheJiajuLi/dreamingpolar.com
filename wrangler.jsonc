@@ -4,6 +4,9 @@
   "main": "_worker.js",
   "assets": {
     "directory": ".",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "routing": {
+      "has_file_system_router": false
+    }
   }
 }
