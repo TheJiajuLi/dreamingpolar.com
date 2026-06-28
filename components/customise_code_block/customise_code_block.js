@@ -1017,8 +1017,20 @@ async function _flushPendingInjects() {
 
 // ── Run All ───────────────────────────────────────────────
 
+let _runAllAbort = null; // AbortController for the current Run All session
+
+export function abortRunAll() {
+  _runAllAbort?.abort();
+}
+
 async function runAll(btn) {
-  if (btn) btn.disabled = true;
+  // Cancel any already-running session
+  _runAllAbort?.abort();
+  _runAllAbort = new AbortController();
+  const { signal } = _runAllAbort;
+
+  const total = _cells.filter(c => c.editor.value.trim()).length;
+  document.dispatchEvent(new CustomEvent('run-all-start', { detail: { total } }));
 
   document.dispatchEvent(new CustomEvent('notebook-clear-output'));
 
@@ -1032,7 +1044,10 @@ async function runAll(btn) {
   // reference every imported variable, including AI-generated cells.
   await _flushPendingInjects();
 
+  let done = 0;
   for (let i = 0; i < _cells.length; i++) {
+    if (signal.aborted) break;
+
     const cell = _cells[i];
     const code = cell.editor.value.trim();
     if (!code) continue;
@@ -1042,11 +1057,19 @@ async function runAll(btn) {
       continue;
     }
 
+    done++;
+    document.dispatchEvent(new CustomEvent('run-all-progress', { detail: { done, total } }));
+
     cell.counter.textContent = '*';
     const cellRunBtn = cell.el.querySelector('.nb-run');
     if (cellRunBtn) cellRunBtn.disabled = true;
 
     const outputs = await compile(code, cell.lang, { cellIndex: i + 1 });
+
+    if (signal.aborted) {
+      if (cellRunBtn) cellRunBtn.disabled = false;
+      break;
+    }
 
     // Ensure import-button cells get a viz-suggestion (RUNNER diff misses these)
     const _ownDs = _cellInjectDs.get(cell.id);
@@ -1075,7 +1098,8 @@ async function runAll(btn) {
     }));
   }
 
-  if (btn) btn.disabled = false;
+  document.dispatchEvent(new CustomEvent('run-all-done', { detail: { aborted: signal.aborted } }));
+  _runAllAbort = null;
 }
 
 // ── Public init ───────────────────────────────────────────
@@ -1170,6 +1194,44 @@ export function init(container, externalTopbar) {
   }).observe(cellsEl);
 
   attachNotebookHooks({ runAllBtn, runAll, getCells, autoResize, saveAll });
+
+  // ── Run All 状态联动 ──────────────────────────────────────────────────────────
+  const _RUNALL_SVG_ORIG  = runAllBtn.innerHTML;
+  const _STOP_SVG =
+    `<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">` +
+    `<rect x="3" y="3" width="10" height="10" rx="1.5"/></svg>` +
+    `<span class="nb-run-all-label">停止</span>`;
+
+  function _setRunAllRunning(total) {
+    runAllBtn.innerHTML = _STOP_SVG;
+    runAllBtn.style.background = '#ef4444';
+    runAllBtn.style.boxShadow  = '0 1px 3px rgba(239,68,68,0.35)';
+    runAllBtn.style.border     = '1px solid rgba(255,255,255,0.15)';
+    runAllBtn.disabled = false;
+    runAllBtn.onclick  = e => { e.stopPropagation(); abortRunAll(); };
+  }
+
+  function _setRunAllIdle() {
+    runAllBtn.innerHTML    = _RUNALL_SVG_ORIG;
+    runAllBtn.style.background = '';
+    runAllBtn.style.boxShadow  = '';
+    runAllBtn.style.border     = '';
+    runAllBtn.disabled = false;
+    runAllBtn.onclick  = null;  // restore listener from attachNotebookHooks
+    const n = _cells.length;
+    cellCount.textContent = `${n} cell${n === 1 ? '' : 's'}`;
+  }
+
+  document.addEventListener('run-all-start', ({ detail: { total } }) => {
+    _setRunAllRunning(total);
+    cellCount.textContent = `第 1 / ${total} 个 Cell`;
+  });
+
+  document.addEventListener('run-all-progress', ({ detail: { done, total } }) => {
+    cellCount.textContent = `第 ${done} / ${total} 个 Cell`;
+  });
+
+  document.addEventListener('run-all-done', () => _setRunAllIdle());
 
   // Sep-hint reload: patch the active cell's import code to add sep argument
   document.addEventListener('sep-hint-reload', ({ detail: { varName, sepArg } }) => {
