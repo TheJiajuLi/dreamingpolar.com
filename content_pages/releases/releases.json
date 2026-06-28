@@ -1,0 +1,50 @@
+{
+  "current": {
+    "app": "1.2.0",
+    "aria": "小梦 2.1",
+    "notebook": "Power Notebook 1.4",
+    "grid": "DP Grid 1.1",
+    "released": "2026-06-28"
+  },
+  "changelog": [
+    {
+      "version": "1.2.0",
+      "date": "2026-06-28",
+      "highlights": "云同步、用户主页、全局搜索上线",
+      "items": [
+        { "type": "new", "text": "Notebook 代码云同步，换设备不丢失" },
+        { "type": "new", "text": "用户主页：活跃度热力图、近期活动记录" },
+        { "type": "new", "text": "Notebook 全局搜索（Ctrl+F），实时高亮匹配" },
+        { "type": "new", "text": "ICM Ghost Text 代码预测，停止输入后自动补全" },
+        { "type": "new", "text": "Run All 状态联动，运行中显示进度与包加载提示" },
+        { "type": "improve", "text": "DP Grid 双击编辑、过滤条件、同步到内核" },
+        { "type": "improve", "text": "智能报告 Phase 1–4 全部完成，含 PDF 导出" },
+        { "type": "fix", "text": "智能报告生成图表「暂无数据」问题修复" },
+        { "type": "fix", "text": "Pyodide 迁移至 Web Worker，UI 不再因 Python 执行卡顿" }
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-05-15",
+      "highlights": "镜像分屏、DP Grid、文档中心",
+      "items": [
+        { "type": "new", "text": "镜像分屏：代码与输出左右并排，实时对比" },
+        { "type": "new", "text": "DP Grid：可视化编辑 DataFrame，支持过滤与导出" },
+        { "type": "new", "text": "文档中心：内嵌教程搜索、LaTeX/MathJax 支持" },
+        { "type": "improve", "text": "ARIA 报告追问对话，图表自动生成" },
+        { "type": "fix", "text": "Cell 文件化持久化修复" }
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-04-01",
+      "highlights": "首次公开发布",
+      "items": [
+        { "type": "new", "text": "浏览器原生 Python（Pyodide），无需安装" },
+        { "type": "new", "text": "ARIA 智能助手，理解 DataFrame 上下文" },
+        { "type": "new", "text": "Power Notebook 多语言 Cell（Python/LaTeX/Markdown）" },
+        { "type": "new", "text": "文件中心，CSV/Excel/JSON/XML 一键导入注入" }
+      ]
+    }
+  ]
+}

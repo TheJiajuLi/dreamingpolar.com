@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dreaming Polar — 数据分析，从未如此直接</title>
+  <meta name="description" content="浏览器原生 Python · AI 真正理解你的数据。不需要安装环境，不需要配置服务器。">
+  <link rel="icon" href="assets/app_logo/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="components/landing/landing_page.css">
+</head>
+<body>
+
+<!-- ── Nav ───────────────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="lp-nav">
+    <div class="lp-logo">
+      <svg class="lp-logo-icon" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="12" fill="#6366f1" opacity="0.15"/>
+        <path d="M8 14c0-3.31 2.69-6 6-6s6 2.69 6 6-2.69 6-6 6" stroke="#6366f1" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="14" cy="14" r="2.5" fill="#6366f1"/>
+      </svg>
+      Dreaming Polar
+      <span class="lp-version-badge" id="lp-app-version">v1.2.0</span>
+    </div>
+    <div class="lp-nav-actions">
+      <a href="/app" class="lp-btn-ghost">登录</a>
+      <a href="/app" class="lp-btn-primary">免费开始</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────────── -->
+<section class="lp-hero">
+  <div class="lp-hero-badge">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+    浏览器原生 Python · AI 真正理解你的数据
+  </div>
+  <h1 class="lp-hero-title">数据分析，从未如此<span class="lp-hero-accent">直接</span></h1>
+  <p class="lp-hero-sub">不需要安装环境，不需要配置服务器。打开浏览器，导入数据，用自然语言提问或写 Python 代码——AI 知道你的数据里有什么。</p>
+  <div class="lp-hero-cta">
+    <a href="/app" class="lp-cta-main">免费开始使用 →</a>
+    <a href="/changelog" class="lp-cta-secondary">查看更新日志</a>
+  </div>
+</section>
+
+<!-- ── Features ──────────────────────────────────────────────────────────────── -->
+<div class="lp-container">
+  <section class="lp-section">
+    <div class="lp-section-label">核心差异化</div>
+    <h2 class="lp-section-title">别的工具做不到的事</h2>
+    <p class="lp-section-sub">Dreaming Polar 不是"带 AI 的 Jupyter"，而是重新想象了数据分析工作台应该是什么样子。</p>
+
+    <div class="lp-features-grid">
+      <div class="lp-feature-card">
+        <div class="lp-feature-icon">🐍</div>
+        <h3 class="lp-feature-title">浏览器原生 Python 执行</h3>
+        <p class="lp-feature-desc">Pyodide 在你的浏览器里跑，零服务器，零安装，pandas、matplotlib、scipy 开箱即用。</p>
+        <span class="lp-feature-tag">QuickBI 做不到</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-feature-icon">🧠</div>
+        <h3 class="lp-feature-title">AI 真正理解你的数据</h3>
+        <p class="lp-feature-desc">ARIA 知道你的 DataFrame 里有哪些列、哪些变量。"帮我分析 open 列趋势"——它直接做，不是给你解释怎么做。</p>
+        <span class="lp-feature-tag">Copilot 做不到</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-feature-icon">⊞</div>
+        <h3 class="lp-feature-title">镜像分屏 · 代码与输出并排</h3>
+        <p class="lp-feature-desc">每个 Cell 左侧写代码，右侧实时看输出。拖动手柄调比例，再也不用上下滚动对照。</p>
+        <span class="lp-feature-tag">Jupyter 做不到</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-feature-icon">⊟</div>
+        <h3 class="lp-feature-title">DP Grid · 可视化编辑数据</h3>
+        <p class="lp-feature-desc">双击编辑 DataFrame，过滤排序，一键同步回 Python 内核。Excel 能做的事，不用离开平台。</p>
+        <span class="lp-feature-tag">FineBI 做不到</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-feature-icon">📊</div>
+        <h3 class="lp-feature-title">智能报告 · 一键 PDF</h3>
+        <p class="lp-feature-desc">AI 叙事性分析 + 自动生成图表 + 追问对话 + PDF 导出。数据汇报从小时级压缩到分钟级。</p>
+        <span class="lp-feature-tag">PowerBI 的弱项</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-feature-icon">✦</div>
+        <h3 class="lp-feature-title">ICM · 感知数据的代码补全</h3>
+        <p class="lp-feature-desc">不只是通用 Python 补全，ICM 知道你的 DataFrame 列名，Ghost Text 预测的是 df_ge['open'].plot()，不是抽象代码。</p>
+        <span class="lp-feature-tag">VS Code 做不到</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Compare ──────────────────────────────────────────────────────────────── -->
+  <section class="lp-section">
+    <div class="lp-section-label">竞品对比</div>
+    <h2 class="lp-section-title">为什么选 Dreaming Polar</h2>
+    <p class="lp-section-sub">我们不是要替代所有工具，而是填补那个没有人占据的空间。</p>
+    <div class="lp-compare-wrap">
+      <table class="lp-compare-table">
+        <thead>
+          <tr>
+            <th>能力</th>
+            <th class="lp-compare-dp">Dreaming Polar</th>
+            <th>Jupyter</th>
+            <th>FineBI</th>
+            <th>PowerBI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>浏览器原生 Python</strong></td>
+            <td class="lp-check lp-compare-dp">✓</td>
+            <td class="lp-partial">需安装</td>
+            <td class="lp-cross">✗</td>
+            <td class="lp-cross">✗</td>
+          </tr>
+          <tr>
+            <td><strong>AI 理解数据上下文</strong></td>
+            <td class="lp-check lp-compare-dp">✓</td>
+            <td class="lp-cross">✗</td>
+            <td class="lp-partial">有限</td>
+            <td class="lp-partial">有限</td>
+          </tr>
+          <tr>
+            <td><strong>代码 + 可视化并排</strong></td>
+            <td class="lp-check lp-compare-dp">✓</td>
+            <td class="lp-cross">✗</td>
+            <td class="lp-cross">✗</td>
+            <td class="lp-cross">✗</td>
+          </tr>
+          <tr>
+            <td><strong>可视化编辑 DataFrame</strong></td>
+            <td class="lp-check lp-compare-dp">✓</td>
+            <td class="lp-cross">✗</td>
+            <td class="lp-check">✓</td>
+            <td class="lp-check">✓</td>
+          </tr>
+          <tr>
+            <td><strong>自然语言分析</strong></td>
+            <td class="lp-check lp-compare-dp">✓</td>
+            <td class="lp-cross">✗</td>
+            <td class="lp-partial">有限</td>
+            <td class="lp-partial">有限</td>
+          </tr>
+          <tr>
+            <td><strong>零配置启动</strong></td>
+            <td class="lp-check lp-compare-dp">✓</td>
+            <td class="lp-cross">✗</td>
+            <td class="lp-cross">✗</td>
+            <td class="lp-cross">✗</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Steps ────────────────────────────────────────────────────────────────── -->
+  <section class="lp-section">
+    <div class="lp-section-label">上手流程</div>
+    <h2 class="lp-section-title">三步开始分析</h2>
+    <p class="lp-section-sub">不需要环境配置，不需要教程。</p>
+    <div class="lp-steps-grid">
+      <div>
+        <div class="lp-step-num">1</div>
+        <h3 class="lp-step-title">导入数据</h3>
+        <p class="lp-step-desc">拖入 CSV、Excel、JSON 或 XML，自动注入 Python 内核，变量名即时可用。</p>
+      </div>
+      <div>
+        <div class="lp-step-num">2</div>
+        <h3 class="lp-step-title">选择模式</h3>
+        <p class="lp-step-desc">用自然语言问 ARIA，或在 Notebook 里写 Python。两者共享同一份数据，随时切换。</p>
+      </div>
+      <div>
+        <div class="lp-step-num">3</div>
+        <h3 class="lp-step-title">导出成果</h3>
+        <p class="lp-step-desc">一键生成 AI 分析报告，导出 PDF，或把数据保存为任意格式。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Version info ──────────────────────────────────────────────────────────── -->
+  <section class="lp-section">
+    <div class="lp-version-section">
+      <div>
+        <div class="lp-version-main" id="lp-version-main">Dreaming Polar 1.2.0</div>
+        <div class="lp-version-sub" id="lp-version-sub">小梦 ARIA 2.1 · Power Notebook 1.4 · DP Grid 1.1</div>
+        <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px">发布于 <span id="lp-released">2026-06-28</span></div>
+      </div>
+      <a href="/changelog" class="lp-changelog-link">查看完整更新日志 →</a>
+    </div>
+
+    <div style="margin-top:20px">
+      <div style="font-size:0.88rem;color:#64748b;margin-bottom:4px;font-weight:600">近期更新</div>
+      <div class="lp-updates-list" id="lp-updates-list"></div>
+    </div>
+  </section>
+
+  <!-- ── CTA ───────────────────────────────────────────────────────────────────── -->
+  <section class="lp-section">
+    <div class="lp-cta-block">
+      <h2>现在就开始，免费使用</h2>
+      <p>不需要信用卡，不需要安装任何东西。打开浏览器即可开始。</p>
+      <a href="/app" class="lp-cta-white">打开 Dreaming Polar →</a>
+    </div>
+  </section>
+</div>
+
+<!-- ── Footer ────────────────────────────────────────────────────────────────── -->
+<footer class="lp-footer">
+  <p>© 2026 Dreaming Polar &nbsp;·&nbsp;
+     <a href="/changelog">更新日志</a> &nbsp;·&nbsp;
+     <a href="/app">进入应用</a>
+  </p>
+</footer>
+
+<script src="components/landing/landing_page.js"></script>
+</body>
+</html>

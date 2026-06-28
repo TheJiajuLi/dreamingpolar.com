@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>更新日志 — Dreaming Polar</title>
+  <link rel="icon" href="assets/app_logo/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="components/landing/landing_page.css">
+  <style>
+    /* ── Changelog-specific styles ── */
+    .cl-header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      max-width: var(--max-w);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .cl-back {
+      font-size: 0.88rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cl-back:hover { color: var(--accent); }
+    .cl-page-title {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      margin-bottom: 6px;
+    }
+    .cl-current-ver { font-size: 0.88rem; color: var(--muted); }
+    .cl-list { display: flex; flex-direction: column; gap: 32px; margin-top: 40px; }
+    .cl-version {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .cl-version-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .cl-ver-num {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-right: 12px;
+    }
+    .cl-highlights { font-size: 0.88rem; color: var(--muted); }
+    .cl-date { font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+    .cl-items { list-style: none; padding: 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+    .cl-item { display: flex; align-items: flex-start; gap: 12px; }
+    .cl-tag {
+      flex-shrink: 0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 2px;
+    }
+    .cl-tag-new     { background: rgba(22,163,74,0.1);  color: #16a34a; }
+    .cl-tag-improve { background: rgba(37,99,235,0.1);  color: #2563eb; }
+    .cl-tag-fix     { background: rgba(100,116,139,0.1); color: #64748b; }
+    .cl-item-text { font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="cl-header">
+    <a href="/" class="cl-back">← 返回首页</a>
+    <a href="/app" class="lp-btn-primary">打开应用</a>
+  </div>
+</header>
+
+<div class="lp-container">
+  <div style="padding: 48px 0 0">
+    <h1 class="cl-page-title">更新日志</h1>
+    <div class="cl-current-ver" id="cl-current-ver">Dreaming Polar · 加载中…</div>
+  </div>
+  <div class="cl-list" id="cl-list">
+    <div style="color:#94a3b8;text-align:center;padding:40px">加载中…</div>
+  </div>
+  <div style="padding:48px 0;text-align:center">
+    <a href="/app" class="lp-cta-main">打开 Dreaming Polar →</a>
+  </div>
+</div>
+
+<footer class="lp-footer">
+  <p>© 2026 Dreaming Polar &nbsp;·&nbsp;
+     <a href="/">首页</a> &nbsp;·&nbsp;
+     <a href="/app">进入应用</a>
+  </p>
+</footer>
+
+<script src="components/landing/changelog.js"></script>
+</body>
+</html>
