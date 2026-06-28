@@ -1,4 +1,5 @@
 {
+  "title": "Power Notebook",
   "blocks": [
     {
       "label": "Power Notebook 定位",
@@ -7,27 +8,60 @@
       "resultType": "text"
     },
     {
+      "label": "Run All — 进度与停止",
+      "intro": "工具栏左侧的 Run All 按钮可以按顺序执行所有 Cell。",
+      "examples": [
+        {
+          "code": "# 点击 ▶▶ Run All：\n# · 按钮变为红色「■ 停止」\n# · 进度显示「第 1 / 5 个 Cell ···」\n# · 加载包时显示「正在加载 pandas, numpy ···」\n# · 每个 Cell 完成后短暂显示「✓ Cell 1 完成」\n#\n# 点击「■ 停止」：\n# · 当前 Cell 执行完后停止\n# · 后续 Cell 跳过，不强制中断 Worker",
+          "result": "首次运行时，Pyodide 需要从 CDN 下载 pandas、numpy 等包（约 10–30 秒）。进度栏会显示正在加载的包名。后续运行包已缓存，执行更快。",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
+      "label": "全局搜索（Ctrl+F）",
+      "intro": "工具栏中央有一个「搜索 Cells…」输入框，可以在所有 Cell 中实时高亮匹配文本。",
+      "examples": [
+        {
+          "code": "# 激活方式：\n# · 点击工具栏中央搜索框\n# · 或按 Ctrl+F / Cmd+F（Notebook 处于焦点时）\n#\n# 操作：\n# · 输入关键词 → 所有 Cell 中匹配的文字即时高亮\n# · Enter / ↓ 跳转到下一个匹配\n# · Shift+Enter / ↑ 跳到上一个匹配\n# · 右侧显示匹配计数，如「3 / 12」\n# · Esc 清除高亮",
+          "result": "搜索只作用于代码文本，不搜索输出区。高亮层叠加在 textarea 之上，不影响代码编辑。",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
       "label": "预加载包",
       "examples": [
         {
           "code": "# 这些包已预加载，无需 pip install：\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport sympy as sym\n\nprint('All preloaded ✓')",
-          "result": "首次执行 Python 时会下载 Pyodide 内核（约 10-20 秒，显示开机动画）。之后刷新页面前保持常驻，不再重新加载。",
+          "result": "首次执行 Python 时会下载 Pyodide 内核（约 10–20 秒，显示开机动画）。之后刷新页面前保持常驻，不再重新加载。",
+          "resultType": "text"
+        }
+      ]
+    },
+    {
+      "label": "云端同步",
+      "intro": "登录后，Notebook 内容自动同步到云端，换设备或刷新页面后可恢复。",
+      "examples": [
+        {
+          "code": "# 同步触发时机：\n# · 停止输入 3 秒后自动保存（防抖）\n# · 按 Ctrl+S / Cmd+S 立即同步\n#\n# 状态栏提示：\n# · 「☁ 已同步」— 成功\n# · 「⚠ 同步失败，将在下次重试」— 网络问题\n#\n# 开关位置：Settings → Notebook 文件 → 自动同步至云端",
+          "result": "云同步是额外的持久层，不替代本地 localStorage。即使在未登录状态下，代码仍保存在本地，登录后下次打开会从云端恢复最新版本。",
           "resultType": "text"
         }
       ]
     },
     {
       "label": "与 Quick Analysis 互跳",
-      "code": "# 在 Power Notebook 工具栏右侧有「← Quick Analysis」按钮\n# 在 Quick Analysis 工具栏右侧有「Notebook ↗」按钮\n#\n# 两者共享 Pyodide 内核：\n# Power Notebook 里 import 的数据（df 变量）\n# 在 Quick Analysis 里可以用 Python 代码继续操作\n#\n# 注意：Quick Analysis 的轻量导入路径（dataset_store）\n# 不自动注入 Pyodide 内核——如需在 Python 里操作，\n# 请用 Power Notebook 的 📂 按钮导入",
-      "result": "互跳不会丢失数据：Python 内核里的变量一直在内存里，直到点「重启内核」或刷新页面。",
+      "code": "# 在 Power Notebook 工具栏右侧有「← Quick Analysis」按钮\n# 在 Quick Analysis 工具栏右侧有「Notebook ↗」按钮\n#\n# 两者共享 Pyodide 内核：\n# Power Notebook 里 import 的数据（df 变量）\n# 在 Quick Analysis 里可以用 Python 代码继续操作\n#",
+      "result": "推荐工作流：用 Quick Analysis 快速探索和提问 → 发现需要自定义分析时切换到 Notebook 写代码。",
       "resultType": "text"
     },
     {
       "label": "运行方式",
       "examples": [
         {
-          "code": "# 单个 cell：点 ▶ 按钮，或 Ctrl/Cmd + Enter\n# 全部 cell：工具栏「▶▶ Run All」\n#\n# 输出显示在右侧 OUTPUT 面板\n# 每个 cell 的输出独立显示，带 cell 编号标签",
-          "result": "matplotlib 图表直接显示在输出面板里，无需 plt.show() 参数配置，Dreaming Polar 已自动配置。",
+          "code": "# 单个 Cell 运行：\n# · 点击 Cell 左侧的 ▶ 按钮\n# · 或按 Ctrl+Enter / Cmd+Enter\n#\n# 全部运行：\n# · 点击工具栏「▶▶ Run All」\n# · 或按 Ctrl+Shift+Enter / Cmd+Shift+Enter\n#\n# 重启内核（清除所有变量）：\n# · 点击工具栏右侧的「↺」按钮（点两次确认）",
+          "result": "重启内核后，所有 Python 变量会被清除，但代码不会消失。需要重新运行 Cell 才能恢复变量状态。",
           "resultType": "text"
         }
       ]
