@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // Redirect unauthenticated users to landing page
+    (function() {
+      var p = location.pathname;
+      var isLanding = p === '/landing.html';
+      var isChangelog = p === '/changelog.html';
+      var hasUser = localStorage.getItem('dp-auth-user');
+      if (!isLanding && !isChangelog && !hasUser) {
+        window.location.replace('/landing.html');
+      }
+    })();
+  </script>
 
   <title>Dreaming Polar — 浏览器里的 Python · AI 研究环境</title>
   <meta name="description" content="在浏览器中直接运行 Python、绘制图表，与 AI 助手实时协作。Dreaming Polar 是专为探索与研究设计的交互式科学计算平台，无需安装任何软件。">
