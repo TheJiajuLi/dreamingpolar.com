@@ -3,8 +3,9 @@ export default {
     const url  = new URL(request.url);
     const path = url.pathname;
 
+    // Build a fresh GET Request for the target asset
     const rewrite = (target) =>
-      env.ASSETS.fetch(new URL(target, url.origin).toString());
+      env.ASSETS.fetch(new Request(new URL(target, url.origin)));
 
     if (path === '/' || path === '')         return rewrite('/landing.html');
     if (path === '/app')                     return rewrite('/index.html');
