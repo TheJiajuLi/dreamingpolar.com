@@ -59,7 +59,20 @@ const _worker  = new Worker(new URL('./pyodide_worker.js', import.meta.url), { t
 const _pending = new Map();
 let   _workerReady = null;
 
-_worker.onmessage = ({ data: { id, result, error } }) => {
+_worker.onmessage = ({ data }) => {
+  const { id, result, error, type } = data;
+
+  // ── Side-channel messages (no request id) ─────────────────────────────────
+  if (!id) {
+    if (type === 'pkg-loading') {
+      document.dispatchEvent(new CustomEvent('worker-pkg-loading', { detail: { packages: data.packages } }));
+    } else if (type === 'pkg-loaded-all') {
+      document.dispatchEvent(new CustomEvent('worker-pkg-loaded-all'));
+    }
+    return;
+  }
+
+  // ── Normal request/response ────────────────────────────────────────────────
   const p = _pending.get(id);
   if (!p) return;
   _pending.delete(id);

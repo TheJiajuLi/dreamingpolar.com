@@ -1244,22 +1244,27 @@ export function init(container, externalTopbar) {
   }
 
   let _progressTimer = null;
+  let _isRunAllActive = false;
+  let _currentCellProgress = null; // { done, total } — saved to restore after pkg load
 
   document.addEventListener('run-all-start', ({ detail: { total } }) => {
+    _isRunAllActive = true;
+    _currentCellProgress = null;
     _setRunAllRunning(total);
     _setCountRunning('正在初始化');
   });
 
   document.addEventListener('run-all-cell-start', ({ detail: { done, total } }) => {
     clearTimeout(_progressTimer);
+    _currentCellProgress = { done, total };
     _setCountRunning(`第 ${done} / ${total} 个 Cell`);
   });
 
   document.addEventListener('run-all-progress', ({ detail: { done, total } }) => {
     clearTimeout(_progressTimer);
+    _currentCellProgress = null;
     _setCountDone(`✓ Cell ${done} 完成`);
     if (done < total) {
-      // After 200 ms show the next cell's running state
       _progressTimer = setTimeout(() => {
         _setCountRunning(`第 ${done + 1} / ${total} 个 Cell`);
       }, 200);
@@ -1267,9 +1272,28 @@ export function init(container, externalTopbar) {
   });
 
   document.addEventListener('run-all-done', () => {
+    _isRunAllActive = false;
+    _currentCellProgress = null;
     clearTimeout(_progressTimer);
     _progressTimer = null;
     _setRunAllIdle();
+  });
+
+  // ── Package loading notifications (only during Run All) ───────────────────
+  document.addEventListener('worker-pkg-loading', ({ detail: { packages } }) => {
+    if (!_isRunAllActive) return;
+    // Show up to 3 package names to keep it concise
+    const names = packages.slice(0, 3).join(', ') + (packages.length > 3 ? ' …' : '');
+    _setCountRunning(`正在加载 ${names}`);
+  });
+
+  document.addEventListener('worker-pkg-loaded-all', () => {
+    if (!_isRunAllActive) return;
+    // Restore cell-level progress after packages are done
+    if (_currentCellProgress) {
+      const { done, total } = _currentCellProgress;
+      _setCountRunning(`第 ${done} / ${total} 个 Cell`);
+    }
   });
 
   // Sep-hint reload: patch the active cell's import code to add sep argument

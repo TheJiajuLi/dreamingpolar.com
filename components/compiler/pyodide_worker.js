@@ -228,7 +228,28 @@ async function _handleInit(payload) {
 
 async function _handleRun(payload) {
   const { code } = payload;
-  await _py.loadPackagesFromImports(code, { messageCallback: () => {} });
+
+  // Track packages that Pyodide actually fetches (not already cached).
+  // messageCallback receives "Loading X" when downloading, silent for cached.
+  const loading = [];
+  await _py.loadPackagesFromImports(code, {
+    messageCallback: (msg) => {
+      const m = msg.match(/Loading\s+([\w.-]+)/i);
+      if (m) {
+        const pkg = m[1].split('-')[0]; // normalise e.g. "numpy-core" → "numpy"
+        if (!loading.includes(pkg)) {
+          loading.push(pkg);
+          // Side-channel: no request id — main thread dispatches as DOM event
+          self.postMessage({ type: 'pkg-loading', packages: loading.slice() });
+        }
+      }
+    },
+  });
+
+  if (loading.length > 0) {
+    self.postMessage({ type: 'pkg-loaded-all' });
+  }
+
   _py.globals.set('_user_code', code);
   const raw = await _py.runPythonAsync(RUNNER);
   return raw; // JSON string — parsed by main thread
