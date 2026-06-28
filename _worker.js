@@ -3,6 +3,11 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    if (path === '/favicon.ico') {
+      return env.ASSETS.fetch(
+        new Request(new URL('/assets/app_logo/favicon.png', url.origin), request)
+      );
+    }
     if (path === '/app') {
       return env.ASSETS.fetch(
         new Request(new URL('/index.html', url.origin), request)
