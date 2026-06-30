@@ -550,10 +550,21 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 [data-theme="light"] .cds-notebook-toolbar .sc-btn--danger    { color: #dc2626; opacity: 0.6; }
 [data-theme="light"] .cds-notebook-toolbar .sc-btn--danger:hover { background: #fef2f2; color: #dc2626; opacity: 1; }
 
+/* ── Light theme: notebook view as a white rounded card ─────────────────── */
+[data-theme="light"] #cds-notebook-view {
+  margin: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 2px 12px rgba(0,0,0,0.05);
+}
+[data-theme="light"] .cds-notebook-panel { background: #ffffff; }
+[data-theme="light"] .cds-output-panel,
+[data-theme="light"] .cds-output-body    { background: #ffffff; }
+[data-theme="light"] .cds-output-panel-hdr { background: #f8f9fb; border-bottom-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .cds-output-panel { border-left-color: rgba(0,0,0,0.07); }
+
 /* Notebook cells */
-/* light theme: notebook panel background matches cells so no white gap below */
-[data-theme="light"] .cds-notebook-panel    { background: #f0f1f5; }
-[data-theme="light"] .nb-topbar             { background: #f0f1f5; border-bottom-color: var(--border, #d7e1eb); }
+[data-theme="light"] .nb-topbar             { background: #ffffff; border-bottom-color: rgba(0,0,0,0.07); }
 [data-theme="light"] .nb-topbar .nb-run-all-btn       { border-color: var(--border, #d7e1eb); color: var(--text, #1a1a2e); }
 [data-theme="light"] .nb-topbar .nb-run-all-btn:hover { background: var(--accent-soft, #e0e3ff); border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
 [data-theme="light"] .nb-topbar .nb-cell-count        { color: var(--text-muted, #425366); }
