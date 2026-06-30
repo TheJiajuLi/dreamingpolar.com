@@ -411,7 +411,7 @@ function lpAuthClose() {
   setTimeout(() => { overlay.style.display = 'none'; }, 180);
 }
 document.getElementById('lp-auth-close').addEventListener('click', lpAuthClose);
-document.getElementById('lp-auth-overlay').addEventListener('click', e => {
+document.getElementById('lp-auth-overlay').addEventListener('mousedown', e => {
   if (e.target === document.getElementById('lp-auth-overlay')) lpAuthClose();
 });
 
@@ -511,6 +511,21 @@ document.getElementById('lp-forgot-btn').addEventListener('click', async () => {
     err.textContent = e.message;
     btn.disabled = false; btn.textContent = '发送重置链接';
   }
+});
+
+// ── Enter key submits the active form ─────────────────────────────────────────
+['lp-login-email','lp-login-pw'].forEach(id => {
+  document.getElementById(id)?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('lp-login-btn').click(); }
+  });
+});
+['lp-reg-name','lp-reg-email','lp-reg-pw'].forEach(id => {
+  document.getElementById(id)?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('lp-reg-btn').click(); }
+  });
+});
+document.getElementById('lp-forgot-email')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('lp-forgot-btn').click(); }
 });
 
 // ── Auto-redirect logged-in users ─────────────────────────────────────────────
