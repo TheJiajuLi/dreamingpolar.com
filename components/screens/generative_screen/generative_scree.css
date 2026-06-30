@@ -859,3 +859,26 @@
 [data-theme="dark"]   .aria-card-code-footer,
 [data-theme="grey"]   .aria-card-code-footer { border-top-color: rgba(255,255,255,0.06); }
 [data-theme="aurora"] .aria-card-code-footer  { border-top-color: rgba(192,132,252,0.1); }
+
+/* ── ARIA screen "box" — distinct panel bg per theme ─────────────────────── */
+[data-theme="dark"]   #generative-screen { background: #0d1117; }
+[data-theme="grey"]   #generative-screen { background: #22272e; }
+[data-theme="aurora"] #generative-screen { background: #080820; }
+
+/* Header bar (ARIA · 数据分析助理) — slightly lighter surface, creates top-bar layer */
+[data-theme="dark"]   .aria-chat-header { background: #161b22; border-bottom-color: rgba(255,255,255,0.07); }
+[data-theme="grey"]   .aria-chat-header { background: #2d333b; border-bottom-color: rgba(255,255,255,0.07); }
+[data-theme="aurora"] .aria-chat-header { background: #0d0d2e; border-bottom-color: rgba(192,132,252,0.12); }
+
+/* Gen toolbar row (view switcher at top-right) — matches header tone */
+[data-theme="dark"]   .gen-toolbar { background: #161b22; border-bottom-color: rgba(255,255,255,0.06); }
+[data-theme="grey"]   .gen-toolbar { background: #2d333b; border-bottom-color: rgba(255,255,255,0.06); }
+[data-theme="aurora"] .gen-toolbar { background: #0d0d2e; border-bottom-color: rgba(192,132,252,0.1); }
+
+/* Conversation area background — same as screen (seamless) */
+[data-theme="dark"]   .aria-chat-conv-area,
+[data-theme="dark"]   .aria-chat-messages { background: #0d1117; }
+[data-theme="grey"]   .aria-chat-conv-area,
+[data-theme="grey"]   .aria-chat-messages { background: #22272e; }
+[data-theme="aurora"] .aria-chat-conv-area,
+[data-theme="aurora"] .aria-chat-messages { background: #080820; }
