@@ -25,7 +25,7 @@
   will-change: width;
 }
 [data-theme="dark"]   #right-bar { background: #0d1117; border-radius: 0; }
-[data-theme="grey"]   #right-bar { background: #2d333b; border-radius: 0; }
+[data-theme="grey"]   #right-bar { background: #1c2128; border-radius: 0; }
 [data-theme="aurora"] #right-bar { background: #030310; }
 
 /* Expanded state — file panel is open */
@@ -281,8 +281,8 @@
 }
 
 /* Dark themes */
-[data-theme="dark"]   .rb-slide-pane,
-[data-theme="grey"]   .rb-slide-pane   { background: rgba(22,27,34,0.92); border-color: transparent; }
+[data-theme="dark"]   .rb-slide-pane   { background: rgba(22,27,34,0.92); border-color: transparent; }
+[data-theme="grey"]   .rb-slide-pane   { background: #2d333b; border-color: transparent; }
 [data-theme="aurora"] .rb-slide-pane   { background: rgba(7,7,26,0.92);  border-color: transparent; }
 [data-theme="aurora"] .rb-slide-pane   { background: rgba(14,14,36,0.88); border-color: rgba(192,132,252,0.15); }
 [data-theme="dark"]   .dp-setting-name,
