@@ -461,3 +461,84 @@
 #grid-screen[data-screen-state="maximized"] {
   display: flex;
 }
+
+/* ── Phase 3: row select, col menu, pagination, Pro banner ───────────────── */
+
+/* Clickable row-number cell */
+.grid-table tbody td.grid-row-num {
+  cursor: pointer;
+  user-select: none;
+}
+.grid-table tbody td.grid-row-num:hover {
+  color: var(--accent, #6366f1);
+  background: rgba(99,102,241,0.06) !important;
+}
+
+/* Selected row highlight */
+.grid-row--selected { background: rgba(99,102,241,0.11) !important; }
+.grid-row--selected td { color: var(--text, #0f172a); }
+[data-theme="dark"] .grid-row--selected { background: rgba(129,140,248,0.2) !important; }
+
+/* Selected count in status bar */
+#grid-stat-selected { color: var(--accent, #6366f1); font-weight: 600; }
+
+/* Column context menu */
+.grid-ctx-menu {
+  background: var(--surface, #ffffff);
+  border: 0.5px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 140px;
+  font-size: 0.75rem;
+  font-family: inherit;
+}
+.grid-ctx-item {
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text, #0f172a);
+  transition: background 0.1s;
+}
+.grid-ctx-item:hover { background: rgba(99,102,241,0.07); }
+.grid-ctx-item--danger { color: #ef4444; }
+.grid-ctx-item--danger:hover { background: rgba(239,68,68,0.07); }
+[data-theme="dark"] .grid-ctx-menu { background: #161b22; border-color: rgba(255,255,255,0.1); }
+[data-theme="dark"] .grid-ctx-item { color: #e6edf3; }
+
+/* Load-more footer */
+.g-load-more {
+  padding: 10px 14px;
+  text-align: center;
+  border-top: 0.5px solid rgba(0,0,0,0.05);
+}
+.g-load-more-btn {
+  height: auto !important;
+  padding: 4px 14px !important;
+  font-size: 0.7rem !important;
+  border: 0.5px solid rgba(99,102,241,0.25) !important;
+  color: var(--accent, #6366f1) !important;
+  border-radius: 6px !important;
+}
+.g-load-more-btn:hover { background: rgba(99,102,241,0.06) !important; }
+
+/* Pro upgrade banner */
+.g-pro-banner {
+  padding: 5px 14px;
+  background: linear-gradient(90deg, rgba(251,191,36,0.09), rgba(251,191,36,0.03));
+  border-bottom: 0.5px solid rgba(251,191,36,0.22);
+  font-size: 0.7rem;
+  color: var(--text, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.g-pro-link {
+  color: var(--accent, #6366f1);
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+}
+.g-pro-link:hover { text-decoration: underline; }
