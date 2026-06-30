@@ -330,22 +330,86 @@
 }
 .grid-empty-btn:hover { background: rgba(99,102,241,0.12); }
 
-/* ── VT button ─────────────────────────────────────────────────────────── */
+/* ── VT button — same comet-border + shimmer as gen-vt-btn ──────────────── */
 .grid-vt-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--text-muted, #94a3b8);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  position: relative;
+  overflow: visible;
+  transition: border-color 0.3s, background 0.3s, color 0.3s;
 }
-.grid-vt-btn:hover { background: rgba(0,0,0,0.06); color: var(--text, #0f172a); }
-.grid-vt-btn.active { color: var(--accent, #6366f1); background: rgba(99,102,241,0.1); }
+
+/* Comet border layer */
+.grid-vt-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  padding: 1.5px;
+  border-radius: 10px;
+  background: conic-gradient(
+    from var(--sc-angle),
+    transparent      0%,
+    var(--sc-glow-c) 4%,
+    var(--sc-glow-b) 9%,
+    var(--sc-glow-a) 13%,
+    var(--sc-glow)   14%,
+    var(--sc-glow-a) 15%,
+    var(--sc-glow-b) 19%,
+    var(--sc-glow-c) 24%,
+    transparent      28%,
+    transparent      100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask:         linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+
+/* Shimmer sweep */
+.grid-vt-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(108deg, transparent 35%, rgba(255,255,255,0.14) 50%, transparent 65%);
+  background-size: 220% 100%;
+  background-position: 220% 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.grid-vt-btn:hover {
+  border-color: var(--sc-glow-b);
+  background: var(--sc-glow-c);
+  color: var(--sc-glow);
+}
+.grid-vt-btn:not(.active):hover::before { opacity: 0.3; }
+.grid-vt-btn:hover::after {
+  opacity: 1;
+  animation: sc-shimmer 0.55s ease forwards;
+}
+
+.grid-vt-btn.active {
+  border-color: var(--sc-glow-b);
+  background: var(--sc-glow-c);
+  color: var(--sc-glow);
+  animation: sc-breathe 3s ease-in-out infinite;
+}
+body.dp-ready .grid-vt-btn.active::before {
+  opacity: 1;
+  animation: sc-comet 3s linear infinite;
+}
 
 /* ── Dark theme ─────────────────────────────────────────────────────────── */
 [data-theme="dark"] #grid-screen   { background: #0d1117; }
