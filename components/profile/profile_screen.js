@@ -328,8 +328,23 @@ function _renderProfile(screen) {
   const bioOk = document.createElement('div');
   bioOk.className = 'prof-bio-ok';
 
-  bioForm.append(bioInput, bioCounter, bioOk);
+  const bioActions = document.createElement('div');
+  bioActions.className = 'prof-bio-actions';
+  const bioConfirmBtn = document.createElement('button');
+  bioConfirmBtn.type = 'button';
+  bioConfirmBtn.className = 'prof-bio-btn prof-bio-btn-confirm';
+  bioConfirmBtn.textContent = '确定';
+  const bioCancelBtn = document.createElement('button');
+  bioCancelBtn.type = 'button';
+  bioCancelBtn.className = 'prof-bio-btn prof-bio-btn-cancel';
+  bioCancelBtn.textContent = '取消';
+  bioActions.append(bioCancelBtn, bioConfirmBtn);
 
+  bioForm.append(bioInput, bioCounter, bioActions, bioOk);
+
+  function _onOutsideClick(e) {
+    if (!bioForm.contains(e.target)) _closeBio();
+  }
   function _openBio() {
     bioDisplay.style.display = 'none';
     bioForm.style.display = '';
@@ -338,10 +353,12 @@ function _renderProfile(screen) {
     bioOk.textContent = '';
     bioInput.focus();
     bioInput.select();
+    document.addEventListener('mousedown', _onOutsideClick);
   }
   function _closeBio() {
     bioForm.style.display = 'none';
     bioDisplay.style.display = '';
+    document.removeEventListener('mousedown', _onOutsideClick);
   }
 
   bioDisplay.addEventListener('click', _openBio);
@@ -352,6 +369,8 @@ function _renderProfile(screen) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _saveBio(); }
     if (e.key === 'Escape') _closeBio();
   });
+  bioConfirmBtn.addEventListener('click', () => _saveBio());
+  bioCancelBtn.addEventListener('click', () => _closeBio());
 
   async function _saveBio() {
     const newBio = bioInput.value.trim();

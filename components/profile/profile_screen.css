@@ -336,6 +336,19 @@
 }
 [data-theme="dark"] .prof-bio-input { color: #e6edf3; }
 .prof-bio-counter { font-size: 0.65rem; color: var(--text-muted, #94a3b8); text-align: right; margin-top: 2px; }
+.prof-bio-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+.prof-bio-btn {
+  padding: 3px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; font-family: inherit;
+  transition: background 0.12s, border-color 0.12s;
+}
+.prof-bio-btn-cancel {
+  background: transparent; color: var(--text-muted, #94a3b8);
+  border-color: var(--border, #e2e8f0);
+}
+.prof-bio-btn-cancel:hover { background: rgba(148,163,184,0.12); }
+.prof-bio-btn-confirm { background: #6366f1; color: #fff; }
+.prof-bio-btn-confirm:hover { background: #4f46e5; }
 .prof-bio-ok { font-size: 0.7rem; color: #16a34a; margin-top: 3px; min-height: 0; }
 .prof-name { font-size: 1.05rem; font-weight: 600; color: var(--text, #0f172a); margin-bottom: 5px; word-break: break-word; }
 [data-theme="dark"] .prof-name { color: #e6edf3; }
