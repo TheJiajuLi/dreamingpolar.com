@@ -3,12 +3,12 @@
 import { saveUserCache, loadUserCache, clearUserCache } from './auth_hooks.js';
 import { initSync } from '../shared/notebook_sync.js';
 
-const BASE = 'https://dp-auth-backend.onrender.com/auth';
+const AUTH_BASE = 'http://150.109.77.250:3001/auth';
 
 let _accessToken = null;
 
 async function authFetch(path, opts = {}) {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${AUTH_BASE}${path}`, {
     ...opts,
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(opts.headers ?? {}) },
