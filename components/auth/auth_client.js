@@ -3,7 +3,7 @@
 import { saveUserCache, loadUserCache, clearUserCache } from './auth_hooks.js';
 import { initSync } from '../shared/notebook_sync.js';
 
-const AUTH_BASE = 'http://150.109.77.250:3001/auth';
+const AUTH_BASE = 'https://api.dreamingpolar.com/auth';
 
 let _accessToken = null;
 

@@ -2,7 +2,7 @@
 // Debounced auto-save (3s) + Ctrl+S manual save.
 // Cloud is an extra persistence layer; existing localStorage logic is unchanged.
 
-const AUTH_BASE   = 'https://dp-auth-backend.onrender.com';
+const AUTH_BASE   = 'https://api.dreamingpolar.com';
 let _notebookId   = null;
 let _syncTimer    = null;
 let _lastCompilerStatus = null;
