@@ -201,9 +201,82 @@ function _renderProfile(screen) {
   const sidebar = document.createElement('aside');
   sidebar.className = 'prof-sidebar';
 
+  // ── Avatar ────────────────────────────────────────────────────────────────
   const avatarEl = document.createElement('div');
   avatarEl.className = 'prof-avatar';
-  avatarEl.textContent = initials;
+  avatarEl.title = '点击更换头像';
+
+  const avatarOverlay = document.createElement('div');
+  avatarOverlay.className = 'prof-avatar-overlay';
+  avatarOverlay.textContent = '更换头像';
+
+  function _setAvatarDisplay(src) {
+    avatarEl.innerHTML = '';
+    if (src) {
+      const img = document.createElement('img');
+      img.src = src;
+      avatarEl.appendChild(img);
+    } else {
+      avatarEl.textContent = initials;
+    }
+    avatarEl.appendChild(avatarOverlay);
+    _syncRbAvatar(src);
+  }
+
+  function _syncRbAvatar(src) {
+    const userBtn = document.getElementById('au-vt-btn');
+    if (!userBtn) return;
+    if (src) {
+      userBtn.innerHTML = `<img src="${src}" style="width:26px;height:26px;border-radius:50%;object-fit:cover">`;
+    } else {
+      userBtn.innerHTML = `<span class="au-vt-avatar">${initials}</span>`;
+    }
+  }
+
+  _setAvatarDisplay(user.avatar ?? null);
+
+  // Hidden file input for avatar upload
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    try {
+      // Compress to 200×200 via canvas
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            const size = 200;
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const scale = Math.max(size / img.width, size / img.height);
+            const w = img.width * scale, h = img.height * scale;
+            ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      _setAvatarDisplay(base64);
+      const updatedUser = { ...window._dpGetAuthUser(), avatar: base64 };
+      window._dpGetAuthUser = () => updatedUser;
+      try { localStorage.setItem('dp-auth-user', JSON.stringify(updatedUser)); } catch (_) {}
+      window.authClient?.updateMe({ avatar: base64 }).catch(e => console.warn('[avatar]', e.message));
+    } catch (e) {
+      console.warn('[avatar upload]', e);
+    }
+  });
+
+  avatarEl.addEventListener('click', () => fileInput.click());
 
   const nameEl = document.createElement('div');
   nameEl.className = 'prof-name';
@@ -216,6 +289,88 @@ function _renderProfile(screen) {
   const joinedEl = document.createElement('div');
   joinedEl.className = 'prof-joined';
   joinedEl.textContent = `注册于 ${joined}`;
+
+  // ── Bio (signature) ───────────────────────────────────────────────────────
+  const bioWrap = document.createElement('div');
+
+  const bioDisplay = document.createElement('div');
+  bioDisplay.className = 'prof-bio';
+  const _bioText = () => {
+    const u = window._dpGetAuthUser?.();
+    return u?.bio ?? '';
+  };
+  const _renderBioDisplay = () => {
+    const t = _bioText();
+    if (t) {
+      bioDisplay.textContent = t;
+      bioDisplay.classList.remove('prof-bio-placeholder');
+    } else {
+      bioDisplay.textContent = '点击添加个性签名';
+      bioDisplay.classList.add('prof-bio-placeholder');
+    }
+  };
+  _renderBioDisplay();
+
+  const bioForm = document.createElement('div');
+  bioForm.className = 'prof-bio-form';
+  bioForm.style.display = 'none';
+
+  const bioInput = document.createElement('textarea');
+  bioInput.className = 'prof-bio-input';
+  bioInput.maxLength = 100;
+  bioInput.rows = 2;
+  bioInput.placeholder = '个性签名（最多 100 字）';
+
+  const bioCounter = document.createElement('div');
+  bioCounter.className = 'prof-bio-counter';
+  bioCounter.textContent = '0 / 100';
+
+  const bioOk = document.createElement('div');
+  bioOk.className = 'prof-bio-ok';
+
+  bioForm.append(bioInput, bioCounter, bioOk);
+
+  function _openBio() {
+    bioDisplay.style.display = 'none';
+    bioForm.style.display = '';
+    bioInput.value = _bioText();
+    bioCounter.textContent = `${bioInput.value.length} / 100`;
+    bioOk.textContent = '';
+    bioInput.focus();
+    bioInput.select();
+  }
+  function _closeBio() {
+    bioForm.style.display = 'none';
+    bioDisplay.style.display = '';
+  }
+
+  bioDisplay.addEventListener('click', _openBio);
+  bioInput.addEventListener('input', () => {
+    bioCounter.textContent = `${bioInput.value.length} / 100`;
+  });
+  bioInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _saveBio(); }
+    if (e.key === 'Escape') _closeBio();
+  });
+
+  async function _saveBio() {
+    const newBio = bioInput.value.trim();
+    _closeBio();
+    const updatedUser = { ...window._dpGetAuthUser(), bio: newBio };
+    window._dpGetAuthUser = () => updatedUser;
+    try { localStorage.setItem('dp-auth-user', JSON.stringify(updatedUser)); } catch (_) {}
+    _renderBioDisplay();
+    bioOk.textContent = '';
+    bioForm.style.display = 'none';
+    // Brief feedback on the display element
+    const prev = bioDisplay.style.color;
+    bioDisplay.style.color = '#16a34a';
+    bioDisplay.textContent = '✓ 已保存';
+    setTimeout(() => { bioDisplay.style.color = prev; _renderBioDisplay(); }, 1200);
+    window.authClient?.updateMe({ bio: newBio }).catch(e => console.warn('[bio]', e.message));
+  }
+
+  bioWrap.append(bioDisplay, bioForm);
 
   // ── Name row with inline edit ─────────────────────────────────────────────
   const nameRow = document.createElement('div');
@@ -326,7 +481,7 @@ function _renderProfile(screen) {
   });
 
   actionsEl.append(logoutBtn);
-  sidebar.append(avatarEl, nameRow, editForm, emailEl, joinedEl, actionsEl);
+  sidebar.append(avatarEl, fileInput, nameRow, editForm, emailEl, bioWrap, joinedEl, actionsEl);
 
   // ── Content ────────────────────────────────────────────────────────────────
   const content = document.createElement('main');

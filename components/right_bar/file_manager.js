@@ -227,8 +227,12 @@ export function initFileManager() {
     const user  = window._dpGetAuthUser?.();
     const state = window.screenController?.getState('profile');
     if (user) {
-      const initials = (user.username ?? '?').slice(0, 2).toUpperCase();
-      userBtn.innerHTML = `<span class="au-vt-avatar">${initials}</span>`;
+      if (user.avatar) {
+        userBtn.innerHTML = `<img src="${user.avatar}" style="width:26px;height:26px;border-radius:50%;object-fit:cover">`;
+      } else {
+        const initials = (user.username ?? '?').slice(0, 2).toUpperCase();
+        userBtn.innerHTML = `<span class="au-vt-avatar">${initials}</span>`;
+      }
       userBtn.title = user.username ?? '账号';
       userBtn.classList.add('au-logged-in');
     } else {
