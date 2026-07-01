@@ -187,7 +187,7 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
   <h1 class="h1">Dreaming Polar，专为数据分析而生</h1>
   <p class="sub">轻量化一站式工作平台，搭配 ARIA 智能助理及原生 Pyodide。无需手动搭配环境或服务器，打开浏览器即可访问你的数据，一键同步内核上传至 Power Notebook。</p>
   <div class="ctas">
-    <button class="cta-main" onclick="window.location.href='/index.html'">免费试用 →</button>
+    <button class="cta-main" onclick="sessionStorage.setItem('dp-guest-access','1');window.location.href='/index.html'">免费试用 →</button>
   </div>
 </section>
 

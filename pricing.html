@@ -146,7 +146,7 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
     </div>
     <div class="price-note">永久免费，无需信用卡</div>
     <div class="card-desc">够用的功能，直接上手。没有试用期，不会突然消失。</div>
-    <button class="card-btn btn-outline" onclick="window.location='/index.html'">免费试用</button>
+    <button class="card-btn btn-outline" onclick="sessionStorage.setItem('dp-guest-access','1');window.location='/index.html'">免费试用</button>
     <ul class="feats">
       <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>浏览器原生 Python，无限 Cell</li>
       <li><svg class="feat-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>ARIA 智能助手（每天 20 次提问）</li>
@@ -255,7 +255,7 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
   <div class="cta-block">
     <h2>先免费用用看</h2>
     <p>不需要信用卡，打开浏览器就能开始。</p>
-    <button class="cta-w" onclick="window.location='/index.html'">免费试用 →</button>
+    <button class="cta-w" onclick="sessionStorage.setItem('dp-guest-access','1');window.location='/index.html'">免费试用 →</button>
   </div>
 </div>
 
