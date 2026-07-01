@@ -849,18 +849,10 @@ export function initFileManager() {
         const codeFiles2 = cloudFiles.filter(f => f.file_type === 'code');
         
         if (dataFiles.length > 0) {
-          const label = document.createElement('div');
-          label.className = 'rb-cloud-sublabel';
-          label.textContent = '数据文件';
-          cloudSec.body.appendChild(label);
           dataFiles.forEach(f => cloudSec.body.appendChild(_makeCloudFileItem(f)));
         }
         
         if (codeFiles2.length > 0) {
-          const label = document.createElement('div');
-          label.className = 'rb-cloud-sublabel';
-          label.textContent = '代码文件';
-          cloudSec.body.appendChild(label);
           codeFiles2.forEach(f => cloudSec.body.appendChild(_makeCloudFileItem(f)));
         }
         
@@ -893,6 +885,14 @@ export function initFileManager() {
                .forEach(entry => codeSec.body.appendChild(_makeCodeFileItem(entry)));
     }
     body.appendChild(codeSec.el);
+
+    // Section: 模型 & 配置 (placeholder)
+    const modelSec = _makeSection('模型 & 配置', 'ti-brain', true);
+    const placeholder = document.createElement('div');
+    placeholder.className = 'rb-file-placeholder';
+    placeholder.textContent = '开发中 — 保存训练好的模型';
+    modelSec.body.appendChild(placeholder);
+    body.appendChild(modelSec.el);
   }
 
   function _makeCodeFileItem(entry) {
