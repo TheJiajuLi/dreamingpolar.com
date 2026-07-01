@@ -303,7 +303,7 @@ body.cs-resizing * {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;   /* hidden at rest, appears on scroll */
   scrollbar-gutter: stable;
-  background: var(--bg, #f3f5f8);
+  background: transparent;
 }
 .cds-notebook-panel:hover {
   scrollbar-color: var(--border, #cbd5e1) transparent;

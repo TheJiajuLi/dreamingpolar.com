@@ -316,9 +316,9 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 /* ══ NOTEBOOK (customise_code_block) ════════════════════════ */
 
 /* ── .nb-topbar ──────────────────────────────────────────── */
-[data-theme="dark"]   .cds-notebook-panel { background: #0d1117; }
-[data-theme="grey"]   .cds-notebook-panel { background: #22272e; }
-[data-theme="aurora"] .cds-notebook-panel { background: #07071a; }
+[data-theme="dark"]   .cds-notebook-panel { background: transparent; }
+[data-theme="grey"]   .cds-notebook-panel { background: transparent; }
+[data-theme="aurora"] .cds-notebook-panel { background: transparent; }
 [data-theme="dark"]   .nb-topbar { background: #0d1117; border-bottom-color: #30363d; }
 [data-theme="grey"]   .nb-topbar { background: #22272e; border-bottom-color: #444c56; }
 [data-theme="aurora"] .nb-topbar { background: rgba(7,7,26,0.9); border-bottom: 1px solid rgba(192,132,252,0.15); }
@@ -528,12 +528,8 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 [data-theme="light"] .coding-toolbar       { background: #f0f1f5; border-bottom-color: var(--border, #d7e1eb); }
 [data-theme="light"] .code-editor          { background: #f7f8fb; color: #1a1a2e; }
 
-/* ── Light theme: notebook view as unified white card ─────────────────────── */
+/* ── Light theme: notebook view fills the hero-screen card ─────────────────── */
 [data-theme="light"] #cds-notebook-view {
-  margin: 8px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.07), 0 2px 12px rgba(0,0,0,0.04);
   background: #ffffff;
 }
 /* Toolbar flush with card edges, white bg + subtle divider */
@@ -543,7 +539,7 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
   border-bottom: 0.5px solid rgba(0,0,0,0.07);
 }
 /* All inner panels white */
-[data-theme="light"] .cds-notebook-panel   { background: #ffffff; }
+[data-theme="light"] .cds-notebook-panel   { background: transparent; }
 [data-theme="light"] .cds-output-panel,
 [data-theme="light"] .cds-output-body      { background: #ffffff; }
 [data-theme="light"] .cds-output-panel     { border-left-color: rgba(0,0,0,0.07); }
@@ -567,7 +563,7 @@ code, pre           { font-size: var(--font-sz-code, 0.84rem); }
 [data-theme="light"] .cds-notebook-toolbar .sc-btn--danger:hover { background: #fef2f2; color: #dc2626; opacity: 1; }
 
 /* Notebook cells — white container, cells keep their own border */
-[data-theme="light"] .cds-notebook-panel    { background: #ffffff; }
+[data-theme="light"] .cds-notebook-panel    { background: transparent; }
 [data-theme="light"] .nb-topbar             { background: #ffffff; border-bottom-color: rgba(0,0,0,0.07); }
 [data-theme="light"] .nb-topbar .nb-run-all-btn       { border-color: var(--border, #d7e1eb); color: var(--text, #1a1a2e); }
 [data-theme="light"] .nb-topbar .nb-run-all-btn:hover { background: var(--accent-soft, #e0e3ff); border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
