@@ -156,7 +156,7 @@ function setup() {
     <div class="terminal-header">
       <span class="terminal-label">
         <span class="terminal-status-dot" id="term-status-dot"></span>
-        <img src="/assets/icons/start_data_analysis/start_data_analysis.png" width="13" height="13" style="object-fit:contain;display:inline-block;vertical-align:middle;pointer-events:none" alt="" aria-hidden="true">
+        <i class="ti ti-robot" style="font-size:13px;vertical-align:middle" aria-hidden="true"></i>
         ARIA
       </span>
       <div class="sc-toolbar">
