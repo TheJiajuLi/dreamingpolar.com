@@ -270,7 +270,13 @@ function _renderProfile(screen) {
       const updatedUser = { ...window._dpGetAuthUser(), avatar: base64 };
       window._dpGetAuthUser = () => updatedUser;
       try { localStorage.setItem('dp-auth-user', JSON.stringify(updatedUser)); } catch (_) {}
-      window.authClient?.updateMe({ avatar: base64 }).catch(e => console.warn('[avatar]', e.message));
+      // Ensure token is valid before writing to backend
+      if (!window.authClient?.isLoggedIn()) {
+        await window.authClient?.silentRefresh().catch(() => {});
+      }
+      window.authClient?.updateMe({ avatar: base64 })
+        .then(() => console.log('[avatar] saved to cloud'))
+        .catch(e => console.warn('[avatar] save failed:', e.message));
     } catch (e) {
       console.warn('[avatar upload]', e);
     }
@@ -386,7 +392,13 @@ function _renderProfile(screen) {
     bioDisplay.style.color = '#16a34a';
     bioDisplay.textContent = '✓ 已保存';
     setTimeout(() => { bioDisplay.style.color = prev; _renderBioDisplay(); }, 1200);
-    window.authClient?.updateMe({ bio: newBio }).catch(e => console.warn('[bio]', e.message));
+    // Ensure token is valid before writing to backend
+    if (!window.authClient?.isLoggedIn()) {
+      await window.authClient?.silentRefresh().catch(() => {});
+    }
+    window.authClient?.updateMe({ bio: newBio })
+      .then(() => console.log('[bio] saved to cloud'))
+      .catch(e => console.warn('[bio] save failed:', e.message));
   }
 
   bioWrap.append(bioDisplay, bioForm);
@@ -475,6 +487,9 @@ function _renderProfile(screen) {
 
     // Persist to server in background — failure just logs, doesn't revert UI
     try {
+      if (!window.authClient?.isLoggedIn()) {
+        await window.authClient?.silentRefresh().catch(() => {});
+      }
       await window.authClient?.updateMe({ username: newName });
       const updatedUser = { ...window._dpGetAuthUser(), username: newName };
       window._dpGetAuthUser = () => updatedUser;
