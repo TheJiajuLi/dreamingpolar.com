@@ -11,6 +11,32 @@ document.addEventListener('screen-opened',    ({ detail: { id } }) => { if (id =
 document.addEventListener('screen-closed',    ({ detail: { id } }) => { if (id === 'ai-chat') getAiSlot()?.setAttribute('hidden', ''); });
 document.addEventListener('screen-minimized', ({ detail: { id } }) => { if (id === 'ai-chat') getAiSlot()?.setAttribute('hidden', ''); });
 
+// ── Screen label in compiler slot ─────────────────────────────────────────────
+const SCREEN_LABELS = {
+  'coding':     'Power Notebook',
+  'generative': 'ARIA 智能助手',
+  'grid':       'DP Grid',
+  'ai-chat':    'AI 对话',
+  'profile':    '用户主页',
+  'content':    '文档',
+};
+
+let _activeScreenId = null;
+
+function _updateSlotLabel() {
+  const slot = getCompilerSlot();
+  if (!slot) return;
+  if (slot.classList.contains('loading') || slot.classList.contains('running')) return;
+  const label = _activeScreenId
+    ? (SCREEN_LABELS[_activeScreenId] ?? 'Dreaming Polar')
+    : 'Dreaming Polar';
+  slot.textContent = label;
+}
+
+document.addEventListener('screen-opened',    ({ detail: { id } }) => { _activeScreenId = id;                                             _updateSlotLabel(); });
+document.addEventListener('screen-closed',    ({ detail: { id } }) => { if (_activeScreenId === id) { _activeScreenId = null; _updateSlotLabel(); } });
+document.addEventListener('screen-minimized', ({ detail: { id } }) => { if (_activeScreenId === id) { _activeScreenId = null; _updateSlotLabel(); } });
+
 // ── Compiler status slot ──────────────────────────────────────────────────────
 let _lastStatus = {};  // most recent dispatch detail for click popover
 
@@ -104,9 +130,11 @@ document.addEventListener('compiler-status', ({ detail }) => {
   const elapsed = detail.elapsed != null
     ? `<span class="status-elapsed">${detail.elapsed < 1000 ? detail.elapsed + 'ms' : (detail.elapsed/1000).toFixed(1) + 's'}</span>`
     : '';
-  slot.innerHTML = spinning
-    ? `<span class="status-spinner"><i></i><i></i><i></i></span>${detail.message}${pctLabel}`
-    : `${detail.message}${elapsed}`;
+  if (spinning) {
+    slot.innerHTML = `<span class="status-spinner"><i></i><i></i><i></i></span>${detail.message}${pctLabel}`;
+  } else {
+    _updateSlotLabel();
+  }
 
   slot.title = '';
 
