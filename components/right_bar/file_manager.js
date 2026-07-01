@@ -893,14 +893,6 @@ export function initFileManager() {
                .forEach(entry => codeSec.body.appendChild(_makeCodeFileItem(entry)));
     }
     body.appendChild(codeSec.el);
-
-    // Section: 模型 & 配置 (placeholder)
-    const modelSec = _makeSection('模型 & 配置', 'ti-brain', true);
-    const placeholder = document.createElement('div');
-    placeholder.className = 'rb-file-placeholder';
-    placeholder.textContent = '开发中 — 保存训练好的模型';
-    modelSec.body.appendChild(placeholder);
-    body.appendChild(modelSec.el);
   }
 
   function _makeCodeFileItem(entry) {
