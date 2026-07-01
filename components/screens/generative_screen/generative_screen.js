@@ -10,7 +10,7 @@ function _addVtButtons(switchView, getActiveView, isScreenOpen) {
   btn.className       = 'vt-btn gen-vt-btn';
   btn.title           = 'Quick Analysis';
   btn.dataset.genView = 'gen-terminal';
-  btn.innerHTML       = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`;
+  btn.innerHTML       = `<img src="/assets/icons/start_data_analysis/start_data_analysis.png" width="18" height="18" style="object-fit:contain;display:block;pointer-events:none" alt="">`;
 
   btn.addEventListener('click', () => {
     if (isScreenOpen()) {

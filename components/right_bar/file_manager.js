@@ -15,13 +15,15 @@ const RECENT_FILES_KEY = 'dp_recent_files';
 const MAX_RECENT_FILES = 10;
 
 // ── Context-aware action button (screen-dependent label & routing) ─────────────
+const _ARIA_BTN_ICON = `<img src="/assets/icons/start_data_analysis/start_data_analysis.png" width="16" height="16" style="object-fit:contain;display:block;pointer-events:none" alt="">`;
+
 const SCREEN_ACTION_META = {
-  'coding':   { label: '插入至 Notebook',      icon: 'ti-corner-down-left' },
-  'terminal': { label: '发送给 ARIA',            icon: 'ti-robot'            },
-  'grid':     { label: '发送给 DP Grid',         icon: 'ti-table'            },
-  'ai-chat':  { label: '发送给 AI 对话',         icon: 'ti-message'          },
-  'profile':  { label: '插入至 Notebook',        icon: 'ti-corner-down-left' },
-  'content':  { label: '插入至 Notebook',        icon: 'ti-corner-down-left' },
+  'coding':   { label: '插入至 Notebook', icon: 'ti-corner-down-left' },
+  'terminal': { label: '发送给 ARIA',     icon: _ARIA_BTN_ICON        },
+  'grid':     { label: '发送给 DP Grid',  icon: 'ti-table'            },
+  'ai-chat':  { label: '发送给 AI 对话',  icon: 'ti-message'          },
+  'profile':  { label: '插入至 Notebook', icon: 'ti-corner-down-left' },
+  'content':  { label: '插入至 Notebook', icon: 'ti-corner-down-left' },
 };
 const _DEFAULT_ACTION = { label: '插入至 Notebook', icon: 'ti-corner-down-left' };
 
@@ -35,7 +37,7 @@ function _applyActionBtn(btn) {
   const { label, icon } = _getActionMeta();
   btn.title         = label;
   btn.setAttribute('aria-label', label);
-  btn.innerHTML     = `<i class="ti ${icon}"></i>`;
+  btn.innerHTML     = icon.startsWith('<') ? icon : `<i class="ti ${icon}"></i>`;
 }
 function _refreshAllActionBtns() {
   for (const btn of _actionBtns) {
