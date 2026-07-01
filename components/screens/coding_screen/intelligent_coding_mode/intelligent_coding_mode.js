@@ -28,7 +28,10 @@ export function mount(container) {
   btn.className = `icm-btn${_enabled ? ' icm-on' : ''}`;
   btn.title     = '';   // suppressed — rich tooltip takes over
   btn.innerHTML = `
-    <img class="icm-icon" src="${window.BASE}/assets/icons/intelligent_code_mode/ai-technology.png" alt="" aria-hidden="true">
+    <svg class="icm-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 6h16M4 10h12M4 14h8"/>
+      <path d="M15 16l2 2 4-4" stroke-width="2"/>
+    </svg>
     <span class="icm-label">ICM</span>
   `;
 

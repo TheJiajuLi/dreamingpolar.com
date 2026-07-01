@@ -26,7 +26,14 @@
   background: rgba(0,0,0,0.06);        /* hover fill, no border */
 }
 
-.icm-icon { flex-shrink: 0; width: 13px; height: 13px; object-fit: contain; transition: transform 300ms ease; }
+/* ICM icon: SVG inherits color from button, transition on stroke */
+.icm-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  transition: transform 300ms ease, filter 200ms;
+  stroke: currentColor;
+}
 
 .icm-btn.icm-on { animation: icm-appear 200ms ease both; }
 
@@ -35,62 +42,53 @@
   to   { opacity: 1;   transform: scale(1); }
 }
 
-/* ── Light (default) active state ────────────────────────── */
+/* ── Light (default): off → muted grey, on → blue ────────── */
+.icm-btn:not(.icm-on) .icm-icon { opacity: 0.55; }
+
 .icm-btn.icm-on {
   color: #2563eb;
-  border-color: rgba(37,99,235,0.5);
   background: rgba(37,99,235,0.07);
   box-shadow: 0 0 8px rgba(37,99,235,0.15), inset 0 0 6px rgba(37,99,235,0.05);
 }
 .icm-btn.icm-on .icm-icon {
-  filter: drop-shadow(0 0 3px rgba(37,99,235,0.5));
-  transform: rotate(22.5deg);
+  filter: drop-shadow(0 0 3px rgba(37,99,235,0.4));
+  transform: scale(1.08);
 }
 
 /* ── Dark theme ──────────────────────────────────────────── */
+[data-theme="dark"] .icm-btn:not(.icm-on) { color: rgba(255,255,255,0.35); }
 [data-theme="dark"] .icm-btn.icm-on {
   color: #3fb950;
-  border-color: rgba(63,185,80,0.55);
   background: rgba(63,185,80,0.09);
   box-shadow: 0 0 10px rgba(63,185,80,0.2), inset 0 0 8px rgba(63,185,80,0.07);
 }
 [data-theme="dark"] .icm-btn.icm-on .icm-icon {
-  filter: brightness(0) invert(1) drop-shadow(0 0 4px rgba(63,185,80,0.8));
-  transform: rotate(22.5deg);
-}
-[data-theme="dark"] .icm-btn:not(.icm-on) .icm-icon {
-  filter: brightness(0) invert(1) opacity(0.45);
+  filter: drop-shadow(0 0 4px rgba(63,185,80,0.7));
+  transform: scale(1.08);
 }
 
 /* ── Grey theme ──────────────────────────────────────────── */
+[data-theme="grey"] .icm-btn:not(.icm-on) { color: rgba(255,255,255,0.35); }
 [data-theme="grey"] .icm-btn.icm-on {
   color: #57ab5a;
-  border-color: rgba(87,171,90,0.55);
   background: rgba(87,171,90,0.09);
   box-shadow: 0 0 10px rgba(87,171,90,0.2), inset 0 0 8px rgba(87,171,90,0.07);
 }
 [data-theme="grey"] .icm-btn.icm-on .icm-icon {
-  filter: brightness(0) invert(1) drop-shadow(0 0 4px rgba(87,171,90,0.8));
-  transform: rotate(22.5deg);
-}
-[data-theme="grey"] .icm-btn:not(.icm-on) .icm-icon {
-  filter: brightness(0) invert(1) opacity(0.4);
+  filter: drop-shadow(0 0 4px rgba(87,171,90,0.7));
+  transform: scale(1.08);
 }
 
 /* ── Aurora theme ────────────────────────────────────────── */
+[data-theme="aurora"] .icm-btn:not(.icm-on) { color: rgba(255,255,255,0.35); }
 [data-theme="aurora"] .icm-btn.icm-on {
   color: #c084fc;
-  border-color: rgba(192,132,252,0.55);
   background: rgba(192,132,252,0.08);
   box-shadow: 0 0 12px rgba(192,132,252,0.22), inset 0 0 8px rgba(192,132,252,0.07);
 }
 [data-theme="aurora"] .icm-btn.icm-on .icm-icon {
-  filter: brightness(0) invert(1) sepia(1) saturate(3) hue-rotate(230deg)
-          drop-shadow(0 0 5px rgba(192,132,252,0.9));
-  transform: rotate(22.5deg);
-}
-[data-theme="aurora"] .icm-btn:not(.icm-on) .icm-icon {
-  filter: brightness(0) invert(1) opacity(0.4);
+  filter: drop-shadow(0 0 5px rgba(192,132,252,0.8));
+  transform: scale(1.08);
 }
 
 /* ── ICM rich tooltip ────────────────────────────────────── */
