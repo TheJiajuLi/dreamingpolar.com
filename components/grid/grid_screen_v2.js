@@ -692,6 +692,11 @@ function setupGridScreen() {
 
   // ── Row delete ────────────────────────────────────────────────────────────
   function _deleteRows() {
+    console.log('[Grid] deleteRows called', {
+      activeTabId,
+      sel: selectedRows[activeTabId],
+      selSize: selectedRows[activeTabId]?.size
+    });
     const tab = _activeTab();
     const ed  = _activeEdit();
     const sel = selectedRows[activeTabId];
