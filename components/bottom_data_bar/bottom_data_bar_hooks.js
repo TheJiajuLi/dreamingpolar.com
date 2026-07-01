@@ -13,12 +13,12 @@ document.addEventListener('screen-minimized', ({ detail: { id } }) => { if (id =
 
 // ── Screen label in compiler slot ─────────────────────────────────────────────
 const SCREEN_LABELS = {
-  'coding':     'Power Notebook',
-  'generative': 'ARIA 智能助手',
-  'grid':       'DP Grid',
-  'ai-chat':    'AI 对话',
-  'profile':    '用户主页',
-  'content':    '文档',
+  'coding':   'Power Notebook',
+  'terminal': 'ARIA 智能助手',
+  'grid':     'DP Grid',
+  'ai-chat':  'AI 对话',
+  'profile':  '用户主页',
+  'content':  '文档',
 };
 
 let _activeScreenId = null;
