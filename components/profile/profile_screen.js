@@ -977,9 +977,8 @@ function _renderProfile(screen) {
 
   // ── File manager pane ─────────────────────────────────────────────────────
   const filesPane = document.createElement('div');
-  filesPane.className = 'prof-tab-pane';
+  filesPane.className = 'prof-tab-pane prof-pane--hidden';
   filesPane.dataset.pane = 'files';
-  filesPane.hidden = true;
 
   content.append(overviewPane, filesPane);
 
