@@ -280,7 +280,7 @@ export function initFileManager() {
   document.addEventListener('dp-auth-state', () => {
     _syncUserBtn();
     if (_open && _activePane === 'profile') _renderProfilePane();
-    if (_open && _activePane === 'files') _refresh();
+    if (_open && _activePane === 'files') _refresh().catch(console.error);
   });
 
   // ── Outer container — clips the two-panel slide ───────────────────────────
@@ -469,7 +469,7 @@ export function initFileManager() {
     }
     // Always respect the explicitly requested pane — never let localStorage override
     _slideToPane(defaultPane);
-    if (defaultPane === 'files') _refresh();
+    if (defaultPane === 'files') _refresh().catch(console.error);
   }
   function _close() {
     _open = false;
@@ -559,7 +559,7 @@ export function initFileManager() {
     manageBtn.classList.add('rb-file-manage-btn--active');
     panel.classList.add('rb-panel--select');
     _updateDeleteBar();
-    _refresh();
+    _refresh().catch(console.error);
   }
   function _exitSelectMode() {
     _selectMode = false;
@@ -568,7 +568,7 @@ export function initFileManager() {
     manageBtn.classList.remove('rb-file-manage-btn--active');
     panel.classList.remove('rb-panel--select');
     deleteBar.hidden = true;
-    _refresh();
+    _refresh().catch(console.error);
   }
   function _updateDeleteBar() {
     const n = _selected.size;
@@ -670,7 +670,7 @@ export function initFileManager() {
         logActivity('import', `导入 ${file.name}`);
         _recordRecentFile({ name: file.name, varName, size: file.size, fileType });
 
-      _refresh();
+      _refresh().catch(console.error);
     } catch (err) {
       console.warn('[file-manager] import failed:', err);
       // Show inline error briefly
@@ -951,7 +951,7 @@ export function initFileManager() {
       const store = _loadCodeStore();
       delete store[filename];
       _saveCodeStore(store);
-      _refresh();
+      _refresh().catch(console.error);
     });
 
     item.append(iconEl, info, insertBtn);
@@ -1105,18 +1105,18 @@ export function initFileManager() {
   }
 
   // ── Event listeners ────────────────────────────────────────────────────────
-  document.addEventListener('nb-file-imported',    () => { if (_open) _refresh(); });
-  document.addEventListener('nb-code-file-saved', () => { if (_open) _refresh(); });
+  document.addEventListener('nb-file-imported',    () => { if (_open) _refresh().catch(console.error); });
+  document.addEventListener('nb-code-file-saved', () => { if (_open) _refresh().catch(console.error); });
   // "修改资料" button in profile screen → open right bar profile pane
   document.addEventListener('dp-open-profile-pane', () => { _open_('profile'); });
   document.addEventListener('kernel-restarted', () => {
-    if (_open) _refresh();
+    if (_open) _refresh().catch(console.error);
     // Show reload banner if there are any tracked files
     const store = _loadStore();
     const hasFiles = Object.values(store).some(e => e?.filename);
     if (hasFiles) _showKernelBanner();
   });
-  document.addEventListener('dataset-updated',    () => { if (_open) _refresh(); });
+  document.addEventListener('dataset-updated',    () => { if (_open) _refresh().catch(console.error); });
   document.addEventListener('datasets-reloaded',  () => _hideKernelBanner());
 
   // ── Track active screen → update action button labels live ────────────────
