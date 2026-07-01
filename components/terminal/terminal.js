@@ -156,7 +156,7 @@ function setup() {
     <div class="terminal-header">
       <span class="terminal-label">
         <span class="terminal-status-dot" id="term-status-dot"></span>
-        <i class="ti ti-robot" style="font-size:13px;vertical-align:middle" aria-hidden="true"></i>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="vertical-align:middle;flex-shrink:0" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><circle cx="5.5" cy="5.5" r="1.4"/><circle cx="18.5" cy="5.5" r="1.4"/><circle cx="5.5" cy="18.5" r="1.4"/><circle cx="18.5" cy="18.5" r="1.4"/><line x1="12" y1="9.8" x2="6.8" y2="6.8"/><line x1="12" y1="9.8" x2="17.2" y2="6.8"/><line x1="12" y1="14.2" x2="6.8" y2="17.2"/><line x1="12" y1="14.2" x2="17.2" y2="17.2"/></svg>
         ARIA
       </span>
       <div class="sc-toolbar">

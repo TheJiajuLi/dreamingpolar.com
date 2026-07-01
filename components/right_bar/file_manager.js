@@ -15,7 +15,7 @@ const RECENT_FILES_KEY = 'dp_recent_files';
 const MAX_RECENT_FILES = 10;
 
 // ── Context-aware action button (screen-dependent label & routing) ─────────────
-const _ARIA_BTN_ICON = `<i class="ti ti-robot" style="font-size:14px"></i>`;
+const _ARIA_BTN_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="display:block;pointer-events:none"><circle cx="12" cy="12" r="2.2"/><circle cx="5.5" cy="5.5" r="1.4"/><circle cx="18.5" cy="5.5" r="1.4"/><circle cx="5.5" cy="18.5" r="1.4"/><circle cx="18.5" cy="18.5" r="1.4"/><line x1="12" y1="9.8" x2="6.8" y2="6.8"/><line x1="12" y1="9.8" x2="17.2" y2="6.8"/><line x1="12" y1="14.2" x2="6.8" y2="17.2"/><line x1="12" y1="14.2" x2="17.2" y2="17.2"/></svg>`;
 
 const SCREEN_ACTION_META = {
   'coding':   { label: '插入至 Notebook', icon: 'ti-corner-down-left' },
