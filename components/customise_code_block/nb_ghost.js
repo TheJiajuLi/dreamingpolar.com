@@ -4,8 +4,8 @@
 // Tab accepts, any other key or Esc dismisses.
 
 const _PROXY = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3001/api/ai'
-  : 'https://api.dreamingpolar.com/api/ai';
+  ? 'http://localhost:3001/api/ghost'
+  : 'https://api.dreamingpolar.com/api/ghost';
 
 const _SYSTEM =
   '你是一个通用 Python IDE 的代码补全引擎，类似 GitHub Copilot。\n' +
@@ -120,7 +120,7 @@ export function attachGhostText({ body, editor, cell, icmEnabled, icmOnChange })
   // input: reset debounce on every keystroke
   editor.addEventListener('input', () => {
     _clear();
-    _timer = setTimeout(_predict, 800);
+    _timer = setTimeout(_predict, 500);
   });
 
   // keydown (capture phase — intercepts before ICM Tab handler)
