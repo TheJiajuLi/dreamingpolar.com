@@ -41,7 +41,17 @@ const SVG_NOTEBOOK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
   <line x1="4" y1="16" x2="2"  y2="16"/>
 </svg>`;
 
-const SVG_ARIA = `<i class="ti ti-robot" style="font-size:36px"></i>`;
+const SVG_ARIA = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+  <circle cx="12" cy="12" r="2.2"/>
+  <circle cx="5.5" cy="5.5" r="1.4"/>
+  <circle cx="18.5" cy="5.5" r="1.4"/>
+  <circle cx="5.5" cy="18.5" r="1.4"/>
+  <circle cx="18.5" cy="18.5" r="1.4"/>
+  <line x1="12" y1="9.8"  x2="6.8"  y2="6.8"/>
+  <line x1="12" y1="9.8"  x2="17.2" y2="6.8"/>
+  <line x1="12" y1="14.2" x2="6.8"  y2="17.2"/>
+  <line x1="12" y1="14.2" x2="17.2" y2="17.2"/>
+</svg>`;
 
 const SVG_DATA = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
   <ellipse cx="12" cy="6" rx="7" ry="2.5"/>
