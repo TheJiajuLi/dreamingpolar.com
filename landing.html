@@ -549,6 +549,16 @@ document.getElementById('lp-forgot-email')?.addEventListener('keydown', e => {
   } catch (_) {}
 })();
 
+// ── Auto-open modal when redirected from other pages ──────────────────────────
+(function () {
+  const tab = sessionStorage.getItem('lp-open-login');
+  if (tab) {
+    sessionStorage.removeItem('lp-open-login');
+    // Wait for DOM + overlay to be ready
+    requestAnimationFrame(() => lpAuthOpen(tab));
+  }
+})();
+
 // Load releases.json and render
 fetch('/content_pages/releases/releases.json')
   .then(r => r.json())
