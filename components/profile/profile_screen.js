@@ -1,5 +1,8 @@
-// ── Profile Screen — Phase 1, localStorage only ────────────────────────────
+// ── Profile Screen ───────────────────────────────────────────────────────────
 import { logActivity } from '../shared/activity_logger.js';
+import { injectDataFrame } from '../compiler/compiler.js';
+
+const AUTH_BASE = 'https://api.dreamingpolar.com/auth';
 
 const RECENT_KEY          = 'dp_recent_items';
 const RECENT_FILES_KEY    = 'dp_recent_files';
@@ -181,6 +184,311 @@ function _buildRecentFiles() {
     list.appendChild(row);
   }
   return list;
+}
+
+// ── Cloud File Manager ────────────────────────────────────────────────────────
+const _CFM_TYPE_ICON = {
+  csv: 'ti-file-type-csv', json: 'ti-file-type-json',
+  xlsx: 'ti-file-spreadsheet', xls: 'ti-file-spreadsheet', xml: 'ti-file-code-2',
+  py: 'ti-brand-python', md: 'ti-markdown', tex: 'ti-math', html: 'ti-code',
+};
+const _CFM_TYPE_COLOR = {
+  csv: '#10b981', json: '#f59e0b', xlsx: '#22c55e', xls: '#22c55e', xml: '#8b5cf6',
+  py: '#3b82f6', md: '#10b981', tex: '#8b5cf6', html: '#f59e0b',
+};
+const _CFM_DATA_EXTS = new Set(['csv','json','xlsx','xls','xml']);
+
+function _cfmRelTime(ts) {
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 1)  return '刚刚';
+  if (m < 60) return `${m} 分钟前`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} 小时前`;
+  return `${Math.floor(h / 24)} 天前`;
+}
+
+function _cfmFmtSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function _buildCloudFileManager(pane) {
+  pane.innerHTML = '';
+
+  // ── Toolbar ───────────────────────────────────────────────────────────────
+  const toolbar = document.createElement('div');
+  toolbar.className = 'cfm-toolbar';
+
+  const statsEl = document.createElement('div');
+  statsEl.className = 'cfm-stats';
+  statsEl.textContent = '加载中…';
+
+  const uploadBtn = document.createElement('button');
+  uploadBtn.className = 'cfm-upload-btn';
+  uploadBtn.innerHTML = `<i class="ti ti-upload"></i> 上传文件`;
+
+  toolbar.append(statsEl, uploadBtn);
+  pane.appendChild(toolbar);
+
+  // ── Status line (progress / errors) ──────────────────────────────────────
+  const statusEl = document.createElement('div');
+  statusEl.className = 'cfm-status';
+  statusEl.hidden = true;
+  pane.appendChild(statusEl);
+
+  function _showStatus(msg, isErr = false) {
+    statusEl.textContent = msg;
+    statusEl.hidden = false;
+    statusEl.classList.toggle('cfm-status--err', isErr);
+    if (!isErr) setTimeout(() => { statusEl.hidden = true; }, 3000);
+  }
+
+  // ── List container ────────────────────────────────────────────────────────
+  const listEl = document.createElement('div');
+  listEl.className = 'cfm-list';
+  pane.appendChild(listEl);
+
+  // ── Fetch & render ────────────────────────────────────────────────────────
+  async function _load() {
+    listEl.innerHTML = '<div class="cfm-loading">加载中…</div>';
+    statsEl.textContent = '加载中…';
+    try {
+      const res = await window.authClient.authedFetch(`${AUTH_BASE}/files`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const files = await res.json();
+      _render(files);
+    } catch (e) {
+      listEl.innerHTML = `<div class="cfm-empty">加载失败：${_esc(e.message)}</div>`;
+      statsEl.textContent = '';
+    }
+  }
+
+  function _render(files) {
+    listEl.innerHTML = '';
+    if (!files.length) {
+      listEl.innerHTML = '<div class="cfm-empty">还没有云端文件，点击上传开始</div>';
+      statsEl.textContent = '0 个文件';
+      return;
+    }
+
+    const dataFiles = files.filter(f => _CFM_DATA_EXTS.has((f.filename ?? f.name ?? '').split('.').pop().toLowerCase()));
+    const codeFiles = files.filter(f => !_CFM_DATA_EXTS.has((f.filename ?? f.name ?? '').split('.').pop().toLowerCase()));
+    const totalSize = files.reduce((s, f) => s + (f.size ?? 0), 0);
+    statsEl.textContent = `${files.length} 个文件 · ${_cfmFmtSize(totalSize)}`;
+
+    if (dataFiles.length) listEl.appendChild(_makeCfmSection('数据文件', 'ti-database', dataFiles, false));
+    if (codeFiles.length) listEl.appendChild(_makeCfmSection('代码文件', 'ti-file-code', codeFiles, true));
+
+    const modelWrap = _makeCfmSectionHeader('模型 & 配置', 'ti-brain');
+    const modelPh = document.createElement('div');
+    modelPh.className = 'cfm-placeholder';
+    modelPh.textContent = '即将推出';
+    modelWrap.appendChild(modelPh);
+    listEl.appendChild(modelWrap);
+  }
+
+  function _makeCfmSectionHeader(title, icon) {
+    const wrap = document.createElement('div');
+    wrap.className = 'cfm-section';
+    const hdr = document.createElement('div');
+    hdr.className = 'cfm-section-hdr';
+    hdr.innerHTML = `<i class="ti ${icon} cfm-section-icon"></i><span class="cfm-section-title">${_esc(title)}</span>`;
+    wrap.appendChild(hdr);
+    return wrap;
+  }
+
+  function _makeCfmSection(title, icon, files, isCode) {
+    const wrap = _makeCfmSectionHeader(title, icon);
+    files.forEach(f => wrap.appendChild(_makeCfmFileRow(f, isCode)));
+    return wrap;
+  }
+
+  function _makeCfmFileRow(f, isCode) {
+    const filename = f.filename ?? f.name ?? '';
+    const ext = filename.split('.').pop().toLowerCase();
+    const row = document.createElement('div');
+    row.className = 'cfm-file-row';
+
+    const iconEl = document.createElement('i');
+    iconEl.className = `ti ${_CFM_TYPE_ICON[ext] ?? 'ti-file'} cfm-file-icon`;
+    iconEl.style.color = _CFM_TYPE_COLOR[ext] ?? '#6366f1';
+
+    const info = document.createElement('div');
+    info.className = 'cfm-file-info';
+
+    const nameEl = document.createElement('button');
+    nameEl.className = 'cfm-file-name';
+    nameEl.title = '点击下载';
+    nameEl.textContent = filename;
+    nameEl.addEventListener('click', () => _cfmDownload(f));
+
+    const metaEl = document.createElement('div');
+    metaEl.className = 'cfm-file-meta';
+    metaEl.textContent = [
+      _cfmFmtSize(f.size),
+      f.created_at ? _cfmRelTime(f.created_at * 1000) : '',
+    ].filter(Boolean).join(' · ');
+
+    info.append(nameEl, metaEl);
+
+    const actions = document.createElement('div');
+    actions.className = 'cfm-file-actions';
+
+    if (!isCode) {
+      const injectBtn = document.createElement('button');
+      injectBtn.className = 'cfm-action-btn';
+      injectBtn.title = '注入到内核';
+      injectBtn.innerHTML = `<i class="ti ti-player-play"></i>`;
+      injectBtn.addEventListener('click', () => _cfmInject(f, injectBtn));
+      actions.appendChild(injectBtn);
+    } else {
+      const openBtn = document.createElement('button');
+      openBtn.className = 'cfm-action-btn';
+      openBtn.title = '在 Notebook 打开';
+      openBtn.innerHTML = `<i class="ti ti-external-link"></i>`;
+      openBtn.addEventListener('click', () => _cfmOpenInNotebook(f));
+      actions.appendChild(openBtn);
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'cfm-action-btn cfm-action-btn--danger';
+    delBtn.title = '删除';
+    delBtn.innerHTML = `<i class="ti ti-trash"></i>`;
+    delBtn.addEventListener('click', () => _cfmConfirmDelete(f, row));
+    actions.appendChild(delBtn);
+
+    row.append(iconEl, info, actions);
+    return row;
+  }
+
+  async function _cfmDownload(f) {
+    const filename = f.filename ?? f.name ?? 'file';
+    try {
+      const res = await window.authClient.authedFetch(`${AUTH_BASE}/files/${f.id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+    } catch (e) {
+      _showStatus(`下载失败：${e.message}`, true);
+    }
+  }
+
+  async function _cfmInject(f, btn) {
+    const filename = f.filename ?? f.name ?? 'file';
+    const ext = filename.split('.').pop().toLowerCase();
+    const varName = filename.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'df';
+    btn.disabled = true;
+    btn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i>`;
+    try {
+      const res = await window.authClient.authedFetch(`${AUTH_BASE}/files/${f.id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const isExcel = ext === 'xlsx' || ext === 'xls';
+      let data, fileType;
+      if (isExcel) {
+        const buf = await res.arrayBuffer();
+        data = new Uint8Array(buf);
+        fileType = ext;
+      } else {
+        data = await res.text();
+        fileType = ext === 'json' ? 'json' : ext === 'xml' ? 'xml' : 'csv';
+      }
+      await injectDataFrame(varName, data, fileType, filename);
+      _showStatus(`✓ "${filename}" 已注入为 ${varName}`);
+    } catch (e) {
+      _showStatus(`注入失败：${e.message}`, true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="ti ti-player-play"></i>`;
+    }
+  }
+
+  async function _cfmOpenInNotebook(f) {
+    const filename = f.filename ?? f.name ?? 'file';
+    try {
+      const res = await window.authClient.authedFetch(`${AUTH_BASE}/files/${f.id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const code = await res.text();
+      document.dispatchEvent(new CustomEvent('cfm-open-code-file', { detail: { filename, code } }));
+      _showStatus(`✓ "${filename}" 已发送到 Notebook`);
+    } catch (e) {
+      _showStatus(`打开失败：${e.message}`, true);
+    }
+  }
+
+  function _cfmConfirmDelete(f, row) {
+    const filename = f.filename ?? f.name ?? '文件';
+    if (!window.confirm(`确认删除 ${filename}？此操作不可恢复`)) return;
+    _cfmDeleteFile(f, row);
+  }
+
+  async function _cfmDeleteFile(f, row) {
+    try {
+      const res = await window.authClient.authedFetch(`${AUTH_BASE}/files/${f.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      row.classList.add('cfm-file-row--removing');
+      setTimeout(() => { row.remove(); _cfmUpdateStats(); }, 250);
+    } catch (e) {
+      _showStatus(`删除失败：${e.message}`, true);
+    }
+  }
+
+  function _cfmUpdateStats() {
+    const rows = listEl.querySelectorAll('.cfm-file-row');
+    if (!rows.length) {
+      listEl.innerHTML = '<div class="cfm-empty">还没有云端文件，点击上传开始</div>';
+      statsEl.textContent = '0 个文件';
+    } else {
+      statsEl.textContent = `${rows.length} 个文件`;
+    }
+  }
+
+  // ── Upload ────────────────────────────────────────────────────────────────
+  uploadBtn.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.xls,.json,.xml,.py,.md,.tex,.html';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      input.remove();
+      if (!file) return;
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i> 上传中…`;
+      _showStatus(`正在上传 "${file.name}"…`);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const token = window.authClient.getAccessToken();
+        if (!token) throw new Error('未登录');
+        const res = await fetch(`${AUTH_BASE}/files/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message ?? `HTTP ${res.status}`);
+        }
+        _showStatus(`✓ "${file.name}" 上传成功`);
+        _load();
+      } catch (e) {
+        _showStatus(`上传失败：${e.message}`, true);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = `<i class="ti ti-upload"></i> 上传文件`;
+      }
+    });
+    input.click();
+  });
+
+  _load();
 }
 
 // ── Main render ───────────────────────────────────────────────────────────────
@@ -521,6 +829,28 @@ function _renderProfile(screen) {
   const content = document.createElement('main');
   content.className = 'prof-content';
 
+  // ── Tab bar ───────────────────────────────────────────────────────────────
+  const tabBar = document.createElement('div');
+  tabBar.className = 'prof-tabs';
+
+  const tabOverview = document.createElement('button');
+  tabOverview.className = 'prof-tab prof-tab--active';
+  tabOverview.textContent = '概览';
+  tabOverview.dataset.tab = 'overview';
+
+  const tabFiles = document.createElement('button');
+  tabFiles.className = 'prof-tab';
+  tabFiles.textContent = '文件管理';
+  tabFiles.dataset.tab = 'files';
+
+  tabBar.append(tabOverview, tabFiles);
+  content.appendChild(tabBar);
+
+  // ── Overview pane ─────────────────────────────────────────────────────────
+  const overviewPane = document.createElement('div');
+  overviewPane.className = 'prof-tab-pane';
+  overviewPane.dataset.pane = 'overview';
+
   const nbSec = document.createElement('section');
   nbSec.className = 'prof-section';
   nbSec.innerHTML = '<h3 class="prof-section-title">最近访问</h3>';
@@ -541,7 +871,38 @@ function _renderProfile(screen) {
   filesSec.innerHTML = '<h3 class="prof-section-title">最近文件</h3>';
   filesSec.appendChild(_buildRecentFiles());
 
-  content.append(nbSec, filesSec, hmSec, actSec);
+  overviewPane.append(nbSec, filesSec, hmSec, actSec);
+
+  // ── File manager pane ─────────────────────────────────────────────────────
+  const filesPane = document.createElement('div');
+  filesPane.className = 'prof-tab-pane';
+  filesPane.dataset.pane = 'files';
+  filesPane.hidden = true;
+
+  content.append(overviewPane, filesPane);
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  let _filesPaneLoaded = false;
+
+  function _switchTab(tab) {
+    tabBar.querySelectorAll('.prof-tab').forEach(t =>
+      t.classList.toggle('prof-tab--active', t.dataset.tab === tab)
+    );
+    overviewPane.hidden = tab !== 'overview';
+    filesPane.hidden    = tab !== 'files';
+    if (tab === 'files' && !_filesPaneLoaded) {
+      _filesPaneLoaded = true;
+      if (window.authClient?.isLoggedIn()) {
+        _buildCloudFileManager(filesPane);
+      } else {
+        filesPane.innerHTML = '<div class="cfm-empty">请先登录后查看云端文件</div>';
+      }
+    }
+  }
+
+  tabOverview.addEventListener('click', () => _switchTab('overview'));
+  tabFiles.addEventListener('click', () => _switchTab('files'));
+
   layout.append(sidebar, content);
   screen.appendChild(layout);
 }
