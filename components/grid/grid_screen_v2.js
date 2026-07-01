@@ -1,5 +1,6 @@
 // ── DP Grid — Phase 3: row/col CRUD, multi-select, pagination, Pro banner ─────
 import { getAllDatasets, setDataset }        from '../shared/dataset_store.js';
+import { createNudgeBanner }               from '../shared/nudge_banner/nudge_banner.js';
 import { injectDataFrame, getPyodide }       from '../compiler/compiler.js';
 import { downloadBlob }                      from '../shared/file_download.js';
 import { getSettings }                       from '../right_bar/settings.js';
@@ -472,14 +473,15 @@ function setupGridScreen() {
     tableWrap.querySelector('.g-load-more')?.remove();
     tableWrap.querySelector('.g-pro-banner')?.remove();
 
-    // Pro banner — appears at top of table area when dataset exceeds free limit
+    // Pro nudge banner — appears when dataset exceeds free row limit
     if (total > PRO_LIMIT) {
-      const banner = document.createElement('div');
-      banner.className = 'g-pro-banner';
-      banner.innerHTML =
-        `⚡ 数据集共 <strong>${total.toLocaleString()}</strong> 行，Pro 版可无限加载 ` +
-        `&nbsp;<a href="/pricing.html" class="g-pro-link">升级 →</a>`;
-      tableWrap.insertBefore(banner, emptyEl.nextSibling);
+      const banner = createNudgeBanner({
+        id: 'grid-row-limit',
+        content:
+          `⚡ 数据集共 <strong>${total.toLocaleString()}</strong> 行，Pro 版可无限加载` +
+          `&nbsp;<a href="/pricing.html" class="g-pro-link">升级 →</a>`,
+      });
+      if (banner) tableWrap.insertBefore(banner, emptyEl.nextSibling);
     }
 
     const wrapper = document.createElement('div');

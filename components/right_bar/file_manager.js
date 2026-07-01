@@ -3,7 +3,7 @@
 // to both Notebook (py.FS) and Quick Analysis (dataset_store / ARIA tabs).
 // No "select destination" step — import once, use everywhere.
 
-import { setDataset, removeDataset }      from '../shared/dataset_store.js';
+import { setDataset, removeDataset, getAllDatasets } from '../shared/dataset_store.js';
 import { ensureXlsx, parseToDataset }    from '../import/import_data.js';
 import { writeToFS }                     from '../compiler/compiler.js';
 import { createSettingsPanel, getSettings } from './settings.js';
@@ -13,6 +13,36 @@ const INJECT_KEY      = 'dreaming-polar-inject-store';
 const CODE_FILE_KEY   = 'dp-code-file-store';
 const RECENT_FILES_KEY = 'dp_recent_files';
 const MAX_RECENT_FILES = 10;
+
+// ── Context-aware action button (screen-dependent label & routing) ─────────────
+const SCREEN_ACTION_META = {
+  'coding':   { label: '插入至 Notebook',      icon: 'ti-corner-down-left' },
+  'terminal': { label: '发送给 ARIA',            icon: 'ti-robot'            },
+  'grid':     { label: '发送给 DP Grid',         icon: 'ti-table'            },
+  'ai-chat':  { label: '发送给 AI 对话',         icon: 'ti-message'          },
+  'profile':  { label: '插入至 Notebook',        icon: 'ti-corner-down-left' },
+  'content':  { label: '插入至 Notebook',        icon: 'ti-corner-down-left' },
+};
+const _DEFAULT_ACTION = { label: '插入至 Notebook', icon: 'ti-corner-down-left' };
+
+let _activeScreenId = null;
+const _actionBtns   = new Set();   // all live data-file action buttons
+
+function _getActionMeta() {
+  return SCREEN_ACTION_META[_activeScreenId] ?? _DEFAULT_ACTION;
+}
+function _applyActionBtn(btn) {
+  const { label, icon } = _getActionMeta();
+  btn.title         = label;
+  btn.setAttribute('aria-label', label);
+  btn.innerHTML     = `<i class="ti ${icon}"></i>`;
+}
+function _refreshAllActionBtns() {
+  for (const btn of _actionBtns) {
+    if (!btn.isConnected) { _actionBtns.delete(btn); continue; }
+    _applyActionBtn(btn);
+  }
+}
 
 function _recordRecentFile({ name, varName, size, fileType }) {
   let files;
@@ -847,14 +877,30 @@ export function initFileManager() {
 
     info.append(nameEl, metaEl);
 
-    // "→ Notebook" icon button (hidden in select mode)
+    // "→ Notebook / → ARIA / …" icon button (hidden in select mode)
     const toNbBtn = document.createElement('button');
     toNbBtn.className = 'rb-file-action-btn';
-    toNbBtn.title = '插入到 Notebook';
-    toNbBtn.setAttribute('aria-label', '插入到 Notebook');
-    toNbBtn.innerHTML = `<i class="ti ti-corner-down-left"></i>`;
-    // Shared smart-click dispatcher used by both the row click and the ↵ button
+    _applyActionBtn(toNbBtn);
+    _actionBtns.add(toNbBtn);
+
+    // Shared smart-click dispatcher — routes to active screen
     function _smartClick() {
+      if (_activeScreenId === 'terminal') {
+        // Dataset is in dataset_store; re-activate it → ARIA switches to chat view
+        const ds = getAllDatasets().find(d => d.name === entry.filename);
+        if (ds) {
+          setDataset(ds); // re-sets active + dispatches dataset-updated source='import'
+        } else {
+          // Dataset not in store yet; fall back to Notebook
+          document.dispatchEvent(new CustomEvent('rb-file-smart-click', {
+            detail: { code: _buildCode(entry), entry },
+          }));
+        }
+        item.classList.add('rb-file-item--flash');
+        setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
+        return;
+      }
+      // Default: insert into Notebook
       document.dispatchEvent(new CustomEvent('rb-file-smart-click', {
         detail: { code: _buildCode(entry), entry },
       }));
@@ -938,4 +984,16 @@ export function initFileManager() {
   });
   document.addEventListener('dataset-updated',    () => { if (_open) _refresh(); });
   document.addEventListener('datasets-reloaded',  () => _hideKernelBanner());
+
+  // ── Track active screen → update action button labels live ────────────────
+  document.addEventListener('screen-opened',    ({ detail: { id } }) => {
+    _activeScreenId = id;
+    _refreshAllActionBtns();
+  });
+  document.addEventListener('screen-closed',    ({ detail: { id } }) => {
+    if (_activeScreenId === id) { _activeScreenId = null; _refreshAllActionBtns(); }
+  });
+  document.addEventListener('screen-minimized', ({ detail: { id } }) => {
+    if (_activeScreenId === id) { _activeScreenId = null; _refreshAllActionBtns(); }
+  });
 }
