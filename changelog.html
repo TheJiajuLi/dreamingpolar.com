@@ -75,7 +75,7 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
     </div>
     <div class="nav-spacer"></div>
     <div style="display:flex;gap:8px">
-      <button class="btn-o" onclick="sessionStorage.setItem('lp-open-login','login');window.location='/landing.html'">登录</button>
+      <button class="btn-o" onclick="window.dpAuthModal?.open('login')">登录</button>
     </div>
   </div>
 </header>
@@ -89,14 +89,13 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
   <div class="cl-list" id="cl-list">
     <div style="color:#94a3b8;text-align:center;padding:40px 0">加载中…</div>
   </div>
-
-  <div class="end-note">持续更新中，下个版本见 👋</div>
 </div>
 
 <footer>
-  <p><a href="/">首页</a> &nbsp;·&nbsp; <a href="/app">进入应用</a></p>
+  <p>Dreaming Polar 2026</p>
 </footer>
 
+<script type="module" src="/components/auth/auth_modal.js"></script>
 <script>
 const TAG = { new: ['t-new','新功能'], improve: ['t-improve','优化'], fix: ['t-fix','修复'] };
 
