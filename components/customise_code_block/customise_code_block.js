@@ -744,6 +744,14 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   body.append(editor);
   // Ghost text prediction overlay (ICM-gated, Python only)
   attachGhostText({ body, editor, cell, icmEnabled, icmOnChange });
+
+  // Ctrl+I hover hint — visible only when ICM is on
+  const aiHint = document.createElement('span');
+  aiHint.className = 'nb-ai-hint';
+  aiHint.textContent = 'Ctrl+I';
+  aiHint.style.display = icmEnabled() ? '' : 'none';
+  icmOnChange(on => { aiHint.style.display = on ? '' : 'none'; });
+  body.appendChild(aiHint);
   // Ensure editor height is correct on first paint (autoResize needs the element in DOM)
   requestAnimationFrame(() => autoResize(editor));
   const lowerRow = document.createElement('div');
