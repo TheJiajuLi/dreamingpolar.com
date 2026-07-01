@@ -188,7 +188,9 @@
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: var(--border, #cbd5e1) transparent;
+  background: var(--bg, #f3f5f8);
 }
+[data-theme="light"] .grid-table-wrap { background: #ffffff; }
 .grid-table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
 .grid-table-wrap::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
 
