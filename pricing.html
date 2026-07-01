@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>定价 — Dreaming Polar</title>
+<title>套餐定价 — Dreaming Polar</title>
+<link rel="icon" href="/assets/app_logo/favicon-32.png" type="image/png">
 <meta name="description" content="Dreaming Polar 定价方案：免费版永久可用，Pro 版解锁云同步、无限 AI 分析和更多高级功能。">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -20,7 +21,8 @@ button{cursor:pointer;font-family:inherit}
 
 /* Nav */
 nav{border-bottom:1px solid var(--bd);background:var(--s);position:sticky;top:0;z-index:100}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;max-width:960px;margin:0 auto}
+.nav-inner{display:flex;align-items:center;gap:24px;padding:12px 28px;max-width:960px;margin:0 auto}
+.nav-spacer{flex:1}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700}
 .logo img{height:26px;width:auto}
 .nav-links{display:flex;align-items:center;gap:24px;font-size:.88rem;color:var(--m)}
@@ -109,24 +111,25 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
 <nav>
   <div class="nav-inner">
     <div class="logo">
-      <img src="assets/home_page/imgs/dp_logo.png" alt="Dreaming Polar">
+      <img src="assets/home_page/imgs/dp_logo.png" alt="Dreaming Polar" style="height:26px;width:auto;display:block;object-fit:contain">
     </div>
     <div class="nav-links">
       <a href="/landing.html">首页</a>
-      <a href="/pricing.html" class="active">定价</a>
       <a href="/changelog.html">更新日志</a>
+      <a href="/pricing.html" class="active">套餐定价</a>
     </div>
+    <div class="nav-spacer"></div>
     <div class="nav-btns">
-      <button class="btn-o" onclick="document.getElementById('lp-auth-ref').href='/landing.html#login'">登录</button>
-      <a href="/landing.html" class="btn-f">免费开始</a>
+      <button class="btn-o" onclick="window.location='/landing.html'">登录</button>
+      <a href="/index.html" class="btn-f">免费开始</a>
     </div>
   </div>
 </nav>
 
 <!-- ── Hero ─────────────────────────────────────────────────────────────────── -->
 <section class="hero">
-  <h1>简单透明，<span style="color:var(--a)">没有套路</span></h1>
-  <p>免费版能做的事已经够多了。Pro 版是给真的重度用户准备的。</p>
+  <h1>从免费开始，<span style="color:var(--a)">按需升级</span></h1>
+  <p>不需要信用卡。免费版够用就一直免费用，想要更多随时升级。</p>
   <div class="toggle-wrap">
     <div class="toggle-opt active" id="tog-month" onclick="setBilling('month')">按月</div>
     <div class="toggle-opt" id="tog-year" onclick="setBilling('year')">按年 <span class="badge-save">省 20%</span></div>

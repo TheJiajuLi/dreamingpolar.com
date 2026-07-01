@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dreaming Polar — 数据分析，从未如此直接</title>
+<link rel="icon" href="/assets/app_logo/favicon-32.png" type="image/png">
 <meta name="description" content="不用装环境，不用配服务器。打开浏览器，导入数据，用中文问 ARIA 或者写 Python——它真的懂你的数据。">
 <!-- No external icon CDN — using app's own inline SVGs -->
 <style>
@@ -21,13 +22,14 @@ button{cursor:pointer;font-family:inherit}
 
 /* Nav */
 nav{border-bottom:1px solid var(--bd);background:var(--s);position:sticky;top:0;z-index:100}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;max-width:var(--w);margin:0 auto}
-.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem}
+.nav-inner{display:flex;align-items:center;gap:24px;padding:12px 28px;max-width:var(--w);margin:0 auto}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem;flex-shrink:0}
 .logo img{display:block;flex-shrink:0}
 .ver{font-size:.7rem;color:var(--m);background:var(--bg);border:1px solid var(--bd);border-radius:20px;padding:2px 8px;font-weight:500}
-.nav-links{display:flex;align-items:center;gap:20px}
+.nav-links{display:flex;align-items:center;gap:22px}
 .nav-links a{font-size:.86rem;color:var(--m);text-decoration:none;transition:color .15s}
 .nav-links a:hover{color:var(--a)}
+.nav-spacer{flex:1}
 .nav-btns{display:flex;gap:8px}
 .btn-o{padding:7px 16px;border:1px solid var(--bd);border-radius:8px;background:var(--s);font-size:.86rem;color:var(--t);transition:border-color .15s}
 .btn-o:hover{border-color:var(--a);color:var(--a)}
@@ -166,13 +168,14 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
 <nav>
   <div class="nav-inner">
     <div class="logo">
-      <img src="assets/home_page/imgs/dp_logo.png" alt="Dreaming Polar" style="height:28px;width:auto;display:block;object-fit:contain">
+      <img src="assets/home_page/imgs/dp_logo.png" alt="Dreaming Polar" style="height:26px;width:auto;display:block;object-fit:contain">
       <span class="ver" id="ver">v1.2.0</span>
     </div>
     <div class="nav-links">
       <a href="/changelog.html">更新日志</a>
       <a href="/pricing.html">套餐定价</a>
     </div>
+    <div class="nav-spacer"></div>
     <div class="nav-btns">
       <button class="btn-o" onclick="lpAuthOpen('login')">登录</button>
       <button class="btn-f" onclick="window.location.href='/index.html'">免费开始</button>
