@@ -23,6 +23,131 @@ function _rowsToCSV(columns, rows) {
   return header + '\n' + body;
 }
 
+// ── XLSX export (SheetJS, loaded on demand) ───────────────────────────────────
+async function _exportXLSX(columns, rows, filename) {
+  let XLSX;
+  try {
+    XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs');
+  } catch (e) {
+    alert('无法加载 XLSX 库，请检查网络连接');
+    return;
+  }
+  const data = [columns, ...rows.map(r => columns.map(c => r[c] ?? ''))];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  XLSX.writeFile(wb, filename);
+}
+
+// ── Formula engine ────────────────────────────────────────────────────────────
+// Splits function args respecting nested parens and quoted strings
+function _splitArgs(str) {
+  const args = []; let depth = 0, cur = '', inStr = false, strCh = '';
+  for (const ch of str) {
+    if (inStr) { cur += ch; if (ch === strCh) inStr = false; }
+    else if (ch === '"' || ch === "'") { inStr = true; strCh = ch; cur += ch; }
+    else if (ch === '(') { depth++; cur += ch; }
+    else if (ch === ')') { depth--; cur += ch; }
+    else if (ch === ',' && depth === 0) { args.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  if (cur.trim()) args.push(cur);
+  return args;
+}
+
+// Convert column letter(s) A/B/AA … to 0-based index, then look up column name
+function _colLetterToName(letter, columns) {
+  let idx = 0;
+  for (let i = 0; i < letter.length; i++) idx = idx * 26 + (letter.toUpperCase().charCodeAt(i) - 64);
+  return columns[idx - 1] ?? null;
+}
+
+// Get numeric value of a cell (1-based rowNum into workingRows)
+function _cellVal(colLetter, rowNum, rows, columns) {
+  const colName = _colLetterToName(colLetter, columns);
+  if (!colName) return NaN;
+  const row = rows[rowNum - 1];
+  if (!row) return NaN;
+  const raw = row[colName];
+  if (typeof raw === 'string' && raw.startsWith('=')) return _evalFormula(raw, rows, columns);
+  return raw === '' || raw == null ? NaN : Number(raw);
+}
+
+// Expand range like A1:A10 → array of numbers
+function _expandRange(range, rows, columns) {
+  const [from, to] = range.split(':');
+  const fc = from.match(/[A-Za-z]+/)?.[0], fr = parseInt(from.match(/\d+/)?.[0] ?? 0);
+  const tc = to.match(/[A-Za-z]+/)?.[0],   tr = parseInt(to.match(/\d+/)?.[0] ?? 0);
+  if (!fc || !tc || fr > tr) return [];
+  const vals = [];
+  if (fc.toUpperCase() === tc.toUpperCase()) {
+    for (let r = fr; r <= tr; r++) {
+      const v = _cellVal(fc, r, rows, columns);
+      if (!isNaN(v)) vals.push(v);
+    }
+  }
+  return vals;
+}
+
+// Evaluate simple value: quoted string, number, or cell ref
+function _evalValue(s, rows, columns) {
+  const t = s.trim();
+  if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) return t.slice(1, -1);
+  if (!isNaN(Number(t))) return Number(t);
+  const m = t.match(/^([A-Za-z]+)(\d+)$/);
+  if (m) { const v = _cellVal(m[1], parseInt(m[2]), rows, columns); return isNaN(v) ? '' : v; }
+  return t;
+}
+
+// Evaluate a condition expression like A1>0
+function _evalCond(cond, rows, columns) {
+  try {
+    const resolved = cond.replace(/([A-Za-z]+)(\d+)/g, (_, c, r) => {
+      const v = _cellVal(c, parseInt(r), rows, columns);
+      return isNaN(v) ? '""' : v;
+    });
+    // eslint-disable-next-line no-new-func
+    return Function('"use strict";return(' + resolved + ')')();
+  } catch { return false; }
+}
+
+// Main formula evaluator — returns computed value or '#ERR'
+function _evalFormula(formula, rows, columns) {
+  try {
+    const expr = formula.slice(1).trim();
+    let m;
+    // Named functions with range
+    const RANGE_RE = /^(SUM|AVERAGE|AVG|MAX|MIN|COUNT)\(([A-Za-z]+\d+:[A-Za-z]+\d+)\)$/i;
+    if ((m = expr.match(RANGE_RE))) {
+      const vals = _expandRange(m[2], rows, columns);
+      switch (m[1].toUpperCase()) {
+        case 'SUM':     return vals.reduce((a, b) => a + b, 0);
+        case 'AVERAGE': case 'AVG': return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+        case 'MAX':     return vals.length ? Math.max(...vals) : 0;
+        case 'MIN':     return vals.length ? Math.min(...vals) : 0;
+        case 'COUNT':   return vals.length;
+      }
+    }
+    // IF
+    if ((m = expr.match(/^IF\((.+)\)$/i))) {
+      const args = _splitArgs(m[1]);
+      if (args.length >= 3) return _evalCond(args[0], rows, columns) ? _evalValue(args[1], rows, columns) : _evalValue(args[2], rows, columns);
+    }
+    // Arithmetic with cell refs: A1+B2*3 etc.
+    if (/[A-Za-z]+\d+/.test(expr)) {
+      const resolved = expr.replace(/([A-Za-z]+)(\d+)/g, (_, c, r) => {
+        const v = _cellVal(c, parseInt(r), rows, columns);
+        return isNaN(v) ? 0 : v;
+      });
+      // eslint-disable-next-line no-new-func
+      return Function('"use strict";return(' + resolved + ')')();
+    }
+    // Plain arithmetic
+    // eslint-disable-next-line no-new-func
+    return Function('"use strict";return(' + expr + ')')();
+  } catch { return '#ERR'; }
+}
+
 // ── Parse raw inject-store data ───────────────────────────────────────────────
 function _parseInjectEntry(entry) {
   try {
@@ -139,14 +264,15 @@ function _buildTable(ds, sortState, editState, filters, limit, selSet) {
 
   let thead = '<thead><tr><th class="th-row">#</th>';
   columns.forEach(col => {
-    const label  = _dtypeLabel(dtypes[col]);
-    const isSort = col === sortCol;
-    const cls    = isSort ? (sortDir === 1 ? 'sorted-asc' : sortDir === -1 ? 'sorted-desc' : '') : '';
+    const label    = _dtypeLabel(dtypes[col]);
+    const isSort   = col === sortCol && sortDir !== 0;
+    const cls      = isSort ? (sortDir === 1 ? 'sorted-asc' : 'sorted-desc') : '';
+    const sortChar = isSort ? (sortDir === 1 ? '↑' : '↓') : '↕';
     thead += `<th class="${cls}" data-col="${col}">
       <div class="th-inner">
         <span class="th-name">${col}</span>
         ${label ? `<span class="dtype-badge ${label}">${label}</span>` : ''}
-        <span class="sort-icon"></span>
+        <span class="sort-icon${isSort ? ' sort-icon--on' : ''}">${sortChar}</span>
       </div></th>`;
   });
   thead += '</tr></thead>';
@@ -162,11 +288,14 @@ function _buildTable(ds, sortState, editState, filters, limit, selSet) {
     tbody += `<tr class="${rowCls}" data-orig-idx="${origIdx}">`;
     tbody += `<td class="td-row grid-row-num">${dispIdx + 1}</td>`;
     columns.forEach(col => {
-      const v       = row[col];
-      const isNull  = v === null || v === undefined || v === '';
-      const numCls  = _isNumCol(dtypes, col) ? ' num' : '';
-      const nullCls = isNull ? ' null-val' : '';
-      tbody += `<td class="${numCls}${nullCls}" data-col="${col}" data-orig-idx="${origIdx}">${isNull ? '' : v}</td>`;
+      const raw       = row[col];
+      const isFormula = typeof raw === 'string' && raw.startsWith('=');
+      const v         = isFormula ? _evalFormula(raw, workingRows, columns) : raw;
+      const isNull    = v === null || v === undefined || v === '';
+      const numCls    = _isNumCol(dtypes, col) ? ' num' : '';
+      const nullCls   = isNull ? ' null-val' : '';
+      const fCls      = isFormula ? (v === '#ERR' ? ' formula-err' : ' formula-cell') : '';
+      tbody += `<td class="${numCls}${nullCls}${fCls}" data-col="${col}" data-orig-idx="${origIdx}">${isNull ? '' : String(v)}</td>`;
     });
     tbody += '</tr>';
   });
@@ -593,13 +722,21 @@ function setupGridScreen() {
 
     const input = document.createElement('input');
     input.value = currentVal;
+    const isFormulaNow = typeof currentVal === 'string' && currentVal.startsWith('=');
     input.style.cssText =
       'width:100%;box-sizing:border-box;border:none;outline:2px solid #6366f1;' +
       'border-radius:3px;font-family:var(--code-font,"JetBrains Mono",monospace);' +
-      'font-size:12px;padding:0 4px;background:var(--surface,#fff);color:var(--text,#0f172a)';
+      `font-size:12px;padding:0 4px;background:${isFormulaNow ? 'rgba(99,102,241,0.06)' : 'var(--surface,#fff)'};` +
+      `color:${isFormulaNow ? '#6366f1' : 'var(--text,#0f172a)'}`;
     td.textContent = '';
     td.appendChild(input);
     input.focus(); input.select();
+
+    input.addEventListener('input', () => {
+      const isF = input.value.startsWith('=');
+      input.style.background = isF ? 'rgba(99,102,241,0.06)' : 'var(--surface,#fff)';
+      input.style.color = isF ? '#6366f1' : 'var(--text,#0f172a)';
+    });
 
     const _commit = () => {
       const newVal = input.value;
@@ -961,17 +1098,20 @@ function setupGridScreen() {
     const menu = document.createElement('div');
     menu.className = 'grid-picker';
     menu.style.cssText = 'position:fixed;z-index:500;bottom:60px;right:80px;min-width:140px';
-    [['CSV','csv','text/csv'],['JSON','json','application/json'],['TSV','tsv','text/tab-separated-values']].forEach(([label,ext,mime]) => {
+    const base = tab.filename.replace(/\.[^.]+$/, '') + '_edited';
+    [['CSV','csv'],['JSON','json'],['XLSX','xlsx']].forEach(([label, ext]) => {
       const item = document.createElement('div');
       item.className = 'grid-picker-item';
       item.innerHTML = `<div class="grid-picker-name">${label}</div>`;
-      item.addEventListener('click', () => {
-        let content;
-        if (ext === 'csv')  content = _rowsToCSV(tab.ds.columns, rows);
-        else if (ext === 'tsv') content = [tab.ds.columns.join('\t'), ...rows.map(r => tab.ds.columns.map(c => r[c] ?? '').join('\t'))].join('\n');
-        else content = JSON.stringify(rows, null, 2);
-        downloadBlob(content, `${tab.filename.replace(/\.[^.]+$/, '')}_edited.${ext}`, mime);
+      item.addEventListener('click', async () => {
         menu.remove();
+        if (ext === 'csv') {
+          downloadBlob(_rowsToCSV(tab.ds.columns, rows), `${base}.csv`, 'text/csv');
+        } else if (ext === 'json') {
+          downloadBlob(JSON.stringify(rows, null, 2), `${base}.json`, 'application/json');
+        } else {
+          await _exportXLSX(tab.ds.columns, rows, `${base}.xlsx`);
+        }
       });
       menu.appendChild(item);
     });

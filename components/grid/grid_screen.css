@@ -223,8 +223,10 @@
 }
 .grid-table thead th:hover { background: rgba(99,102,241,0.05); }
 .grid-table thead th.th-row { cursor: default; color: var(--text-muted, #94a3b8); font-weight: 400; min-width: 48px; }
-.grid-table thead th.sorted-asc .sort-icon::after  { content: ' ↑'; color: var(--accent, #6366f1); }
-.grid-table thead th.sorted-desc .sort-icon::after { content: ' ↓'; color: var(--accent, #6366f1); }
+.grid-table thead th.sorted-asc,
+.grid-table thead th.sorted-desc { background: rgba(99,102,241,0.07); }
+.grid-table thead th.sorted-asc:hover,
+.grid-table thead th.sorted-desc:hover { background: rgba(99,102,241,0.12); }
 
 .th-inner {
   display: flex;
@@ -232,7 +234,8 @@
   gap: 6px;
 }
 .th-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.sort-icon { font-size: 0.62rem; opacity: 0.5; }
+.sort-icon { font-size: 0.65rem; color: var(--text-muted, #cbd5e1); flex-shrink: 0; line-height: 1; }
+.sort-icon--on { color: var(--accent, #6366f1); font-weight: 700; }
 
 /* Type badge */
 .dtype-badge {
@@ -282,6 +285,8 @@
 }
 .grid-table tbody td.num { text-align: right; }
 .grid-table tbody td.null-val { color: var(--text-muted, #94a3b8); font-style: italic; }
+.grid-table tbody td.formula-cell { color: var(--accent, #6366f1); }
+.grid-table tbody td.formula-err  { color: #ef4444; font-weight: 600; }
 
 /* ── Status bar ──────────────────────────────────────────────────────────── */
 .grid-status-bar {
