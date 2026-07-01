@@ -280,6 +280,7 @@ export function initFileManager() {
   document.addEventListener('dp-auth-state', () => {
     _syncUserBtn();
     if (_open && _activePane === 'profile') _renderProfilePane();
+    if (_open && _activePane === 'files') _refresh();
   });
 
   // ── Outer container — clips the two-panel slide ───────────────────────────
@@ -718,8 +719,110 @@ export function initFileManager() {
     return name;
   }
 
+  // ── Time formatting ───────────────────────────────────────────────────────
+  function _timeAgo(ms) {
+    const diff = Date.now() - ms;
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return '刚刚';
+    if (min < 60) return min + '分钟前';
+    const h = Math.floor(min / 60);
+    if (h < 24) return h + '小时前';
+    return Math.floor(h / 24) + '天前';
+  }
+
+  // ── Fetch cloud files ──────────────────────────────────────────────────────
+  async function _fetchCloudFiles() {
+    if (!window.authClient?.isLoggedIn()) return [];
+    try {
+      const token = window.authClient.getAccessToken();
+      const res = await fetch(
+        'https://api.dreamingpolar.com/auth/files',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  // ── Cloud file item renderer ───────────────────────────────────────────────
+  function _makeCloudFileItem(file) {
+    const row = document.createElement('div');
+    row.className = 'rb-file-item';
+
+    const icon = file.filename.endsWith('.py') ? 'ti-file-code'
+      : file.filename.match(/\.(csv|xlsx|xls)$/) ? 'ti-table'
+      : 'ti-file';
+
+    const size = file.size_bytes < 1024
+      ? file.size_bytes + ' B'
+      : file.size_bytes < 1024 * 1024
+      ? (file.size_bytes / 1024).toFixed(1) + ' KB'
+      : (file.size_bytes / 1024 / 1024).toFixed(1) + ' MB';
+
+    const ago = _timeAgo(file.created_at * 1000);
+
+    row.innerHTML = `
+      <i class="ti ${icon} rb-file-item-icon"></i>
+      <div class="rb-file-item-info">
+        <div class="rb-file-item-name">${file.filename}</div>
+        <div class="rb-file-item-meta">${size} · ${ago}</div>
+      </div>
+      <div class="rb-cloud-actions">
+        <button class="rb-file-action-btn rb-inject-cloud" title="注入到内核">
+          <i class="ti ti-player-play"></i>
+        </button>
+        <button class="rb-file-action-btn rb-delete-cloud" title="删除">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+    `;
+
+    // 注入到内核
+    row.querySelector('.rb-inject-cloud').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        const token = window.authClient.getAccessToken();
+        const res = await fetch(
+          `https://api.dreamingpolar.com/auth/files/${file.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) throw new Error('下载失败');
+        const buffer = await res.arrayBuffer();
+        const varName = file.filename.replace(/\.[^/.]+$/, '')
+          .replace(/[^a-zA-Z0-9_]/g, '_');
+        if (window.injectDataFrame) {
+          window.injectDataFrame(varName, new Uint8Array(buffer), file.file_type ?? 'csv', file.filename);
+        }
+      } catch (e) {
+        console.error('[cloud inject]', e);
+      }
+    });
+
+    // 删除
+    row.querySelector('.rb-delete-cloud').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm(`确认删除 ${file.filename}？`)) return;
+      try {
+        const token = window.authClient.getAccessToken();
+        const res = await fetch(
+          `https://api.dreamingpolar.com/auth/files/${file.id}`,
+          { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok) {
+          row.remove();
+        }
+      } catch (e) {
+        console.error('[cloud delete]', e);
+      }
+    });
+
+    return row;
+  }
+
   // ── Render file list ───────────────────────────────────────────────────────
-  function _refresh() {
+  async function _refresh() {
     body.innerHTML = '';
     const store = _loadStore();
 
@@ -735,6 +838,35 @@ export function initFileManager() {
     });
 
     const dedupedEntries = [...byFilename.values()];
+
+    // 云端文件（登录后显示）
+    if (window.authClient?.isLoggedIn()) {
+      const cloudFiles = await _fetchCloudFiles();
+      if (cloudFiles.length > 0) {
+        const cloudSec = _makeSection('云端文件', 'ti-cloud', false);
+        
+        const dataFiles = cloudFiles.filter(f => f.file_type === 'data');
+        const codeFiles2 = cloudFiles.filter(f => f.file_type === 'code');
+        
+        if (dataFiles.length > 0) {
+          const label = document.createElement('div');
+          label.className = 'rb-cloud-sublabel';
+          label.textContent = '数据文件';
+          cloudSec.body.appendChild(label);
+          dataFiles.forEach(f => cloudSec.body.appendChild(_makeCloudFileItem(f)));
+        }
+        
+        if (codeFiles2.length > 0) {
+          const label = document.createElement('div');
+          label.className = 'rb-cloud-sublabel';
+          label.textContent = '代码文件';
+          cloudSec.body.appendChild(label);
+          codeFiles2.forEach(f => cloudSec.body.appendChild(_makeCloudFileItem(f)));
+        }
+        
+        body.appendChild(cloudSec.el);
+      }
+    }
 
     // Section: 数据文件
     const sec = _makeSection('数据文件', 'ti-database', dedupedEntries.length === 0);
