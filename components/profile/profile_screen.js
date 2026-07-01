@@ -193,8 +193,8 @@ const _CFM_TYPE_ICON = {
   py: 'ti-brand-python', md: 'ti-markdown', tex: 'ti-math', html: 'ti-code',
 };
 const _CFM_TYPE_COLOR = {
-  csv: '#10b981', json: '#f59e0b', xlsx: '#22c55e', xls: '#22c55e', xml: '#8b5cf6',
-  py: '#3b82f6', md: '#10b981', tex: '#8b5cf6', html: '#f59e0b',
+  csv: '#10b981', json: '#3b82f6', xlsx: '#22c55e', xls: '#22c55e', xml: '#3b82f6',
+  py: '#eab308', md: '#8b5cf6', tex: '#8b5cf6', html: '#f97316',
 };
 const _CFM_DATA_EXTS = new Set(['csv','json','xlsx','xls','xml']);
 
@@ -217,135 +217,298 @@ function _cfmFmtSize(bytes) {
 function _buildCloudFileManager(pane) {
   pane.innerHTML = '';
 
-  // ── Toolbar ───────────────────────────────────────────────────────────────
-  const toolbar = document.createElement('div');
-  toolbar.className = 'cfm-toolbar';
+  // ── Toast notification ────────────────────────────────────────────────────
+  const toastEl = document.createElement('div');
+  toastEl.className = 'cfm-toast';
+  toastEl.hidden = true;
+  pane.appendChild(toastEl);
 
-  const statsEl = document.createElement('div');
-  statsEl.className = 'cfm-stats';
-  statsEl.textContent = '加载中…';
-
-  const uploadBtn = document.createElement('button');
-  uploadBtn.className = 'cfm-upload-btn';
-  uploadBtn.innerHTML = `<i class="ti ti-upload"></i> 上传文件`;
-
-  toolbar.append(statsEl, uploadBtn);
-  pane.appendChild(toolbar);
-
-  // ── Status line (progress / errors) ──────────────────────────────────────
-  const statusEl = document.createElement('div');
-  statusEl.className = 'cfm-status';
-  statusEl.hidden = true;
-  pane.appendChild(statusEl);
-
+  let _toastTimer;
   function _showStatus(msg, isErr = false) {
-    statusEl.textContent = msg;
-    statusEl.hidden = false;
-    statusEl.classList.toggle('cfm-status--err', isErr);
-    if (!isErr) setTimeout(() => { statusEl.hidden = true; }, 3000);
+    clearTimeout(_toastTimer);
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    toastEl.className = `cfm-toast${isErr ? ' cfm-toast--err' : ''}`;
+    if (!isErr) _toastTimer = setTimeout(() => { toastEl.hidden = true; }, 3000);
   }
+
+  // ── Upload progress bar ───────────────────────────────────────────────────
+  const progressWrap = document.createElement('div');
+  progressWrap.className = 'cfm-progress-wrap';
+  progressWrap.hidden = true;
+  const progressFill = document.createElement('div');
+  progressFill.className = 'cfm-progress-fill';
+  progressWrap.appendChild(progressFill);
+  pane.appendChild(progressWrap);
 
   // ── List container ────────────────────────────────────────────────────────
   const listEl = document.createElement('div');
   listEl.className = 'cfm-list';
   pane.appendChild(listEl);
 
+  // ── Shared upload logic (button + drag-drop) ──────────────────────────────
+  function _triggerUpload(fileArg) {
+    if (fileArg) return _doUpload(fileArg);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.xls,.json,.xml,.py,.md,.tex,.html';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      input.remove();
+      if (file) _doUpload(file);
+    });
+    input.click();
+  }
+
+  async function _doUpload(file) {
+    const token = window.authClient?.getAccessToken();
+    if (!token) { _showStatus('请先登录', true); return; }
+    _showStatus(`正在上传 "${file.name}"…`);
+    progressWrap.hidden = false;
+    progressFill.style.width = '0%';
+    progressFill.classList.remove('cfm-progress-fill--done');
+
+    try {
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${AUTH_BASE}/files/upload`);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.upload.addEventListener('progress', e => {
+          if (e.lengthComputable)
+            progressFill.style.width = `${Math.round(e.loaded / e.total * 100)}%`;
+        });
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) { resolve(); return; }
+          let msg;
+          try { msg = JSON.parse(xhr.responseText).message; } catch { msg = null; }
+          reject(new Error(msg ?? `HTTP ${xhr.status}`));
+        });
+        xhr.addEventListener('error', () => reject(new Error('网络错误')));
+        const fd = new FormData();
+        fd.append('file', file);
+        xhr.send(fd);
+      });
+      progressFill.style.width = '100%';
+      progressFill.classList.add('cfm-progress-fill--done');
+      setTimeout(() => { progressWrap.hidden = true; }, 500);
+      _showStatus(`✓ "${file.name}" 上传成功`);
+      _load();
+    } catch (e) {
+      progressWrap.hidden = true;
+      _showStatus(`上传失败：${e.message}`, true);
+    }
+  }
+
   // ── Fetch & render ────────────────────────────────────────────────────────
   async function _load() {
-    listEl.innerHTML = '<div class="cfm-loading">加载中…</div>';
-    statsEl.textContent = '加载中…';
+    _renderSkeleton();
     try {
       const res = await window.authClient.authedFetch(`${AUTH_BASE}/files`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const files = await res.json();
-      _render(files);
+      _render(await res.json());
     } catch (e) {
-      listEl.innerHTML = `<div class="cfm-empty">加载失败：${_esc(e.message)}</div>`;
-      statsEl.textContent = '';
+      listEl.innerHTML = '';
+      listEl.appendChild(_emptyState('加载失败', _esc(e.message), false));
     }
+  }
+
+  function _renderSkeleton() {
+    listEl.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'cfm-card';
+    const hdr = document.createElement('div');
+    hdr.className = 'cfm-card-hdr';
+    hdr.innerHTML = '<div class="cfm-skel cfm-skel--hdr"></div>';
+    const body = document.createElement('div');
+    body.className = 'cfm-card-body';
+    for (let i = 0; i < 3; i++) {
+      const r = document.createElement('div');
+      r.className = 'cfm-skel-row';
+      r.innerHTML = `<div class="cfm-skel cfm-skel--icon"></div>
+        <div class="cfm-skel-info">
+          <div class="cfm-skel cfm-skel--name" style="width:${55 + i * 15}%"></div>
+          <div class="cfm-skel cfm-skel--meta"></div>
+        </div>`;
+      body.appendChild(r);
+    }
+    card.append(hdr, body);
+    listEl.appendChild(card);
+  }
+
+  function _emptyState(title, hint, showUpload = true) {
+    const wrap = document.createElement('div');
+    wrap.className = 'cfm-empty-state';
+    wrap.innerHTML = `
+      <svg class="cfm-empty-icon" width="44" height="44" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <div class="cfm-empty-title">${title}</div>
+      <div class="cfm-empty-hint">${hint}</div>`;
+    if (showUpload) {
+      const btn = document.createElement('button');
+      btn.className = 'cfm-empty-btn';
+      btn.innerHTML = `<i class="ti ti-upload"></i> 上传文件`;
+      btn.addEventListener('click', () => _triggerUpload());
+      wrap.appendChild(btn);
+    }
+    return wrap;
+  }
+
+  function _ext(f) {
+    return (f.filename ?? f.name ?? '').split('.').pop().toLowerCase();
   }
 
   function _render(files) {
     listEl.innerHTML = '';
     if (!files.length) {
-      listEl.innerHTML = '<div class="cfm-empty">还没有云端文件，点击上传开始</div>';
-      statsEl.textContent = '0 个文件';
+      listEl.appendChild(_emptyState('还没有云端文件', '拖拽文件到此处，或点击上传'));
       return;
     }
 
-    const dataFiles = files.filter(f => _CFM_DATA_EXTS.has((f.filename ?? f.name ?? '').split('.').pop().toLowerCase()));
-    const codeFiles = files.filter(f => !_CFM_DATA_EXTS.has((f.filename ?? f.name ?? '').split('.').pop().toLowerCase()));
+    const dataFiles = files.filter(f => _CFM_DATA_EXTS.has(_ext(f)));
+    const codeFiles = files.filter(f => !_CFM_DATA_EXTS.has(_ext(f)));
     const totalSize = files.reduce((s, f) => s + (f.size ?? 0), 0);
-    statsEl.textContent = `${files.length} 个文件 · ${_cfmFmtSize(totalSize)}`;
 
-    if (dataFiles.length) listEl.appendChild(_makeCfmSection('数据文件', 'ti-database', dataFiles, false));
-    if (codeFiles.length) listEl.appendChild(_makeCfmSection('代码文件', 'ti-file-code', codeFiles, true));
+    // Stats row
+    const statsEl = document.createElement('div');
+    statsEl.className = 'cfm-stats-row';
+    statsEl.textContent = `${files.length} 个文件 · ${_cfmFmtSize(totalSize)} 已使用`;
+    listEl.appendChild(statsEl);
 
-    const modelWrap = _makeCfmSectionHeader('模型 & 配置', 'ti-brain');
-    const modelPh = document.createElement('div');
-    modelPh.className = 'cfm-placeholder';
-    modelPh.textContent = '即将推出';
-    modelWrap.appendChild(modelPh);
-    listEl.appendChild(modelWrap);
+    let animIdx = 0;
+    if (dataFiles.length) {
+      listEl.appendChild(_makeCard('数据文件', 'ti-database', dataFiles, false, animIdx, true));
+      animIdx += dataFiles.length;
+    }
+    if (codeFiles.length) {
+      listEl.appendChild(_makeCard('代码文件', 'ti-file-code', codeFiles, true, animIdx, false));
+    }
+
+    // Models placeholder
+    const modelCard = document.createElement('div');
+    modelCard.className = 'cfm-card cfm-card--dim';
+    modelCard.innerHTML = `
+      <div class="cfm-card-hdr">
+        <div class="cfm-card-hdr-left">
+          <i class="ti ti-brain cfm-card-hdr-icon"></i>
+          <span class="cfm-card-hdr-title">模型 & 配置</span>
+          <span class="cfm-count-badge cfm-count-badge--muted">即将推出</span>
+        </div>
+      </div>`;
+    listEl.appendChild(modelCard);
   }
 
-  function _makeCfmSectionHeader(title, icon) {
-    const wrap = document.createElement('div');
-    wrap.className = 'cfm-section';
+  function _makeCard(title, icon, files, isCode, startIdx, showUpload) {
+    const card = document.createElement('div');
+    card.className = 'cfm-card';
+
+    // Header
     const hdr = document.createElement('div');
-    hdr.className = 'cfm-section-hdr';
-    hdr.innerHTML = `<i class="ti ${icon} cfm-section-icon"></i><span class="cfm-section-title">${_esc(title)}</span>`;
-    wrap.appendChild(hdr);
-    return wrap;
+    hdr.className = 'cfm-card-hdr';
+
+    const left = document.createElement('div');
+    left.className = 'cfm-card-hdr-left';
+    left.innerHTML = `
+      <i class="ti ${icon} cfm-card-hdr-icon"></i>
+      <span class="cfm-card-hdr-title">${_esc(title)}</span>
+      <span class="cfm-count-badge">${files.length}</span>`;
+    hdr.appendChild(left);
+
+    if (showUpload) {
+      const uploadBtn = document.createElement('button');
+      uploadBtn.className = 'cfm-hdr-upload-btn';
+      uploadBtn.innerHTML = `<i class="ti ti-upload"></i> 上传`;
+      uploadBtn.addEventListener('click', () => _triggerUpload());
+      hdr.appendChild(uploadBtn);
+    }
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'cfm-card-body';
+
+    files.forEach((f, i) => {
+      const row = _makeRow(f, isCode);
+      row.style.setProperty('--i', startIdx + i);
+      body.appendChild(row);
+    });
+
+    // Drag-and-drop (data section only)
+    if (!isCode) {
+      body.classList.add('cfm-drop-zone');
+      body.addEventListener('dragover', e => { e.preventDefault(); body.classList.add('cfm-drop-zone--over'); });
+      body.addEventListener('dragleave', e => {
+        if (!body.contains(e.relatedTarget)) body.classList.remove('cfm-drop-zone--over');
+      });
+      body.addEventListener('drop', e => {
+        e.preventDefault();
+        body.classList.remove('cfm-drop-zone--over');
+        const file = e.dataTransfer?.files?.[0];
+        if (file) _triggerUpload(file);
+      });
+    }
+
+    card.append(hdr, body);
+    return card;
   }
 
-  function _makeCfmSection(title, icon, files, isCode) {
-    const wrap = _makeCfmSectionHeader(title, icon);
-    files.forEach(f => wrap.appendChild(_makeCfmFileRow(f, isCode)));
-    return wrap;
-  }
-
-  function _makeCfmFileRow(f, isCode) {
+  function _makeRow(f, isCode) {
     const filename = f.filename ?? f.name ?? '';
-    const ext = filename.split('.').pop().toLowerCase();
+    const ext = _ext(f);
+    const color = _CFM_TYPE_COLOR[ext] ?? '#6366f1';
+
     const row = document.createElement('div');
-    row.className = 'cfm-file-row';
+    row.className = 'cfm-row';
+    row.style.setProperty('--stripe', color);
 
+    // Color stripe
+    const stripe = document.createElement('div');
+    stripe.className = 'cfm-row-stripe';
+
+    // Icon
     const iconEl = document.createElement('i');
-    iconEl.className = `ti ${_CFM_TYPE_ICON[ext] ?? 'ti-file'} cfm-file-icon`;
-    iconEl.style.color = _CFM_TYPE_COLOR[ext] ?? '#6366f1';
+    iconEl.className = `ti ${_CFM_TYPE_ICON[ext] ?? 'ti-file'} cfm-row-icon`;
+    iconEl.style.color = color;
 
+    // Info block
     const info = document.createElement('div');
-    info.className = 'cfm-file-info';
+    info.className = 'cfm-row-info';
 
     const nameEl = document.createElement('button');
-    nameEl.className = 'cfm-file-name';
+    nameEl.className = 'cfm-row-name';
     nameEl.title = '点击下载';
     nameEl.textContent = filename;
     nameEl.addEventListener('click', () => _cfmDownload(f));
 
     const metaEl = document.createElement('div');
-    metaEl.className = 'cfm-file-meta';
-    metaEl.textContent = [
-      _cfmFmtSize(f.size),
+    metaEl.className = 'cfm-row-meta';
+
+    const metaText = [
       f.created_at ? _cfmRelTime(f.created_at * 1000) : '',
+      _cfmFmtSize(f.size),
+      ext.toUpperCase(),
     ].filter(Boolean).join(' · ');
 
+    metaEl.textContent = metaText;
     info.append(nameEl, metaEl);
 
+    // Actions
     const actions = document.createElement('div');
-    actions.className = 'cfm-file-actions';
+    actions.className = 'cfm-row-actions';
 
     if (!isCode) {
       const injectBtn = document.createElement('button');
-      injectBtn.className = 'cfm-action-btn';
-      injectBtn.title = '注入到内核';
+      injectBtn.className = 'cfm-row-btn';
+      injectBtn.title = '注入到 Python 内核';
       injectBtn.innerHTML = `<i class="ti ti-player-play"></i>`;
       injectBtn.addEventListener('click', () => _cfmInject(f, injectBtn));
       actions.appendChild(injectBtn);
     } else {
       const openBtn = document.createElement('button');
-      openBtn.className = 'cfm-action-btn';
+      openBtn.className = 'cfm-row-btn';
       openBtn.title = '在 Notebook 打开';
       openBtn.innerHTML = `<i class="ti ti-external-link"></i>`;
       openBtn.addEventListener('click', () => _cfmOpenInNotebook(f));
@@ -353,13 +516,13 @@ function _buildCloudFileManager(pane) {
     }
 
     const delBtn = document.createElement('button');
-    delBtn.className = 'cfm-action-btn cfm-action-btn--danger';
+    delBtn.className = 'cfm-row-btn cfm-row-btn--del';
     delBtn.title = '删除';
     delBtn.innerHTML = `<i class="ti ti-trash"></i>`;
     delBtn.addEventListener('click', () => _cfmConfirmDelete(f, row));
     actions.appendChild(delBtn);
 
-    row.append(iconEl, info, actions);
+    row.append(stripe, iconEl, info, actions);
     return row;
   }
 
@@ -368,44 +531,34 @@ function _buildCloudFileManager(pane) {
     try {
       const res = await window.authClient.authedFetch(`${AUTH_BASE}/files/${f.id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(await res.blob());
       const a = document.createElement('a');
       a.href = url; a.download = filename;
       document.body.appendChild(a); a.click();
       setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-    } catch (e) {
-      _showStatus(`下载失败：${e.message}`, true);
-    }
+    } catch (e) { _showStatus(`下载失败：${e.message}`, true); }
   }
 
   async function _cfmInject(f, btn) {
     const filename = f.filename ?? f.name ?? 'file';
-    const ext = filename.split('.').pop().toLowerCase();
-    const varName = filename.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'df';
+    const ext = _ext(f);
+    const varName = filename.replace(/\.[^.]+$/, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'df';
     btn.disabled = true;
     btn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i>`;
     try {
       const res = await window.authClient.authedFetch(`${AUTH_BASE}/files/${f.id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const isExcel = ext === 'xlsx' || ext === 'xls';
-      let data, fileType;
-      if (isExcel) {
-        const buf = await res.arrayBuffer();
-        data = new Uint8Array(buf);
-        fileType = ext;
-      } else {
-        data = await res.text();
-        fileType = ext === 'json' ? 'json' : ext === 'xml' ? 'xml' : 'csv';
-      }
+      const data = isExcel ? new Uint8Array(await res.arrayBuffer()) : await res.text();
+      const fileType = ext === 'json' ? 'json' : ext === 'xml' ? 'xml' : isExcel ? ext : 'csv';
       await injectDataFrame(varName, data, fileType, filename);
       _showStatus(`✓ "${filename}" 已注入为 ${varName}`);
-    } catch (e) {
-      _showStatus(`注入失败：${e.message}`, true);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = `<i class="ti ti-player-play"></i>`;
-    }
+      // Flash row green
+      btn.closest('.cfm-row')?.classList.add('cfm-row--injected');
+      setTimeout(() => btn.closest('.cfm-row')?.classList.remove('cfm-row--injected'), 1500);
+    } catch (e) { _showStatus(`注入失败：${e.message}`, true); }
+    finally { btn.disabled = false; btn.innerHTML = `<i class="ti ti-player-play"></i>`; }
   }
 
   async function _cfmOpenInNotebook(f) {
@@ -413,80 +566,29 @@ function _buildCloudFileManager(pane) {
     try {
       const res = await window.authClient.authedFetch(`${AUTH_BASE}/files/${f.id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const code = await res.text();
-      document.dispatchEvent(new CustomEvent('cfm-open-code-file', { detail: { filename, code } }));
+      document.dispatchEvent(new CustomEvent('cfm-open-code-file',
+        { detail: { filename, code: await res.text() } }));
       _showStatus(`✓ "${filename}" 已发送到 Notebook`);
-    } catch (e) {
-      _showStatus(`打开失败：${e.message}`, true);
-    }
+    } catch (e) { _showStatus(`打开失败：${e.message}`, true); }
   }
 
   function _cfmConfirmDelete(f, row) {
-    const filename = f.filename ?? f.name ?? '文件';
-    if (!window.confirm(`确认删除 ${filename}？此操作不可恢复`)) return;
+    if (!window.confirm(`确认删除 ${f.filename ?? f.name ?? '文件'}？此操作不可恢复`)) return;
     _cfmDeleteFile(f, row);
   }
 
   async function _cfmDeleteFile(f, row) {
+    // Optimistic: collapse immediately, restore on failure
+    row.classList.add('cfm-row--out');
     try {
       const res = await window.authClient.authedFetch(`${AUTH_BASE}/files/${f.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      row.classList.add('cfm-file-row--removing');
-      setTimeout(() => { row.remove(); _cfmUpdateStats(); }, 250);
+      setTimeout(() => row.remove(), 300);
     } catch (e) {
+      row.classList.remove('cfm-row--out');
       _showStatus(`删除失败：${e.message}`, true);
     }
   }
-
-  function _cfmUpdateStats() {
-    const rows = listEl.querySelectorAll('.cfm-file-row');
-    if (!rows.length) {
-      listEl.innerHTML = '<div class="cfm-empty">还没有云端文件，点击上传开始</div>';
-      statsEl.textContent = '0 个文件';
-    } else {
-      statsEl.textContent = `${rows.length} 个文件`;
-    }
-  }
-
-  // ── Upload ────────────────────────────────────────────────────────────────
-  uploadBtn.addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv,.xlsx,.xls,.json,.xml,.py,.md,.tex,.html';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-    input.addEventListener('change', async () => {
-      const file = input.files?.[0];
-      input.remove();
-      if (!file) return;
-      uploadBtn.disabled = true;
-      uploadBtn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i> 上传中…`;
-      _showStatus(`正在上传 "${file.name}"…`);
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const token = window.authClient.getAccessToken();
-        if (!token) throw new Error('未登录');
-        const res = await fetch(`${AUTH_BASE}/files/upload`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message ?? `HTTP ${res.status}`);
-        }
-        _showStatus(`✓ "${file.name}" 上传成功`);
-        _load();
-      } catch (e) {
-        _showStatus(`上传失败：${e.message}`, true);
-      } finally {
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = `<i class="ti ti-upload"></i> 上传文件`;
-      }
-    });
-    input.click();
-  });
 
   _load();
 }
@@ -888,8 +990,8 @@ function _renderProfile(screen) {
     tabBar.querySelectorAll('.prof-tab').forEach(t =>
       t.classList.toggle('prof-tab--active', t.dataset.tab === tab)
     );
-    overviewPane.hidden = tab !== 'overview';
-    filesPane.hidden    = tab !== 'files';
+    overviewPane.classList.toggle('prof-pane--hidden', tab !== 'overview');
+    filesPane.classList.toggle('prof-pane--hidden', tab !== 'files');
     if (tab === 'files' && !_filesPaneLoaded) {
       _filesPaneLoaded = true;
       if (window.authClient?.isLoggedIn()) {
