@@ -22,6 +22,32 @@ function _loadChartJs() {
   return _chartJsP;
 }
 
+// ── KaTeX 懒加载（追问区数学公式渲染）──────────────────────────────────────────
+const _KATEX_CSS = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+const _KATEX_JS  = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
+const _KATEX_AR  = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js';
+let _katexP = null;
+function _loadKatex() {
+  if (window.renderMathInElement) return Promise.resolve();
+  if (_katexP) return _katexP;
+  _katexP = new Promise((res, rej) => {
+    if (!document.querySelector('link[href*="katex"]')) {
+      const link = document.createElement('link');
+      link.rel  = 'stylesheet';
+      link.href = _KATEX_CSS;
+      document.head.appendChild(link);
+    }
+    const _loadScript = src => new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = ok;
+      s.onerror = () => fail(new Error(`KaTeX load failed: ${src}`));
+      document.head.appendChild(s);
+    });
+    _loadScript(_KATEX_JS).then(() => _loadScript(_KATEX_AR)).then(res).catch(rej);
+  });
+  return _katexP;
+}
+
 // ── 皮尔逊相关系数 ─────────────────────────────────────────────────────────────
 function _pearson(a, b) {
   const n = Math.min(a.length, b.length);
@@ -456,10 +482,17 @@ function _renderChunk(rawAccum, container) {
 }
 
 function _typesetMath(el) {
-  if (!window.MathJax) return;
-  // MathJax needs the element to be in the DOM and fully settled before typesetting.
-  const run = () => MathJax.typesetPromise([el]).catch(() => {});
-  window.MathJax.startup?.promise ? MathJax.startup.promise.then(run) : run();
+  _loadKatex().then(() => {
+    if (!window.renderMathInElement) return;
+    renderMathInElement(el, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true  },
+        { left: '$',  right: '$',  display: false },
+      ],
+      throwOnError: false,
+      ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+    });
+  }).catch(() => {});
 }
 
 // ── PDF 导出（html2canvas + jsPDF → 自动下载，与 CSV/XML 导出行为一致）────────
@@ -815,8 +848,7 @@ export async function openReportModal(varName) {
         _renderFollowupChunk(fuAccum, responseDiv);
         body.scrollTop = body.scrollHeight;
       }
-      // MathJax typesetting skipped — AI followup text may contain $ symbols
-      // that clash with LaTeX delimiters, causing visual overlap.
+      _typesetMath(responseDiv);
     } catch (err) {
       responseDiv.innerHTML =
         `<p class="report-error"><i class="ti ti-alert-circle"></i> ${err.message}</p>`;
