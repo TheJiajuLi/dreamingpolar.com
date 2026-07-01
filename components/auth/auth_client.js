@@ -105,7 +105,25 @@ export async function updateMe(data) {
   });
 }
 
-window.authClient = { register, login, logout, getMe, updateMe, authedFetch,
+export async function updateMeAvatar(avatar) {
+  if (!_accessToken) throw new Error('未登录');
+  return authFetch('/me/avatar', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${_accessToken}` },
+    body: JSON.stringify({ avatar }),
+  });
+}
+
+export async function updateMeBio(bio) {
+  if (!_accessToken) throw new Error('未登录');
+  return authFetch('/me/bio', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${_accessToken}` },
+    body: JSON.stringify({ bio }),
+  });
+}
+
+window.authClient = { register, login, logout, getMe, updateMe, updateMeAvatar, updateMeBio, authedFetch,
                       silentRefresh, isLoggedIn, getAccessToken,
                       forgotPassword, resetPassword,
                       showResetPassword: (token) => _buildResetPage(token) };

@@ -274,7 +274,7 @@ function _renderProfile(screen) {
       if (!window.authClient?.isLoggedIn()) {
         await window.authClient?.silentRefresh().catch(() => {});
       }
-      window.authClient?.updateMe({ avatar: base64 })
+      window.authClient?.updateMeAvatar(base64)
         .then(() => console.log('[avatar] saved to cloud'))
         .catch(e => console.warn('[avatar] save failed:', e.message));
     } catch (e) {
@@ -396,7 +396,7 @@ function _renderProfile(screen) {
     if (!window.authClient?.isLoggedIn()) {
       await window.authClient?.silentRefresh().catch(() => {});
     }
-    window.authClient?.updateMe({ bio: newBio })
+    window.authClient?.updateMeBio(newBio)
       .then(() => console.log('[bio] saved to cloud'))
       .catch(e => console.warn('[bio] save failed:', e.message));
   }
