@@ -882,3 +882,71 @@
 [data-theme="grey"]   .aria-chat-messages { background: #22272e; }
 [data-theme="aurora"] .aria-chat-conv-area,
 [data-theme="aurora"] .aria-chat-messages { background: #080820; }
+
+/* ── Print media — fix PDF export truncation ──────────────────────────────── */
+@media print {
+  /* 避免在card和图表内部分页 */
+  .aria-data-card,
+  .aria-chat-card-chart,
+  .aria-chat-messages,
+  .output-block,
+  .aa-card,
+  [class*="card"],
+  [class*="chart"],
+  [class*="report"] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 避免标题和内容分离 */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* canvas和图表元素不分页 */
+  canvas, svg, img {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    max-width: 100% !important;
+  }
+
+  /* 隐藏所有UI元素，只显示报告内容 */
+  #vertical-toolbar,
+  #right-bar,
+  .page-header,
+  #bottom-data-bar,
+  .gen-toolbar,
+  .aria-chat-header,
+  .aria-chat-input-area,
+  .hero-screens-row > section:not(#generative-screen) {
+    display: none !important;
+  }
+
+  /* 报告区域全宽显示 */
+  #generative-screen {
+    width: 100% !important;
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  .gen-view-container {
+    overflow: visible !important;
+  }
+
+  .aria-chat-conv-area,
+  .aria-chat-messages {
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* 确保所有内容可见，避免溢出隐藏 */
+  .gen-output-body {
+    overflow: visible !important;
+  }
+
+  /* 移除背景色干扰（黑色横条原因） */
+  body {
+    background: #ffffff !important;
+  }
+}
