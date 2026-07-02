@@ -34,6 +34,24 @@ function _relTime(ts) {
   return `${Math.floor(h / 24)} 天前`;
 }
 
+function _getGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return '早上好';
+  if (hour >= 12 && hour < 14) return '中午好';
+  if (hour >= 14 && hour < 18) return '下午好';
+  if (hour >= 18 && hour < 22) return '晚上好';
+  return '夜深了';
+}
+
+function _getSubtext() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return '新的一天，从容开始。';
+  if (hour >= 12 && hour < 14) return '午后时光，慢慢来。';
+  if (hour >= 14 && hour < 18) return '下午好，状态怎么样？';
+  if (hour >= 18 && hour < 22) return '忙了一天，辛苦了。';
+  return '夜深了，注意休息。';
+}
+
 // ── SVG helpers ───────────────────────────────────────────────────────────────
 const SVG_NOTEBOOK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
   <rect x="4" y="3" width="16" height="18" rx="1.5"/>
@@ -83,13 +101,14 @@ function _buildDashboard() {
   greeting.className = 'esd-greeting';
 
   function _renderGreeting(user) {
-    const username = String(user?.username ?? '').trim();
-    if (!username) {
-      greeting.innerHTML = '<span class="esd-greeting-text">下午好，今天想做什么分析？</span>';
-      return;
-    }
-    greeting.innerHTML =
-      `<span class="esd-greeting-text"><span class="esd-greeting-user">${_esc(username)}</span>，欢迎回来。<br>今天想做什么分析？</span>`;
+    const username = String(user?.username ?? '').trim() || '你';
+    greeting.innerHTML = `
+      <span class="esd-greeting-text">
+        <span class="esd-greeting-user">${_esc(username)}</span>，${_getGreeting()}。
+        <br>
+        <span class="esd-greeting-sub">${_getSubtext()}</span>
+      </span>
+    `;
   }
 
   _renderGreeting(window._dpGetAuthUser?.());

@@ -111,6 +111,12 @@
   letter-spacing: inherit;
 }
 
+.esd-greeting-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
 /* ── Section ──────────────────────────────────────────────── */
 .esd-section {
   width: 100%;
