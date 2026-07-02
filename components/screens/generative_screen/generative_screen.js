@@ -137,6 +137,13 @@ function setupGenerativeScreen() {
       document.dispatchEvent(new CustomEvent('aria-select-dataset', {
         detail: { varName: resolvedVarName, filename }
       }));
+
+      // Fallback for selector-based implementations
+      const select = document.querySelector('.aria-dataset-select');
+      if (select) {
+        select.value = resolvedVarName;
+        select.dispatchEvent(new Event('change'));
+      }
     } catch (err) {
       console.error('[dp-send-to-aria]', err);
     }

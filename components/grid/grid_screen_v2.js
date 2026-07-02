@@ -5,6 +5,7 @@ import { injectDataFrame, getPyodide }       from '../compiler/compiler.js';
 import { downloadBlob }                      from '../shared/file_download.js';
 import { getSettings }                       from '../right_bar/settings.js';
 import { recordRecentItem }                  from '../empty_state_dashboard/empty_state_dashboard.js';
+import { parseToDataset }                    from '../import/import_data.js';
 
 const INJECT_KEY = 'dreaming-polar-inject-store';
 const MAX_TABS   = 8;
@@ -207,6 +208,43 @@ function _dtypeLabel(dtype) {
   if (dtype.includes('datetime')) return 'datetime';
   if (dtype.includes('bool'))     return 'bool';
   return 'str';
+}
+
+function _inferVarName(filename = 'df') {
+  return filename.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_]/g, '_') || 'df';
+}
+
+function _buildDatasetFromText(text, filename) {
+  const trimmed = String(text ?? '').trim();
+  if (!trimmed) return null;
+
+  // JSON first, then CSV fallback
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      const rows = Array.isArray(parsed)
+        ? parsed
+        : (Array.isArray(parsed?.data) ? parsed.data : []);
+      if (rows.length && typeof rows[0] === 'object') {
+        const columns = [...new Set(rows.flatMap(r => Object.keys(r ?? {})))];
+        const normRows = rows.map(r => {
+          const obj = {};
+          columns.forEach(c => { obj[c] = r?.[c] ?? ''; });
+          return obj;
+        });
+        const dtypes = {};
+        columns.forEach(c => {
+          const sample = normRows.find(r => r[c] !== '' && r[c] != null)?.[c];
+          dtypes[c] = typeof sample === 'number' ? 'float64' : 'object';
+        });
+        return { name: filename, columns, dtypes, rows: normRows };
+      }
+    } catch (_) {
+      // Fall through to CSV parsing
+    }
+  }
+
+  return parseToDataset(trimmed, filename);
 }
 function _isNumCol(dtypes, col) {
   const l = _dtypeLabel(dtypes[col]);
@@ -1225,7 +1263,77 @@ function setupGridScreen() {
   });
   document.addEventListener('nb-file-imported', () => {/* sources updated */});
 
-  window._gridOpenDataset = _openDataset;
+  // ── Receive cloud files from right-bar and open directly in Grid ─────────
+  document.addEventListener('dp-open-in-grid', async (e) => {
+    try {
+      const { filename, fileId, data, varName } = e.detail ?? {};
+      if (!filename) return;
+
+      let bytes = null;
+      if (data instanceof Uint8Array) bytes = data;
+      else if (data instanceof ArrayBuffer) bytes = new Uint8Array(data);
+
+      if (!bytes && fileId) {
+        const token = window.authClient?.getAccessToken?.();
+        if (!token) return;
+        const res = await fetch(
+          `https://api.dreamingpolar.com/auth/files/${fileId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        bytes = new Uint8Array(await res.arrayBuffer());
+      }
+      if (!bytes) return;
+
+      const text = new TextDecoder().decode(bytes);
+      const ds = _buildDatasetFromText(text, filename);
+      if (!ds) return;
+
+      const source = {
+        _from: 'store',
+        name: ds.name,
+        varName: varName || _inferVarName(filename),
+        columns: ds.columns,
+        dtypes: ds.dtypes,
+        rows: ds.rows,
+      };
+
+      setDataset(ds);
+      _openDataset(source);
+
+      const state = window.screenController?.getState('grid');
+      if (state !== 'normal' && state !== 'maximized') {
+        window.screenController?.open('grid');
+      }
+    } catch (err) {
+      console.error('[dp-open-in-grid]', err);
+    }
+  });
+
+  window._gridOpenDataset = (payload) => {
+    if (!payload) return;
+    if (payload._from) {
+      _openDataset(payload);
+      return;
+    }
+    if (typeof payload.data === 'string') {
+      const filename = payload.filename || 'cloud.csv';
+      const ds = _buildDatasetFromText(payload.data, filename);
+      if (!ds) return;
+      const source = {
+        _from: 'store',
+        name: ds.name,
+        varName: payload.varName || _inferVarName(filename),
+        columns: ds.columns,
+        dtypes: ds.dtypes,
+        rows: ds.rows,
+      };
+      setDataset(ds);
+      _openDataset(source);
+      return;
+    }
+    _openDataset(payload);
+  };
   window._saveGridState   = _saveGridState;
 }
 
