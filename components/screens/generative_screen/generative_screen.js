@@ -137,6 +137,25 @@ function setupGenerativeScreen() {
         window.screenController?.open('terminal');
       }
       switchView('gen-terminal');
+      // 解析CSV写入dataset_store让ARIA能访问数据
+      if (ext === 'csv') {
+        const text = new TextDecoder('utf-8').decode(
+          data instanceof Uint8Array ? data : new Uint8Array(data)
+        );
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length > 0) {
+          const cols = lines[0].split(',').map(c => c.trim().replace(/^"|"$/g,''));
+          const rows = lines.slice(1).filter(l => l.trim()).map(line => {
+            const vals = line.split(',');
+            return Object.fromEntries(cols.map((c,i) => [c, vals[i]?.trim() ?? '']));
+          });
+          const { setDataset } = await import('../../shared/dataset_store.js');
+          setDataset({ name: filename, columns: cols, dtypes: {}, rows });
+        }
+      } else {
+        const { setDataset } = await import('../../shared/dataset_store.js');
+        setDataset({ name: filename, columns: [], dtypes: {}, rows: [] });
+      }
       // Signal ARIA to select this dataset
       document.dispatchEvent(new CustomEvent('aria-select-dataset', {
         detail: { varName: resolvedVarName, filename }
