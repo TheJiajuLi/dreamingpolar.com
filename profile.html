@@ -667,10 +667,24 @@
     }
 
     function renderTopAvatar() {
+      let username = '';
+      try {
+        username = window.authClient?.getUser?.()?.username
+          ?? JSON.parse(localStorage.getItem('dp-auth-user') || '{}')?.username
+          ?? '';
+      } catch (_) {}
+
+      if (username) {
+        els.topAvatar.href = `/community/user/${encodeURIComponent(username)}`;
+        els.topAvatar.onclick = null;
+      } else {
+        els.topAvatar.href = '/';
+      }
+
       if (state.me?.avatar) {
         els.topAvatar.innerHTML = `<img src="${esc(state.me.avatar)}" alt="${esc(state.me.username)}">`;
       } else {
-        const text = state.me?.username ? initials(state.me.username) : '我';
+        const text = state.me?.username ? initials(state.me.username) : (username ? initials(username) : '我');
         els.topAvatar.textContent = text;
       }
     }

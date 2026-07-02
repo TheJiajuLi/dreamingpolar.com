@@ -542,6 +542,20 @@
       const loginBtn = document.getElementById('login-btn');
       const avatarBtn = document.getElementById('avatar-btn');
 
+      let username = '';
+      try {
+        username = window.authClient?.getUser?.()?.username
+          ?? JSON.parse(localStorage.getItem('dp-auth-user') || '{}')?.username
+          ?? '';
+      } catch (_) {}
+
+      if (username) {
+        avatarBtn.href = `/community/user/${encodeURIComponent(username)}`;
+        avatarBtn.onclick = null;
+      } else {
+        avatarBtn.href = '/';
+      }
+
       if (user && user.username) {
         loginBtn.style.display = 'none';
         avatarBtn.style.display = '';

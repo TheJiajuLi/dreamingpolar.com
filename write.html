@@ -108,6 +108,30 @@
       color: #fff;
     }
 
+    .user-chip {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .user-chip img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
     #save-status {
       font-size: 12px;
       color: var(--muted);
@@ -676,6 +700,7 @@
     <a class="back-link" href="/community"><i class="ti ti-arrow-left"></i>返回社区</a>
     <input id="title-input" type="text" placeholder="输入教程标题...">
     <div class="actions">
+      <a id="avatar-btn" class="user-chip" href="/" title="个人主页"></a>
       <span id="save-status">未保存</span>
       <button class="btn" id="btn-save" type="button">保存草稿</button>
       <button class="btn" id="btn-update" type="button" style="display:none;">更新</button>
@@ -770,6 +795,7 @@
       saveBtn: document.getElementById('btn-save'),
       updateBtn: document.getElementById('btn-update'),
       publishBtn: document.getElementById('btn-publish'),
+      avatarBtn: document.getElementById('avatar-btn'),
       saveStatus: document.getElementById('save-status'),
       blockList: document.getElementById('block-list'),
       previewPlaceholder: document.getElementById('preview-placeholder'),
@@ -827,6 +853,35 @@
 
     function setSaved(msg = '已保存') {
       els.saveStatus.textContent = msg;
+    }
+
+    function initTopAvatarLink() {
+      const avatarBtn = els.avatarBtn;
+      if (!avatarBtn) return;
+
+      let username = '';
+      let user = null;
+      try {
+        user = JSON.parse(localStorage.getItem('dp-auth-user') || 'null');
+        username = window.authClient?.getUser?.()?.username
+          ?? JSON.parse(localStorage.getItem('dp-auth-user') || '{}')?.username
+          ?? '';
+      } catch (_) {}
+
+      if (username) {
+        avatarBtn.href = `/community/user/${encodeURIComponent(username)}`;
+        avatarBtn.onclick = null;
+      } else {
+        avatarBtn.href = '/';
+      }
+
+      if (user?.avatar) {
+        avatarBtn.innerHTML = `<img src="${esc(user.avatar)}" alt="${esc(user.username || username || 'me')}">`;
+      } else if (username) {
+        avatarBtn.textContent = String(username).slice(0, 2).toUpperCase();
+      } else {
+        avatarBtn.textContent = '我';
+      }
     }
 
     function renderMeta() {
@@ -1562,6 +1617,7 @@
     }
 
     function init() {
+      initTopAvatarLink();
       renderMeta();
       renderEditor();
       renderPreview();
