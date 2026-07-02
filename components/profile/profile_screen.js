@@ -155,73 +155,58 @@ function _fmtSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function _buildRecentFiles() {
+async function _buildRecentFiles(container) {
+  container.innerHTML = '<div class="prof-loading">加载中...</div>';
+  try {
+    if (!window.authClient?.isLoggedIn()) {
+      container.innerHTML = '<div class="prof-empty">登录后查看最近文件</div>';
+      return;
+    }
+    const token = window.authClient.getAccessToken();
+    const res = await fetch(
+      'https://api.dreamingpolar.com/auth/files',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const files = await res.json();
+    if (!files.length) {
+      container.innerHTML = '<div class="prof-empty">还没有云端文件</div>';
+      return;
+    }
+
+    const _toMs = v => (typeof v === 'number' && v < 1e12 ? v * 1000 : Number(v) || 0);
+    const recent = [...files]
+      .sort((a, b) => _toMs(b.created_at ?? b.createdAt ?? b.updated_at ?? b.updatedAt) - _toMs(a.created_at ?? a.createdAt ?? a.updated_at ?? a.updatedAt))
+      .slice(0, 3);
+
+    container.innerHTML = '';
+    recent.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'prof-file-row';
+      const filename = f.filename ?? f.name ?? 'untitled';
+      const ext = filename.includes('.') ? filename.split('.').pop().toUpperCase() : 'FILE';
+      const sizeBytes = Number(f.size_bytes ?? f.size ?? 0);
+      const kb = sizeBytes < 1024
+        ? sizeBytes + ' B'
+        : (sizeBytes / 1024).toFixed(1) + ' KB';
+      row.innerHTML = `
+        <i class="ti ti-file prof-file-icon"></i>
+        <span class="prof-file-name">${_esc(filename)}</span>
+        <span class="prof-file-meta">${_esc(ext)}</span>
+        <span class="prof-file-meta">${_esc(kb)}</span>
+      `;
+      container.appendChild(row);
+    });
+  } catch (e) {
+    console.error('[recentFiles]', e);
+    container.innerHTML = '<div class="prof-empty">文件列表加载失败</div>';
+  }
+}
+
+function _mountRecentFiles() {
   const container = document.createElement('div');
   container.className = 'prof-files-list';
-
-  // Show loading state initially
-  const loadingMsg = document.createElement('p');
-  loadingMsg.className = 'prof-empty';
-  loadingMsg.textContent = '加载中...';
-  container.appendChild(loadingMsg);
-
-  // Asynchronously fetch from cloud API
-  (async () => {
-    try {
-      const token = window.authClient?.getAccessToken?.();
-      if (!token) throw new Error('Not authenticated');
-
-      const resp = await fetch(`${AUTH_BASE}/files`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!resp.ok) throw new Error(`API error: ${resp.status}`);
-
-      const files = await resp.json();
-      const top3 = (Array.isArray(files) ? files : [])
-        .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
-        .slice(0, 3);
-
-      // Clear loading state
-      container.innerHTML = '';
-
-      if (!top3.length) {
-        const p = document.createElement('p');
-        p.className = 'prof-empty';
-        p.textContent = '还没有上传过文件';
-        container.appendChild(p);
-        return;
-      }
-
-      // Render files
-      for (const f of top3) {
-        const row = document.createElement('div');
-        row.className = 'prof-file-row';
-        const ext = (f.name.split('.').pop() ?? '').toLowerCase();
-        const badge = ext === 'csv' ? 'CSV' : ext === 'xlsx' || ext === 'xls' ? 'Excel' : ext.toUpperCase();
-        row.innerHTML =
-          `<span class="prof-file-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5V6"/><path d="M5 10v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-4"/><path d="M5 14v3c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-3"/></svg></span>` +
-          `<span class="prof-file-name">${_esc(f.name)}</span>` +
-          `<span class="prof-file-meta">${f.varName ? `→ ${_esc(f.varName)}` : ''}</span>` +
-          `<span class="prof-file-badge">${_esc(badge)}</span>` +
-          `<span class="prof-file-size">${f.size ? _fmtSize(f.size) : '—'}</span>` +
-          `<span class="prof-file-time">${_relTime(f.updatedAt || f.createdAt || Date.now())}</span>`;
-        container.appendChild(row);
-      }
-    } catch (err) {
-      console.error('[_buildRecentFiles]', err);
-      container.innerHTML = '';
-      const p = document.createElement('p');
-      p.className = 'prof-empty';
-      p.textContent = '无法加载文件列表';
-      container.appendChild(p);
-    }
-  })();
-
+  _buildRecentFiles(container);
   return container;
 }
 
@@ -1019,6 +1004,13 @@ function _renderProfile(screen) {
   hmSec.className = 'prof-section';
   hmSec.innerHTML = '<h3 class="prof-section-title">活跃度</h3>';
   hmSec.appendChild(_buildHeatmap());
+  const HEATMAP_KEY = 'dp-heatmap-last-refresh';
+  const last = parseInt(localStorage.getItem(HEATMAP_KEY) || '0', 10);
+  if (Date.now() - last > 24 * 60 * 60 * 1000) {
+    localStorage.setItem(HEATMAP_KEY, Date.now().toString());
+    hmSec.querySelector('.prof-heatmap')?.remove();
+    hmSec.appendChild(_buildHeatmap());
+  }
 
   const actSec = document.createElement('section');
   actSec.className = 'prof-section';
@@ -1028,7 +1020,7 @@ function _renderProfile(screen) {
   const filesSec = document.createElement('section');
   filesSec.className = 'prof-section';
   filesSec.innerHTML = '<h3 class="prof-section-title">最近文件</h3>';
-  filesSec.appendChild(_buildRecentFiles());
+  filesSec.appendChild(_mountRecentFiles());
 
   overviewPane.append(nbSec, filesSec, hmSec, actSec);
 

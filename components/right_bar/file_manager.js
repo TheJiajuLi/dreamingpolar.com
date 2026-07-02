@@ -493,6 +493,15 @@ export function initFileManager() {
 
   let _open = false;
 
+  function _handleOutsideClick(e) {
+    if (!_open) return;
+    const bar = document.getElementById('right-bar');
+    if (bar && !bar.contains(e.target)) {
+      _close();
+      document.removeEventListener('mousedown', _handleOutsideClick);
+    }
+  }
+
   function _open_(defaultPane = 'files') {
     _open = true;
     panelOuter.hidden = false;
@@ -505,6 +514,7 @@ export function initFileManager() {
     // Always respect the explicitly requested pane — never let localStorage override
     _slideToPane(defaultPane);
     if (defaultPane === 'files') _refresh().catch(console.error);
+    document.addEventListener('mousedown', _handleOutsideClick);
   }
   function _close() {
     _open = false;
@@ -517,6 +527,7 @@ export function initFileManager() {
       localStorage.removeItem('dp-rb-open');
     }
     _exitSelectMode();
+    document.removeEventListener('mousedown', _handleOutsideClick);
   }
 
   // ── Auto-restore on page load if state memory is ON ──────────────────────
