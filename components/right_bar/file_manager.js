@@ -13,6 +13,7 @@ const INJECT_KEY      = 'dreaming-polar-inject-store';
 const CODE_FILE_KEY   = 'dp-code-file-store';
 const RECENT_FILES_KEY = 'dp_recent_files';
 const MAX_RECENT_FILES = 10;
+const _cloudFileCache = new Map();
 
 // ── Context-aware action button (screen-dependent label & routing) ─────────────
 const _ARIA_BTN_ICON = `<svg width="14" height="14" viewBox="3 3 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="display:block;pointer-events:none"><circle cx="12" cy="12" r="2.2"/><circle cx="5.5" cy="5.5" r="1.4"/><circle cx="18.5" cy="5.5" r="1.4"/><circle cx="5.5" cy="18.5" r="1.4"/><circle cx="18.5" cy="18.5" r="1.4"/><line x1="12" y1="9.8" x2="6.8" y2="6.8"/><line x1="12" y1="9.8" x2="17.2" y2="6.8"/><line x1="12" y1="14.2" x2="6.8" y2="17.2"/><line x1="12" y1="14.2" x2="17.2" y2="17.2"/></svg>`;
@@ -886,6 +887,28 @@ export function initFileManager() {
     }
   }
 
+  async function _getCloudFileData(fileId) {
+    const useCache = getSettings().cacheCloudFiles !== false;
+
+    if (useCache && _cloudFileCache.has(fileId)) {
+      console.log('[cloud cache] hit:', fileId);
+      return _cloudFileCache.get(fileId);
+    }
+
+    const token = window.authClient?.getAccessToken?.();
+    if (!token) throw new Error('未登录');
+    const res = await fetch(
+      `https://api.dreamingpolar.com/auth/files/${fileId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) throw new Error(`下载失败: HTTP ${res.status}`);
+    const buffer = await res.arrayBuffer();
+    const data = new Uint8Array(buffer);
+
+    if (useCache) _cloudFileCache.set(fileId, data);
+    return data;
+  }
+
   // ── Cloud file item renderer ───────────────────────────────────────────────
   function _makeCloudFileItem(file, source = 'cloud') {
     const row = document.createElement('div');
@@ -961,19 +984,13 @@ export function initFileManager() {
       if (meta.action === 'aria') {
         // 发送给ARIA
         try {
-          const token = window.authClient.getAccessToken();
-          const res = await fetch(
-            `https://api.dreamingpolar.com/auth/files/${file.id}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (!res.ok) throw new Error('下载失败');
-          const buffer = await res.arrayBuffer();
+          const data = await _getCloudFileData(file.id);
           document.dispatchEvent(new CustomEvent('dp-send-to-aria', {
             detail: {
               varName,
               filename: file.filename,
               fileId: file.id,
-              data: new Uint8Array(buffer),
+              data,
               fileType: file.filename.split('.').pop().toLowerCase(),
             }
           }));
@@ -983,19 +1000,13 @@ export function initFileManager() {
       } else if (meta.action === 'grid') {
         // 发送给Grid
         try {
-          const token = window.authClient.getAccessToken();
-          const res = await fetch(
-            `https://api.dreamingpolar.com/auth/files/${file.id}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (!res.ok) throw new Error('下载失败');
-          const buffer = await res.arrayBuffer();
+          const data = await _getCloudFileData(file.id);
           document.dispatchEvent(new CustomEvent('dp-open-in-grid', {
             detail: {
               varName,
               filename: file.filename,
               fileId: file.id,
-              data: new Uint8Array(buffer),
+              data,
               fileType: file.filename.split('.').pop().toLowerCase()
             }
           }));
@@ -1005,15 +1016,9 @@ export function initFileManager() {
       } else {
         // notebook：插入到当前活跃cell的末尾
         try {
-          const token = window.authClient.getAccessToken();
-          const res = await fetch(
-            `https://api.dreamingpolar.com/auth/files/${file.id}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (!res.ok) throw new Error('下载失败');
-          const buffer = await res.arrayBuffer();
+          const data = await _getCloudFileData(file.id);
           document.dispatchEvent(new CustomEvent('dp-insert-file-to-notebook', {
-            detail: { filename: file.filename, buffer: new Uint8Array(buffer), fileType: file.filename.split('.').pop().toLowerCase() }
+            detail: { filename: file.filename, buffer: data, fileType: file.filename.split('.').pop().toLowerCase() }
           }));
         } catch (e) {
           console.error('[cloud insert-to-notebook]', e);

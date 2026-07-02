@@ -7,6 +7,7 @@ const SETTINGS_KEY = 'dp-settings';
 const DEFAULTS = {
   cacheNotebookOutput:  true,   // persist output blocks across page refreshes
   cacheKernelData:      true,   // prewrite inject-store files to Pyodide FS at boot
+  cacheCloudFiles:      true,   // cache downloaded cloud files in-memory within current session
   cacheRightBarState:   false,  // right bar closed by default; user can enable state memory
   cacheAriaHistory:     true,   // persist ARIA chat history across page refreshes
   autoRunOnLoad:        false,  // auto run all cells once kernel boots on page load
@@ -170,6 +171,7 @@ const _CATEGORIES = [
       _makeRow('ARIA 对话历史', '刷新后保留与 ARIA 的聊天记录，最多保存最近 40 条', 'cacheAriaHistory', s),
       _makeRow('内核数据预载', '启动时将文件中心数据预写入 Python 运行环境', 'cacheKernelData', s),
       _makeRow('侧边栏状态记忆', '记住文件管理/设置面板的展开状态', 'cacheRightBarState', s),
+      _makeRow('云端文件缓存', '自动缓存已下载的云端文件，同一会话内再次访问无需重新下载', 'cacheCloudFiles', s),
       _makeRow('启动后自动运行全部 Cell', '内核就绪后自动执行所有 Cell，恢复变量和输出', 'autoRunOnLoad', s),
     ],
   },
