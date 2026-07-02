@@ -978,7 +978,7 @@ export function initFileManager() {
               filename: file.filename,
               fileId: file.id,
               data: new Uint8Array(buffer),
-              fileType: file.file_type ?? 'csv'
+              fileType: file.filename.split('.').pop().toLowerCase()
             }
           }));
         } catch (e) {
@@ -995,7 +995,7 @@ export function initFileManager() {
           if (!res.ok) throw new Error('下载失败');
           const buffer = await res.arrayBuffer();
           document.dispatchEvent(new CustomEvent('dp-insert-file-to-notebook', {
-            detail: { filename: file.filename, buffer: new Uint8Array(buffer), fileType: file.file_type ?? 'csv' }
+            detail: { filename: file.filename, buffer: new Uint8Array(buffer), fileType: file.filename.split('.').pop().toLowerCase() }
           }));
         } catch (e) {
           console.error('[cloud insert-to-notebook]', e);
