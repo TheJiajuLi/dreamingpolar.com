@@ -6,7 +6,8 @@
       }
     });
     const API_BASE = 'https://api.dreamingpolar.com/auth';
-    const id = location.pathname.split('/community/')[1];
+    const id = new URLSearchParams(location.search).get('id')
+      ?? location.pathname.split('/community/')[1];
     if (!id) location.href = '/community';
 
     const state = {

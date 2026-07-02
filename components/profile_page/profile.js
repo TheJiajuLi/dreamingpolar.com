@@ -2,7 +2,8 @@ import { initAuth } from '/components/auth/auth_client.js';
 
 initAuth().catch(() => {});
 
-    const username = location.pathname.split('/community/user/')[1];
+    const username = new URLSearchParams(location.search).get('username')
+      ?? location.pathname.split('/community/user/')[1];
     if (!username) location.href = '/community';
 
     const state = {
