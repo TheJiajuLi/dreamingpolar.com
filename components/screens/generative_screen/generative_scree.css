@@ -919,6 +919,8 @@
   .gen-toolbar,
   .aria-chat-header,
   .aria-chat-input-area,
+  .gen-output-panel-hdr,
+  .gen-output-panel,
   .hero-screens-row > section:not(#generative-screen) {
     display: none !important;
   }
@@ -945,8 +947,44 @@
     overflow: visible !important;
   }
 
-  /* 移除背景色干扰（黑色横条原因） */
+  /* 全局背景色处理——消除黑色横条 */
+  * {
+    background: white !important;
+    color: black !important;
+    border-color: #cccccc !important;
+    -webkit-print-color-adjust: exact;
+  }
+
   body {
     background: #ffffff !important;
+  }
+
+  /* canvas和图表正确打印 */
+  canvas {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  svg {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* 文本元素 */
+  p, div, span, a {
+    background: transparent !important;
+    color: #000000 !important;
+  }
+
+  /* 特定主题变量覆盖 */
+  [data-theme="dark"],
+  [data-theme="grey"],
+  [data-theme="aurora"] {
+    background: white !important;
+    color: black !important;
   }
 }
