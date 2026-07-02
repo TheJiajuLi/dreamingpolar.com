@@ -93,11 +93,26 @@ function _initWorker() {
 
   // Read inject-store from localStorage (not available in Worker) and pass to init
   let injectFiles = [];
+
+  function _normalizeInjectData(data) {
+    if (data instanceof Uint8Array) return data;
+    if (Array.isArray(data)) return new Uint8Array(data);
+    if (data instanceof ArrayBuffer) return new Uint8Array(data);
+    if (data?.buffer instanceof ArrayBuffer) return new Uint8Array(data.buffer);
+    if (data && typeof data === 'object') return new Uint8Array(Object.values(data));
+    return data;
+  }
+
   try {
     const s = JSON.parse(localStorage.getItem('dp-settings') ?? '{}');
     if (s.cacheKernelData !== false) {
       const store = JSON.parse(localStorage.getItem('dreaming-polar-inject-store') ?? '{}');
-      injectFiles = Object.values(store).filter(e => e?.filename && e?.data != null);
+      injectFiles = Object.values(store)
+        .filter(e => e?.filename && e?.data != null)
+        .map(entry => ({
+          ...entry,
+          data: _normalizeInjectData(entry.data),
+        }));
     }
   } catch (_) {}
 

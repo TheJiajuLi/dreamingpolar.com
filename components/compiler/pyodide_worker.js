@@ -167,6 +167,14 @@ _j.dumps({'stdout': _out.getvalue(), 'stderr': _err.getvalue(), 'error': _exc, '
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function _toUint8Array(data) {
+  if (data instanceof Uint8Array) return data;
+  if (Array.isArray(data)) return new Uint8Array(data);
+  if (data instanceof ArrayBuffer) return new Uint8Array(data);
+  if (data?.buffer instanceof ArrayBuffer) return new Uint8Array(data.buffer);
+  return new Uint8Array(data);
+}
+
 function _writeToFS(filename, data, fileType) {
   if (!_py || !filename) return;
   const path = `/home/pyodide/${filename}`;
@@ -179,11 +187,13 @@ function _writeToFS(filename, data, fileType) {
         bytes = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       } else {
-        bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+        bytes = _toUint8Array(data);
       }
       _py.FS.writeFile(path, bytes);
     } else {
-      const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
+      const text = typeof data === 'string'
+        ? data
+        : new TextDecoder('utf-8').decode(_toUint8Array(data));
       _py.FS.writeFile(path, text);
     }
   } catch (e) {
