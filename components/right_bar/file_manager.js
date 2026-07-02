@@ -191,61 +191,6 @@ async function _syncStoreToDataset() {
   }
 }
 
-// Sync cloud files to kernel on page load (after kernel is ready)
-let _cloudSyncDone = false;
-async function _syncCloudFilesToKernel() {
-  if (_cloudSyncDone) return;
-  _cloudSyncDone = true;
-
-  // Check if user is logged in
-  const token = window.authClient?.getAccessToken?.();
-  if (!token) return;
-
-  try {
-    // Fetch cloud files from API
-    const res = await fetch('https://api.dreamingpolar.com/auth/files', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) {
-      console.warn('[cloud-sync] Failed to fetch cloud files:', res.status);
-      return;
-    }
-
-    const files = await res.json();
-    if (!Array.isArray(files) || files.length === 0) return;
-
-    // Inject each cloud file into kernel
-    for (const file of files) {
-      if (!file.id || !file.data || !file.filename) continue;
-      try {
-        const varName = file.varName || file.filename.split('.')[0].replace(/[^a-zA-Z0-9_]/g, '_');
-        await injectDataFrame(
-          varName,
-          file.data,
-          file.fileType || 'csv',
-          file.filename,
-          { source: 'cloud', cloudFileId: file.id }
-        );
-        // Register in dataset_store for ARIA tabs
-        const dataset = await _parseEntry({
-          varName,
-          filename: file.filename,
-          fileType: file.fileType || 'csv',
-          data: file.data,
-          rows: file.rows,
-          columns: file.columns,
-          columnNames: file.columnNames
-        });
-        if (dataset) setDataset(dataset);
-      } catch (e) {
-        console.warn('[cloud-sync] Failed to inject cloud file:', file.filename, e);
-      }
-    }
-  } catch (err) {
-    console.warn('[cloud-sync] Error syncing cloud files:', err);
-  }
-}
-
 // Detect active screen from DOM on init (handles page load where screen-opened not fired)
 function _detectActiveScreen() {
   const activeScreenEl = document.querySelector('[data-screen-state="normal"]');
@@ -266,13 +211,6 @@ export function initFileManager() {
 
   _syncStoreToDataset();
   _detectActiveScreen();  // Detect active screen on page load
-
-  // ── On kernel ready, sync cloud files to kernel (page load only) ─────────
-  document.addEventListener('compiler-status', ({ detail: { status } }) => {
-    if (status === 'ready') {
-      _syncCloudFilesToKernel().catch(err => console.warn('[cloud-sync] error:', err));
-    }
-  });
 
   // ── Two strip buttons: Files + Settings ───────────────────────────────────
   const toggleBtn = document.createElement('button');
