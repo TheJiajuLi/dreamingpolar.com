@@ -692,7 +692,7 @@
             <div class="cover-preview" id="cover-preview">无封面</div>
             <div>
               <button class="btn" type="button" id="cover-upload-btn">设置封面图片</button>
-              <div style="margin-top:8px;font-size:12px;color:#5f748f;">暂使用图片 URL，不做上传。</div>
+              <div style="margin-top:8px;font-size:12px;color:#5f748f;">支持本地上传或 URL。</div>
             </div>
           </div>
           <div class="meta-grid">
@@ -1148,12 +1148,51 @@
     }
 
     async function promptCoverUrl() {
-      const result = await openModal('设置封面图（URL）', `
-        <label class="modal-field">封面 URL
-          <input name="coverImage" value="${esc(tutorialMeta.cover_image || '')}" placeholder="https://...">
-        </label>
+      const waitResult = openModal('设置封面图', `
+        <div class="img-upload-options">
+          <label class="upload-option upload-pick">
+            <i class="ti ti-upload"></i>
+            <span>本地上传封面</span>
+            <input type="file" accept="image/*" style="display:none" id="cover-file-input">
+          </label>
+          <div class="upload-divider">或</div>
+          <div class="upload-option url-option">
+            <i class="ti ti-link"></i>
+            <input type="text" name="coverImage" value="${esc(tutorialMeta.cover_image || '')}" placeholder="粘贴封面URL...">
+          </div>
+          <div class="upload-status" id="cover-upload-status"></div>
+        </div>
       `);
-      if (!result) return;
+
+      const fileInput = document.getElementById('cover-file-input');
+      const statusEl = document.getElementById('cover-upload-status');
+      if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+
+          if (statusEl) statusEl.textContent = '上传中...';
+          els.modalConfirm.disabled = true;
+          els.modalCancel.disabled = true;
+
+          try {
+            const imageUrl = await uploadImageToCOS(file);
+            tutorialMeta.cover_image = imageUrl;
+            markDirty('封面已更新，待保存');
+            renderMeta();
+            renderPreview();
+            closeModal({ uploaded: true });
+          } catch (err) {
+            if (statusEl) statusEl.textContent = `上传失败：${err.message}`;
+          } finally {
+            els.modalConfirm.disabled = false;
+            els.modalCancel.disabled = false;
+          }
+        });
+      }
+
+      const result = await waitResult;
+      if (!result || result.uploaded) return;
       tutorialMeta.cover_image = result.coverImage || '';
       markDirty('封面已更新，待保存');
       renderMeta();
