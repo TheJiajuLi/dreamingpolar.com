@@ -18,8 +18,8 @@ const MAX_RECENT_FILES = 10;
 const _ARIA_BTN_ICON = `<svg width="14" height="14" viewBox="3 3 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="display:block;pointer-events:none"><circle cx="12" cy="12" r="2.2"/><circle cx="5.5" cy="5.5" r="1.4"/><circle cx="18.5" cy="5.5" r="1.4"/><circle cx="5.5" cy="18.5" r="1.4"/><circle cx="18.5" cy="18.5" r="1.4"/><line x1="12" y1="9.8" x2="6.8" y2="6.8"/><line x1="12" y1="9.8" x2="17.2" y2="6.8"/><line x1="12" y1="14.2" x2="6.8" y2="17.2"/><line x1="12" y1="14.2" x2="17.2" y2="17.2"/></svg>`;
 
 const SCREEN_ACTION_META = {
-  'coding':   { label: '插入至 Notebook', icon: 'ti-corner-down-left' },
-  'terminal': { label: '发送给 ARIA',     icon: _ARIA_BTN_ICON        },
+  'notebook': { label: '插入至 Notebook', icon: 'ti-corner-down-left' },
+  'aria':     { label: '发送给 ARIA',     icon: _ARIA_BTN_ICON        },
   'grid':     { label: '发送给 DP Grid',  icon: 'ti-table'            },
   'ai-chat':  { label: '发送给 AI 对话',  icon: 'ti-message'          },
   'profile':  { label: '插入至 Notebook', icon: 'ti-corner-down-left' },
@@ -48,11 +48,11 @@ function _refreshAllActionBtns() {
 
 // ── Get cloud file action metadata (screen-aware) ─────────────────────────────
 function _getCloudActionMeta() {
-  if (_activeScreenId === 'coding') {
+  if (_activeScreenId === 'notebook') {
     return { label: '插入到Notebook', icon: 'ti-file-plus', action: 'notebook' };
   } else if (_activeScreenId === 'grid') {
     return { label: '发送到Grid', icon: 'ti-table-import', action: 'grid' };
-  } else if (_activeScreenId === 'terminal') {
+  } else if (_activeScreenId === 'aria') {
     return { label: '发送给ARIA', icon: _ARIA_BTN_ICON, action: 'aria' };
   }
   return { label: '注入到内核', icon: 'ti-player-play', action: 'notebook' };
@@ -193,21 +193,23 @@ async function _syncStoreToDataset() {
 
 // Detect active screen from DOM on init (handles page load where screen-opened not fired)
 function _detectActiveScreen() {
-  const activeScreenEl = document.querySelector('[data-screen-state="normal"]');
-  if (activeScreenEl?.id) {
-    const screenId = activeScreenEl.id.replace('-screen', '');
-    if (['coding', 'grid', 'terminal', 'ai-chat', 'profile', 'content'].includes(screenId)) {
-      _activeScreenId = screenId;
-      console.log('[file-manager] Detected active screen on init:', _activeScreenId);
-      return;
+  // 按优先级检查，不依赖DOM顺序
+  const screens = [
+    { id: 'terminal', name: 'aria' },
+    { id: 'coding', name: 'notebook' },
+    { id: 'grid', name: 'grid' },
+    { id: 'ai-chat', name: 'ai-chat' },
+  ];
+  for (const { id, name } of screens) {
+    const el = document.getElementById(id + '-screen')
+      ?? document.querySelector(`[data-screen-id="${id}"]`)
+      ?? document.querySelector(`#${id}-screen`);
+    if (el?.dataset?.screenState === 'normal' ||
+        el?.dataset?.screenState === 'maximized') {
+      return name;
     }
   }
-  // If detection failed, retry after a short delay to allow DOM to settle
-  if (!_activeScreenId) {
-    requestAnimationFrame(() => {
-      setTimeout(() => _detectActiveScreen(), 100);
-    });
-  }
+  return null;
 }
 
 export function initFileManager() {
@@ -218,7 +220,23 @@ export function initFileManager() {
   window.injectDataFrame = injectDataFrame;
 
   _syncStoreToDataset();
-  _detectActiveScreen();  // Detect active screen on page load
+  const detectedScreen = _detectActiveScreen();
+  if (detectedScreen) {
+    _activeScreenId = detectedScreen;
+    console.log('[file-manager] Detected active screen on init:', _activeScreenId);
+  } else {
+    // Retry once on next frame to allow persisted screen state restoration
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const retryScreen = _detectActiveScreen();
+        if (retryScreen) {
+          _activeScreenId = retryScreen;
+          console.log('[file-manager] Detected active screen on init (retry):', _activeScreenId);
+          _refreshAllActionBtns();
+        }
+      }, 100);
+    });
+  }
 
   // ── Two strip buttons: Files + Settings ───────────────────────────────────
   const toggleBtn = document.createElement('button');
@@ -1242,7 +1260,7 @@ export function initFileManager() {
 
     // Shared smart-click dispatcher — routes to active screen
     function _smartClick() {
-      if (_activeScreenId === 'terminal') {
+      if (_activeScreenId === 'aria') {
         // Dataset is in dataset_store; re-activate it → ARIA switches to chat view
         const ds = getAllDatasets().find(d => d.name === entry.filename);
         if (ds) {
@@ -1349,8 +1367,15 @@ export function initFileManager() {
     });
   }
 
+  const _mapScreenIdToActive = (id) => {
+    if (id === 'terminal') return 'aria';
+    if (id === 'coding') return 'notebook';
+    if (id === 'grid') return 'grid';
+    return id;
+  };
+
   document.addEventListener('screen-opened',    ({ detail: { id } }) => {
-    _activeScreenId = id;
+    _activeScreenId = _mapScreenIdToActive(id);
     _refreshAllActionBtns();
     _updateCloudActionBtns();
   });

@@ -91,6 +91,16 @@ function setupGenerativeScreen() {
     }
   });
 
+  // 页面加载后同步按钮状态
+  requestAnimationFrame(() => {
+    const state = window.screenController?.getState('terminal');
+    if (state === 'normal' || state === 'maximized') {
+      document.dispatchEvent(new CustomEvent('screen-opened', {
+        detail: { id: 'terminal' }
+      }));
+    }
+  });
+
   // ── Quick Analysis import (lightweight JS path) ──────────────────────────
   // source='import' → new file loaded → show DATA card, switch to chat view
   // source='switch' → user clicked a tab → DO NOT show DATA card again
