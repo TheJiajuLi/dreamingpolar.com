@@ -951,7 +951,13 @@ export function initFileManager() {
           if (!res.ok) throw new Error('下载失败');
           const buffer = await res.arrayBuffer();
           document.dispatchEvent(new CustomEvent('dp-send-to-aria', {
-            detail: { varName, filename: file.filename, data: new Uint8Array(buffer), fileType: file.file_type ?? 'csv' }
+            detail: {
+              varName,
+              filename: file.filename,
+              fileId: file.id,
+              data: new Uint8Array(buffer),
+              fileType: file.filename.split('.').pop().toLowerCase(),
+            }
           }));
         } catch (e) {
           console.error('[cloud send-to-aria]', e);
