@@ -548,8 +548,24 @@
 .rb-file-item--selected .rb-file-check-icon { opacity: 1; }
 .rb-file-item--selected { background: var(--accent-soft, #e0e3ff) !important; border-radius: 8px; }
 
-/* Hide action btn in select mode */
-.rb-panel--select .rb-file-action-btn { display: none; }
+/* Hide action btn in select mode unless row is explicitly in delete mode */
+.rb-panel--select .rb-file-item:not(.rb-delete-mode) .rb-file-action-btn { display: none; }
+
+.rb-file-item.rb-delete-mode .rb-file-action-btn {
+  display: inline-flex;
+  opacity: 1;
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.rb-file-item.rb-delete-mode .rb-file-action-btn:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.rb-file-item.rb-delete-mode .rb-file-select-circle {
+  display: none !important;
+}
 
 /* Delete bar */
 .rb-file-delete-bar {

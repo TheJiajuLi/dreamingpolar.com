@@ -492,6 +492,7 @@ export function initFileManager() {
   });
 
   let _open = false;
+  let _closeTimer = null;
 
   function _handleOutsideClick(e) {
     if (!_open) return;
@@ -504,7 +505,12 @@ export function initFileManager() {
 
   function _open_(defaultPane = 'files') {
     _open = true;
+    if (_closeTimer) {
+      clearTimeout(_closeTimer);
+      _closeTimer = null;
+    }
     panelOuter.hidden = false;
+    requestAnimationFrame(() => panelOuter.classList.add('rb-panel-outer--open'));
     rightBar.classList.add('rb--expanded');
     toggleBtn.classList.add('rb-btn--active');
     settingsBtn.classList.remove('rb-btn--active');
@@ -518,7 +524,7 @@ export function initFileManager() {
   }
   function _close() {
     _open = false;
-    panelOuter.hidden = true;
+    panelOuter.classList.remove('rb-panel-outer--open');
     rightBar.classList.remove('rb--expanded');
     toggleBtn.classList.remove('rb-btn--active');
     settingsBtn.classList.remove('rb-btn--active');
@@ -528,6 +534,11 @@ export function initFileManager() {
     }
     _exitSelectMode();
     document.removeEventListener('mousedown', _handleOutsideClick);
+    _closeTimer = setTimeout(() => {
+      if (_open) return;
+      panelOuter.hidden = true;
+      _closeTimer = null;
+    }, 300);
   }
 
   // ── Auto-restore on page load if state memory is ON ──────────────────────
@@ -580,19 +591,7 @@ export function initFileManager() {
   const body = document.createElement('div');
   body.className = 'rb-file-body';
 
-  // Delete bar (shown in select mode when ≥1 item checked)
-  const deleteBar = document.createElement('div');
-  deleteBar.className = 'rb-file-delete-bar';
-  deleteBar.hidden = true;
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'rb-file-delete-btn';
-  deleteBtn.innerHTML = `<i class="ti ti-trash"></i> <span class="rb-del-label">删除所选</span>`;
-  const cancelSelBtn = document.createElement('button');
-  cancelSelBtn.className = 'rb-file-cancel-sel-btn';
-  cancelSelBtn.textContent = '取消';
-  deleteBar.append(deleteBtn, cancelSelBtn);
-
-  panel.append(hdr, body, deleteBar);
+  panel.append(hdr, body);
 
   let _selectMode = false;
   const _selected = new Set(); // keys in inject-store
@@ -604,7 +603,6 @@ export function initFileManager() {
     manageBtn.textContent = '完成';
     manageBtn.classList.add('rb-file-manage-btn--active');
     panel.classList.add('rb-panel--select');
-    _updateDeleteBar();
     _refresh().catch(console.error);
   }
   function _exitSelectMode() {
@@ -613,27 +611,18 @@ export function initFileManager() {
     manageBtn.textContent = '管理';
     manageBtn.classList.remove('rb-file-manage-btn--active');
     panel.classList.remove('rb-panel--select');
-    deleteBar.hidden = true;
     _refresh().catch(console.error);
-  }
-  function _updateDeleteBar() {
-    const n = _selected.size;
-    deleteBar.hidden = !(_selectMode && n > 0);
-    deleteBar.querySelector('.rb-del-label').textContent =
-      n > 0 ? `删除所选 (${n})` : '删除所选';
   }
 
   manageBtn.addEventListener('click', () =>
     _selectMode ? _exitSelectMode() : _enterSelectMode()
   );
 
-  cancelSelBtn.addEventListener('click', _exitSelectMode);
+  async function _deleteSelectedKeys(keys) {
+    if (!keys?.length) return;
 
-  deleteBtn.addEventListener('click', async () => {
-    if (!_selected.size) return;
-    
     // Separate cloud, local data, and code files
-    const toDelete = Array.from(_selected);
+    const toDelete = Array.from(keys);
     const cloudToDelete = toDelete.filter(key => key.startsWith('cloud_'));
     const codeToDelete = toDelete.filter(key => key.startsWith('code_'));
     const localToDelete = toDelete.filter(key => !key.startsWith('cloud_') && !key.startsWith('code_'));
@@ -673,12 +662,13 @@ export function initFileManager() {
       _saveStore(store);
 
       _selected.clear();
-      _exitSelectMode();
+      if (!_selectMode) _exitSelectMode();
+      else _refresh().catch(console.error);
       document.dispatchEvent(new CustomEvent('nb-file-imported'));
     } catch (err) {
       console.error('[delete files]', err);
     }
-  });
+  }
 
   // ── Core import logic ─────────────────────────────────────────────────────
   // 1. Parse file in JS
@@ -882,6 +872,7 @@ export function initFileManager() {
   function _makeCloudFileItem(file, source = 'cloud') {
     const row = document.createElement('div');
     row.className = 'rb-file-item';
+    if (_selectMode) row.classList.add('rb-delete-mode');
 
     const icon = file.filename.endsWith('.py') ? 'ti-file-code'
       : file.filename.match(/\.(csv|xlsx|xls)$/) ? 'ti-table'
@@ -925,6 +916,12 @@ export function initFileManager() {
     // 更新操作按钮的meta信息
     const actionBtn = row.querySelector('.rb-inject-cloud');
     function _updateActionBtn() {
+      if (_selectMode) {
+        actionBtn.title = '删除文件';
+        actionBtn.setAttribute('aria-label', '删除文件');
+        actionBtn.innerHTML = '<i class="ti ti-trash"></i>';
+        return;
+      }
       const meta = _getCloudActionMeta();
       actionBtn.title = meta.label;
       actionBtn.setAttribute('aria-label', meta.label);
@@ -935,7 +932,10 @@ export function initFileManager() {
     // 根据screen类型调用对应的操作
     actionBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (_selectMode) return; // Don't fire action in select mode
+      if (_selectMode) {
+        await _deleteSelectedKeys([`cloud_${file.id}`]);
+        return;
+      }
       const meta = _getCloudActionMeta();
       const varName = file.filename.replace(/\.[^/.]+$/, '')
         .replace(/[^a-zA-Z0-9_]/g, '_');
@@ -967,7 +967,13 @@ export function initFileManager() {
           if (!res.ok) throw new Error('下载失败');
           const buffer = await res.arrayBuffer();
           document.dispatchEvent(new CustomEvent('dp-open-in-grid', {
-            detail: { varName, filename: file.filename, data: new Uint8Array(buffer), fileType: file.file_type ?? 'csv' }
+            detail: {
+              varName,
+              filename: file.filename,
+              fileId: file.id,
+              data: new Uint8Array(buffer),
+              fileType: file.file_type ?? 'csv'
+            }
           }));
         } catch (e) {
           console.error('[cloud open-in-grid]', e);
@@ -994,16 +1000,7 @@ export function initFileManager() {
     // Shared click handler for select mode and regular clicks
     row.addEventListener('click', () => {
       if (_selectMode) {
-        // Toggle selection for cloud files
-        const cloudKey = `cloud_${file.id}`;
-        if (_selected.has(cloudKey)) {
-          _selected.delete(cloudKey);
-          row.classList.remove('rb-file-item--selected');
-        } else {
-          _selected.add(cloudKey);
-          row.classList.add('rb-file-item--selected');
-        }
-        _updateDeleteBar();
+        // In delete mode, only trash button triggers deletion.
         return;
       }
       // In normal mode, click the action button
@@ -1141,20 +1138,17 @@ export function initFileManager() {
     }
 
     insertBtn.addEventListener('click', e => { 
-      e.stopPropagation(); 
-      _doInsert(); 
+      e.stopPropagation();
+      if (_selectMode) {
+        _deleteSelectedKeys([codeKey]);
+        return;
+      }
+      _doInsert();
     });
 
     item.addEventListener('click', () => {
       if (_selectMode) {
-        if (_selected.has(codeKey)) {
-          _selected.delete(codeKey);
-          item.classList.remove('rb-file-item--selected');
-        } else {
-          _selected.add(codeKey);
-          item.classList.add('rb-file-item--selected');
-        }
-        _updateDeleteBar();
+        // In delete mode, only trash button triggers deletion.
         return;
       }
       _doInsert();
@@ -1192,6 +1186,7 @@ export function initFileManager() {
     const { varName, fileType, filename, rows, columns } = entry;
     const item = document.createElement('div');
     item.className = 'rb-file-item';
+    if (_selectMode) item.classList.add('rb-delete-mode');
     item.draggable = !_selectMode;
 
     // ── Select circle (visible in select mode) ────────────────────────────
@@ -1227,7 +1222,13 @@ export function initFileManager() {
     // "→ Notebook / → ARIA / …" icon button (hidden in select mode)
     const toNbBtn = document.createElement('button');
     toNbBtn.className = 'rb-file-action-btn';
-    _applyActionBtn(toNbBtn);
+    if (_selectMode) {
+      toNbBtn.title = '删除文件';
+      toNbBtn.setAttribute('aria-label', '删除文件');
+      toNbBtn.innerHTML = '<i class="ti ti-trash"></i>';
+    } else {
+      _applyActionBtn(toNbBtn);
+    }
     _actionBtns.add(toNbBtn);
 
     // Shared smart-click dispatcher — routes to active screen
@@ -1257,7 +1258,10 @@ export function initFileManager() {
 
     toNbBtn.addEventListener('click', e => {
       e.stopPropagation();
-      if (_selectMode) return;
+      if (_selectMode) {
+        _deleteSelectedKeys([storeKey]);
+        return;
+      }
       _smartClick();
     });
 
@@ -1265,14 +1269,7 @@ export function initFileManager() {
 
     item.addEventListener('click', () => {
       if (_selectMode) {
-        if (_selected.has(storeKey)) {
-          _selected.delete(storeKey);
-          item.classList.remove('rb-file-item--selected');
-        } else {
-          _selected.add(storeKey);
-          item.classList.add('rb-file-item--selected');
-        }
-        _updateDeleteBar();
+        // In delete mode, only trash button triggers deletion.
         return;
       }
       _smartClick();
