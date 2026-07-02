@@ -16,7 +16,10 @@ export default {
       }
       return env.ASSETS.fetch(request);
     } catch (e) {
-      return new Response('Not found', { status: 404 });
+      return new Response(
+        `Error: ${e.message}\nPathname: ${url.pathname}`,
+        { status: 500, headers: { 'content-type': 'text/plain' } }
+      );
     }
   },
 };
