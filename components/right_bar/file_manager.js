@@ -1014,14 +1014,34 @@ export function initFileManager() {
           console.error('[cloud open-in-grid]', e);
         }
       } else {
-        // notebook：插入到当前活跃cell的末尾
+        // notebook：走智能插入路径（与本地文件一致）
         try {
           const data = await _getCloudFileData(file.id);
-          document.dispatchEvent(new CustomEvent('dp-insert-file-to-notebook', {
-            detail: { filename: file.filename, buffer: data, fileType: file.filename.split('.').pop().toLowerCase() }
+          const ext = file.filename.split('.').pop().toLowerCase();
+          const varName = file.filename.replace(/\.[^/.]+$/, '')
+            .replace(/[^a-zA-Z0-9_]/g, '_');
+
+          // 先注入内核（写入Pyodide FS）
+          if (window.injectDataFrame) {
+            await window.injectDataFrame(varName, data, ext, file.filename);
+          }
+
+          // 统一走智能插入路径：FileTracker 检查 / 跳转 / 空白cell插入
+          document.dispatchEvent(new CustomEvent('rb-file-smart-click', {
+            detail: {
+              code: _buildCode({ varName, fileType: ext, filename: file.filename }),
+              entry: {
+                varName,
+                filename: file.filename,
+                fileType: ext,
+                rows: null,
+                columns: null,
+                source: 'cloud',
+              },
+            }
           }));
         } catch (e) {
-          console.error('[cloud insert-to-notebook]', e);
+          console.error('[cloud notebook insert]', e);
         }
       }
     });
