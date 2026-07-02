@@ -198,7 +198,15 @@ function _detectActiveScreen() {
     const screenId = activeScreenEl.id.replace('-screen', '');
     if (['coding', 'grid', 'terminal', 'ai-chat', 'profile', 'content'].includes(screenId)) {
       _activeScreenId = screenId;
+      console.log('[file-manager] Detected active screen on init:', _activeScreenId);
+      return;
     }
+  }
+  // If detection failed, retry after a short delay to allow DOM to settle
+  if (!_activeScreenId) {
+    requestAnimationFrame(() => {
+      setTimeout(() => _detectActiveScreen(), 100);
+    });
   }
 }
 
