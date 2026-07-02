@@ -156,35 +156,75 @@ function _fmtSize(bytes) {
 }
 
 function _buildRecentFiles() {
-  const files = (() => { try { return JSON.parse(localStorage.getItem(RECENT_FILES_KEY) ?? '[]'); } catch { return []; } })();
-  const top5 = files.slice(0, 5);
+  const container = document.createElement('div');
+  container.className = 'prof-files-list';
 
-  if (!top5.length) {
-    const p = document.createElement('p');
-    p.className = 'prof-empty';
-    p.textContent = '还没有导入过文件';
-    return p;
-  }
+  // Show loading state initially
+  const loadingMsg = document.createElement('p');
+  loadingMsg.className = 'prof-empty';
+  loadingMsg.textContent = '加载中...';
+  container.appendChild(loadingMsg);
 
-  const list = document.createElement('div');
-  list.className = 'prof-files-list';
+  // Asynchronously fetch from cloud API
+  (async () => {
+    try {
+      const token = window.authClient?.getAccessToken?.();
+      if (!token) throw new Error('Not authenticated');
 
-  for (const f of top5) {
-    const row = document.createElement('div');
-    row.className = 'prof-file-row';
-    const ext = (f.name.split('.').pop() ?? '').toLowerCase();
-    const badge = ext === 'csv' ? 'CSV' : ext === 'xlsx' || ext === 'xls' ? 'Excel' : ext.toUpperCase();
-    row.innerHTML =
-      `<span class="prof-file-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5V6"/><path d="M5 10v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-4"/><path d="M5 14v3c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-3"/></svg></span>` +
-      `<span class="prof-file-name">${_esc(f.name)}</span>` +
-      `<span class="prof-file-meta">${f.varName ? `→ ${_esc(f.varName)}` : ''}</span>` +
-      `<span class="prof-file-badge">${_esc(badge)}</span>` +
-      `<span class="prof-file-size">${_fmtSize(f.size)}</span>` +
-      `<span class="prof-file-time">${_relTime(f.openedAt)}</span>`;
-    list.appendChild(row);
-  }
-  return list;
+      const resp = await fetch(`${AUTH_BASE}/files`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+
+      const files = await resp.json();
+      const top3 = (Array.isArray(files) ? files : [])
+        .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+        .slice(0, 3);
+
+      // Clear loading state
+      container.innerHTML = '';
+
+      if (!top3.length) {
+        const p = document.createElement('p');
+        p.className = 'prof-empty';
+        p.textContent = '还没有上传过文件';
+        container.appendChild(p);
+        return;
+      }
+
+      // Render files
+      for (const f of top3) {
+        const row = document.createElement('div');
+        row.className = 'prof-file-row';
+        const ext = (f.name.split('.').pop() ?? '').toLowerCase();
+        const badge = ext === 'csv' ? 'CSV' : ext === 'xlsx' || ext === 'xls' ? 'Excel' : ext.toUpperCase();
+        row.innerHTML =
+          `<span class="prof-file-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5V6"/><path d="M5 10v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-4"/><path d="M5 14v3c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-3"/></svg></span>` +
+          `<span class="prof-file-name">${_esc(f.name)}</span>` +
+          `<span class="prof-file-meta">${f.varName ? `→ ${_esc(f.varName)}` : ''}</span>` +
+          `<span class="prof-file-badge">${_esc(badge)}</span>` +
+          `<span class="prof-file-size">${f.size ? _fmtSize(f.size) : '—'}</span>` +
+          `<span class="prof-file-time">${_relTime(f.updatedAt || f.createdAt || Date.now())}</span>`;
+        container.appendChild(row);
+      }
+    } catch (err) {
+      console.error('[_buildRecentFiles]', err);
+      container.innerHTML = '';
+      const p = document.createElement('p');
+      p.className = 'prof-empty';
+      p.textContent = '无法加载文件列表';
+      container.appendChild(p);
+    }
+  })();
+
+  return container;
 }
+
 
 // ── Cloud File Manager ────────────────────────────────────────────────────────
 const _CFM_TYPE_ICON = {

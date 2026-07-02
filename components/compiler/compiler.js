@@ -792,6 +792,7 @@ async function _injectDataFrameCore(varName, data, fileType, fileName, context) 
 export async function injectDataFrame(varName, data, fileType = 'csv', fileName = '', context = {}) {
   return _enqueue(() => _injectDataFrameCore(varName, data, fileType, fileName, context));
 }
+window.injectDataFrame = injectDataFrame;
 
 // Write a code file (text) to the Worker's Pyodide FS so `import my_module` works.
 export async function writeCodeFileToFS(filename, code) {

@@ -110,6 +110,37 @@ function setupGenerativeScreen() {
     // In this path we don't have dataset_store populated, so just switch view
     switchView('gen-terminal');
   });
+
+  // ── Handle cloud file injection from file manager ──────────────────────────
+  document.addEventListener('dp-send-to-aria', async (e) => {
+    const { filename, buffer, data, fileType, varName } = e.detail;
+    if (!filename || !buffer) return;
+    try {
+      // Inject file data into Python kernel
+      const resolvedVarName = varName || filename.replace(/\.[^/.]+$/, '')
+        .replace(/[^a-zA-Z0-9_]/g, '_') || 'df';
+      if (window.injectDataFrame) {
+        await window.injectDataFrame(
+          resolvedVarName,
+          new Uint8Array(buffer || data),
+          fileType ?? 'csv',
+          filename
+        );
+      }
+      // Open ARIA screen and dispatch dataset selection
+      const state = window.screenController?.getState('terminal');
+      if (state !== 'normal' && state !== 'maximized') {
+        window.screenController?.open('terminal');
+      }
+      switchView('gen-terminal');
+      // Signal ARIA to select this dataset
+      document.dispatchEvent(new CustomEvent('aria-select-dataset', {
+        detail: { varName: resolvedVarName, filename }
+      }));
+    } catch (err) {
+      console.error('[dp-send-to-aria]', err);
+    }
+  });
 }
 
 if (document.readyState === 'loading') {

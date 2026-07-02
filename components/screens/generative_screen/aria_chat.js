@@ -409,6 +409,14 @@ export function createAriaChat() {
     _rebuildChips(active);
   });
 
+  // ── Handle dataset selection from cloud files ────────────────────────────
+  document.addEventListener('aria-select-dataset', ({ detail }) => {
+    const { varName, filename } = detail;
+    if (!varName) return;
+    // setActiveDataset expects the dataset name, which is the filename
+    setActiveDataset(filename || varName);
+  });
+
   // ── Data asset card (between dsTabs and welcomeHeader) ───────────────────────
   const dataCard = document.createElement('div');
   dataCard.className = 'aria-data-card';
