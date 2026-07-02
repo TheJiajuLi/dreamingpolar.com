@@ -6,7 +6,7 @@ import { create as createTextHL }   from '../screens/coding_screen/coding_screen
 import { create as createCompletion } from '../screens/coding_screen/coding_screen_python/python_code-completion/python_code_completion.js';
 import { getCurrentMode } from '../compiler/compiler_mode_switcher/compiler_mode_switcher.js';
 import { renderBlocks, parseAIResponse } from '../screens/compiling_screen/compiling_screen_utility.js';
-import { ask, streamChat, systemExplainForLang } from '../ai/ai_client.js';
+import { ask, systemExplainForLang } from '../ai/ai_client.js';
 import { createRefactorBtn } from '../screens/compiling_screen/refactorization_button/refactorization_button.js';
 import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
@@ -26,6 +26,25 @@ const INJECT_KEY     = 'dreaming-polar-inject-store'; // persists pending inject
 const CODE_FILE_KEY  = 'dp-code-file-store';
 
 const LANG_EXT = { python: '.py', markdown: '.md', latex: '.tex', mathjax: '.html' };
+
+function _normalizeLang(lang) {
+  if (!lang) return 'python';
+  const map = {
+    latex: 'latex',
+    LaTeX: 'latex',
+    LATEX: 'latex',
+    markdown: 'markdown',
+    Markdown: 'markdown',
+    md: 'markdown',
+    mathjax: 'mathjax',
+    MathJax: 'mathjax',
+    html: 'html',
+    HTML: 'html',
+    python: 'python',
+    Python: 'python',
+  };
+  return map[lang] ?? String(lang).toLowerCase();
+}
 
 // ── Inject-store helpers ──────────────────────────────────
 // Stores { [cellId]: { varName, fileType, filename, rows, columns, data, isBase64 } }
@@ -294,7 +313,7 @@ function autoResize(el) {
 }
 
 function cellLabel(cell) {
-  return `Cell ${_cells.indexOf(cell) + 1} · ${cell.lang}`;
+  return `Cell ${_cells.indexOf(cell) + 1} · ${_normalizeLang(cell.lang)}`;
 }
 
 // ── Ctrl+I inline AI completion ───────────────────────────────────────────────
@@ -309,9 +328,57 @@ const _INLINE_AI_LANG_PROMPTS = {
 function _getInlineAISystemPrompt(cell) {
   const cellEl = cell?.el ?? null;
   const langSelect = cellEl?.querySelector('.nb-lang-select');
-  const currentLang = langSelect?.value || 'python';
+  const currentLang = _normalizeLang(langSelect?.value || 'python');
   return _INLINE_AI_LANG_PROMPTS[currentLang]
     ?? `You are a ${currentLang} code assistant. Output only ${currentLang} code.`;
+}
+
+async function* _streamGhostChat(messages, systemPrompt, maxTokens = 500, signal) {
+  const res = await fetch('/api/ghost', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages,
+      system: systemPrompt,
+      max_tokens: maxTokens,
+      stream: true,
+    }),
+    signal,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? `Request failed (${res.status})`);
+  }
+
+  const reader = res.body?.getReader?.();
+  if (!reader) return;
+
+  const decoder = new TextDecoder();
+  let buf = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop() ?? '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const raw = line.slice(6).trim();
+      if (raw === '[DONE]') return;
+      try {
+        const json = JSON.parse(raw);
+        if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta' && json.delta.text) {
+          yield json.delta.text;
+        }
+        const delta = json.choices?.[0]?.delta?.content ?? null;
+        if (delta) yield delta;
+      } catch (_) {
+        // ignore partial JSON lines
+      }
+    }
+  }
 }
 
 function _getCursorLine(editor) {
@@ -470,9 +537,11 @@ function _openInlineAI(cell, editor) {
     _code = '';
     try {
       const systemPrompt = _getInlineAISystemPrompt(cell);
-      for await (const chunk of streamChat(
+      for await (const chunk of _streamGhostChat(
         [{ role: 'user', content: userMsg }],
-        systemPrompt, 512,
+        systemPrompt,
+        500,
+        _abort.signal,
       )) {
         if (_abort.signal.aborted) break;
         _code += chunk;
@@ -538,6 +607,7 @@ function _openInlineAI(cell, editor) {
 // ── Cell factory ──────────────────────────────────────────
 
 function makeCell(lang = 'python', code = '', id = uid()) {
+  lang = _normalizeLang(lang);
   const cell = { id, lang, editor: null, counter: null, numEl: null, el: null, dsLabel: null, _datasetInfo: null };
 
   const el = document.createElement('div');
@@ -698,7 +768,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   cell._savedFilename = null;
 
   function _showSaveInput() {
-    const ext = LANG_EXT[cell.lang] ?? '.py';
+    const ext = LANG_EXT[_normalizeLang(cell.lang)] ?? '.py';
     saveInput.value = cell._savedFilename ?? `untitled_${_cells.indexOf(cell) + 1}${ext}`;
     saveInlineWrap.style.display = '';
     saveFileBtn.style.display = 'none';
@@ -714,12 +784,12 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     filename = filename.trim();
     if (!filename) return;
     const store = JSON.parse(localStorage.getItem(CODE_FILE_KEY) ?? '{}');
-    store[filename] = { filename, language: cell.lang, cellId: cell.id, code: cell.editor.value, savedAt: Date.now() };
+    store[filename] = { filename, language: _normalizeLang(cell.lang), cellId: cell.id, code: cell.editor.value, savedAt: Date.now() };
     localStorage.setItem(CODE_FILE_KEY, JSON.stringify(store));
     writeCodeFileToFS(filename, cell.editor.value);
     cell._savedFilename = filename;
     _hideSaveInput();
-    document.dispatchEvent(new CustomEvent('nb-code-file-saved', { detail: { filename, language: cell.lang } }));
+    document.dispatchEvent(new CustomEvent('nb-code-file-saved', { detail: { filename, language: _normalizeLang(cell.lang) } }));
     if (getSettings().saveFileRemoveCell) {
       const cells = getCells();
       if (cells.length > 1) {
@@ -759,7 +829,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   // Ctrl+I hover hint — visible only when ICM is on
   const aiHint = document.createElement('span');
   aiHint.className = 'nb-ai-hint';
-  aiHint.textContent = 'Ctrl+I';
+  aiHint.textContent = 'Ctrl+I进入智能对话';
   aiHint.style.display = icmEnabled() ? '' : 'none';
   icmOnChange(on => { aiHint.style.display = on ? '' : 'none'; });
   body.appendChild(aiHint);
@@ -926,6 +996,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     cell, PLACEHOLDER, ICON_COPY, ICON_CHECK,
     autoResize, saveAll, rebuildCells, cellLabel,
     getCells, setCells, getRunSeq, bumpRunSeq,
+    normalizeLang: _normalizeLang,
     flushPendingInjects:  _flushPendingInjects,
     buildImportCellCode:  _buildImportCellCode,
   });
@@ -955,7 +1026,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   cell._icm = { hl: createSyntaxHL(), th: createTextHL(), cc: createCompletion() };
 
   function _icmSyncCell() {
-    if (cell.lang === 'python' && icmEnabled()) {
+    if (_normalizeLang(cell.lang) === 'python' && icmEnabled()) {
       if (!cell._icm.hl.isActive()) {
         cell._icm.hl.init(editor, body);
         cell._icm.th.init(editor, body);
@@ -1078,7 +1149,8 @@ async function runAll(btn) {
     const code = cell.editor.value.trim();
     if (!code) continue;
 
-    if (cell.lang === 'python' && /\binput\s*\(/.test(code)) {
+    const lang = _normalizeLang(cell.lang);
+    if (lang === 'python' && /\binput\s*\(/.test(code)) {
       document.dispatchEvent(new CustomEvent('run-in-terminal', { detail: { code } }));
       continue;
     }
@@ -1089,7 +1161,7 @@ async function runAll(btn) {
     const cellRunBtn = cell.el.querySelector('.nb-run');
     if (cellRunBtn) cellRunBtn.disabled = true;
 
-    const outputs = await compile(code, cell.lang, { cellIndex: i + 1 });
+    const outputs = await compile(code, lang, { cellIndex: i + 1 });
 
     if (signal.aborted) {
       if (cellRunBtn) cellRunBtn.disabled = false;
@@ -1102,7 +1174,7 @@ async function runAll(btn) {
 
     // Ensure import-button cells get a viz-suggestion (RUNNER diff misses these)
     const _ownDs = _cellInjectDs.get(cell.id);
-    if (_ownDs?.varName && cell.lang === 'python') {
+    if (_ownDs?.varName && lang === 'python') {
       const { varName, rows, columns } = _ownDs;
       if (!outputs.some(o => o.type === 'viz-suggestion' && o.varName === varName)) {
         outputs.push({
@@ -1111,7 +1183,7 @@ async function runAll(btn) {
         });
       }
     }
-    if (cell.lang === 'python') {
+    if (lang === 'python') {
       queryKernelDataframes().then(dfs => {
         if (Object.keys(dfs).length)
           document.dispatchEvent(new CustomEvent('kernel-dfs-updated', { detail: { dfs } }));
@@ -1123,7 +1195,7 @@ async function runAll(btn) {
     cell.counter.textContent = _runSeq;
 
     document.dispatchEvent(new CustomEvent('compile-result', {
-      detail: { outputs, cellId: cell.id, cellLabel: `Cell ${i + 1} · ${cell.lang}`, sourceCode: code, sourceLang: cell.lang, ariaSource: cell.el.dataset.ariaSource === '1' }
+      detail: { outputs, cellId: cell.id, cellLabel: `Cell ${i + 1} · ${lang}`, sourceCode: code, sourceLang: lang, ariaSource: cell.el.dataset.ariaSource === '1' }
     }));
   }
 
@@ -1142,7 +1214,7 @@ export function init(container, externalTopbar) {
     savedData = [{ id: uid(), lang: 'python', code: legacyCode }];
   }
 
-  _cells  = savedData.map(d => makeCell(d.lang ?? 'python', d.code ?? '', d.id ?? uid()));
+  _cells  = savedData.map(d => makeCell(_normalizeLang(d.lang ?? 'python'), d.code ?? '', d.id ?? uid()));
   _runSeq = 0;
 
   // Restore persisted inject data (survive page refresh)
@@ -1177,7 +1249,7 @@ export function init(container, externalTopbar) {
   document.addEventListener('dp-cloud-restore', ({ detail: { cells } }) => {
     if (!Array.isArray(cells) || !cells.length) return;
     const sorted = [...cells].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
-    _cells = sorted.map(d => makeCell(d.language ?? 'python', d.code ?? '', d.id ?? uid()));
+    _cells = sorted.map(d => makeCell(_normalizeLang(d.language ?? 'python'), d.code ?? '', d.id ?? uid()));
     rebuildCells();
     saveAll(); // persist to localStorage so next cold load also gets the cloud data
   });
@@ -1435,7 +1507,7 @@ export function init(container, externalTopbar) {
 
   // Code file click from file manager → inject code into focused/empty cell
   document.addEventListener('nb-code-file-click', ({ detail: { filename, language, code } }) => {
-    const lang = language ?? 'python';
+    const lang = _normalizeLang(language ?? 'python');
     const focusedCell = _lastFocusedCellId ? _cells.find(c => c.id === _lastFocusedCellId) : null;
     const emptyCell   = _cells.find(c => !c.editor.value.trim());
     const target = (focusedCell && !focusedCell.editor.value.trim() ? focusedCell : null)
@@ -1545,7 +1617,7 @@ export function setCellCode(cellId, code) {
 
 export function addImportedCell(lang, code, { autoRun = false } = {}) {
   if (!_cellsEl) return null;
-  const cell = makeCell(lang, code, uid());
+  const cell = makeCell(_normalizeLang(lang), code, uid());
   _cells.push(cell);
 
   // Append without full rebuild to avoid touching existing cells

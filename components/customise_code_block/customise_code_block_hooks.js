@@ -8,11 +8,14 @@ export function attachCellHooks({
   cell, PLACEHOLDER, ICON_COPY, ICON_CHECK,
   autoResize, saveAll, rebuildCells, cellLabel,
   getCells, setCells, getRunSeq, bumpRunSeq,
+  normalizeLang,
   flushPendingInjects,
   buildImportCellCode,   // optional: auto-fill code when editor is empty
 }) {
+  const norm = normalizeLang ?? (v => v ?? 'python');
+
   sel.addEventListener('change', () => {
-    cell.lang = sel.value;
+    cell.lang = norm(sel.value);
     editor.placeholder = PLACEHOLDER[cell.lang] ?? '';
     saveAll();
   });
@@ -54,7 +57,8 @@ export function attachCellHooks({
     const code = editor.value.trim();
     if (!code) return;
 
-    if (cell.lang === 'python' && /\binput\s*\(/.test(code)) {
+    const lang = norm(cell.lang);
+    if (lang === 'python' && /\binput\s*\(/.test(code)) {
       document.dispatchEvent(new CustomEvent('run-in-terminal', { detail: { code } }));
       return;
     }
@@ -68,13 +72,19 @@ export function attachCellHooks({
     // is already flushed: fall back to _datasetInfo which persists across runs.
     const _ownInjectDs = cell._datasetInfo ? { ...cell._datasetInfo } : null;
 
-    await flushPendingInjects?.();
-    const cellNum = cell.numEl?.textContent ?? '';
-    const outputs = await compile(code, cell.lang, { cellIndex: cellNum });
+    let outputs = [];
+    try {
+      await flushPendingInjects?.();
+      const cellNum = cell.numEl?.textContent ?? '';
+      outputs = await compile(code, lang, { cellIndex: cellNum });
+    } catch (e) {
+      console.error('[run error]', e);
+      outputs = [{ type: 'error', content: e?.message ?? String(e) }];
+    }
 
     // If this cell owns imported data, ensure a viz-suggestion card appears
     // (the RUNNER diff won't catch it because the variable existed pre-exec).
-    if (_ownInjectDs?.varName && cell.lang === 'python') {
+    if (_ownInjectDs?.varName && lang === 'python') {
       const { varName, rows, columns } = _ownInjectDs;
       const alreadyPresent = outputs.some(o => o.type === 'viz-suggestion' && o.varName === varName);
       if (!alreadyPresent) {
@@ -87,7 +97,7 @@ export function attachCellHooks({
       }
     }
     // After Python execution: query kernel for DataFrames and update bottom bar.
-    if (cell.lang === 'python') {
+    if (lang === 'python') {
       queryKernelDataframes().then(dfs => {
         if (Object.keys(dfs).length) {
           document.dispatchEvent(new CustomEvent('kernel-dfs-updated', { detail: { dfs } }));
@@ -107,7 +117,7 @@ export function attachCellHooks({
     bumpRunSeq();
     cell.counter.textContent = getRunSeq();
     document.dispatchEvent(new CustomEvent('compile-result', {
-      detail: { outputs, cellId: cell.id, cellLabel: cellLabel(cell), sourceCode: code, sourceLang: cell.lang, ariaSource: cell.el.dataset.ariaSource === '1' }
+      detail: { outputs, cellId: cell.id, cellLabel: cellLabel(cell), sourceCode: code, sourceLang: lang, ariaSource: cell.el.dataset.ariaSource === '1' }
     }));
   });
 
