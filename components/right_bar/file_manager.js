@@ -1110,12 +1110,6 @@ export function initFileManager() {
     insertBtn.title = '插入到 Notebook';
     insertBtn.innerHTML = `<i class="ti ti-corner-down-left"></i>`;
 
-    // Delete button (only shown in non-select mode)
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'rb-file-action-btn';
-    deleteBtn.title = '删除';
-    deleteBtn.innerHTML = `<i class="ti ti-trash"></i>`;
-
     const codeKey = `code_${filename}`;
 
     function _doInsert() {
@@ -1147,29 +1141,7 @@ export function initFileManager() {
       _doInsert();
     });
 
-    // Delete button click (legacy, for non-select mode)
-    deleteBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      if (_selectMode) return;
-      if (!confirm(`删除代码文件 \"${filename}\"？`)) return;
-      const store = _loadCodeStore();
-      delete store[filename];
-      _saveCodeStore(store);
-      item.remove();
-    });
-
-    // Delete via right-click context menu (simple confirm)
-    item.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      if (_selectMode) return;
-      if (!confirm(`删除代码文件 "${filename}"？`)) return;
-      const store = _loadCodeStore();
-      delete store[filename];
-      _saveCodeStore(store);
-      _refresh().catch(console.error);
-    });
-
-    item.append(circle, iconEl, info, insertBtn, deleteBtn);
+    item.append(circle, iconEl, info, insertBtn);
     return item;
   }
 
