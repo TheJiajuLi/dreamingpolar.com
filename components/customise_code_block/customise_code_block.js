@@ -298,11 +298,21 @@ function cellLabel(cell) {
 }
 
 // ── Ctrl+I inline AI completion ───────────────────────────────────────────────
-const _INLINE_AI_SYSTEM =
-  'You are a Python code assistant embedded in a data science notebook.\n' +
-  'CRITICAL: Output ONLY raw Python code. Absolutely no markdown code fences (no ``` or ```python). No explanations. No comments unless asked.\n' +
-  'The output will be inserted directly into a Python file. Any non-code characters will cause a SyntaxError.\n' +
-  'Keep the code concise and idiomatic.';
+const _INLINE_AI_LANG_PROMPTS = {
+  python: 'You are a Python code assistant. Output only Python code.',
+  latex: 'You are a LaTeX assistant. Output only LaTeX code.',
+  markdown: 'You are a Markdown assistant. Output only Markdown.',
+  mathjax: 'You are a MathJax/LaTeX math assistant. Output only math expressions.',
+  javascript: 'You are a JavaScript assistant. Output only JS code.',
+};
+
+function _getInlineAISystemPrompt(cell) {
+  const cellEl = cell?.el ?? null;
+  const langSelect = cellEl?.querySelector('.nb-lang-select');
+  const currentLang = langSelect?.value || 'python';
+  return _INLINE_AI_LANG_PROMPTS[currentLang]
+    ?? `You are a ${currentLang} code assistant. Output only ${currentLang} code.`;
+}
 
 function _getCursorLine(editor) {
   return editor.value.slice(0, editor.selectionStart).split('\n').length - 1;
@@ -459,9 +469,10 @@ function _openInlineAI(cell, editor) {
 
     _code = '';
     try {
+      const systemPrompt = _getInlineAISystemPrompt(cell);
       for await (const chunk of streamChat(
         [{ role: 'user', content: userMsg }],
-        _INLINE_AI_SYSTEM, 512,
+        systemPrompt, 512,
       )) {
         if (_abort.signal.aborted) break;
         _code += chunk;
