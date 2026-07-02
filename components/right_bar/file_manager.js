@@ -1011,7 +1011,9 @@ export function initFileManager() {
   }
 
   // ── Render file list ───────────────────────────────────────────────────────
+  let _refreshSeq = 0;
   async function _refresh() {
+    const seq = ++_refreshSeq;
     body.innerHTML = '';
     const store = _loadStore();
 
@@ -1032,6 +1034,7 @@ export function initFileManager() {
     let cloudDataFiles = [];
     if (window.authClient?.isLoggedIn()) {
       const cloudFiles = await _fetchCloudFiles();
+      if (seq !== _refreshSeq) return;
       cloudDataFiles = cloudFiles
         .filter(f => f.file_type === 'data')
         .map(f => ({ 
