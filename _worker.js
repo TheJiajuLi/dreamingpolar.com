@@ -5,10 +5,12 @@ export default {
       return Response.redirect(url.origin + '/community.html', 302);
     }
     if (url.pathname.startsWith('/community/user/')) {
-      return Response.redirect(url.origin + '/profile.html', 302);
+      const username = url.pathname.split('/community/user/')[1];
+      return Response.redirect(url.origin + '/profile.html?username=' + username, 302);
     }
     if (url.pathname.startsWith('/community/')) {
-      return Response.redirect(url.origin + '/tutorial.html', 302);
+      const id = url.pathname.split('/community/')[1];
+      return Response.redirect(url.origin + '/tutorial.html?id=' + id, 302);
     }
     if (url.pathname === '/write') {
       return Response.redirect(url.origin + '/write.html', 302);
