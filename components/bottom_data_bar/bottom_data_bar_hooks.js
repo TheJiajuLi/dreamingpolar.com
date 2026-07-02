@@ -14,14 +14,51 @@ document.addEventListener('screen-minimized', ({ detail: { id } }) => { if (id =
 // ── Screen label in compiler slot ─────────────────────────────────────────────
 const SCREEN_LABELS = {
   'coding':   'Power Notebook',
-  'terminal': 'ARIA 智能助手',
+  'terminal': 'ARIA 分析助手',
   'grid':     'DP Grid',
-  'ai-chat':  'AI 对话',
+  'ai-chat':  '客服中心',
   'profile':  '用户主页',
-  'content':  '文档',
+  'content':  '帮助文档',
 };
 
-let _activeScreenId = null;
+let _activeScreenId = null; 
+
+function _findActiveScreenFromDom() {
+  const nodes = Array.from(document.querySelectorAll('[data-screen-id][data-screen-state]'));
+  if (!nodes.length) return null;
+
+  const pickByState = state => {
+    return nodes.find(node => {
+      if (node.dataset.screenState !== state) return false;
+      return Boolean(SCREEN_LABELS[node.dataset.screenId]);
+    });
+  };
+
+  const picked =
+    pickByState('maximized') ||
+    pickByState('normal') ||
+    pickByState('hidden-by-max');
+
+  return picked?.dataset.screenId ?? null;
+}
+
+function _syncActiveScreenFromDom() {
+  const current = _findActiveScreenFromDom();
+  if (!current) return false;
+  if (_activeScreenId === current) return true;
+  _activeScreenId = current;
+  _updateSlotLabel();
+  return true;
+}
+
+function _bootstrapActiveScreenLabel(retries = 10) {
+  if (_syncActiveScreenFromDom()) return;
+  if (retries <= 0) {
+    _updateSlotLabel();
+    return;
+  }
+  setTimeout(() => _bootstrapActiveScreenLabel(retries - 1), 120);
+}
 
 function _updateSlotLabel() {
   const slot = getCompilerSlot();
@@ -34,8 +71,22 @@ function _updateSlotLabel() {
 }
 
 document.addEventListener('screen-opened',    ({ detail: { id } }) => { _activeScreenId = id;                                             _updateSlotLabel(); });
-document.addEventListener('screen-closed',    ({ detail: { id } }) => { if (_activeScreenId === id) { _activeScreenId = null; _updateSlotLabel(); } });
-document.addEventListener('screen-minimized', ({ detail: { id } }) => { if (_activeScreenId === id) { _activeScreenId = null; _updateSlotLabel(); } });
+document.addEventListener('screen-closed',    ({ detail: { id } }) => {
+  if (_activeScreenId !== id) return;
+  _activeScreenId = null;
+  if (!_syncActiveScreenFromDom()) _updateSlotLabel();
+});
+document.addEventListener('screen-minimized', ({ detail: { id } }) => {
+  if (_activeScreenId !== id) return;
+  _activeScreenId = null;
+  if (!_syncActiveScreenFromDom()) _updateSlotLabel();
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => _bootstrapActiveScreenLabel());
+} else {
+  _bootstrapActiveScreenLabel();
+}
 
 // ── Compiler status slot ──────────────────────────────────────────────────────
 let _lastStatus = {};  // most recent dispatch detail for click popover
