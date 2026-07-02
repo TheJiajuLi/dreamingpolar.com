@@ -3,24 +3,20 @@ export default {
     const url = new URL(request.url);
     try {
       if (url.pathname === '/community') {
-        return env.ASSETS.fetch(new Request(new URL('/community.html', url), request));
+        return env.ASSETS.fetch('https://assets.local/community.html');
       }
       if (url.pathname.startsWith('/community/user/')) {
-        return env.ASSETS.fetch(new Request(new URL('/profile.html', url), request));
+        return env.ASSETS.fetch('https://assets.local/profile.html');
       }
       if (url.pathname.startsWith('/community/')) {
-        return env.ASSETS.fetch(new Request(new URL('/tutorial.html', url), request));
+        return env.ASSETS.fetch('https://assets.local/tutorial.html');
       }
       if (url.pathname === '/write') {
-        return env.ASSETS.fetch(new Request(new URL('/write.html', url), request));
+        return env.ASSETS.fetch('https://assets.local/write.html');
       }
       return env.ASSETS.fetch(request);
     } catch (e) {
-      return new Response(
-        `Error: ${e.message}`,
-        { status: 500, headers: { 'content-type': 'text/plain' } }
-      );
+      return new Response(`Error: ${e.message}`, { status: 500 });
     }
   },
 };
-
