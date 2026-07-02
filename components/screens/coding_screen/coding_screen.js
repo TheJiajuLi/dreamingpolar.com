@@ -32,6 +32,52 @@ function setupCodingScreen() {
       }
     });
 
+    // Handle cloud file insertion from file manager
+    document.addEventListener('dp-insert-file-to-notebook', async ({ detail }) => {
+      const { filename, buffer, fileType } = detail;
+      if (!filename || !buffer) return;
+      
+      try {
+        // Find active cell (the one with focus or the last one)
+        const cells = document.querySelectorAll('.nb-cell');
+        let activeCell = document.querySelector('.nb-cell:focus-within');
+        if (!activeCell && cells.length > 0) {
+          activeCell = cells[cells.length - 1];  // fallback to last cell
+        }
+        if (!activeCell) return;
+
+        // Build Python code to read the file from Pyodide FS
+        const varName = filename.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_]/g, '_') || 'df';
+        const readers = {
+          'csv':  `pd.read_csv("${filename}")`,
+          'json': `pd.read_json("${filename}")`,
+          'xlsx': `pd.read_excel("${filename}")`,
+          'xls':  `pd.read_excel("${filename}")`,
+          'xml':  `pd.read_xml("${filename}")`,
+        };
+        const reader = readers[fileType] ?? `pd.read_csv("${filename}")`;
+        const code = `# "${filename}" → ${varName}\nimport pandas as pd\n${varName} = ${reader}\nprint(${varName}.shape)\n${varName}.head()`;
+
+        // Write file to Pyodide FS first
+        if (window.injectDataFrame) {
+          await window.injectDataFrame(varName, buffer, fileType, filename);
+        }
+
+        // Append code to active cell
+        const editor = activeCell.querySelector('.nb-editor');
+        if (editor) {
+          const existing = editor.value || '';
+          editor.value = existing + (existing ? '\n\n' : '') + code;
+          editor.dispatchEvent(new Event('input', { bubbles: true }));
+          editor.focus();
+          // Scroll editor to end
+          setTimeout(() => { editor.scrollTop = editor.scrollHeight; }, 50);
+        }
+      } catch (e) {
+        console.error('[dp-insert-file-to-notebook]', e);
+      }
+    });
+
     // Auto-run all cells once kernel finishes booting (setting: autoRunOnLoad)
     if (getSettings().autoRunOnLoad) {
       // 'Notebook Editor' message = first-boot complete (distinct from cell-run 'Done')

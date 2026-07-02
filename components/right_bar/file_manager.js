@@ -191,11 +191,23 @@ async function _syncStoreToDataset() {
   }
 }
 
+// Detect active screen from DOM on init (handles page load where screen-opened not fired)
+function _detectActiveScreen() {
+  const activeScreenEl = document.querySelector('[data-screen-state="normal"]');
+  if (activeScreenEl?.id) {
+    const screenId = activeScreenEl.id.replace('-screen', '');
+    if (['coding', 'grid', 'terminal', 'ai-chat', 'profile', 'content'].includes(screenId)) {
+      _activeScreenId = screenId;
+    }
+  }
+}
+
 export function initFileManager() {
   const rightBar = document.getElementById('right-bar');
   if (!rightBar) return;
 
   _syncStoreToDataset();
+  _detectActiveScreen();  // Detect active screen on page load
 
   // ── Two strip buttons: Files + Settings ───────────────────────────────────
   const toggleBtn = document.createElement('button');
@@ -841,7 +853,7 @@ export function initFileManager() {
           console.error('[cloud open-in-grid]', e);
         }
       } else {
-        // notebook或默认：注入到内核
+        // notebook：插入到当前活跃cell的末尾
         try {
           const token = window.authClient.getAccessToken();
           const res = await fetch(
@@ -850,11 +862,11 @@ export function initFileManager() {
           );
           if (!res.ok) throw new Error('下载失败');
           const buffer = await res.arrayBuffer();
-          if (window.injectDataFrame) {
-            window.injectDataFrame(varName, new Uint8Array(buffer), file.file_type ?? 'csv', file.filename);
-          }
+          document.dispatchEvent(new CustomEvent('dp-insert-file-to-notebook', {
+            detail: { filename: file.filename, buffer: new Uint8Array(buffer), fileType: file.file_type ?? 'csv' }
+          }));
         } catch (e) {
-          console.error('[cloud inject]', e);
+          console.error('[cloud insert-to-notebook]', e);
         }
       }
     });
