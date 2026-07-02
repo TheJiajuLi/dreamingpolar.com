@@ -3,9 +3,7 @@
 // Displays grey italic prediction text overlaid on the textarea.
 // Tab accepts, any other key or Esc dismisses.
 
-const _PROXY = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3001/api/ghost'
-  : 'https://api.dreamingpolar.com/api/ghost';
+const _PROXY = 'https://api.dreamingpolar.com/api/ghost';
 
 const _SYSTEM =
   '你是一个通用 Python IDE 的代码补全引擎，类似 GitHub Copilot。\n' +

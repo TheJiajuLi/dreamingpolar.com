@@ -1,10 +1,5 @@
-const _isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const PROXY_URL = _isLocal
-  ? 'http://localhost:3001/api/ai'
-  : 'https://api.dreamingpolar.com/api/ai';
-const _NETWORK_ERR = _isLocal
-  ? 'Cannot reach Polar Bear proxy. Is the backend running? (cd backend && npm start)'
-  : '小梦暂时离线，请稍后再试 🌙';
+const PROXY_URL = 'https://api.dreamingpolar.com/api/ai';
+const _NETWORK_ERR = '小梦暂时离线，请稍后再试 🌙';
 
 // All personas live in ai_without_personalities.js — edit there for prompt engineering.
 export {
