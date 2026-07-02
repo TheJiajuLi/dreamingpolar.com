@@ -528,7 +528,7 @@
     async function loadTutorials() {
       setState('正在加载社区教程...', true);
       try {
-        const resp = await fetch('/auth/tutorials?status=published', { credentials: 'include' });
+        const resp = await fetch('https://api.dreamingpolar.com/auth/tutorials?status=published', { credentials: 'include' });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         tutorialsState.all = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
