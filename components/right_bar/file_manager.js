@@ -639,6 +639,56 @@ export function initFileManager() {
     importBtn.innerHTML = `<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i>`;
 
     try {
+      // ── Check if logged in → upload to cloud ──────────────────────────────
+      const isLoggedIn = window.authClient?.isLoggedIn?.();
+      
+      if (isLoggedIn) {
+        // Upload to cloud COS
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const token = window.authClient.getAccessToken();
+          const res = await fetch(
+            'https://api.dreamingpolar.com/auth/files/upload',
+            {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}` },
+              body: formData
+            }
+          );
+          
+          if (!res.ok) throw new Error('上传失败');
+          const cloudFile = await res.json();
+          
+          // Inject to kernel (read file locally)
+          const buffer = await file.arrayBuffer();
+          const varName = _resolveVarName(file.name);
+          if (window.injectDataFrame) {
+            await window.injectDataFrame(
+              varName,
+              new Uint8Array(buffer),
+              fileType,
+              file.name
+            );
+          }
+          
+          // Record and notify
+          document.dispatchEvent(new CustomEvent('nb-file-imported', {
+            detail: { varName, filename: file.name, fileType, cloudId: cloudFile.id },
+          }));
+          logActivity('import', `上传 ${file.name} 至云端`);
+          _recordRecentFile({ name: file.name, varName, size: file.size, fileType });
+          
+          // Refresh to show cloud file
+          await _refresh();
+          return;
+        } catch (err) {
+          console.warn('[file-manager] cloud upload failed:', err);
+          // Fall through to local import as fallback
+        }
+      }
+
+      // ── Fallback: local import (not logged in or cloud upload failed) ──────
       // Read raw data
       let rawData, isBase64 = false;
       if (isExcel) {
@@ -690,12 +740,12 @@ export function initFileManager() {
         console.warn('[file-manager] setDataset failed:', e);
       }
 
-        // Notify listeners
-        document.dispatchEvent(new CustomEvent('nb-file-imported', {
-          detail: { varName, rows, columns, filename: file.name, fileType, cellId },
-        }));
-        logActivity('import', `导入 ${file.name}`);
-        _recordRecentFile({ name: file.name, varName, size: file.size, fileType });
+      // Notify listeners
+      document.dispatchEvent(new CustomEvent('nb-file-imported', {
+        detail: { varName, rows, columns, filename: file.name, fileType, cellId },
+      }));
+      logActivity('import', `导入 ${file.name}`);
+      _recordRecentFile({ name: file.name, varName, size: file.size, fileType });
 
       _refresh().catch(console.error);
     } catch (err) {
