@@ -1,48 +1,48 @@
 {
-  "title": "5 分钟上手",
   "blocks": [
     {
-      "label": "第一步：导入数据集",
-      "intro": "点击左侧垂直工具栏的「文件」图标，打开文件中心，导入你的数据文件。",
-      "note": "支持 CSV、Excel (.xlsx/.xls)、JSON、XML。导入后无需重新选择文件，刷新页面数据依然存在。"
+      "label": "5 分钟上手 Dreaming Polar",
+      "code": "# Dreaming Polar 是一个浏览器原生的数据分析工作台\n# 打开网页即用，无需安装任何环境\n#\n# 三个核心入口（左侧垂直工具栏）：\n#\n# 📓 Power Notebook  — 写 Python 代码，完整分析能力\n# ✦  ARIA 分析助手  — 用自然语言对话分析数据\n# ⊞  DP Grid        — 可视化编辑数据表格\n#\n# 所有入口共享同一个 Python 内核（变量互通）",
+      "result": "无需注册即可试用。登录后数据自动同步到云端，换设备也能继续。",
+      "resultType": "text"
+    },
+    {
+      "label": "第一步：导入数据",
+      "code": "# 点击右侧文件面板「+ 导入」按钮\n# 支持格式：CSV / Excel (.xlsx .xls) / JSON / XML\n#\n# 导入后文件自动同步到云端文件中心\n# 刷新页面数据依然存在，无需重新导入",
+      "result": "登录用户的文件存储在云端，免费版最多 5 个文件，Pro 版最多 30 个。",
+      "resultType": "text"
     },
     {
       "label": "第二步：选择分析方式",
       "examples": [
         {
-          "desc": "根据你的目标选择入口：",
-          "code": "# Quick Analysis（左侧第三个图标）\n# → 点击文件 → 发送给 ARIA → 直接用自然语言提问\n# → 适合：快速浏览、提问、看图表\n\n# Power Notebook（左侧第二个图标）\n# → 写 Python 代码 → 完整 pandas/matplotlib 能力\n# → 适合：建模、复杂分析、自定义可视化\n\n# 两者共享同一份 Pyodide 内核（变量互通）"
-        }
-      ]
-    },
-    {
-      "label": "第三步：开始分析",
-      "intro": "在 Notebook 里新建一个 Python cell，直接用文件名读取数据：",
-      "examples": [
+          "code": "# 方式A：ARIA 分析助手（推荐新手）\n# 1. 点击左侧工具栏 ✦ 图标\n# 2. 从右侧文件面板点击「发送给 ARIA」\n# 3. 直接用中文提问\n\n「这份数据有什么特点？」\n「帮我看 close 列的分布」\n「open 和 close 有没有相关性？」",
+          "result": "ARIA 会读取真实列名和数据，引用具体数字，在需要时自动生成图表。",
+          "resultType": "text"
+        },
         {
-          "code": "import pandas as pd\n\ndf = pd.read_csv(\"GE.csv\")  # 文件中心里的文件，直接用文件名\nprint(df.shape)\ndf.head()"
-        }
-      ]
-    },
-    {
-      "label": "Notebook 工具栏速览",
-      "intro": "Notebook 顶部工具栏集成了常用操作：",
-      "examples": [
+          "code": "# 方式B：Power Notebook（适合写代码）\n# 1. 点击左侧工具栏 📓 图标\n# 2. 从右侧文件面板点击「插入到 Notebook」\n# 3. 自动生成导入代码，直接运行\n\nimport pandas as pd\ndf = pd.read_csv(\"GE.csv\")  # 文件名直接用\nprint(df.shape)\ndf.head()",
+          "result": "Power Notebook 使用 Pyodide（浏览器内 Python），支持 pandas、matplotlib、numpy 等常用库。",
+          "resultType": "text"
+        },
         {
-          "code": "# 左侧\n# · ICM 按钮 — 智能代码模式（语法高亮 / 自动补全）\n# · ▶▶ Run All — 按顺序运行所有 Cell\n#   运行中变为「■ 停止」，显示「第 N / M 个 Cell」进度\n#   首次运行时显示「正在加载 pandas ···」（下载包时）\n#\n# 中央\n# · 🔍 搜索框 — 全局搜索所有 Cell 代码\n#   Ctrl+F 激活，Enter/↑↓ 跳转匹配，Esc 清除\n#\n# 右侧\n# · 清空输出 / 重启内核（点两次确认）",
-          "result": "工具栏宽度与 Cell 对齐，采用半透明深色背景，视觉上融入整体界面。",
+          "code": "# 方式C：DP Grid（可视化编辑）\n# 1. 点击左侧工具栏 ⊞ 图标\n# 2. 从右侧文件面板点击「发送到 Grid」\n# 3. 像 Excel 一样直接编辑数据\n#\n# 支持：排序、过滤、行列增删、公式、导出 XLSX",
+          "result": "编辑完成后可同步回 Python 内核，也可以导出为 CSV / XLSX / JSON。",
           "resultType": "text"
         }
       ]
     },
     {
+      "label": "第三步：云端文件中心",
+      "code": "# 所有导入的文件都保存在云端文件中心\n# 入口：右上角头像 → 用户主页 → 文件管理\n#\n# 支持：上传 / 下载 / 删除文件\n# · 注入到 Python 内核\n# · 发送给 ARIA 分析\n# · 发送到 DP Grid 编辑",
+      "result": "云端文件在所有设备间共享，登录后自动同步。",
+      "resultType": "text"
+    },
+    {
       "label": "下一步",
-      "items": [
-        "在 ARIA 里直接用中文描述你想做的分析",
-        "用 DP Grid（左侧第四个图标）查看和编辑数据表格",
-        "登录后 Notebook 自动同步到云端，换设备也能继续",
-        "使用 Matplotlib 生成图表，右侧输出区实时预览"
-      ]
+      "code": "# 推荐阅读顺序：\n# 1. 导入数据     → 了解支持的格式和导入方式\n# 2. ARIA 分析助手 → 学会用自然语言分析数据\n# 3. Power Notebook → 写 Python 代码做深度分析\n# 4. DP Grid       → 可视化编辑和整理数据\n# 5. LaTeX / Math  → 在 Notebook 里写数学公式",
+      "result": "遇到问题可以直接在 ARIA 里提问，或者查阅对应模块的文档。",
+      "resultType": "text"
     }
   ]
 }
