@@ -131,6 +131,49 @@
 .grid-picker-meta { font-size: 0.65rem; color: var(--text-muted, #94a3b8); font-family: var(--code-font, "JetBrains Mono", monospace); }
 .grid-picker-empty { padding: 16px; text-align: center; font-size: 0.76rem; color: var(--text-muted, #94a3b8); }
 
+.grid-ds-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  margin-bottom: 4px;
+}
+
+.grid-ds-item:hover {
+  background: rgba(99,102,241,0.08);
+}
+
+.grid-ds-item-main {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  color: var(--text, #0f172a);
+  font-size: 0.82rem;
+}
+
+.grid-ds-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 2px;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  flex-wrap: wrap;
+}
+
+.grid-ds-item--cloud .grid-ds-cloud-icon {
+  color: var(--accent-color, var(--accent, #6366f1));
+  font-size: 0.9rem;
+  margin-right: 4px;
+}
+
+.grid-ds-local-icon {
+  color: var(--accent, #6366f1);
+  font-size: 0.9rem;
+  margin-right: 4px;
+}
+
 /* ── Toolbar ─────────────────────────────────────────────────────────────── */
 .grid-toolbar {
   display: flex;

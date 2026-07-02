@@ -8,9 +8,45 @@ import { recordRecentItem }                  from '../empty_state_dashboard/empt
 import { parseToDataset }                    from '../import/import_data.js';
 
 const INJECT_KEY = 'dreaming-polar-inject-store';
+const CLOUD_META_KEY = 'dp-cloud-file-meta';
 const MAX_TABS   = 8;
 const PAGE_SIZE  = 200;   // rows per page
 const PRO_LIMIT  = 500;   // free-tier row ceiling — shows upsell above this
+
+function _timeAgo(ms) {
+  const diff = Date.now() - Number(ms || 0);
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return '刚刚';
+  if (min < 60) return `${min}分钟前`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h}小时前`;
+  return `${Math.floor(h / 24)}天前`;
+}
+
+function _formatBytes(sizeBytes) {
+  const size = Number(sizeBytes || 0);
+  if (!size) return '';
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function _getCloudMetaCache(fileId) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(CLOUD_META_KEY) || '{}');
+    return cache[fileId] || null;
+  } catch {
+    return null;
+  }
+}
+
+function _setCloudMetaCache(fileId, rows, cols) {
+  try {
+    const cache = JSON.parse(localStorage.getItem(CLOUD_META_KEY) || '{}');
+    cache[fileId] = { rows, cols, updatedAt: Date.now() };
+    localStorage.setItem(CLOUD_META_KEY, JSON.stringify(cache));
+  } catch {}
+}
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
 function _escCSV(v) {
@@ -581,7 +617,8 @@ function setupGridScreen() {
           filename: f.filename,
           fileId: f.id,
           source: 'cloud',
-          label: `☁ ${f.filename}`,
+          size_bytes: Number(f.size_bytes || 0),
+          created_at: Number(f.created_at || 0),
           rows: null,
         }))
         .filter(src => !local.some(s => (s.filename || s.name) === src.filename));
@@ -1240,6 +1277,57 @@ function setupGridScreen() {
     title.style.cssText = 'font-weight:600;font-size:0.88rem;margin-bottom:12px;color:#0f172a';
     title.textContent = '选择数据集';
     modal.appendChild(title);
+
+    function _renderCloudItem(src) {
+      const item = document.createElement('div');
+      item.className = 'grid-ds-item grid-ds-item--cloud';
+
+      const size = _formatBytes(src.size_bytes);
+      const ago = src.created_at ? _timeAgo(src.created_at * 1000) : '';
+      const cached = _getCloudMetaCache(src.fileId);
+      const rowCol = cached
+        ? `${Number(cached.rows).toLocaleString()} 行 × ${Number(cached.cols).toLocaleString()} 列`
+        : '未解析';
+
+      item.innerHTML = `
+        <div class="grid-ds-item-main">
+          <i class="ti ti-cloud grid-ds-cloud-icon"></i>
+          <span class="grid-ds-filename">${src.filename}</span>
+        </div>
+        <div class="grid-ds-item-meta">
+          <span class="grid-ds-varname">${src.varName}</span>
+          ${size ? `<span>·</span><span>${size}</span>` : ''}
+          ${ago ? `<span>·</span><span>${ago}</span>` : ''}
+          <span>·</span><span class="grid-ds-rowcol" data-file-id="${src.fileId}">${rowCol}</span>
+        </div>
+      `;
+      return item;
+    }
+
+    function _renderLocalItem(src) {
+      const item = document.createElement('div');
+      item.className = 'grid-ds-item';
+      const name = src.name ?? src.filename ?? '—';
+      const varN = src.varName ?? src.name ?? '—';
+      const rowCount = Array.isArray(src.rows) ? src.rows.length : src.rows;
+      const cnt = rowCount != null ? `${Number(rowCount).toLocaleString()} 行` : '? 行';
+      const cols = Array.isArray(src.columns) ? src.columns.length : null;
+      const rowColText = cols != null
+        ? `${cnt} × ${Number(cols).toLocaleString()} 列`
+        : cnt;
+      item.innerHTML = `
+        <div class="grid-ds-item-main">
+          <i class="ti ti-table grid-ds-local-icon"></i>
+          <span class="grid-ds-filename">${name}</span>
+        </div>
+        <div class="grid-ds-item-meta">
+          <span class="grid-ds-varname">${varN}</span>
+          <span>·</span><span>${rowColText}</span>
+        </div>
+      `;
+      return item;
+    }
+
     if (!sources.length) {
       const empty = document.createElement('div');
       empty.style.cssText = 'font-size:0.78rem;color:#94a3b8;text-align:center;padding:16px 0';
@@ -1247,21 +1335,9 @@ function setupGridScreen() {
       modal.appendChild(empty);
     } else {
       sources.forEach(src => {
-        const item = document.createElement('div');
-        item.style.cssText = 'padding:10px 12px;border-radius:8px;cursor:pointer;transition:background 0.1s;margin-bottom:4px';
-        item.onmouseenter = () => { item.style.background = 'rgba(99,102,241,0.08)'; };
-        item.onmouseleave = () => { item.style.background = ''; };
-        const name = src.label ?? src.name ?? src.filename ?? '—';
-        const varN = src.varName ?? src.name ?? '—';
-        const rowCount = Array.isArray(src.rows) ? src.rows.length : src.rows;
-        const cnt = rowCount != null
-          ? `${rowCount.toLocaleString()} 行`
-          : src.source === 'cloud'
-            ? '云端文件'
-            : '? 行';
-        item.innerHTML =
-          `<div style="font-weight:600;font-size:0.82rem;color:#0f172a">${name}</div>` +
-          `<div style="font-size:0.68rem;color:#94a3b8;font-family:monospace">${varN} · ${cnt}</div>`;
+        const item = src.source === 'cloud'
+          ? _renderCloudItem(src)
+          : _renderLocalItem(src);
         item.addEventListener('click', async () => {
           overlay.remove();
           if (src.source === 'cloud') {
@@ -1275,15 +1351,26 @@ function setupGridScreen() {
               if (!res.ok) return;
 
               const buffer = await res.arrayBuffer();
+              const bytes = new Uint8Array(buffer);
               const ext = String(src.filename).split('.').pop()?.toLowerCase() || 'csv';
               await window.injectDataFrame?.(
                 src.varName,
-                new Uint8Array(buffer),
+                bytes,
                 ext,
                 src.filename
               );
 
-              const text = new TextDecoder().decode(new Uint8Array(buffer));
+              if (ext === 'csv') {
+                const text = new TextDecoder().decode(bytes);
+                const lines = text.split(/\r?\n/).filter(l => l.trim());
+                const cols = lines[0]?.split(',').length ?? 0;
+                const rows = Math.max(lines.length - 1, 0);
+                _setCloudMetaCache(src.fileId, rows, cols);
+                const rowColEl = document.querySelector(`.grid-ds-rowcol[data-file-id="${src.fileId}"]`);
+                if (rowColEl) rowColEl.textContent = `${Number(rows).toLocaleString()} 行 × ${Number(cols).toLocaleString()} 列`;
+              }
+
+              const text = new TextDecoder().decode(bytes);
               window._gridOpenDataset?.({
                 source: 'cloud',
                 fileId: src.fileId,

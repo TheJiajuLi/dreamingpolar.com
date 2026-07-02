@@ -1059,14 +1059,21 @@ export function initFileManager() {
     if (window.authClient?.isLoggedIn()) {
       const cloudFiles = await _fetchCloudFiles();
       if (seq !== _refreshSeq) return;
-      cloudDataFiles = cloudFiles
-        .filter(f => f.file_type === 'data')
-        .map(f => ({ 
-          file: f, 
-          source: 'cloud', 
-          filename: f.filename,
-          timestamp: (f.created_at ?? 0) * 1000  // Convert to ms
-        }));
+      const seen = new Map();
+      cloudFiles
+        .filter(f => f.file_type === 'data' && f.filename)
+        .sort((a, b) => (Number(b.created_at) || 0) - (Number(a.created_at) || 0))
+        .forEach(f => {
+          if (!seen.has(f.filename)) seen.set(f.filename, f);
+        });
+
+      const dedupedCloudFiles = [...seen.values()];
+      cloudDataFiles = dedupedCloudFiles.map(f => ({
+        file: f,
+        source: 'cloud',
+        filename: f.filename,
+        timestamp: (f.created_at ?? 0) * 1000  // Convert to ms
+      }));
     }
 
     // Merge & deduplicate: cloud files take priority over local
