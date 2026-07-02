@@ -771,7 +771,7 @@ export function initFileManager() {
   }
 
   // ── Cloud file item renderer ───────────────────────────────────────────────
-  function _makeCloudFileItem(file) {
+  function _makeCloudFileItem(file, source = 'cloud') {
     const row = document.createElement('div');
     row.className = 'rb-file-item';
 
@@ -787,7 +787,13 @@ export function initFileManager() {
 
     const ago = _timeAgo(file.created_at * 1000);
 
+    // Create source status icon element
+    const sourceIconHtml = source === 'cloud' 
+      ? '<i class="ti ti-cloud" style="color:#3b82f6;font-size:12px;margin-right:4px;" title="云端文件"></i>'
+      : '<i class="ti ti-device-laptop" style="color:#9ca3af;font-size:12px;margin-right:4px;" title="本地文件"></i>';
+
     row.innerHTML = `
+      ${sourceIconHtml}
       <i class="ti ${icon} rb-file-item-icon"></i>
       <div class="rb-file-item-info">
         <div class="rb-file-item-name">${file.filename}</div>
@@ -897,54 +903,56 @@ export function initFileManager() {
     body.innerHTML = '';
     const store = _loadStore();
 
-    // Deduplicate by filename — keep the entry with most info (prefer fm_* over cell-id)
-    const byFilename = new Map(); // filename → {key, entry}
+    // Deduplicate local entries by filename — keep the entry with most info (prefer fm_* over cell-id)
+    const byFilename = new Map(); // filename → {key, entry, source: 'local'}
     Object.entries(store).forEach(([key, entry]) => {
       if (!entry?.filename) return;
       const existing = byFilename.get(entry.filename);
       // Prefer fm_* entries (file-manager owned) over cell-id entries
       if (!existing || key.startsWith('fm_')) {
-        byFilename.set(entry.filename, { key, entry });
+        byFilename.set(entry.filename, { key, entry, source: 'local', timestamp: entry.savedAt || Date.now() });
       }
     });
 
-    const dedupedEntries = [...byFilename.values()];
+    const localDataFiles = [...byFilename.values()];
 
-    // 云端文件（登录后显示）
-    let cloudFilenames = new Set();
+    // Fetch cloud files (if logged in)
+    let cloudDataFiles = [];
     if (window.authClient?.isLoggedIn()) {
       const cloudFiles = await _fetchCloudFiles();
-      if (cloudFiles.length > 0) {
-        const cloudSec = _makeSection('云端文件', 'ti-cloud', false);
-        
-        // 收集云端文件名用于去重
-        cloudFiles.forEach(f => cloudFilenames.add(f.filename));
-        
-        const dataFiles = cloudFiles.filter(f => f.file_type === 'data');
-        const codeFiles2 = cloudFiles.filter(f => f.file_type === 'code');
-        
-        if (dataFiles.length > 0) {
-          dataFiles.forEach(f => cloudSec.body.appendChild(_makeCloudFileItem(f)));
-        }
-        
-        if (codeFiles2.length > 0) {
-          codeFiles2.forEach(f => cloudSec.body.appendChild(_makeCloudFileItem(f)));
-        }
-        
-        body.appendChild(cloudSec.el);
-      }
+      cloudDataFiles = cloudFiles
+        .filter(f => f.file_type === 'data')
+        .map(f => ({ 
+          file: f, 
+          source: 'cloud', 
+          filename: f.filename,
+          timestamp: (f.created_at ?? 0) * 1000  // Convert to ms
+        }));
     }
 
-    // Section: 数据文件（去重：排除云端文件中已有的）
-    const filteredEntries = dedupedEntries.filter(({ entry }) => !cloudFilenames.has(entry.filename));
-    const sec = _makeSection('数据文件', 'ti-database', filteredEntries.length === 0);
-    if (filteredEntries.length === 0) {
+    // Merge & deduplicate: cloud files take priority over local
+    const cloudFilenames = new Set(cloudDataFiles.map(f => f.filename));
+    const filteredLocalFiles = localDataFiles.filter(f => !cloudFilenames.has(f.entry.filename));
+    
+    const allDataFiles = [...cloudDataFiles, ...filteredLocalFiles];
+    // Sort by timestamp, newest first
+    allDataFiles.sort((a, b) => b.timestamp - a.timestamp);
+
+    // Section: 数据文件 (unified, with source icons)
+    const sec = _makeSection('数据文件', 'ti-database', allDataFiles.length === 0);
+    if (allDataFiles.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'rb-file-placeholder';
       empty.textContent = '还没有导入文件 — 点击上方"导入"按钮添加';
       sec.body.appendChild(empty);
     } else {
-      filteredEntries.forEach(({ key, entry }) => sec.body.appendChild(_makeFileItem(key, entry)));
+      allDataFiles.forEach(item => {
+        if (item.source === 'cloud') {
+          sec.body.appendChild(_makeCloudFileItem(item.file, 'cloud'));
+        } else {
+          sec.body.appendChild(_makeFileItem(item.key, item.entry, 'local'));
+        }
+      });
     }
     body.appendChild(sec.el);
 
@@ -1066,7 +1074,7 @@ export function initFileManager() {
     return { el, body: sBody };
   }
 
-  function _makeFileItem(storeKey, entry) {
+  function _makeFileItem(storeKey, entry, source = 'local') {
     const { varName, fileType, filename, rows, columns } = entry;
     const item = document.createElement('div');
     item.className = 'rb-file-item';
@@ -1076,6 +1084,13 @@ export function initFileManager() {
     const circle = document.createElement('span');
     circle.className = 'rb-file-select-circle';
     circle.innerHTML = `<i class="ti ti-check rb-file-check-icon"></i>`;
+
+    // ── Source status icon (cloud or local) ────────────────────────────────
+    const sourceIcon = document.createElement('i');
+    sourceIcon.className = source === 'cloud' ? 'ti ti-cloud' : 'ti ti-device-laptop';
+    sourceIcon.style.color = source === 'cloud' ? '#3b82f6' : '#9ca3af';
+    sourceIcon.style.fontSize = '12px';
+    sourceIcon.title = source === 'cloud' ? '云端文件' : '本地文件';
 
     const iconEl = document.createElement('i');
     iconEl.className = `ti ${TYPE_ICON[fileType] ?? 'ti-file'} rb-file-item-icon`;
@@ -1132,7 +1147,7 @@ export function initFileManager() {
       _smartClick();
     });
 
-    item.append(circle, iconEl, info, toNbBtn);
+    item.append(circle, sourceIcon, iconEl, info, toNbBtn);
 
     item.addEventListener('click', () => {
       if (_selectMode) {

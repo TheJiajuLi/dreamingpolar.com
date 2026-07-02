@@ -480,7 +480,24 @@ function _buildCloudFileManager(pane) {
     const nameEl = document.createElement('button');
     nameEl.className = 'cfm-row-name';
     nameEl.title = '点击下载';
-    nameEl.textContent = filename;
+    
+    // Create name container with cloud icon
+    const nameContainer = document.createElement('span');
+    nameContainer.style.display = 'flex';
+    nameContainer.style.alignItems = 'center';
+    nameContainer.style.gap = '6px';
+    
+    const cloudIcon = document.createElement('i');
+    cloudIcon.className = 'ti ti-cloud';
+    cloudIcon.style.color = '#3b82f6';
+    cloudIcon.style.fontSize = '12px';
+    cloudIcon.title = '云端已同步';
+    
+    const nameText = document.createElement('span');
+    nameText.textContent = filename;
+    
+    nameContainer.append(cloudIcon, nameText);
+    nameEl.appendChild(nameContainer);
     nameEl.addEventListener('click', () => _cfmDownload(f));
 
     const metaEl = document.createElement('div');
