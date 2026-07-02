@@ -613,10 +613,11 @@ export function initFileManager() {
   deleteBtn.addEventListener('click', async () => {
     if (!_selected.size) return;
     
-    // Separate cloud and local files for deletion
+    // Separate cloud, local data, and code files
     const toDelete = Array.from(_selected);
     const cloudToDelete = toDelete.filter(key => key.startsWith('cloud_'));
-    const localToDelete = toDelete.filter(key => !key.startsWith('cloud_'));
+    const codeToDelete = toDelete.filter(key => key.startsWith('code_'));
+    const localToDelete = toDelete.filter(key => !key.startsWith('cloud_') && !key.startsWith('code_'));
 
     try {
       // Delete cloud files via API
@@ -635,7 +636,15 @@ export function initFileManager() {
         }
       }
 
-      // Delete local files from store
+      // Delete code files from code store
+      const codeStore = _loadCodeStore();
+      for (const key of codeToDelete) {
+        const filename = key.replace('code_', '');
+        delete codeStore[filename];
+      }
+      if (codeToDelete.length > 0) _saveCodeStore(codeStore);
+
+      // Delete local data files from store
       const store = _loadStore();
       for (const key of localToDelete) {
         const filename = store[key]?.filename;
@@ -1071,6 +1080,11 @@ export function initFileManager() {
     const item = document.createElement('div');
     item.className = 'rb-file-item rb-code-file-item';
 
+    // ── Select circle (visible in select mode) ────────────────────────────
+    const circle = document.createElement('span');
+    circle.className = 'rb-file-select-circle';
+    circle.innerHTML = `<i class="ti ti-check rb-file-check-icon"></i>`;
+
     const iconEl = document.createElement('i');
     iconEl.className = `ti ${LANG_ICON[language] ?? 'ti-file-code'} rb-file-item-icon`;
     iconEl.style.color = LANG_COLOR[language] ?? '#6366f1';
@@ -1096,13 +1110,16 @@ export function initFileManager() {
     insertBtn.title = '插入到 Notebook';
     insertBtn.innerHTML = `<i class="ti ti-corner-down-left"></i>`;
 
-    // Delete button
+    // Delete button (only shown in non-select mode)
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'rb-file-action-btn';
     deleteBtn.title = '删除';
     deleteBtn.innerHTML = `<i class="ti ti-trash"></i>`;
 
+    const codeKey = `code_${filename}`;
+
     function _doInsert() {
+      if (_selectMode) return;
       document.dispatchEvent(new CustomEvent('nb-code-file-click', {
         detail: { filename, language, code },
       }));
@@ -1110,12 +1127,30 @@ export function initFileManager() {
       setTimeout(() => item.classList.remove('rb-file-item--flash'), 600);
     }
 
-    insertBtn.addEventListener('click', e => { e.stopPropagation(); _doInsert(); });
-    item.addEventListener('click', _doInsert);
+    insertBtn.addEventListener('click', e => { 
+      e.stopPropagation(); 
+      _doInsert(); 
+    });
 
-    // Delete button click
+    item.addEventListener('click', () => {
+      if (_selectMode) {
+        if (_selected.has(codeKey)) {
+          _selected.delete(codeKey);
+          item.classList.remove('rb-file-item--selected');
+        } else {
+          _selected.add(codeKey);
+          item.classList.add('rb-file-item--selected');
+        }
+        _updateDeleteBar();
+        return;
+      }
+      _doInsert();
+    });
+
+    // Delete button click (legacy, for non-select mode)
     deleteBtn.addEventListener('click', e => {
       e.stopPropagation();
+      if (_selectMode) return;
       if (!confirm(`删除代码文件 \"${filename}\"？`)) return;
       const store = _loadCodeStore();
       delete store[filename];
@@ -1126,6 +1161,7 @@ export function initFileManager() {
     // Delete via right-click context menu (simple confirm)
     item.addEventListener('contextmenu', e => {
       e.preventDefault();
+      if (_selectMode) return;
       if (!confirm(`删除代码文件 "${filename}"？`)) return;
       const store = _loadCodeStore();
       delete store[filename];
@@ -1133,7 +1169,7 @@ export function initFileManager() {
       _refresh().catch(console.error);
     });
 
-    item.append(iconEl, info, insertBtn, deleteBtn);
+    item.append(circle, iconEl, info, insertBtn, deleteBtn);
     return item;
   }
 
