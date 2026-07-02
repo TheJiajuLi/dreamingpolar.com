@@ -259,6 +259,7 @@
       gap: 8px;
       font-size: 13px;
       color: var(--muted);
+      text-decoration: none;
     }
 
     .avatar {
@@ -430,6 +431,10 @@
       return t.author_name || t.username || t.author?.username || '匿名作者';
     }
 
+    function tutorialAuthorUsername(t) {
+      return t.author_username || t.username || t.author?.username || '';
+    }
+
     function tutorialAuthorAvatar(t) {
       return t.author_avatar || t.avatar_url || t.author?.avatar || '';
     }
@@ -457,6 +462,7 @@
       const summary = tutorialSummary(t);
       const tags = tutorialTags(t).slice(0, 5);
       const author = tutorialAuthor(t);
+      const authorUsername = tutorialAuthorUsername(t);
       const avatar = tutorialAuthorAvatar(t);
       const cover = tutorialCover(t);
       const stats = tutorialStats(t);
@@ -469,6 +475,10 @@
         ? `<span class="avatar"><img src="${esc(avatar)}" alt="${esc(author)}"></span>`
         : `<span class="avatar">${esc(initials(author))}</span>`;
 
+      const authorLink = authorUsername
+        ? `/community/user/${encodeURIComponent(authorUsername)}`
+        : '#';
+
       const coverHtml = cover
         ? `<img class="cover" src="${esc(cover)}" alt="${esc(title)}">`
         : '<div class="cover"></div>';
@@ -478,7 +488,7 @@
           ${coverHtml}
           <div class="content">
             <h3 class="title">${esc(title)}</h3>
-            <div class="author">${avatarHtml}<span>${esc(author)}</span></div>
+            <a class="author" href="${authorLink}">${avatarHtml}<span>${esc(author)}</span></a>
             <p class="summary">${esc(summary)}</p>
             <div class="badge-list">${badgeHtml}</div>
             <div class="meta">

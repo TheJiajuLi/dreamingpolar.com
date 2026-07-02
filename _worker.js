@@ -4,6 +4,9 @@ export default {
     if (url.pathname === '/community') {
       return env.ASSETS.fetch(new Request(new URL('/community.html', url), request));
     }
+    if (url.pathname.startsWith('/community/user/')) {
+      return env.ASSETS.fetch(new Request(new URL('/profile.html', url), request));
+    }
     if (url.pathname.startsWith('/community/')) {
       return env.ASSETS.fetch(new Request(new URL('/tutorial.html', url), request));
     }
