@@ -1322,21 +1322,33 @@ export function initFileManager() {
   document.addEventListener('datasets-reloaded',  () => _hideKernelBanner());
 
   // ── Track active screen → update action button labels live ────────────────
-  document.addEventListener('screen-opened',    ({ detail: { id } }) => {
-    _activeScreenId = id;
-    _refreshAllActionBtns();
-    // 更新云端文件的操作按钮meta
+  // Helper: update cloud file action buttons (called on screen change)
+  function _updateCloudActionBtns() {
     document.querySelectorAll('.rb-inject-cloud').forEach(btn => {
       const meta = _getCloudActionMeta();
       btn.title = meta.label;
       btn.setAttribute('aria-label', meta.label);
       btn.innerHTML = meta.icon.startsWith('<') ? meta.icon : `<i class="ti ${meta.icon}"></i>`;
     });
+  }
+
+  document.addEventListener('screen-opened',    ({ detail: { id } }) => {
+    _activeScreenId = id;
+    _refreshAllActionBtns();
+    _updateCloudActionBtns();
   });
   document.addEventListener('screen-closed',    ({ detail: { id } }) => {
-    if (_activeScreenId === id) { _activeScreenId = null; _refreshAllActionBtns(); }
+    if (_activeScreenId === id) { 
+      _activeScreenId = null; 
+      _refreshAllActionBtns();
+      _updateCloudActionBtns();  // 屏幕关闭时也要更新云端文件按钮
+    }
   });
   document.addEventListener('screen-minimized', ({ detail: { id } }) => {
-    if (_activeScreenId === id) { _activeScreenId = null; _refreshAllActionBtns(); }
+    if (_activeScreenId === id) { 
+      _activeScreenId = null; 
+      _refreshAllActionBtns();
+      _updateCloudActionBtns();  // 屏幕最小化时也要更新云端文件按钮
+    }
   });
 }
