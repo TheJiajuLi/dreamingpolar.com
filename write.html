@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>写教程 - Dreaming Polar</title>
+  <link rel="icon" href="assets/app_logo/favicon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <style>
+    :root {
+      --bg: #f4f7fc;
+      --panel: #ffffff;
+      --line: #d8e2ef;
+      --text: #102640;
+      --muted: #5f748f;
+      --brand: #1f6fff;
+      --shadow: 0 12px 24px rgba(16, 38, 64, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 420px at 100% -10%, #dcecff 0%, rgba(220, 236, 255, 0) 60%),
+        var(--bg);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 10px;
+    }
+
+    .back-link:hover { background: #eef4ff; color: #23476f; }
+
+    #title-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+    }
+
+    #title-input:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(31, 111, 255, 0.14);
+    }
+
+    .actions {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 72px 1fr 38%;
+      gap: 12px;
+      padding: 12px;
+      min-height: calc(100vh - 66px);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .block-tools {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+      align-items: center;
+    }
+
+    .tool-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #355577;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .tool-btn:hover { background: #f1f6ff; border-color: #b6cdf4; }
+
+    .editor,
+    .preview {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .panel-head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--muted);
+      background: #fafcff;
+    }
+
+    .panel-body {
+      padding: 14px;
+      overflow: auto;
+      min-height: 0;
+      flex: 1;
+    }
+
+    .block-placeholder {
+      border: 1px dashed #b8cce8;
+      border-radius: 12px;
+      background: #fbfdff;
+      color: #6b83a0;
+      padding: 16px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .preview-placeholder {
+      min-height: 180px;
+      border-radius: 12px;
+      border: 1px dashed #bfd2ef;
+      background: linear-gradient(180deg, #fcfeff 0%, #f7fbff 100%);
+      padding: 16px;
+      color: #6e86a3;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 64px 1fr;
+        grid-template-rows: 1fr 380px;
+      }
+
+      .preview {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .actions { justify-content: flex-end; }
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr 320px;
+      }
+
+      .block-tools {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back-link" href="/community"><i class="ti ti-arrow-left"></i>返回社区</a>
+    <input id="title-input" type="text" placeholder="输入教程标题...">
+    <div class="actions">
+      <button class="btn" type="button">保存草稿</button>
+      <button class="btn btn-primary" type="button">发布</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel block-tools" aria-label="Block 工具栏">
+      <button class="tool-btn" title="文本"><i class="ti ti-align-left"></i></button>
+      <button class="tool-btn" title="代码"><i class="ti ti-code"></i></button>
+      <button class="tool-btn" title="公式"><i class="ti ti-math"></i></button>
+      <button class="tool-btn" title="图片"><i class="ti ti-photo"></i></button>
+      <button class="tool-btn" title="标题"><i class="ti ti-heading"></i></button>
+      <button class="tool-btn" title="提示框"><i class="ti ti-bulb"></i></button>
+    </aside>
+
+    <section class="panel editor">
+      <div class="panel-head">编辑区（Block 列表）</div>
+      <div class="panel-body">
+        <div class="block-placeholder">标题 Block（示例）</div>
+        <div class="block-placeholder">正文文本 Block（示例）</div>
+        <div class="block-placeholder">代码 Block（示例）</div>
+      </div>
+    </section>
+
+    <section class="panel preview">
+      <div class="panel-head">预览区</div>
+      <div class="panel-body">
+        <div class="preview-placeholder">
+          <strong>实时预览（骨架）</strong><br>
+          后续将在这里渲染教程内容，包括文本、代码、公式和图片。
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
