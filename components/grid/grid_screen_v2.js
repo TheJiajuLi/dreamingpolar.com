@@ -581,54 +581,6 @@ function setupGridScreen() {
     return sources;
   }
 
-  async function _getAvailableSourcesWithCloud() {
-    const local = _getAvailableSources();
-    if (!window.authClient?.isLoggedIn?.()) return local;
-
-    try {
-      const token = window.authClient.getAccessToken?.();
-      if (!token) return local;
-
-      const res = await fetch(
-        'https://api.dreamingpolar.com/auth/files',
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) return local;
-
-      const cloudJson = await res.json();
-      const cloudFiles = Array.isArray(cloudJson) ? cloudJson : [];
-      const seen = new Map();
-      cloudFiles
-        .filter(f => f?.file_type === 'data' && f?.filename && f?.id)
-        .sort((a, b) => {
-          const at = Date.parse(a?.created_at || 0) || 0;
-          const bt = Date.parse(b?.created_at || 0) || 0;
-          return bt - at;
-        })
-        .forEach(f => {
-          if (!seen.has(f.filename)) seen.set(f.filename, f);
-        });
-
-      const cloudSources = [...seen.values()]
-        .map(f => ({
-          varName: String(f.filename)
-            .replace(/\.[^/.]+$/, '')
-            .replace(/[^a-zA-Z0-9_]/g, '_') || 'df',
-          filename: f.filename,
-          fileId: f.id,
-          source: 'cloud',
-          size_bytes: Number(f.size_bytes || 0),
-          created_at: Number(f.created_at || 0),
-          rows: null,
-        }))
-        .filter(src => !local.some(s => (s.filename || s.name) === src.filename));
-
-      return [...local, ...cloudSources];
-    } catch {
-      return local;
-    }
-  }
-
   // ── Open dataset in new tab ───────────────────────────────────────────────
   function _openDataset(source) {
     const ds = _normalise(source);
@@ -1261,9 +1213,50 @@ function setupGridScreen() {
   });
 
   // ── Dataset selector overlay ──────────────────────────────────────────────
-  async function _showDatasetOverlay() {
+  async function _showDatasetOverlay(triggerEl) {
     document.getElementById('dp-grid-overlay')?.remove();
-    const sources = await _getAvailableSourcesWithCloud();
+    // 现有的本地 sources
+    const localSources = _getAvailableSources();
+
+    // 新增：拉取云端文件
+    let cloudSources = [];
+    if (window.authClient?.isLoggedIn?.()) {
+      try {
+        const token = window.authClient.getAccessToken?.();
+        const res = await fetch(
+          'https://api.dreamingpolar.com/auth/files',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok) {
+          const files = await res.json();
+          const seen = new Map();
+          (Array.isArray(files) ? files : [])
+            .filter(f => f?.file_type === 'data' && f?.filename && f?.id)
+            .sort((a, b) => (Number(b.created_at) || 0) - (Number(a.created_at) || 0))
+            .forEach(f => {
+              if (!seen.has(f.filename)) seen.set(f.filename, f);
+            });
+          cloudSources = [...seen.values()].map(f => ({
+            _from: 'cloud',
+            name: f.filename,
+            varName: String(f.filename).replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_]/g, '_') || 'df',
+            filename: f.filename,
+            fileId: f.id,
+            size_bytes: Number(f.size_bytes || 0),
+            created_at: Number(f.created_at || 0),
+            rows: null,
+            columns: null,
+          }));
+        }
+      } catch (e) {
+        console.warn('[grid] cloud files fetch failed:', e);
+      }
+    }
+
+    // 合并：云端排在本地后面，并过滤本地已有同名文件
+    const localNames = new Set(localSources.map(s => s.name ?? s.filename));
+    const newCloudSources = cloudSources.filter(s => !localNames.has(s.name));
+    const sources = [...localSources, ...newCloudSources];
     const overlay = document.createElement('div');
     overlay.id = 'dp-grid-overlay';
     overlay.style.cssText =
@@ -1335,12 +1328,12 @@ function setupGridScreen() {
       modal.appendChild(empty);
     } else {
       sources.forEach(src => {
-        const item = src.source === 'cloud'
+        const item = src._from === 'cloud'
           ? _renderCloudItem(src)
           : _renderLocalItem(src);
         item.addEventListener('click', async () => {
           overlay.remove();
-          if (src.source === 'cloud') {
+          if (src._from === 'cloud') {
             try {
               const token = window.authClient?.getAccessToken?.();
               if (!token) return;
