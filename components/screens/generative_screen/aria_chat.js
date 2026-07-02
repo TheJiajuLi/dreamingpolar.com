@@ -175,6 +175,7 @@ const _SYSTEM =
   `图表指令（重要）：\n` +
   `• 当建议查看某数值列的分布时，在回答最后一行单独写：CHART: histogram(列名)\n` +
   `• 当建议比较两列关系时，在回答最后一行单独写：CHART: scatter(列名1, 列名2)\n` +
+  `• 图表必须包含清晰的轴标签：title（图表标题）、xAxisLabel（X轴说明）、yAxisLabel（Y轴说明）\n` +
   `• 这一行必须独立，不含其他文字，不加标点\n` +
   `• 只在真正有帮助时才写，不要每次都写`;
 
@@ -206,7 +207,10 @@ function _histogramConfig(colName, ds) {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false },
         title: { display: true, text: `分布：${colName}`, font: { size: 11 } } },
-      scales: { x: { ticks: { maxRotation: 35, maxTicksLimit: 10 } } },
+      scales: {
+        x: { title: { display: true, text: '数值范围', font: { size: 10 } }, ticks: { maxRotation: 35, maxTicksLimit: 10 } },
+        y: { title: { display: true, text: '频数', font: { size: 10 } } },
+      },
     },
   };
 }

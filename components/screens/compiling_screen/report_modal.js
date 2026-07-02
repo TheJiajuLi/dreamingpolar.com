@@ -487,7 +487,7 @@ function _typesetMath(el) {
     renderMathInElement(el, {
       delimiters: [
         { left: '$$', right: '$$', display: true  },
-        { left: '$',  right: '$',  display: false },
+        { left: '\\(', right: '\\)', display: false },
       ],
       throwOnError: false,
       ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
