@@ -1,22 +1,22 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === '/community') {
-      url.pathname = '/community.html';
-      return env.ASSETS.fetch(new Request(url, request));
+    try {
+      if (url.pathname === '/community') {
+        return env.ASSETS.fetch('https://assets.local/community.html');
+      }
+      if (url.pathname.startsWith('/community/user/')) {
+        return env.ASSETS.fetch('https://assets.local/profile.html');
+      }
+      if (url.pathname.startsWith('/community/')) {
+        return env.ASSETS.fetch('https://assets.local/tutorial.html');
+      }
+      if (url.pathname === '/write') {
+        return env.ASSETS.fetch('https://assets.local/write.html');
+      }
+      return env.ASSETS.fetch(request);
+    } catch (e) {
+      return new Response(`Error: ${e.message}`, { status: 500 });
     }
-    if (url.pathname.startsWith('/community/user/')) {
-      url.pathname = '/profile.html';
-      return env.ASSETS.fetch(new Request(url, request));
-    }
-    if (url.pathname.startsWith('/community/')) {
-      url.pathname = '/tutorial.html';
-      return env.ASSETS.fetch(new Request(url, request));
-    }
-    if (url.pathname === '/write') {
-      url.pathname = '/write.html';
-      return env.ASSETS.fetch(new Request(url, request));
-    }
-    return env.ASSETS.fetch(request);
   },
 };
