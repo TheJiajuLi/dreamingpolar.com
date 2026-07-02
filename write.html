@@ -575,6 +575,51 @@
       outline: none;
     }
 
+    .img-upload-options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .upload-option {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+    }
+
+    .upload-option.upload-pick {
+      cursor: pointer;
+    }
+
+    .upload-option.upload-pick:hover {
+      border-color: #abc5eb;
+      background: #f7fbff;
+    }
+
+    .upload-divider {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .upload-option.url-option input {
+      width: 100%;
+      border: 0;
+      outline: none;
+      font-size: 14px;
+      background: transparent;
+      font-family: inherit;
+    }
+
+    .upload-status {
+      font-size: 12px;
+      color: #4f6888;
+      min-height: 16px;
+    }
+
     @media (max-width: 1100px) {
       .layout {
         grid-template-columns: 64px 1fr;
@@ -1054,15 +1099,51 @@
     }
 
     async function promptImageBlock() {
-      const result = await openModal('图片 Block（URL）', `
-        <label class="modal-field">图片 URL
-          <input name="imageUrl" placeholder="https://...">
-        </label>
-        <label class="modal-field">图片说明
-          <input name="caption" placeholder="可选">
-        </label>
+      const waitResult = openModal('图片 Block', `
+        <div class="img-upload-options">
+          <label class="upload-option upload-pick">
+            <i class="ti ti-upload"></i>
+            <span>本地上传</span>
+            <input type="file" accept="image/*" style="display:none" id="img-file-input">
+          </label>
+          <div class="upload-divider">或</div>
+          <div class="upload-option url-option">
+            <i class="ti ti-link"></i>
+            <input type="text" name="imageUrl" placeholder="粘贴图片URL..." id="img-url-input">
+          </div>
+          <label class="modal-field">图片说明
+            <input name="caption" placeholder="可选">
+          </label>
+          <div class="upload-status" id="img-upload-status"></div>
+        </div>
       `);
-      if (!result) return;
+
+      const fileInput = document.getElementById('img-file-input');
+      const statusEl = document.getElementById('img-upload-status');
+      if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+
+          if (statusEl) statusEl.textContent = '上传中...';
+          els.modalConfirm.disabled = true;
+          els.modalCancel.disabled = true;
+
+          try {
+            const imageUrl = await uploadImageToCOS(file);
+            addBlock({ type: 'image', imageUrl, caption: '' });
+            closeModal({ uploaded: true });
+          } catch (err) {
+            if (statusEl) statusEl.textContent = `上传失败：${err.message}`;
+          } finally {
+            els.modalConfirm.disabled = false;
+            els.modalCancel.disabled = false;
+          }
+        });
+      }
+
+      const result = await waitResult;
+      if (!result || result.uploaded) return;
       addBlock({ type: 'image', imageUrl: result.imageUrl || '', caption: result.caption || '' });
     }
 
@@ -1197,6 +1278,11 @@
       return m ? decodeURIComponent(m[1]) : '';
     }
 
+    function getDpAccessCookie() {
+      const m = document.cookie.match(/(?:^|;\s*)dp_access=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+
     function getTokenFromLocalStorage() {
       const keys = ['dp-access-token', 'accessToken', 'token', 'dp-token'];
       for (const k of keys) {
@@ -1210,7 +1296,42 @@
       const fromClient = window.authClient?.getAccessToken?.();
       if (fromClient) return fromClient;
       if (latestToken) return latestToken;
-      return getTokenFromCookie() || getTokenFromLocalStorage();
+      return getTokenFromCookie() || getDpAccessCookie() || getTokenFromLocalStorage();
+    }
+
+    function resolveUploadedImageUrl(data) {
+      const directUrl = data?.url || data?.file_url || data?.fileUrl || data?.public_url || data?.publicUrl;
+      if (directUrl) return directUrl;
+
+      const key = data?.cos_key || data?.cosKey || data?.id;
+      if (!key) throw new Error('上传成功但未返回图片地址');
+
+      if (String(key).startsWith('http://') || String(key).startsWith('https://')) {
+        return String(key);
+      }
+
+      return `https://dp-1317483118.cos.ap-hongkong.myqcloud.com/users/${key}`;
+    }
+
+    async function uploadImageToCOS(file) {
+      const token = getToken();
+      if (!token) throw new Error('请先登录');
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('https://api.dreamingpolar.com/auth/files/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.message || `上传失败: ${res.status}`);
+      }
+
+      return resolveUploadedImageUrl(data);
     }
 
     async function ensureToken() {

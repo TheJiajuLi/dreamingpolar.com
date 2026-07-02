@@ -13,6 +13,9 @@
       --text: #13233a;
       --muted: #5c6f88;
       --line: #d9e2ee;
+      --surface-2: #ffffff;
+      --border: #d9e2ee;
+      --border-strong: #c3d2e5;
       --brand: #1f6fff;
       --brand-soft: #e8f0ff;
       --pill: #eef4ff;
@@ -139,11 +142,36 @@
       margin: 20px auto 40px;
     }
 
-    .filters {
+    .filter-bar {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      min-height: 48px;
+      background: var(--surface-2);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .filter-sep {
+      width: 0.5px;
+      height: 20px;
+      background: var(--border-strong);
+      flex-shrink: 0;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .filter-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
     }
 
     .pill {
@@ -165,11 +193,24 @@
       font-weight: 600;
     }
 
-    .tag-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
+    .tag {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s ease;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .tag.active {
+      background: var(--brand-soft);
+      border-color: #bdd3ff;
+      color: var(--brand);
+      font-weight: 600;
     }
 
     .cards {
@@ -320,20 +361,22 @@
   </header>
 
   <main class="container">
-    <section class="filters" id="main-filters">
-      <button class="pill active" data-filter="all">全部</button>
-      <button class="pill" data-filter="latest">最新</button>
-      <button class="pill" data-filter="hot">热门</button>
-      <button class="pill" data-filter="favorites">我的收藏</button>
-    </section>
-
-    <section class="tag-row" id="tag-filters">
-      <button class="pill" data-tag="Python">Python</button>
-      <button class="pill" data-tag="数据分析">数据分析</button>
-      <button class="pill" data-tag="可视化">可视化</button>
-      <button class="pill" data-tag="机器学习">机器学习</button>
-      <button class="pill" data-tag="LaTeX">LaTeX</button>
-      <button class="pill" data-tag="入门">入门</button>
+    <section class="filter-bar">
+      <div class="filter-tabs" id="main-filters">
+        <button class="pill active" data-filter="all">全部</button>
+        <button class="pill" data-filter="latest">最新</button>
+        <button class="pill" data-filter="hot">热门</button>
+        <button class="pill" data-filter="favorites">我的收藏</button>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-tags" id="tag-filters">
+        <button class="tag" data-tag="Python">Python</button>
+        <button class="tag" data-tag="数据分析">数据分析</button>
+        <button class="tag" data-tag="可视化">可视化</button>
+        <button class="tag" data-tag="机器学习">机器学习</button>
+        <button class="tag" data-tag="LaTeX">LaTeX</button>
+        <button class="tag" data-tag="入门">入门</button>
+      </div>
     </section>
 
     <section id="cards" class="cards"></section>
@@ -511,11 +554,11 @@
       });
 
       document.getElementById('tag-filters').addEventListener('click', (e) => {
-        const btn = e.target.closest('.pill[data-tag]');
+        const btn = e.target.closest('.tag[data-tag]');
         if (!btn) return;
         const selected = btn.dataset.tag;
         tutorialsState.tag = tutorialsState.tag === selected ? null : selected;
-        document.querySelectorAll('#tag-filters .pill').forEach(x => x.classList.toggle('active', x === btn && tutorialsState.tag === selected));
+        document.querySelectorAll('#tag-filters .tag').forEach(x => x.classList.toggle('active', x === btn && tutorialsState.tag === selected));
         applyFilters();
       });
 
