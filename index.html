@@ -3,24 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script>
-    (function() {
-      var params = new URLSearchParams(location.search);
-      var fromLanding = params.get('from') === 'landing';
-      var hasUser     = localStorage.getItem('dp-auth-user');
-      var guestAccess = sessionStorage.getItem('dp-guest-access') === '1';
-
-      // Allow entry: logged in, coming from landing (post-login), or clicked 免费试用
-      if (!fromLanding && !hasUser && !guestAccess) {
-        window.location.replace('/landing.html');
-        return;
-      }
-
-      // Clean one-time flags
-      if (fromLanding) history.replaceState({}, '', location.pathname);
-      if (guestAccess) sessionStorage.removeItem('dp-guest-access');
-    })();
-  </script>
+  <script src="/components/pages/index/access_guard.js"></script>
 
   <title>Dreaming Polar — 浏览器里的 Python · AI 研究环境</title>
   <meta name="description" content="在浏览器中直接运行 Python、绘制图表，与 AI 助手实时协作。Dreaming Polar 是专为探索与研究设计的交互式科学计算平台，无需安装任何软件。">
@@ -106,22 +89,8 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <!-- Chart.js — loaded on-demand by generative_screen charts view -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
-  <script>
-    window.BASE = window.location.hostname === 'thejiajuli.github.io' ? '/dreamingpolar.com' : '';
-    // Sync: apply saved theme before first paint so the veil matches the user's palette.
-    // Runs during HTML parse — before any element is rendered.
-    try { var _t = localStorage.getItem('theme'); if (_t) document.documentElement.setAttribute('data-theme', _t); } catch (_) {}
-  </script>
-  <style>
-    /* Full-viewport veil — appears before any JS runs. hero_loader.js removes it. */
-    #dp-veil {
-      position: fixed; inset: 0; z-index: 9999;
-      background: #f3f5f8;          /* light default */
-    }
-    [data-theme="dark"]   #dp-veil { background: #0d1117; }
-    [data-theme="grey"]   #dp-veil { background: #22272e; }
-    [data-theme="aurora"] #dp-veil { background: #07071a; }
-  </style>
+  <script src="/components/pages/index/base_theme.js"></script>
+  <link rel="stylesheet" href="/components/pages/index/prepaint_veil.css">
 </head>
 <body>
 
@@ -196,10 +165,7 @@
   <script src="hooks/theme_controller_hook.js" type="module"></script>
   <script src="components/theme_controller/theme_controller.js" type="module"></script>
   <script src="components/font_switcher/font_switcher.js" type="module"></script>
-  <script type="module">
-    import { initI18n } from './components/shared/i18n.js';
-    await initI18n();
-  </script>
+  <script type="module" src="/components/pages/index/i18n_init.js"></script>
   <script src="components/mobile/mobile_page_header_buttons_wrapper/mobile_page_header_buttons_wrapper.js" type="module"></script>
   <script src="components/screens/content_screen/content_screen.js" type="module"></script>
   <script src="components/screens/coding_screen/coding_screen.js" type="module"></script>
@@ -209,21 +175,9 @@
   <script src="components/hero_loader/hero_loader.js" type="module"></script>
   <script src="components/screens/generative_screen/generative_screen.js" type="module"></script>
   <script src="components/right_bar/right_bar.js" type="module"></script>
-  <script type="module">
-    import { initFileManager } from './components/right_bar/file_manager.js';
-    initFileManager();
-    import { initDataCatalog } from './components/dataset_catalog/dataset_catalog.js';
-    initDataCatalog();
-  </script>
+  <script type="module" src="/components/pages/index/file_manager_catalog_init.js"></script>
   <script src="components/compiler/kernel_boot_screen.js" type="module"></script>
-  <script type="module">
-    import { initDashboard } from './components/empty_state_dashboard/empty_state_dashboard.js';
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initDashboard);
-    } else {
-      initDashboard();
-    }
-  </script>
+  <script type="module" src="/components/pages/index/dashboard_init.js"></script>
   <script src="components/terminal/terminal.js" type="module"></script>
   <script src="components/ai/ai_header.js" type="module"></script>
   <script src="components/ai/ai_chat_screen/ai_chat_screen.js" type="module"></script>
@@ -237,18 +191,7 @@
   <link rel="stylesheet" href="components/profile/profile_screen.css">
   <script src="components/profile/profile_screen.js" type="module"></script>
 
-  <script type="module">
-    // Handle ?token= reset-password link (fallback if auth_client loads late)
-    const _rt = new URLSearchParams(location.search).get('token');
-    if (_rt) {
-      // auth_client.js sets window.authClient — wait for it via DOMContentLoaded
-      // then call showResetPassword; guard in _buildResetPage prevents double render
-      const _show = () => window.authClient?.showResetPassword(_rt);
-      document.readyState === 'loading'
-        ? document.addEventListener('DOMContentLoaded', _show)
-        : _show();
-    }
-  </script>
+  <script type="module" src="/components/pages/index/reset_token_init.js"></script>
 
 </body>
 </html>

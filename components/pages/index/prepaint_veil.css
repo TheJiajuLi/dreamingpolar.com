@@ -1,0 +1,11 @@
+/* Full-viewport veil — appears before any JS runs. hero_loader.js removes it. */
+#dp-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #f3f5f8;
+}
+
+[data-theme="dark"] #dp-veil { background: #0d1117; }
+[data-theme="grey"] #dp-veil { background: #22272e; }
+[data-theme="aurora"] #dp-veil { background: #07071a; }

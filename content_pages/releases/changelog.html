@@ -6,60 +6,7 @@
 <title>更新日志 — Dreaming Polar</title>
 <link rel="icon" href="/assets/app_logo/favicon-32.png" type="image/png">
 <!-- No external CDN -->
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --a:#6366f1;--t:#0f172a;--m:#64748b;
-  --bd:#e2e8f0;--bg:#f8fafc;--s:#fff;--r:12px;--w:720px;
-  --green:#16a34a;--blue:#2563eb;
-}
-html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--t);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
-
-/* Header */
-.hdr{background:var(--s);position:sticky;top:0;z-index:100;box-shadow:0 1px 0 var(--bd),0 2px 8px rgba(0,0,0,0.04)}
-.hdr-inner{display:flex;align-items:center;gap:24px;padding:12px 28px;width:100%}
-.logo{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.nav-links{display:flex;align-items:center;gap:22px}
-.nav-links a{font-size:.86rem;color:var(--m);text-decoration:none;transition:color .15s}
-.nav-links a:hover,.nav-links a.active{color:var(--a)}
-.nav-links a.active{font-weight:600}
-.nav-spacer{flex:1}
-.btn-o{padding:7px 16px;border:1px solid var(--bd);border-radius:8px;background:var(--s);font-size:.86rem;color:var(--t);cursor:pointer;transition:border-color .15s}
-.btn-o:hover{border-color:var(--a);color:var(--a)}
-.btn-f{padding:7px 16px;border:none;border-radius:8px;background:var(--t);color:#fff;font-size:.86rem;font-weight:500;text-decoration:none;display:inline-flex;align-items:center}
-.btn-f:hover{opacity:.83}
-
-/* Page */
-.page{max-width:var(--w);margin:0 auto;padding:48px 24px 80px}
-.page-title{font-size:2rem;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
-.cur-ver{font-size:.88rem;color:var(--m);margin-bottom:40px}
-
-/* Version blocks */
-.cl-list{display:flex;flex-direction:column;gap:24px}
-.cl-ver{background:var(--s);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
-.cl-ver-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:18px 22px;background:var(--bg);border-bottom:1px solid var(--bd)}
-.ver-num{font-size:1rem;font-weight:800;color:var(--a)}
-.highlights{font-size:.84rem;color:var(--m);margin-left:10px}
-.rel-date{font-size:.8rem;color:var(--m)}
-.items{list-style:none;padding:14px 22px;display:flex;flex-direction:column;gap:9px}
-.item{display:flex;align-items:flex-start;gap:10px}
-.itag{flex-shrink:0;font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-top:3px}
-.t-new{background:rgba(22,163,74,.1);color:var(--green)}
-.t-improve{background:rgba(37,99,235,.1);color:var(--blue)}
-.t-fix{background:rgba(100,116,139,.1);color:var(--m)}
-.item-text{font-size:.9rem}
-
-/* Component versions */
-.comp-vers{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px}
-.comp-badge{font-size:.78rem;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.18);color:var(--a);border-radius:20px;padding:4px 12px;font-weight:500}
-
-/* Footer */
-footer{border-top:1px solid var(--bd);padding:22px;text-align:center;font-size:.8rem;color:var(--m)}
-footer a{color:var(--m)}footer a:hover{color:var(--a)}
-.end-note{text-align:center;padding:32px 0 0;font-size:.88rem;color:var(--m)}
-</style>
+<link rel="stylesheet" href="/components/pages/releases_changelog/releases_changelog.css">
 </head>
 <body>
 
@@ -96,38 +43,6 @@ footer a{color:var(--m)}footer a:hover{color:var(--a)}
 </footer>
 
 <script type="module" src="/components/auth/auth_modal.js"></script>
-<script>
-const TAG = { new: ['t-new','新功能'], improve: ['t-improve','优化'], fix: ['t-fix','修复'] };
-
-fetch('/content_pages/releases/releases.json')
-  .then(r => r.json())
-  .then(data => {
-    const c = data.current;
-
-    document.getElementById('cur-ver').textContent =
-      `Dreaming Polar v${c.app} · 最新发布：${c.released}`;
-
-    document.getElementById('comp-vers').innerHTML = [
-      c.aria, c.notebook, c.grid
-    ].map(v => `<span class="comp-badge">${v}</span>`).join('');
-
-    document.getElementById('cl-list').innerHTML = data.changelog.map(v => {
-      const items = v.items.map(item => {
-        const [cls, label] = TAG[item.type] ?? ['t-fix','修复'];
-        return `<li class="item"><span class="itag ${cls}">${label}</span><span class="item-text">${item.text}</span></li>`;
-      }).join('');
-      return `<div class="cl-ver">
-        <div class="cl-ver-hdr">
-          <div><span class="ver-num">v${v.version}</span><span class="highlights">${v.highlights}</span></div>
-          <span class="rel-date">${v.date}</span>
-        </div>
-        <ul class="items">${items}</ul>
-      </div>`;
-    }).join('');
-  })
-  .catch(() => {
-    document.getElementById('cl-list').textContent = '暂时无法加载';
-  });
-</script>
+<script src="/components/pages/releases_changelog/releases_changelog.js"></script>
 </body>
 </html>
