@@ -176,7 +176,10 @@ async function _preWriteInjectStore(py) {
 
   for (const entry of entries) {
     try {
-      writeToFS(entry.filename, entry.data, entry.fileType ?? 'csv');
+      const uint8 = entry.data instanceof Uint8Array
+        ? entry.data
+        : (Array.isArray(entry.data) ? new Uint8Array(entry.data) : entry.data);
+      writeToFS(entry.filename, uint8, entry.fileType ?? 'csv');
     } catch (err) {
       console.warn(`[inject-store] Failed to pre-write "${entry.filename}" to FS:`, err);
     }

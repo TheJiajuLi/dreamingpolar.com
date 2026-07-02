@@ -109,21 +109,54 @@ function _saveStore(store) {
   catch (e) { console.warn('[file-manager] localStorage quota exceeded:', e.message); }
 }
 
+function _upsertCloudInjectStore({
+  cloudId,
+  varName,
+  filename,
+  fileType,
+  data,
+  size,
+}) {
+  const store = _loadStore();
+  const filtered = Object.fromEntries(
+    Object.entries(store).filter(([, entry]) => entry?.filename !== filename)
+  );
+  const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+  filtered[`cloud_${cloudId}_${Date.now()}`] = {
+    varName,
+    filename,
+    fileType,
+    data: Array.from(bytes),
+    cloudId,
+    size,
+    uploadedAt: Date.now(),
+  };
+  _saveStore(filtered);
+}
+
 // ── Parse entry → dataset {columns, dtypes, rows} ─────────────────────────────
 async function _parseEntry(entry) {
   const { fileType, filename, data: raw, isBase64 } = entry;
   const isExcel = fileType === 'xlsx' || fileType === 'xls';
+  const isArrayData = Array.isArray(raw);
 
   if (isExcel) {
     const XLSX = await ensureXlsx();
-    const binary = atob(raw);
-    const bytes  = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    let bytes;
+    if (isArrayData) {
+      bytes = new Uint8Array(raw);
+    } else {
+      const binary = atob(raw);
+      bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    }
     const wb  = XLSX.read(bytes, { type: 'array' });
     const csv = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
     return parseToDataset(csv, filename);
   }
-  const text = isBase64 ? atob(raw) : raw;
+  const text = isArrayData
+    ? new TextDecoder().decode(new Uint8Array(raw))
+    : (isBase64 ? atob(raw) : raw);
   return parseToDataset(text, filename);
 }
 
@@ -726,15 +759,26 @@ export function initFileManager() {
           
           // Inject to kernel (read file locally)
           const buffer = await file.arrayBuffer();
+          const data = new Uint8Array(buffer);
           const varName = _resolveVarName(file.name);
           if (window.injectDataFrame) {
             await window.injectDataFrame(
               varName,
-              new Uint8Array(buffer),
+              data,
               fileType,
               file.name
             );
           }
+
+          // Sync cloud file to inject-store so refresh-time preloading can restore it.
+          _upsertCloudInjectStore({
+            cloudId: cloudFile.id,
+            varName,
+            filename: file.name,
+            fileType,
+            data,
+            size: file.size,
+          });
           
           // Record and notify
           document.dispatchEvent(new CustomEvent('nb-file-imported', {
@@ -1025,6 +1069,16 @@ export function initFileManager() {
           if (window.injectDataFrame) {
             await window.injectDataFrame(varName, data, ext, file.filename);
           }
+
+          // Sync cloud file to inject-store so refresh-time preloading can restore it.
+          _upsertCloudInjectStore({
+            cloudId: file.id,
+            varName,
+            filename: file.filename,
+            fileType: ext,
+            data,
+            size: file.size_bytes,
+          });
 
           // 统一走智能插入路径：FileTracker 检查 / 跳转 / 空白cell插入
           document.dispatchEvent(new CustomEvent('rb-file-smart-click', {
