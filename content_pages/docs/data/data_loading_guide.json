@@ -2,49 +2,34 @@
   "blocks": [
     {
       "label": "两种导入路径",
-      "code": "# Quick Analysis（左侧工具栏第三个图标）\n# → 📂 按钮 → 纯 JS 解析 → dataset_store → 即时可用，不等 Python\n# → 适合：对话提问、查看图表、快速浏览\n\n# Power Notebook（左侧工具栏第二个图标）\n# → 📂 按钮 → Pyodide 内核 → df 变量 → 可写 Python 代码\n# → 适合：建模、复杂分析、自定义可视化\n\n# 两者共享同一份 Pyodide 内核（df 变量互通）",
-      "result": "两种入口互不干扰：Quick Analysis 不会触发 Python 加载；Power Notebook 会等内核就绪，但能拿到可编程的 df 变量。",
+      "code": "# Quick Analysis\n# · 导入后立即可问 ARIA\n# · 适合快速探索与看图\n\n# Power Notebook\n# · 导入后得到可编程 DataFrame\n# · 适合清洗、特征工程、建模\n\n# DP Grid\n# · 适合看表、筛选、编辑和回写",
+      "result": "建议按场景选择入口，而不是固定只用一种方式。",
       "resultType": "text"
     },
     {
-      "label": "Quick Analysis — 导入多份文件",
+      "label": "支持格式与读取方式",
       "examples": [
         {
-          "code": "# 支持 CSV / Excel (.xlsx .xls)\n# 导入第一份文件：\n#   顶部出现文件名标签（橙色高亮 = 当前激活）\n#   聊天区出现绿色分隔线「📥 已加载 xxx.csv — N行×M列」\n#\n# 导入第二份文件：\n#   标签栏新增一个标签\n#   橙色分隔线显示新文件信息\n#\n# 切换数据集：点击标签\n#   聊天区出现切换分隔线\n#   之后的 ARIA 回答自动基于新数据集",
-          "result": "每张 ARIA 回答卡片底部都会标注「基于 xxx.csv · N行×M列」，方便区分哪些对话对应哪份数据。",
+          "code": "# 支持格式\n# · CSV\n# · Excel（.xlsx / .xls）\n# · JSON\n# · XML\n\n# Notebook 常见读取\nimport pandas as pd\ndf_csv  = pd.read_csv('a.csv')\ndf_xlsx = pd.read_excel('b.xlsx')\ndf_json = pd.read_json('c.json')\ndf_xml  = pd.read_xml('d.xml')",
+          "result": "文件名可直接用于读取；导入后通常会自动生成预览 Cell。",
           "resultType": "text"
         }
       ]
     },
     {
-      "label": "Power Notebook — 支持的文件格式",
+      "label": "云端文件工作流",
       "examples": [
         {
-          "code": "# CSV（默认）\n# 点击 cell 工具栏的 📂 按钮，选择 .csv 文件\n# 自动生成：\n# \"sales.csv\" → df (1000 rows, 5 cols)\nprint(df.shape)\ndf.head()",
-          "result": "CSV 使用 pd.read_csv()，pandas 按需加载，无需手动 import。",
-          "resultType": "text"
-        },
-        {
-          "code": "# JSON（新增）\n# 选择 .json 文件（支持 records、index、columns 等 orient 格式）\n# 自动生成：\n# \"users.json\" → df_users (50 rows, 4 cols)\nprint(df_users.dtypes)\ndf_users.head()",
-          "result": "JSON 使用 pd.read_json()，自动推断 orient。常见格式：[{...}, {...}]（records）或 {\"col\": {\"0\": val, ...}}（index）。",
-          "resultType": "text"
-        },
-        {
-          "code": "# Excel（新增）\n# 选择 .xlsx / .xls 文件\n# openpyxl 自动加载（首次约需几秒）\n# 自动生成：\n# \"report.xlsx\" → df_report (200 rows, 8 cols)\nprint(df_report.columns.tolist())\ndf_report.head()",
-          "result": "Excel 使用 pd.read_excel() + openpyxl，读取第一个 Sheet，保留原始数据类型（日期、数字格式不丢失）。多 Sheet 文件默认取 Sheet1；如需指定，目前需在 cell 里手动写 pd.read_excel('/tmp/...', sheet_name='Sheet2')。",
-          "resultType": "text"
-        },
-        {
-          "code": "# XML（新增）\n# 选择 .xml 文件\n# lxml 自动加载（首次约需几秒）\n# 自动生成：\n# \"data.xml\" → df_data (30 rows, 5 cols)\nprint(df_data.dtypes)\ndf_data.head()\n\n# 示例 XML 格式（pd.read_xml 要求有统一的行元素）：\n# <root>\n#   <row><id>1</id><name>Alice</name><age>25</age></row>\n#   <row><id>2</id><name>Bob</name><age>30</age></row>\n# </root>",
-          "result": "XML 使用 pd.read_xml() + lxml，每个子元素作为一行，标签名作为列名。注意：XML 必须有统一的行节点结构，否则 lxml 解析会报错并在输出面板明确提示。",
+          "code": "# 推荐流程\n# 1) 文件中心上传并保存到云端\n# 2) 在 Notebook / Grid 中从云端候选列表直接打开\n# 3) 刷新后自动恢复可用数据",
+          "result": "适合跨设备和多人协作场景，可减少重复导入。",
           "resultType": "text"
         }
       ]
     },
     {
-      "label": "DataFrame 面板（右侧小面板）",
-      "code": "# 点击右侧边栏的 📊 图标（表格图标）\n# 展开悬浮面板，实时显示：\n#   Rows    — 行数\n#   Columns — 列数\n#   Nulls   — 空值总数\n#   Memory  — 内存占用\n#\n# 数据来源：运行 Python 代码后自动刷新\n# （通过 globals().get('df') 读取内核里的 df 变量）",
-      "result": "DataFrame 面板只在 Power Notebook 路径下有意义（需要真正的 Python df 变量）。Quick Analysis 路径的数据在 dataset_store 里，不经过 Pyodide。",
+      "label": "常见导入问题排查",
+      "code": "# 1) 文件名含空格或特殊字符\n# 建议重命名后再导入（英文、数字、下划线）\n\n# 2) Excel 打不开\n# 检查是否受保护、是否损坏、是否极大文件\n\n# 3) XML 解析失败\n# 检查是否存在统一的行节点结构",
+      "result": "若导入成功但结果异常，优先检查列类型（日期/数字被识别为字符串）。",
       "resultType": "text"
     }
   ]

@@ -3,6 +3,7 @@ import { PAGES, FLAT_PAGES } from '../../../content_pages/pages.js';
 // ── Sidebar nav tree ────────────────────────────────────────────────────────────
 
 let _activeFile = null;
+let _activeTitle = null;
 
 function _makeItem(item, depth = 0) {
   const li = document.createElement('li');
@@ -72,10 +73,22 @@ function _buildTree(container) {
   }
 }
 
-function _setActive(file) {
+function _setActive(file, title = null) {
   _activeFile = file;
-  document.querySelectorAll('.docs-nav-link').forEach(btn => {
-    const isActive = btn.dataset.file === file;
+  _activeTitle = title;
+
+  const buttons = [...document.querySelectorAll('.docs-nav-link')];
+  let target = null;
+
+  if (title) {
+    target = buttons.find(btn => btn.dataset.file === file && btn.dataset.title === title) ?? null;
+  }
+  if (!target) {
+    target = buttons.find(btn => btn.dataset.file === file) ?? null;
+  }
+
+  buttons.forEach(btn => {
+    const isActive = btn === target;
     btn.classList.toggle('docs-nav-link--active', isActive);
     // Auto-expand parent when child is active
     if (isActive) {
@@ -90,7 +103,7 @@ function _setActive(file) {
 }
 
 function _loadPage(file, title, group) {
-  _setActive(file);
+  _setActive(file, title);
   window.contentScreen?.renderFromJson(file, { title, group });
 }
 

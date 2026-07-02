@@ -79,8 +79,12 @@ function _buildActivityFeed() {
     return frag;
   }
 
+  const recentEvents = [...events]
+    .sort((a, b) => Number(b?.time ?? 0) - Number(a?.time ?? 0))
+    .slice(0, 50);
+
   const groups = new Map();
-  for (const ev of events.slice(0, 20)) {
+  for (const ev of recentEvents) {
     const lbl = _dayLabel(ev.time);
     if (!groups.has(lbl)) groups.set(lbl, []);
     groups.get(lbl).push(ev);

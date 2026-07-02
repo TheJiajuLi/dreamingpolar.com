@@ -953,6 +953,7 @@
     color: black !important;
     border-color: #cccccc !important;
     -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   body {

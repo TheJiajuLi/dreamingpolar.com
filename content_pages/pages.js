@@ -72,7 +72,7 @@ export const PAGES = [
         dataFile: `${B}/content_pages/docs/latex/latex_guide.json`,
       },
       {
-        title: '数据可视化',
+        title: 'Matplotlib',
         dataFile: `${B}/content_pages/tutorials/python_with_mathematics/matplotlib/matplotlib_tutorials.json`,
       },
     ],

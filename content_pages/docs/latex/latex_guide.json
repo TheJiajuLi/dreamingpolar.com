@@ -2,30 +2,30 @@
   "title": "LaTeX / MathJax",
   "blocks": [
     {
-      "label": "Cell 类型：LaTeX 与 Markdown",
-      "intro": "Dreaming Polar 的每个 Cell 都可以选择语言类型。选 LaTeX 可以写完整的 LaTeX 文档；选 Markdown 后可以用 $...$ 插入行内数学公式（MathJax 渲染）。",
-      "code": "% 将 Cell 语言切换为「LaTeX」\n% 点击 Cell 左上角的语言选择器，选择「LaTeX」\n% 点击运行，Dreaming Polar 会用内置渲染引擎显示排版结果\n\n\\documentclass{article}\n\\begin{document}\n\nHello, \\LaTeX!\n\n\\end{document}",
-      "result": "渲染后显示：Hello, LaTeX!（以排版字体呈现）",
+      "label": "选择正确的 Cell 语言",
+      "intro": "数学内容建议根据用途选择 LaTeX 或 MathJax/Markdown。",
+      "code": "# LaTeX Cell\n# · 适合完整排版、段落、公式块\n\n# Markdown / MathJax Cell\n# · 适合笔记式写作 + 公式嵌入",
+      "result": "如果只写公式说明，优先用 Markdown + MathJax 更轻量。",
       "resultType": "text"
     },
     {
-      "label": "行内公式（MathJax，Markdown Cell）",
-      "intro": "在 Markdown Cell 里，用 $...$ 包裹数学公式，Dreaming Polar 会自动用 MathJax 渲染。",
+      "label": "行内公式（MathJax）",
+      "intro": "在 Markdown Cell 里用 $...$ 包裹行内表达式。",
       "examples": [
         {
-          "code": "<!-- Markdown Cell 里写 -->\n爱因斯坦质能方程：$E = mc^2$\n\n欧拉恒等式：$e^{i\\pi} + 1 = 0$\n\n正态分布：$f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}$",
-          "result": "渲染后行内显示：E = mc²、e^iπ + 1 = 0、正态分布密度函数",
+          "code": "爱因斯坦方程：$E = mc^2$\n\n欧拉恒等式：$e^{i\\pi}+1=0$\n\n正态分布：$f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}$",
+          "result": "推荐把货币金额写成普通文本，避免误触发公式渲染。",
           "resultType": "text"
         }
       ]
     },
     {
       "label": "独立公式块（LaTeX Cell）",
-      "intro": "用 \\[ ... \\] 或 equation 环境把公式单独成行、居中显示。",
+      "intro": "用 $$...$$ 或 \\[...\\] 展示居中公式。",
       "examples": [
         {
           "code": "\\[\n  \\int_{-\\infty}^{+\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}\n\\]\n\n\\begin{equation}\n  \\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}\n\\end{equation}",
-          "result": "独立居中显示：高斯积分结果 √π，以及麦克斯韦第一方程（高斯定律）",
+          "result": "适合论文式表达和推导展示。",
           "resultType": "text"
         }
       ]
@@ -46,7 +46,7 @@
       "examples": [
         {
           "code": "% 极限\n\\[\n  \\lim_{x \\to 0} \\frac{\\sin x}{x} = 1\n\\]\n\n% 定积分\n\\[\n  \\int_a^b f(x)\\,dx = F(b) - F(a)\n\\]\n\n% 泰勒级数\n\\[\n  e^x = \\sum_{n=0}^{\\infty} \\frac{x^n}{n!}\n     = 1 + x + \\frac{x^2}{2!} + \\frac{x^3}{3!} + \\cdots\n\\]\n\n% 偏导数\n\\[\n  \\frac{\\partial f}{\\partial x},\\quad\n  \\nabla f = \\left(\\frac{\\partial f}{\\partial x},\\,\\frac{\\partial f}{\\partial y}\\right)\n\\]",
-          "result": "渲染后显示：sinc 极限、牛顿-莱布尼茨公式、自然指数的泰勒展开、梯度符号",
+          "result": "建议每个公式块只承载一个核心结论，便于阅读。",
           "resultType": "text"
         }
       ]
@@ -66,16 +66,23 @@
       "examples": [
         {
           "code": "% 希腊字母\n$\\alpha,\\ \\beta,\\ \\gamma,\\ \\delta,\\ \\epsilon,\\ \\zeta$\n$\\eta,\\ \\theta,\\ \\lambda,\\ \\mu,\\ \\pi,\\ \\sigma,\\ \\omega$\n$\\Gamma,\\ \\Delta,\\ \\Theta,\\ \\Lambda,\\ \\Pi,\\ \\Sigma,\\ \\Omega$\n\n% 集合与逻辑\n$\\in,\\ \\notin,\\ \\subset,\\ \\cup,\\ \\cap,\\ \\emptyset$\n$\\forall,\\ \\exists,\\ \\neg,\\ \\land,\\ \\lor,\\ \\Rightarrow,\\ \\Leftrightarrow$\n\n% 箭头\n$\\leftarrow,\\ \\rightarrow,\\ \\leftrightarrow,\\ \\Rightarrow,\\ \\iff$",
-          "result": "渲染后显示希腊字母、集合符号、逻辑连接符及箭头",
+          "result": "可作为公式写作速查片段。",
           "resultType": "text"
         }
       ]
     },
     {
+      "label": "常见问题",
+      "intro": "遇到渲染异常时，按以下顺序排查。",
+      "code": "# 1) 确认 Cell 语言\n#    公式内容建议用 Markdown/MathJax 或 LaTeX，不要混用错误模式\n\n# 2) 检查分隔符\n#    行内：$...$\n#    公式块：$$...$$ 或 \\[...\\]\n\n# 3) 检查反斜杠转义\n#    常见错误：\\frac 写成 /frac",
+      "result": "多数渲染问题来自分隔符或转义错误，优先检查这两项。",
+      "resultType": "text"
+    },
+    {
       "label": "完整 LaTeX 文档示例",
-      "intro": "在 LaTeX Cell 里可以写包含标题、章节、数学公式的完整文档。",
+      "intro": "需要论文式输出时可使用完整文档结构。",
       "code": "\\documentclass{article}\n\\usepackage{amsmath}\n\n\\title{Maxwell's Equations}\n\\author{Dreaming Polar}\n\\date{}\n\n\\begin{document}\n\\maketitle\n\n\\section{Differential Form}\n\nIn free space, Maxwell's equations are:\n\n\\begin{align}\n  \\nabla \\cdot \\mathbf{E}  &= \\frac{\\rho}{\\varepsilon_0}  \\\\\n  \\nabla \\cdot \\mathbf{B}  &= 0                            \\\\\n  \\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\\n  \\nabla \\times \\mathbf{B} &= \\mu_0\\mathbf{J} + \\mu_0\\varepsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}\n\\end{align}\n\n\\end{document}",
-      "result": "完整渲染：包含标题、章节标题和四条麦克斯韦方程组，公式编号自动对齐",
+      "result": "适合课程讲义、技术文档和研究笔记沉淀。",
       "resultType": "text"
     }
   ]

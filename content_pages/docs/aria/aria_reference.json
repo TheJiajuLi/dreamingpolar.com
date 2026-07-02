@@ -1,53 +1,43 @@
 {
   "blocks": [
     {
-      "label": "Quick Analysis — AI 数据对话",
-      "code": "# Quick Analysis 是轻量数据分析入口（左侧工具栏第三个图标）\n#\n# 使用流程：\n# 1. 点击工具栏 📂 按钮导入 CSV / Excel（纯 JS，不等 Python）\n# 2. 直接用自然语言提问：\n#    「这些数据有什么特点？」\n#    「帮我看 price 列的分布」\n#    「比较 revenue 和 units 两列的关系」\n#\n# ARIA 会：\n# • 引用真实列名和数字，不说套话\n# • 在需要时自动生成内嵌图表（histogram / scatter）\n# • 每次回答都标注「基于 xxx.csv」，不会串数据\n#\n# 支持同时导入多份文件，顶部标签栏切换当前数据集",
-      "result": "Quick Analysis 走轻量路径（dataset_store，不加载 Python 内核），适合快速浏览数据、对话提问、查看图表。",
+      "label": "ARIA 两种工作模式",
+      "code": "# 模式 A：Quick Analysis（左侧第三个图标）\n# · 快速问答与图表\n# · 导入后直接提问，不必先写 Python\n#\n# 模式 B：Notebook 内 ARIA（底部终端输入）\n# · 基于当前内核变量和 Cell 上下文提供建议\n# · 更适合“边写代码边问”",
+      "result": "推荐流程：先用 Quick Analysis 找方向，再在 Notebook 里让 ARIA协助落地成代码。",
       "resultType": "text"
     },
     {
-      "label": "导入数据（Quick Analysis 路径）",
+      "label": "Quick Analysis：提问模板",
       "examples": [
         {
-          "code": "# 点击顶部工具栏的 📂 按钮（不是左侧VT导航栏）\n# 支持 .csv .xlsx .xls\n# 导入后立刻出现绿色分隔线：\n#   📥 已加载 GE.csv   1,258 行 × 3 列\n#\n# 可以连续导入多份文件，顶部会出现文件名标签，点击切换",
-          "result": "Quick Analysis 导入不需要 Python 加载，导入后直接提问即可。",
+          "code": "# 结构认知\n这份数据有哪些字段？每个字段类型是什么？\n\n# 质量检查\n哪些列缺失值最多？有异常值吗？\n\n# 关系探索\nclose 和 volume 的关系如何？\n\n# 结果产出\n给我一个三点结论 + 一张图",
+          "result": "问题越具体，ARIA 返回越稳定；建议带上列名和目标。",
           "resultType": "text"
         }
       ]
     },
     {
-      "label": "内嵌图表 — AI 自动决定类型",
+      "label": "图表生成行为",
       "examples": [
         {
-          "code": "# 问题涉及分布时，AI 自动生成直方图：\n「帮我看 close 列的分布」\n\n# 问题涉及两列关系时，AI 自动生成散点图：\n「open 和 close 有没有相关性？」",
-          "result": "图表使用 Chart.js 从真实数据渲染，不是占位图。AI 在回答末尾写 CHART: histogram(列名) 或 CHART: scatter(列名1, 列名2)，前端解析后取 dataset_store 里的真实数值渲染。",
+          "code": "# 分布问题\n帮我看 close 的分布\n\n# 关系问题\nopen 和 close 有相关性吗\n\n# 对比问题\n按行业比较 revenue 的中位数",
+          "result": "ARIA 会按问题类型选择合适图表，并优先引用当前激活数据集。",
           "resultType": "text"
         }
       ]
     },
     {
-      "label": "Power Notebook — 写代码操作数据",
-      "code": "# Power Notebook 是高级入口（左侧工具栏第二个图标）\n# 支持 Python / LaTeX / MathJax / Markdown 多语言 cell\n#\n# 导入数据后，自动生成预览 cell：\n#   # \"GE.csv\" loaded as df (1258 rows)\n#   print(df.shape)\n#   df.head()\n#\n# 每次导入新文件，新增一个 cell（不覆盖旧的）\n# 数据注入 Pyodide 内核，可以写完整 Python 代码操作 df",
-      "result": "Power Notebook 走 Python 路径（Pyodide 内核），适合写模型、复杂分析、自定义图表。两种入口共享同一个 Python 内核。",
+      "label": "Notebook 内 ARIA 常用命令",
+      "code": "# 在 Notebook 底部终端输入\nai 帮我分析这个 df 的关键结论\n\n# 解释当前代码\nexplain\n\n# 修复当前代码\nfix",
+      "result": "AI 回复可直接插入到当前 Cell 继续运行，适合快速迭代。",
       "resultType": "text"
     },
     {
-      "label": "ARIA 终端命令（Power Notebook 里）",
+      "label": "多数据集场景",
       "examples": [
         {
-          "code": "# 在 Power Notebook 底部的终端输入框：\nai 帮我分析这些客户数据",
-          "result": "ARIA 自动读取当前 df 的列名、类型、前3行样本，连同问题发给 AI。回答会引用真实列名，不是泛泛而谈。如果检测到 customer_id / purchase_date / amount 等字段会主动建议 RFM 分层分析。",
-          "resultType": "text"
-        },
-        {
-          "code": "fix",
-          "result": "ARIA 读取编辑器里的代码，找 bug 并重写修复版本。",
-          "resultType": "text"
-        },
-        {
-          "code": "explain",
-          "result": "ARIA 逐行解释编辑器里的代码逻辑。",
+          "code": "# 导入多份文件后：\n# 1) 先切到目标文件标签\n# 2) 再发问题\n\n比较 A.csv 和 B.csv 的趋势差异",
+          "result": "建议在问题里显式写文件名或变量名，避免上下文歧义。",
           "resultType": "text"
         }
       ]

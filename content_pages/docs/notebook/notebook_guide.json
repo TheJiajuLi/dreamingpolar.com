@@ -3,8 +3,8 @@
   "blocks": [
     {
       "label": "Power Notebook 定位",
-      "code": "# Power Notebook = 高级用户 / 建模入口\n# 左侧工具栏第二个图标（四格网格图标）\n#\n# 支持多语言 cell：\n#   Python  — 完整 pandas / numpy / matplotlib / sympy\n#   LaTeX   — 排版公式文档\n#   MathJax — 行内数学公式\n#   Markdown — 富文本说明\n#\n# 所有 Python cell 共享同一个 Pyodide 内核\n# Cell 1 定义的变量，Cell 2 可以直接使用",
-      "result": "Power Notebook 适合需要写代码、建模型、做自定义可视化的高级用户。如果只是想快速提问数据，用左侧第三个图标进入 Quick Analysis 更快。",
+      "code": "# Power Notebook = 可复现分析工作区\n# 左侧工具栏第二个图标\n#\n# 支持多语言 Cell：\n#   Python / Markdown / LaTeX / MathJax\n#\n# 所有 Python Cell 共享同一个 Pyodide 内核\n# 前一个 Cell 的变量可在后续 Cell 继续使用",
+      "result": "适合做完整分析链路：导入 → 清洗 → 建模 → 可视化 → 结论沉淀。",
       "resultType": "text"
     },
     {
@@ -12,8 +12,8 @@
       "intro": "工具栏左侧的 Run All 按钮可以按顺序执行所有 Cell。",
       "examples": [
         {
-          "code": "# 点击 ▶▶ Run All：\n# · 按钮变为红色「■ 停止」\n# · 进度显示「第 1 / 5 个 Cell ···」\n# · 加载包时显示「正在加载 pandas, numpy ···」\n# · 每个 Cell 完成后短暂显示「✓ Cell 1 完成」\n#\n# 点击「■ 停止」：\n# · 当前 Cell 执行完后停止\n# · 后续 Cell 跳过，不强制中断 Worker",
-          "result": "首次运行时，Pyodide 需要从 CDN 下载 pandas、numpy 等包（约 10–30 秒）。进度栏会显示正在加载的包名。后续运行包已缓存，执行更快。",
+          "code": "# Run All 行为\n# · 顺序执行所有 Cell\n# · 显示第 N / M 个 Cell 进度\n# · 可在运行中点击停止\n#\n# 首次运行\n# · 可能触发依赖包下载\n# · 状态栏会提示加载进度",
+          "result": "建议第一次运行时保持网络稳定，完成后同会话内执行会更快。",
           "resultType": "text"
         }
       ]
@@ -23,18 +23,18 @@
       "intro": "工具栏中央有一个「搜索 Cells…」输入框，可以在所有 Cell 中实时高亮匹配文本。",
       "examples": [
         {
-          "code": "# 激活方式：\n# · 点击工具栏中央搜索框\n# · 或按 Ctrl+F / Cmd+F（Notebook 处于焦点时）\n#\n# 操作：\n# · 输入关键词 → 所有 Cell 中匹配的文字即时高亮\n# · Enter / ↓ 跳转到下一个匹配\n# · Shift+Enter / ↑ 跳到上一个匹配\n# · 右侧显示匹配计数，如「3 / 12」\n# · Esc 清除高亮",
-          "result": "搜索只作用于代码文本，不搜索输出区。高亮层叠加在 textarea 之上，不影响代码编辑。",
+          "code": "# 快捷键\n# · Ctrl+F / Cmd+F：激活搜索\n# · Enter：下一个匹配\n# · Shift+Enter：上一个匹配\n# · Esc：清除",
+          "result": "搜索作用于 Cell 代码区，可快速跳转到目标片段。",
           "resultType": "text"
         }
       ]
     },
     {
-      "label": "预加载包",
+      "label": "导入数据到 Notebook",
       "examples": [
         {
-          "code": "# 这些包已预加载，无需 pip install：\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport sympy as sym\n\nprint('All preloaded ✓')",
-          "result": "首次执行 Python 时会下载 Pyodide 内核（约 10–20 秒，显示开机动画）。之后刷新页面前保持常驻，不再重新加载。",
+          "code": "# 文件中心支持：CSV / Excel / JSON / XML\n# 发送到 Notebook 后会自动生成预览 Cell\n\nimport pandas as pd\ndf = pd.read_csv(\"GE.csv\")\ndf.head()",
+          "result": "云端文件和本地文件都可注入内核；刷新后会自动恢复已注入文件。",
           "resultType": "text"
         }
       ]
@@ -44,24 +44,24 @@
       "intro": "登录后，Notebook 内容自动同步到云端，换设备或刷新页面后可恢复。",
       "examples": [
         {
-          "code": "# 同步触发时机：\n# · 停止输入 3 秒后自动保存（防抖）\n# · 按 Ctrl+S / Cmd+S 立即同步\n#\n# 状态栏提示：\n# · 「☁ 已同步」— 成功\n# · 「⚠ 同步失败，将在下次重试」— 网络问题\n#\n# 开关位置：Settings → Notebook 文件 → 自动同步至云端",
-          "result": "云同步是额外的持久层，不替代本地 localStorage。即使在未登录状态下，代码仍保存在本地，登录后下次打开会从云端恢复最新版本。",
+          "code": "# 同步触发\n# · 输入暂停后自动保存\n# · Ctrl+S / Cmd+S 立即保存\n#\n# 建议\n# · 关键节点手动保存一次\n# · 网络不稳定时以状态提示为准",
+          "result": "系统会避免用“全空 Cell”覆盖云端已有内容，降低误覆盖风险。",
           "resultType": "text"
         }
       ]
     },
     {
       "label": "与 Quick Analysis 互跳",
-      "code": "# 在 Power Notebook 工具栏右侧有「← Quick Analysis」按钮\n# 在 Quick Analysis 工具栏右侧有「Notebook ↗」按钮\n#\n# 两者共享 Pyodide 内核：\n# Power Notebook 里 import 的数据（df 变量）\n# 在 Quick Analysis 里可以用 Python 代码继续操作\n#",
-      "result": "推荐工作流：用 Quick Analysis 快速探索和提问 → 发现需要自定义分析时切换到 Notebook 写代码。",
+      "code": "# 推荐链路\n# 1) Quick Analysis：先问问题、看趋势\n# 2) Notebook：落地为可复现代码\n# 3) Grid：做表格核对和回写",
+      "result": "三者可互跳，适合从探索到生产化分析的连续流程。",
       "resultType": "text"
     },
     {
       "label": "运行方式",
       "examples": [
         {
-          "code": "# 单个 Cell 运行：\n# · 点击 Cell 左侧的 ▶ 按钮\n# · 或按 Ctrl+Enter / Cmd+Enter\n#\n# 全部运行：\n# · 点击工具栏「▶▶ Run All」\n# · 或按 Ctrl+Shift+Enter / Cmd+Shift+Enter\n#\n# 重启内核（清除所有变量）：\n# · 点击工具栏右侧的「↺」按钮（点两次确认）",
-          "result": "重启内核后，所有 Python 变量会被清除，但代码不会消失。需要重新运行 Cell 才能恢复变量状态。",
+          "code": "# 单 Cell\n# · Ctrl+Enter / Cmd+Enter\n#\n# 全部 Cell\n# · Run All\n#\n# 重启内核\n# · 工具栏重启按钮（双击确认）",
+          "result": "重启仅清空内核变量，不会删除 Cell 代码。",
           "resultType": "text"
         }
       ]
