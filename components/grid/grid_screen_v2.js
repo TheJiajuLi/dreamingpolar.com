@@ -545,6 +545,40 @@ function setupGridScreen() {
     return sources;
   }
 
+  async function _getAvailableSourcesWithCloud() {
+    const local = _getAvailableSources();
+    if (!window.authClient?.isLoggedIn?.()) return local;
+
+    try {
+      const token = window.authClient.getAccessToken?.();
+      if (!token) return local;
+
+      const res = await fetch(
+        'https://api.dreamingpolar.com/auth/files',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) return local;
+
+      const cloudFiles = await res.json();
+      const cloudSources = (Array.isArray(cloudFiles) ? cloudFiles : [])
+        .filter(f => f?.file_type === 'data' && f?.filename && f?.id)
+        .map(f => ({
+          varName: String(f.filename)
+            .replace(/\.[^/.]+$/, '')
+            .replace(/[^a-zA-Z0-9_]/g, '_') || 'df',
+          filename: f.filename,
+          fileId: f.id,
+          source: 'cloud',
+          label: `☁ ${f.filename}`,
+        }))
+        .filter(src => !local.some(s => (s.filename || s.name) === src.filename));
+
+      return [...local, ...cloudSources];
+    } catch {
+      return local;
+    }
+  }
+
   // ── Open dataset in new tab ───────────────────────────────────────────────
   function _openDataset(source) {
     const ds = _normalise(source);
@@ -1177,9 +1211,9 @@ function setupGridScreen() {
   });
 
   // ── Dataset selector overlay ──────────────────────────────────────────────
-  function _showDatasetOverlay() {
+  async function _showDatasetOverlay() {
     document.getElementById('dp-grid-overlay')?.remove();
-    const sources = _getAvailableSources();
+    const sources = await _getAvailableSourcesWithCloud();
     const overlay = document.createElement('div');
     overlay.id = 'dp-grid-overlay';
     overlay.style.cssText =
@@ -1204,13 +1238,50 @@ function setupGridScreen() {
         item.style.cssText = 'padding:10px 12px;border-radius:8px;cursor:pointer;transition:background 0.1s;margin-bottom:4px';
         item.onmouseenter = () => { item.style.background = 'rgba(99,102,241,0.08)'; };
         item.onmouseleave = () => { item.style.background = ''; };
-        const name = src.name ?? src.filename ?? '—';
+        const name = src.label ?? src.name ?? src.filename ?? '—';
         const varN = src.varName ?? src.name ?? '—';
         const cnt  = src.rows ? (Array.isArray(src.rows) ? src.rows.length : src.rows) : '?';
         item.innerHTML =
           `<div style="font-weight:600;font-size:0.82rem;color:#0f172a">${name}</div>` +
           `<div style="font-size:0.68rem;color:#94a3b8;font-family:monospace">${varN} · ${cnt} 行</div>`;
-        item.addEventListener('click', () => { overlay.remove(); _openDataset(src); });
+        item.addEventListener('click', async () => {
+          overlay.remove();
+          if (src.source === 'cloud') {
+            try {
+              const token = window.authClient?.getAccessToken?.();
+              if (!token) return;
+              const res = await fetch(
+                `https://api.dreamingpolar.com/auth/files/${src.fileId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              if (!res.ok) return;
+
+              const buffer = await res.arrayBuffer();
+              const ext = String(src.filename).split('.').pop()?.toLowerCase() || 'csv';
+              await window.injectDataFrame?.(
+                src.varName,
+                new Uint8Array(buffer),
+                ext,
+                src.filename
+              );
+
+              const text = new TextDecoder().decode(new Uint8Array(buffer));
+              window._gridOpenDataset?.({
+                source: 'cloud',
+                fileId: src.fileId,
+                filename: src.filename,
+                varName: src.varName,
+                data: text,
+              });
+              return;
+            } catch (err) {
+              console.error('[grid-cloud-open]', err);
+              return;
+            }
+          }
+
+          _openDataset(src);
+        });
         modal.appendChild(item);
       });
     }

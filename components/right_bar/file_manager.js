@@ -1367,12 +1367,16 @@ export function initFileManager() {
     });
   }
 
-  const _mapScreenIdToActive = (id) => {
-    if (id === 'terminal') return 'aria';
-    if (id === 'coding') return 'notebook';
-    if (id === 'grid') return 'grid';
-    return id;
+  const SCREEN_ID_MAP = {
+    'terminal': 'aria',
+    'coding': 'notebook',
+    'grid': 'grid',
+    'ai-chat': 'ai-chat',
+    'profile': 'profile',
+    'content': 'content',
   };
+
+  const _mapScreenIdToActive = (id) => SCREEN_ID_MAP[id] ?? id;
 
   document.addEventListener('screen-opened',    ({ detail: { id } }) => {
     _activeScreenId = _mapScreenIdToActive(id);
@@ -1380,14 +1384,16 @@ export function initFileManager() {
     _updateCloudActionBtns();
   });
   document.addEventListener('screen-closed',    ({ detail: { id } }) => {
-    if (_activeScreenId === id) { 
+    const businessName = _mapScreenIdToActive(id);
+    if (_activeScreenId === businessName) {
       _activeScreenId = null; 
       _refreshAllActionBtns();
       _updateCloudActionBtns();  // 屏幕关闭时也要更新云端文件按钮
     }
   });
   document.addEventListener('screen-minimized', ({ detail: { id } }) => {
-    if (_activeScreenId === id) { 
+    const businessName = _mapScreenIdToActive(id);
+    if (_activeScreenId === businessName) {
       _activeScreenId = null; 
       _refreshAllActionBtns();
       _updateCloudActionBtns();  // 屏幕最小化时也要更新云端文件按钮
