@@ -101,6 +101,14 @@
   font-weight: 500;
   color: var(--text, #102040);
   letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.esd-greeting-user {
+  font-size: inherit;
+  font-weight: 600;
+  color: inherit;
+  letter-spacing: inherit;
 }
 
 /* ── Section ──────────────────────────────────────────────── */
@@ -187,18 +195,21 @@
 
 /* ── Dark / grey / aurora ─────────────────────────────────── */
 [data-theme="dark"]   .esd-greeting-text { color: #e6edf3; }
+[data-theme="dark"]   .esd-greeting-user { color: #e6edf3; }
 [data-theme="dark"]   .esd-recent-item:hover { background: rgba(255,255,255,0.05); }
 [data-theme="dark"]   .esd-recent-name      { color: #c9d1d9; }
 [data-theme="dark"]   .esd-recent-icon      { color: #c9d1d9; }
 [data-theme="dark"]   .esd-recent-empty     { border-color: rgba(255,255,255,0.08); }
 
 [data-theme="grey"]   .esd-greeting-text { color: #adbac7; }
+[data-theme="grey"]   .esd-greeting-user { color: #adbac7; }
 [data-theme="grey"]   .esd-recent-item:hover { background: rgba(255,255,255,0.05); }
 [data-theme="grey"]   .esd-recent-name      { color: #adbac7; }
 [data-theme="grey"]   .esd-recent-icon      { color: #adbac7; }
 [data-theme="grey"]   .esd-recent-empty     { border-color: rgba(255,255,255,0.08); }
 
 [data-theme="aurora"] .esd-greeting-text { color: #e0e0ff; }
+[data-theme="aurora"] .esd-greeting-user { color: #e0e0ff; }
 [data-theme="aurora"] .esd-recent-item:hover { background: rgba(192,132,252,0.07); }
 [data-theme="aurora"] .esd-recent-name      { color: #c4b5fd; }
 [data-theme="aurora"] .esd-recent-icon      { color: #c4b5fd; }

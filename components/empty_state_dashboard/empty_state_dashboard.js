@@ -7,6 +7,10 @@ import { createLoadDataBtn } from '../import/import_data.js';
 const RECENT_KEY  = 'dp_recent_items';
 const MAX_RECENT  = 6;
 
+function _esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // ── Recent-items API (consumed by notebook / generative screen) ───────────────
 export function recordRecentItem({ id, name, type = 'notebook' }) {
   const items = _getRecent().filter(i => i.id !== id);
@@ -77,12 +81,28 @@ function _buildDashboard() {
   // ── Greeting ──────────────────────────────────────────────────────────────
   const greeting = document.createElement('div');
   greeting.className = 'esd-greeting';
-  const hour = new Date().getHours();
-  const timeOfDay = hour < 12 ? '上午好' : hour < 18 ? '下午好' : '晚上好';
-  const base = window.BASE ?? '';
-  greeting.innerHTML =
-    `<img src="${base}/assets/app_logo/dreaming_polar.png" class="esd-greeting-logo" alt="Dreaming Polar">` +
-    `<span class="esd-greeting-text">${timeOfDay}，今天想做什么分析？</span>`;
+
+  function _renderGreeting(user) {
+    const username = String(user?.username ?? '').trim();
+    if (!username) {
+      greeting.innerHTML = '<span class="esd-greeting-text">下午好，今天想做什么分析？</span>';
+      return;
+    }
+    greeting.innerHTML =
+      `<span class="esd-greeting-text"><span class="esd-greeting-user">${_esc(username)}</span>，欢迎回来。<br>今天想做什么分析？</span>`;
+  }
+
+  _renderGreeting(window._dpGetAuthUser?.());
+
+  document.addEventListener('dp-auth-state', (e) => {
+    const user = e?.detail?.user ?? window._dpGetAuthUser?.();
+    _renderGreeting(user);
+  });
+
+  document.addEventListener('dp-auth-logout', () => {
+    _renderGreeting(null);
+  });
+
   wrap.appendChild(greeting);
 
   // ── Quick-start cards ─────────────────────────────────────────────────────
