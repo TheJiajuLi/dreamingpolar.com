@@ -46,6 +46,18 @@ function _refreshAllActionBtns() {
   }
 }
 
+// ── Get cloud file action metadata (screen-aware) ─────────────────────────────
+function _getCloudActionMeta() {
+  if (_activeScreenId === 'coding') {
+    return { label: '插入到Notebook', icon: 'ti-file-plus', action: 'notebook' };
+  } else if (_activeScreenId === 'grid') {
+    return { label: '发送到Grid', icon: 'ti-table-import', action: 'grid' };
+  } else if (_activeScreenId === 'terminal') {
+    return { label: '发送给ARIA', icon: _ARIA_BTN_ICON, action: 'aria' };
+  }
+  return { label: '注入到内核', icon: 'ti-player-play', action: 'notebook' };
+}
+
 function _recordRecentFile({ name, varName, size, fileType }) {
   let files;
   try { files = JSON.parse(localStorage.getItem(RECENT_FILES_KEY) ?? '[]'); } catch { files = []; }
@@ -770,8 +782,8 @@ export function initFileManager() {
         <div class="rb-file-item-meta">${size} · ${ago}</div>
       </div>
       <div class="rb-cloud-actions">
-        <button class="rb-file-action-btn rb-inject-cloud" title="注入到内核">
-          <i class="ti ti-player-play"></i>
+        <button class="rb-file-action-btn rb-inject-cloud">
+          <i class="ti"></i>
         </button>
         <button class="rb-file-action-btn rb-delete-cloud" title="删除">
           <i class="ti ti-trash"></i>
@@ -779,24 +791,71 @@ export function initFileManager() {
       </div>
     `;
 
-    // 注入到内核
-    row.querySelector('.rb-inject-cloud').addEventListener('click', async (e) => {
+    // 更新操作按钮的meta信息
+    const actionBtn = row.querySelector('.rb-inject-cloud');
+    function _updateActionBtn() {
+      const meta = _getCloudActionMeta();
+      actionBtn.title = meta.label;
+      actionBtn.setAttribute('aria-label', meta.label);
+      actionBtn.innerHTML = meta.icon.startsWith('<') ? meta.icon : `<i class="ti ${meta.icon}"></i>`;
+    }
+    _updateActionBtn();
+
+    // 根据screen类型调用对应的操作
+    actionBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      try {
-        const token = window.authClient.getAccessToken();
-        const res = await fetch(
-          `https://api.dreamingpolar.com/auth/files/${file.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!res.ok) throw new Error('下载失败');
-        const buffer = await res.arrayBuffer();
-        const varName = file.filename.replace(/\.[^/.]+$/, '')
-          .replace(/[^a-zA-Z0-9_]/g, '_');
-        if (window.injectDataFrame) {
-          window.injectDataFrame(varName, new Uint8Array(buffer), file.file_type ?? 'csv', file.filename);
+      const meta = _getCloudActionMeta();
+      const varName = file.filename.replace(/\.[^/.]+$/, '')
+        .replace(/[^a-zA-Z0-9_]/g, '_');
+
+      if (meta.action === 'aria') {
+        // 发送给ARIA
+        try {
+          const token = window.authClient.getAccessToken();
+          const res = await fetch(
+            `https://api.dreamingpolar.com/auth/files/${file.id}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!res.ok) throw new Error('下载失败');
+          const buffer = await res.arrayBuffer();
+          document.dispatchEvent(new CustomEvent('dp-send-to-aria', {
+            detail: { varName, filename: file.filename, data: new Uint8Array(buffer), fileType: file.file_type ?? 'csv' }
+          }));
+        } catch (e) {
+          console.error('[cloud send-to-aria]', e);
         }
-      } catch (e) {
-        console.error('[cloud inject]', e);
+      } else if (meta.action === 'grid') {
+        // 发送给Grid
+        try {
+          const token = window.authClient.getAccessToken();
+          const res = await fetch(
+            `https://api.dreamingpolar.com/auth/files/${file.id}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!res.ok) throw new Error('下载失败');
+          const buffer = await res.arrayBuffer();
+          document.dispatchEvent(new CustomEvent('dp-open-in-grid', {
+            detail: { varName, filename: file.filename, data: new Uint8Array(buffer), fileType: file.file_type ?? 'csv' }
+          }));
+        } catch (e) {
+          console.error('[cloud open-in-grid]', e);
+        }
+      } else {
+        // notebook或默认：注入到内核
+        try {
+          const token = window.authClient.getAccessToken();
+          const res = await fetch(
+            `https://api.dreamingpolar.com/auth/files/${file.id}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!res.ok) throw new Error('下载失败');
+          const buffer = await res.arrayBuffer();
+          if (window.injectDataFrame) {
+            window.injectDataFrame(varName, new Uint8Array(buffer), file.file_type ?? 'csv', file.filename);
+          }
+        } catch (e) {
+          console.error('[cloud inject]', e);
+        }
       }
     });
 
@@ -840,10 +899,14 @@ export function initFileManager() {
     const dedupedEntries = [...byFilename.values()];
 
     // 云端文件（登录后显示）
+    let cloudFilenames = new Set();
     if (window.authClient?.isLoggedIn()) {
       const cloudFiles = await _fetchCloudFiles();
       if (cloudFiles.length > 0) {
         const cloudSec = _makeSection('云端文件', 'ti-cloud', false);
+        
+        // 收集云端文件名用于去重
+        cloudFiles.forEach(f => cloudFilenames.add(f.filename));
         
         const dataFiles = cloudFiles.filter(f => f.file_type === 'data');
         const codeFiles2 = cloudFiles.filter(f => f.file_type === 'code');
@@ -860,15 +923,16 @@ export function initFileManager() {
       }
     }
 
-    // Section: 数据文件
-    const sec = _makeSection('数据文件', 'ti-database', dedupedEntries.length === 0);
-    if (dedupedEntries.length === 0) {
+    // Section: 数据文件（去重：排除云端文件中已有的）
+    const filteredEntries = dedupedEntries.filter(({ entry }) => !cloudFilenames.has(entry.filename));
+    const sec = _makeSection('数据文件', 'ti-database', filteredEntries.length === 0);
+    if (filteredEntries.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'rb-file-placeholder';
       empty.textContent = '还没有导入文件 — 点击上方"导入"按钮添加';
       sec.body.appendChild(empty);
     } else {
-      dedupedEntries.forEach(({ key, entry }) => sec.body.appendChild(_makeFileItem(key, entry)));
+      filteredEntries.forEach(({ key, entry }) => sec.body.appendChild(_makeFileItem(key, entry)));
     }
     body.appendChild(sec.el);
 
@@ -925,6 +989,12 @@ export function initFileManager() {
     insertBtn.title = '插入到 Notebook';
     insertBtn.innerHTML = `<i class="ti ti-corner-down-left"></i>`;
 
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'rb-file-action-btn';
+    deleteBtn.title = '删除';
+    deleteBtn.innerHTML = `<i class="ti ti-trash"></i>`;
+
     function _doInsert() {
       document.dispatchEvent(new CustomEvent('nb-code-file-click', {
         detail: { filename, language, code },
@@ -936,6 +1006,16 @@ export function initFileManager() {
     insertBtn.addEventListener('click', e => { e.stopPropagation(); _doInsert(); });
     item.addEventListener('click', _doInsert);
 
+    // Delete button click
+    deleteBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!confirm(`删除代码文件 \"${filename}\"？`)) return;
+      const store = _loadCodeStore();
+      delete store[filename];
+      _saveCodeStore(store);
+      item.remove();
+    });
+
     // Delete via right-click context menu (simple confirm)
     item.addEventListener('contextmenu', e => {
       e.preventDefault();
@@ -946,7 +1026,7 @@ export function initFileManager() {
       _refresh().catch(console.error);
     });
 
-    item.append(iconEl, info, insertBtn);
+    item.append(iconEl, info, insertBtn, deleteBtn);
     return item;
   }
 
@@ -1115,6 +1195,13 @@ export function initFileManager() {
   document.addEventListener('screen-opened',    ({ detail: { id } }) => {
     _activeScreenId = id;
     _refreshAllActionBtns();
+    // 更新云端文件的操作按钮meta
+    document.querySelectorAll('.rb-inject-cloud').forEach(btn => {
+      const meta = _getCloudActionMeta();
+      btn.title = meta.label;
+      btn.setAttribute('aria-label', meta.label);
+      btn.innerHTML = meta.icon.startsWith('<') ? meta.icon : `<i class="ti ${meta.icon}"></i>`;
+    });
   });
   document.addEventListener('screen-closed',    ({ detail: { id } }) => {
     if (_activeScreenId === id) { _activeScreenId = null; _refreshAllActionBtns(); }
