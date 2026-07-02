@@ -6,6 +6,7 @@
   <title>写教程 - Dreaming Polar</title>
   <link rel="icon" href="assets/app_logo/favicon.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github.min.css">
   <style>
     :root {
       --bg: #f4f7fc;
@@ -15,6 +16,12 @@
       --muted: #5f748f;
       --brand: #1f6fff;
       --shadow: 0 12px 24px rgba(16, 38, 64, 0.08);
+      --callout-tip: #eaf6ff;
+      --callout-tip-line: #b7defe;
+      --callout-warning: #fff7e8;
+      --callout-warning-line: #ffd58a;
+      --callout-info: #eff4ff;
+      --callout-info-line: #b9c9ff;
     }
 
     * { box-sizing: border-box; }
@@ -73,6 +80,7 @@
     .actions {
       display: inline-flex;
       gap: 8px;
+      align-items: center;
     }
 
     .btn {
@@ -89,6 +97,12 @@
       background: var(--brand);
       border-color: var(--brand);
       color: #fff;
+    }
+
+    #save-status {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
     }
 
     .layout {
@@ -154,14 +168,340 @@
       flex: 1;
     }
 
-    .block-placeholder {
+    .meta-editor {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .meta-cover {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .cover-preview {
+      width: 120px;
+      height: 72px;
+      border-radius: 10px;
+      border: 1px dashed #bdd0ea;
+      overflow: hidden;
+      background: linear-gradient(130deg, #d7e7ff, #f1e4ff 56%, #dcfff8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5e7391;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .cover-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .meta-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    #meta-title {
+      width: 100%;
+      font-size: 24px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    #meta-summary {
+      width: 100%;
+      resize: vertical;
+      min-height: 78px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      outline: none;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    #meta-title:focus,
+    #meta-summary:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(31, 111, 255, 0.12);
+    }
+
+    .tag-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-chip {
+      border: 1px solid #c7d7ee;
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 14px;
+      color: #4c6788;
+      background: #fff;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tag-chip.active {
+      border-color: #a8c6fb;
+      color: #1f5bd3;
+      background: #eaf2ff;
+    }
+
+    #block-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .block-empty {
       border: 1px dashed #b8cce8;
       border-radius: 12px;
       background: #fbfdff;
       color: #6b83a0;
       padding: 16px;
-      margin-bottom: 10px;
       font-size: 14px;
+      text-align: center;
+    }
+
+    .block-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px;
+    }
+
+    .block-handle {
+      width: 22px;
+      color: #90a3bb;
+      font-size: 16px;
+      line-height: 1;
+      user-select: none;
+      padding-top: 4px;
+    }
+
+    .block-content {
+      min-width: 0;
+    }
+
+    .block-head {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .type-badge,
+    .lang-badge {
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      border: 1px solid #c8daf2;
+      background: #f3f8ff;
+      color: #3f5f84;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #486589;
+    }
+
+    .block-input,
+    .block-select,
+    .block-inline,
+    .code-editor {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .block-input,
+    .code-editor {
+      resize: vertical;
+      min-height: 96px;
+      line-height: 1.45;
+    }
+
+    .code-editor {
+      font-family: "JetBrains Mono", "Menlo", monospace;
+      background: #f8fbff;
+      min-height: 140px;
+    }
+
+    .block-inline {
+      min-height: auto;
+    }
+
+    .block-input:focus,
+    .block-select:focus,
+    .block-inline:focus,
+    .code-editor:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(31, 111, 255, 0.12);
+    }
+
+    .latex-editor {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .latex-live {
+      border: 1px dashed #bdd0ea;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfdff;
+      min-height: 96px;
+      overflow: auto;
+      font-size: 14px;
+      color: #395577;
+    }
+
+    .image-block {
+      display: grid;
+      gap: 8px;
+    }
+
+    .image-thumb {
+      width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid #d5e0ef;
+      background: #f7fbff;
+    }
+
+    .block-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .block-actions button {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      width: 30px;
+      height: 30px;
+      background: #fff;
+      color: #4f6888;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .block-actions button:hover {
+      background: #f3f8ff;
+      border-color: #afc8eb;
+    }
+
+    .block-actions .block-delete {
+      color: #9c2d33;
+      border-color: #f4c4c8;
+      background: #fff8f9;
+    }
+
+    .preview-content {
+      display: grid;
+      gap: 12px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .preview-title {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.25;
+    }
+
+    .preview-summary {
+      margin: 0;
+      color: #5e7594;
+      font-size: 15px;
+    }
+
+    .preview-cover {
+      width: 100%;
+      max-height: 280px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid #d7e1ef;
+      background: linear-gradient(130deg, #d7e7ff, #f1e4ff 56%, #dcfff8);
+    }
+
+    .preview-tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .preview-tag {
+      border: 1px solid #cad9ef;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #456388;
+      background: #f6f9ff;
+    }
+
+    .preview-code {
+      margin: 0;
+      border: 1px solid #d8e2ef;
+      border-radius: 10px;
+      overflow: auto;
+      background: #f8fbff;
+    }
+
+    .preview-code code {
+      display: block;
+      padding: 12px;
+      font-family: "JetBrains Mono", "Menlo", monospace;
+      font-size: 13px;
+    }
+
+    .preview-callout {
+      border-radius: 10px;
+      padding: 10px 12px;
+      border-left: 4px solid transparent;
+    }
+
+    .preview-callout.tip {
+      background: var(--callout-tip);
+      border-color: var(--callout-tip-line);
+    }
+
+    .preview-callout.warning {
+      background: var(--callout-warning);
+      border-color: var(--callout-warning-line);
+    }
+
+    .preview-callout.info {
+      background: var(--callout-info);
+      border-color: var(--callout-info-line);
     }
 
     .preview-placeholder {
@@ -175,10 +515,74 @@
       line-height: 1.6;
     }
 
+    .modal-layer {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 16, 28, 0.36);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-layer.show { display: flex; }
+
+    .modal {
+      width: min(460px, 100%);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .modal-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .modal-body {
+      padding: 12px 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .modal-foot {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      background: #fcfdff;
+    }
+
+    .modal-field {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: #4f6888;
+    }
+
+    .modal-field input,
+    .modal-field select {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 8px 10px;
+      font-size: 14px;
+      outline: none;
+    }
+
     @media (max-width: 1100px) {
       .layout {
         grid-template-columns: 64px 1fr;
         grid-template-rows: 1fr 380px;
+      }
+
+      .latex-editor {
+        grid-template-columns: 1fr;
       }
 
       .preview {
@@ -201,6 +605,15 @@
         flex-direction: row;
         justify-content: center;
       }
+
+      .block-card {
+        grid-template-columns: 1fr;
+      }
+
+      .block-actions {
+        flex-direction: row;
+        justify-content: flex-end;
+      }
     }
   </style>
 </head>
@@ -209,39 +622,789 @@
     <a class="back-link" href="/community"><i class="ti ti-arrow-left"></i>返回社区</a>
     <input id="title-input" type="text" placeholder="输入教程标题...">
     <div class="actions">
-      <button class="btn" type="button">保存草稿</button>
-      <button class="btn btn-primary" type="button">发布</button>
+      <span id="save-status">未保存</span>
+      <button class="btn" id="btn-save" type="button">保存草稿</button>
+      <button class="btn" id="btn-update" type="button" style="display:none;">更新</button>
+      <button class="btn btn-primary" id="btn-publish" type="button">发布</button>
     </div>
   </header>
 
   <main class="layout">
     <aside class="panel block-tools" aria-label="Block 工具栏">
-      <button class="tool-btn" title="文本"><i class="ti ti-align-left"></i></button>
-      <button class="tool-btn" title="代码"><i class="ti ti-code"></i></button>
-      <button class="tool-btn" title="公式"><i class="ti ti-math"></i></button>
-      <button class="tool-btn" title="图片"><i class="ti ti-photo"></i></button>
-      <button class="tool-btn" title="标题"><i class="ti ti-heading"></i></button>
-      <button class="tool-btn" title="提示框"><i class="ti ti-bulb"></i></button>
+      <button class="tool-btn" title="文本" data-add="text"><i class="ti ti-align-left"></i></button>
+      <button class="tool-btn" title="代码" data-add="code"><i class="ti ti-code"></i></button>
+      <button class="tool-btn" title="公式" data-add="latex"><i class="ti ti-math"></i></button>
+      <button class="tool-btn" title="图片" data-add="image"><i class="ti ti-photo"></i></button>
+      <button class="tool-btn" title="标题" data-add="heading"><i class="ti ti-heading"></i></button>
+      <button class="tool-btn" title="提示框" data-add="callout"><i class="ti ti-bulb"></i></button>
     </aside>
 
     <section class="panel editor">
       <div class="panel-head">编辑区（Block 列表）</div>
-      <div class="panel-body">
-        <div class="block-placeholder">标题 Block（示例）</div>
-        <div class="block-placeholder">正文文本 Block（示例）</div>
-        <div class="block-placeholder">代码 Block（示例）</div>
+      <div class="panel-body" id="editor-scroll">
+        <section class="meta-editor">
+          <div class="meta-cover">
+            <div class="cover-preview" id="cover-preview">无封面</div>
+            <div>
+              <button class="btn" type="button" id="cover-upload-btn">设置封面图片</button>
+              <div style="margin-top:8px;font-size:12px;color:#5f748f;">暂使用图片 URL，不做上传。</div>
+            </div>
+          </div>
+          <div class="meta-grid">
+            <input id="meta-title" type="text" placeholder="教程标题">
+            <textarea id="meta-summary" placeholder="一句话描述这篇教程..."></textarea>
+            <div class="tag-picker" id="meta-tags"></div>
+          </div>
+        </section>
+
+        <section id="block-list"></section>
       </div>
     </section>
 
     <section class="panel preview">
       <div class="panel-head">预览区</div>
-      <div class="panel-body">
-        <div class="preview-placeholder">
+      <div class="panel-body" id="preview-root">
+        <div class="preview-placeholder" id="preview-placeholder">
           <strong>实时预览（骨架）</strong><br>
           后续将在这里渲染教程内容，包括文本、代码、公式和图片。
         </div>
+        <div class="preview-content" id="preview-content" style="display:none;"></div>
       </div>
     </section>
   </main>
+
+  <div class="modal-layer" id="modal-layer" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head" id="modal-title"></div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-foot">
+        <button class="btn" type="button" id="modal-cancel">取消</button>
+        <button class="btn btn-primary" type="button" id="modal-confirm">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+
+  <script>
+    const API_BASE = 'https://api.dreamingpolar.com/auth/tutorials';
+    const TAGS = ['Python', '数据分析', '可视化', '机器学习', 'LaTeX', '入门'];
+
+    let blocks = [];
+    let tutorialMeta = {
+      title: '',
+      summary: '',
+      cover_image: '',
+      tags: [],
+      status: 'draft'
+    };
+
+    let currentTutorialId = null;
+    let latestToken = null;
+    let modalResolve = null;
+
+    const els = {
+      titleInput: document.getElementById('title-input'),
+      saveBtn: document.getElementById('btn-save'),
+      updateBtn: document.getElementById('btn-update'),
+      publishBtn: document.getElementById('btn-publish'),
+      saveStatus: document.getElementById('save-status'),
+      blockList: document.getElementById('block-list'),
+      previewPlaceholder: document.getElementById('preview-placeholder'),
+      previewContent: document.getElementById('preview-content'),
+      coverUploadBtn: document.getElementById('cover-upload-btn'),
+      coverPreview: document.getElementById('cover-preview'),
+      metaTitle: document.getElementById('meta-title'),
+      metaSummary: document.getElementById('meta-summary'),
+      metaTags: document.getElementById('meta-tags'),
+      toolPanel: document.querySelector('.block-tools'),
+      modalLayer: document.getElementById('modal-layer'),
+      modalTitle: document.getElementById('modal-title'),
+      modalBody: document.getElementById('modal-body'),
+      modalCancel: document.getElementById('modal-cancel'),
+      modalConfirm: document.getElementById('modal-confirm'),
+    };
+
+    function uid() {
+      return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function esc(text) {
+      return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function normalizeBlock(raw = {}) {
+      return {
+        id: raw.id || uid(),
+        type: raw.type || 'text',
+        content: raw.content ?? '',
+        language: raw.language || 'python',
+        executable: typeof raw.executable === 'boolean' ? raw.executable : true,
+        level: Number(raw.level || 2),
+        variant: raw.variant || 'tip',
+        imageUrl: raw.imageUrl || '',
+        caption: raw.caption || '',
+      };
+    }
+
+    function addBlock(partial) {
+      blocks.push(normalizeBlock(partial));
+      markDirty('已添加 block，待保存');
+      renderEditor();
+      renderPreview();
+    }
+
+    function markDirty(msg = '内容已更新，待保存') {
+      els.saveStatus.textContent = msg;
+    }
+
+    function setSaved(msg = '已保存') {
+      els.saveStatus.textContent = msg;
+    }
+
+    function renderMeta() {
+      const title = tutorialMeta.title || '';
+      els.titleInput.value = title;
+      els.metaTitle.value = title;
+      els.metaSummary.value = tutorialMeta.summary || '';
+
+      if (tutorialMeta.cover_image) {
+        els.coverPreview.innerHTML = `<img src="${esc(tutorialMeta.cover_image)}" alt="封面">`;
+      } else {
+        els.coverPreview.textContent = '无封面';
+      }
+
+      els.metaTags.innerHTML = TAGS.map(tag => {
+        const active = tutorialMeta.tags.includes(tag) ? 'active' : '';
+        return `<button type="button" class="tag-chip ${active}" data-tag="${esc(tag)}">${esc(tag)}</button>`;
+      }).join('');
+    }
+
+    function typeBadge(type) {
+      const map = {
+        text: '文本',
+        code: '代码',
+        latex: '公式',
+        heading: '标题',
+        image: '图片',
+        callout: '提示框',
+      };
+      return map[type] || type;
+    }
+
+    function renderBlockContent(block) {
+      if (block.type === 'text') {
+        return `<textarea class="block-input" data-field="content" placeholder="输入文本（支持 Markdown）">${esc(block.content)}</textarea>`;
+      }
+
+      if (block.type === 'code') {
+        return `
+          <div class="block-head">
+            <span class="type-badge">代码</span>
+            <span class="lang-badge">${esc(block.language)}</span>
+            <label class="toggle"><input type="checkbox" data-field="executable" ${block.executable ? 'checked' : ''}>可执行</label>
+            <select class="block-select" data-field="language" style="max-width:160px;">
+              <option value="python" ${block.language === 'python' ? 'selected' : ''}>Python</option>
+              <option value="latex" ${block.language === 'latex' ? 'selected' : ''}>LaTeX</option>
+              <option value="javascript" ${block.language === 'javascript' ? 'selected' : ''}>JavaScript</option>
+              <option value="markdown" ${block.language === 'markdown' ? 'selected' : ''}>Markdown</option>
+            </select>
+          </div>
+          <textarea class="code-editor" data-field="content" placeholder="输入代码...">${esc(block.content)}</textarea>
+        `;
+      }
+
+      if (block.type === 'latex') {
+        return `
+          <div class="latex-editor">
+            <textarea class="block-input" data-field="content" placeholder="输入 LaTeX 公式">${esc(block.content)}</textarea>
+            <div class="latex-live">${block.content ? `\\[${esc(block.content)}\\]` : '公式预览区'}</div>
+          </div>
+        `;
+      }
+
+      if (block.type === 'heading') {
+        return `
+          <div class="block-head">
+            <span class="type-badge">标题</span>
+            <select class="block-select" data-field="level" style="max-width:120px;">
+              <option value="2" ${Number(block.level) === 2 ? 'selected' : ''}>H2</option>
+              <option value="3" ${Number(block.level) === 3 ? 'selected' : ''}>H3</option>
+              <option value="4" ${Number(block.level) === 4 ? 'selected' : ''}>H4</option>
+            </select>
+          </div>
+          <input class="block-inline" data-field="content" value="${esc(block.content)}" placeholder="输入标题内容">
+        `;
+      }
+
+      if (block.type === 'image') {
+        return `
+          <div class="image-block">
+            <input class="block-inline" data-field="imageUrl" value="${esc(block.imageUrl)}" placeholder="图片 URL">
+            ${block.imageUrl ? `<img class="image-thumb" src="${esc(block.imageUrl)}" alt="图片">` : ''}
+            <input class="block-inline" data-field="caption" value="${esc(block.caption)}" placeholder="图片说明（可选）">
+          </div>
+        `;
+      }
+
+      if (block.type === 'callout') {
+        return `
+          <div class="block-head">
+            <span class="type-badge">提示框</span>
+            <select class="block-select" data-field="variant" style="max-width:160px;">
+              <option value="tip" ${block.variant === 'tip' ? 'selected' : ''}>tip</option>
+              <option value="warning" ${block.variant === 'warning' ? 'selected' : ''}>warning</option>
+              <option value="info" ${block.variant === 'info' ? 'selected' : ''}>info</option>
+            </select>
+          </div>
+          <textarea class="block-input" data-field="content" placeholder="输入提示内容">${esc(block.content)}</textarea>
+        `;
+      }
+
+      return `<textarea class="block-input" data-field="content">${esc(block.content)}</textarea>`;
+    }
+
+    function renderEditor() {
+      if (!blocks.length) {
+        els.blockList.innerHTML = '<div class="block-empty">点击左侧工具栏添加第一个 Block</div>';
+        return;
+      }
+
+      els.blockList.innerHTML = blocks.map((block, index) => {
+        return `
+          <div class="block-card" data-id="${block.id}" data-type="${block.type}">
+            <div class="block-handle">⠿</div>
+            <div class="block-content">
+              <div class="block-head"><span class="type-badge">${typeBadge(block.type)}</span></div>
+              ${renderBlockContent(block)}
+            </div>
+            <div class="block-actions">
+              <button class="block-move-up" data-action="up" ${index === 0 ? 'disabled' : ''}>↑</button>
+              <button class="block-move-down" data-action="down" ${index === blocks.length - 1 ? 'disabled' : ''}>↓</button>
+              <button class="block-delete" data-action="delete">×</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([els.blockList]).catch(() => {});
+      }
+    }
+
+    function renderPreview() {
+      const hasContent = blocks.length > 0 || tutorialMeta.title || tutorialMeta.summary || tutorialMeta.cover_image;
+      els.previewPlaceholder.style.display = hasContent ? 'none' : '';
+      els.previewContent.style.display = hasContent ? '' : 'none';
+      if (!hasContent) return;
+
+      const metaHtml = `
+        ${tutorialMeta.cover_image ? `<img class="preview-cover" src="${esc(tutorialMeta.cover_image)}" alt="封面">` : ''}
+        ${tutorialMeta.title ? `<h1 class="preview-title">${esc(tutorialMeta.title)}</h1>` : ''}
+        ${tutorialMeta.summary ? `<p class="preview-summary">${esc(tutorialMeta.summary)}</p>` : ''}
+        ${tutorialMeta.tags.length ? `<div class="preview-tag-row">${tutorialMeta.tags.map(t => `<span class="preview-tag">${esc(t)}</span>`).join('')}</div>` : ''}
+      `;
+
+      const blocksHtml = blocks.map(block => {
+        if (block.type === 'text') {
+          return `<section>${marked.parse(block.content || '', { breaks: true })}</section>`;
+        }
+        if (block.type === 'code') {
+          const lang = String(block.language || '').toLowerCase();
+          return `<pre class="preview-code"><code class="language-${esc(lang)}">${esc(block.content || '')}</code></pre>`;
+        }
+        if (block.type === 'latex') {
+          return `<section>\\[${esc(block.content || '')}\\]</section>`;
+        }
+        if (block.type === 'heading') {
+          const lv = [2, 3, 4].includes(Number(block.level)) ? Number(block.level) : 2;
+          return `<h${lv}>${esc(block.content || '标题')}</h${lv}>`;
+        }
+        if (block.type === 'image') {
+          if (!block.imageUrl) return '';
+          return `<figure><img class="preview-cover" src="${esc(block.imageUrl)}" alt="图片">${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`;
+        }
+        if (block.type === 'callout') {
+          const v = ['tip', 'warning', 'info'].includes(block.variant) ? block.variant : 'tip';
+          return `<section class="preview-callout ${v}">${marked.parse(block.content || '', { breaks: true })}</section>`;
+        }
+        return '';
+      }).join('');
+
+      els.previewContent.innerHTML = `${metaHtml}${blocksHtml}`;
+
+      if (window.hljs) {
+        els.previewContent.querySelectorAll('pre code').forEach(node => {
+          window.hljs.highlightElement(node);
+        });
+      }
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([els.previewContent]).catch(() => {});
+      }
+    }
+
+    function moveBlock(id, dir) {
+      const idx = blocks.findIndex(b => b.id === id);
+      if (idx < 0) return;
+      const next = idx + dir;
+      if (next < 0 || next >= blocks.length) return;
+      const temp = blocks[idx];
+      blocks[idx] = blocks[next];
+      blocks[next] = temp;
+      markDirty('Block 顺序已调整，待保存');
+      renderEditor();
+      renderPreview();
+    }
+
+    function removeBlock(id) {
+      const idx = blocks.findIndex(b => b.id === id);
+      if (idx < 0) return;
+      blocks.splice(idx, 1);
+      markDirty('Block 已删除，待保存');
+      renderEditor();
+      renderPreview();
+    }
+
+    function openModal(title, bodyHtml) {
+      els.modalTitle.textContent = title;
+      els.modalBody.innerHTML = bodyHtml;
+      els.modalLayer.classList.add('show');
+      els.modalLayer.setAttribute('aria-hidden', 'false');
+
+      return new Promise(resolve => {
+        modalResolve = resolve;
+      });
+    }
+
+    function closeModal(result) {
+      els.modalLayer.classList.remove('show');
+      els.modalLayer.setAttribute('aria-hidden', 'true');
+      const fn = modalResolve;
+      modalResolve = null;
+      if (fn) fn(result);
+    }
+
+    function readModalValues() {
+      const form = {};
+      els.modalBody.querySelectorAll('[name]').forEach(el => {
+        if (el.type === 'checkbox') {
+          form[el.name] = el.checked;
+        } else {
+          form[el.name] = el.value;
+        }
+      });
+      return form;
+    }
+
+    async function promptCodeBlock() {
+      const result = await openModal('代码 Block 设置', `
+        <label class="modal-field">语言
+          <select name="language">
+            <option value="python">Python</option>
+            <option value="latex">LaTeX</option>
+            <option value="javascript">JavaScript</option>
+            <option value="markdown">Markdown</option>
+          </select>
+        </label>
+        <label class="modal-field"><span><input type="checkbox" name="executable" checked> 是否可执行（默认开启）</span></label>
+      `);
+      if (!result) return;
+      addBlock({ type: 'code', content: '', language: result.language || 'python', executable: !!result.executable });
+    }
+
+    async function promptHeadingBlock() {
+      const result = await openModal('标题级别', `
+        <label class="modal-field">选择级别
+          <select name="level">
+            <option value="2">H2</option>
+            <option value="3">H3</option>
+            <option value="4">H4</option>
+          </select>
+        </label>
+      `);
+      if (!result) return;
+      addBlock({ type: 'heading', level: Number(result.level || 2), content: '' });
+    }
+
+    async function promptCalloutBlock() {
+      const result = await openModal('提示框类型', `
+        <label class="modal-field">选择类型
+          <select name="variant">
+            <option value="tip">tip</option>
+            <option value="warning">warning</option>
+            <option value="info">info</option>
+          </select>
+        </label>
+      `);
+      if (!result) return;
+      addBlock({ type: 'callout', variant: result.variant || 'tip', content: '' });
+    }
+
+    async function promptImageBlock() {
+      const result = await openModal('图片 Block（URL）', `
+        <label class="modal-field">图片 URL
+          <input name="imageUrl" placeholder="https://...">
+        </label>
+        <label class="modal-field">图片说明
+          <input name="caption" placeholder="可选">
+        </label>
+      `);
+      if (!result) return;
+      addBlock({ type: 'image', imageUrl: result.imageUrl || '', caption: result.caption || '' });
+    }
+
+    async function promptCoverUrl() {
+      const result = await openModal('设置封面图（URL）', `
+        <label class="modal-field">封面 URL
+          <input name="coverImage" value="${esc(tutorialMeta.cover_image || '')}" placeholder="https://...">
+        </label>
+      `);
+      if (!result) return;
+      tutorialMeta.cover_image = result.coverImage || '';
+      markDirty('封面已更新，待保存');
+      renderMeta();
+      renderPreview();
+    }
+
+    function bindToolbar() {
+      els.toolPanel.addEventListener('click', async e => {
+        const btn = e.target.closest('[data-add]');
+        if (!btn) return;
+        const t = btn.dataset.add;
+
+        if (t === 'text') return addBlock({ type: 'text', content: '' });
+        if (t === 'code') return promptCodeBlock();
+        if (t === 'latex') return addBlock({ type: 'latex', content: '' });
+        if (t === 'image') return promptImageBlock();
+        if (t === 'heading') return promptHeadingBlock();
+        if (t === 'callout') return promptCalloutBlock();
+      });
+    }
+
+    function bindBlockEditor() {
+      els.blockList.addEventListener('click', e => {
+        const card = e.target.closest('.block-card');
+        if (!card) return;
+        const id = card.dataset.id;
+        const action = e.target.closest('button')?.dataset?.action;
+        if (!action) return;
+        if (action === 'up') return moveBlock(id, -1);
+        if (action === 'down') return moveBlock(id, 1);
+        if (action === 'delete') return removeBlock(id);
+      });
+
+      els.blockList.addEventListener('input', e => {
+        const card = e.target.closest('.block-card');
+        if (!card) return;
+        const id = card.dataset.id;
+        const field = e.target.dataset.field;
+        if (!field) return;
+
+        const block = blocks.find(b => b.id === id);
+        if (!block) return;
+
+        let value;
+        if (e.target.type === 'checkbox') {
+          value = !!e.target.checked;
+        } else if (field === 'level') {
+          value = Number(e.target.value || 2);
+        } else {
+          value = e.target.value;
+        }
+        block[field] = value;
+
+        if (field === 'imageUrl') {
+          const img = card.querySelector('.image-thumb');
+          if (img) img.src = value;
+        }
+
+        markDirty();
+        renderPreview();
+      });
+
+      els.blockList.addEventListener('change', e => {
+        const card = e.target.closest('.block-card');
+        if (!card) return;
+        const id = card.dataset.id;
+        const field = e.target.dataset.field;
+        if (!field) return;
+        const block = blocks.find(b => b.id === id);
+        if (!block) return;
+
+        if (e.target.type === 'checkbox') {
+          block[field] = !!e.target.checked;
+        } else if (field === 'level') {
+          block[field] = Number(e.target.value || 2);
+        } else {
+          block[field] = e.target.value;
+        }
+        markDirty();
+        renderEditor();
+        renderPreview();
+      });
+    }
+
+    function bindMetaEditor() {
+      const onTitleInput = v => {
+        tutorialMeta.title = v;
+        if (els.titleInput.value !== v) els.titleInput.value = v;
+        if (els.metaTitle.value !== v) els.metaTitle.value = v;
+        markDirty();
+        renderPreview();
+      };
+
+      els.titleInput.addEventListener('input', e => onTitleInput(e.target.value));
+      els.metaTitle.addEventListener('input', e => onTitleInput(e.target.value));
+
+      els.metaSummary.addEventListener('input', e => {
+        tutorialMeta.summary = e.target.value;
+        markDirty();
+        renderPreview();
+      });
+
+      els.metaTags.addEventListener('click', e => {
+        const chip = e.target.closest('[data-tag]');
+        if (!chip) return;
+        const tag = chip.dataset.tag;
+        if (tutorialMeta.tags.includes(tag)) {
+          tutorialMeta.tags = tutorialMeta.tags.filter(t => t !== tag);
+        } else {
+          tutorialMeta.tags.push(tag);
+        }
+        markDirty();
+        renderMeta();
+        renderPreview();
+      });
+
+      els.coverUploadBtn.addEventListener('click', promptCoverUrl);
+    }
+
+    function getTokenFromCookie() {
+      const m = document.cookie.match(/(?:^|;\s*)accessToken=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    function getTokenFromLocalStorage() {
+      const keys = ['dp-access-token', 'accessToken', 'token', 'dp-token'];
+      for (const k of keys) {
+        const v = localStorage.getItem(k);
+        if (v) return v;
+      }
+      return '';
+    }
+
+    function getToken() {
+      const fromClient = window.authClient?.getAccessToken?.();
+      if (fromClient) return fromClient;
+      if (latestToken) return latestToken;
+      return getTokenFromCookie() || getTokenFromLocalStorage();
+    }
+
+    async function ensureToken() {
+      let token = getToken();
+      if (token) {
+        latestToken = token;
+        return token;
+      }
+
+      try {
+        const res = await fetch('https://api.dreamingpolar.com/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) return '';
+        const data = await res.json().catch(() => ({}));
+        latestToken = data.accessToken || '';
+        return latestToken;
+      } catch {
+        return '';
+      }
+    }
+
+    function buildPayload(status) {
+      return {
+        ...tutorialMeta,
+        title: (tutorialMeta.title || '').trim(),
+        summary: (tutorialMeta.summary || '').trim(),
+        cover_image: (tutorialMeta.cover_image || '').trim(),
+        tags: Array.isArray(tutorialMeta.tags) ? tutorialMeta.tags : [],
+        blocks,
+        status,
+      };
+    }
+
+    function extractTutorialId(respData) {
+      return String(respData?.id || respData?.tutorial_id || respData?.tutorialId || '');
+    }
+
+    function setEditMode(isEdit) {
+      els.updateBtn.style.display = isEdit ? '' : 'none';
+      els.saveBtn.style.display = isEdit ? 'none' : '';
+    }
+
+    async function requestWithAuth(method, url, body) {
+      const token = await ensureToken();
+      if (!token) throw new Error('未登录或登录已过期，请先登录。');
+
+      const res = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.message || `请求失败: ${res.status}`);
+      }
+      return data;
+    }
+
+    async function createTutorial(status) {
+      const payload = buildPayload(status);
+      if (!payload.title) throw new Error('请先填写教程标题');
+      const data = await requestWithAuth('POST', API_BASE, payload);
+      const id = extractTutorialId(data);
+      if (id) {
+        currentTutorialId = id;
+        history.replaceState({}, '', `/write?id=${encodeURIComponent(id)}`);
+        setEditMode(true);
+      }
+      tutorialMeta.status = status;
+      return data;
+    }
+
+    async function updateTutorial(status = tutorialMeta.status || 'draft') {
+      if (!currentTutorialId) throw new Error('当前不是已存在教程');
+      const payload = buildPayload(status);
+      if (!payload.title) throw new Error('请先填写教程标题');
+      const data = await requestWithAuth('PUT', `${API_BASE}/${encodeURIComponent(currentTutorialId)}`, payload);
+      tutorialMeta.status = status;
+      return data;
+    }
+
+    async function onSaveDraft() {
+      try {
+        els.saveStatus.textContent = '保存中...';
+        await createTutorial('draft');
+        setSaved('草稿已保存');
+      } catch (e) {
+        els.saveStatus.textContent = `保存失败: ${e.message}`;
+      }
+    }
+
+    async function onUpdate() {
+      try {
+        els.saveStatus.textContent = '更新中...';
+        await updateTutorial('draft');
+        setSaved('已更新');
+      } catch (e) {
+        els.saveStatus.textContent = `更新失败: ${e.message}`;
+      }
+    }
+
+    async function onPublish() {
+      try {
+        els.saveStatus.textContent = '发布中...';
+        if (currentTutorialId) {
+          await updateTutorial('published');
+        } else {
+          await createTutorial('published');
+        }
+        setSaved('发布成功，正在跳转...');
+        if (currentTutorialId) {
+          location.href = `/community/${encodeURIComponent(currentTutorialId)}`;
+        }
+      } catch (e) {
+        els.saveStatus.textContent = `发布失败: ${e.message}`;
+      }
+    }
+
+    async function loadExistingTutorial() {
+      const id = new URLSearchParams(location.search).get('id');
+      if (!id) {
+        setEditMode(false);
+        return;
+      }
+
+      try {
+        els.saveStatus.textContent = '加载中...';
+        const token = await ensureToken();
+        if (!token) throw new Error('请先登录后再编辑教程');
+
+        const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.message || `加载失败: ${res.status}`);
+
+        currentTutorialId = id;
+        tutorialMeta = {
+          title: data.title || '',
+          summary: data.summary || '',
+          cover_image: data.cover_image || '',
+          tags: Array.isArray(data.tags) ? data.tags : [],
+          status: data.status || 'draft'
+        };
+        blocks = Array.isArray(data.blocks) ? data.blocks.map(normalizeBlock) : [];
+
+        setEditMode(true);
+        renderMeta();
+        renderEditor();
+        renderPreview();
+        setSaved('已加载教程');
+      } catch (e) {
+        setEditMode(false);
+        els.saveStatus.textContent = `加载失败: ${e.message}`;
+      }
+    }
+
+    function bindTopButtons() {
+      els.saveBtn.addEventListener('click', onSaveDraft);
+      els.updateBtn.addEventListener('click', onUpdate);
+      els.publishBtn.addEventListener('click', onPublish);
+    }
+
+    function bindModal() {
+      els.modalCancel.addEventListener('click', () => closeModal(null));
+      els.modalConfirm.addEventListener('click', () => closeModal(readModalValues()));
+      els.modalLayer.addEventListener('click', e => {
+        if (e.target === els.modalLayer) closeModal(null);
+      });
+    }
+
+    function init() {
+      renderMeta();
+      renderEditor();
+      renderPreview();
+      bindToolbar();
+      bindBlockEditor();
+      bindMetaEditor();
+      bindTopButtons();
+      bindModal();
+      loadExistingTutorial();
+    }
+
+    init();
+  </script>
 </body>
 </html>
