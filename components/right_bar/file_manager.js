@@ -610,19 +610,46 @@ export function initFileManager() {
 
   cancelSelBtn.addEventListener('click', _exitSelectMode);
 
-  deleteBtn.addEventListener('click', () => {
+  deleteBtn.addEventListener('click', async () => {
     if (!_selected.size) return;
-    const store = _loadStore();
-    // Remove from dataset_store (ARIA tabs) before wiping inject-store entries
-    _selected.forEach(key => {
-      const filename = store[key]?.filename;
-      if (filename) removeDataset(filename);  // triggers dataset-updated → ARIA refreshes
-      delete store[key];
-    });
-    _saveStore(store);
-    _selected.clear();
-    _exitSelectMode();
-    document.dispatchEvent(new CustomEvent('nb-file-imported'));
+    
+    // Separate cloud and local files for deletion
+    const toDelete = Array.from(_selected);
+    const cloudToDelete = toDelete.filter(key => key.startsWith('cloud_'));
+    const localToDelete = toDelete.filter(key => !key.startsWith('cloud_'));
+
+    try {
+      // Delete cloud files via API
+      for (const key of cloudToDelete) {
+        const fileId = key.replace('cloud_', '');
+        const token = window.authClient?.getAccessToken?.();
+        if (!token) continue;
+        try {
+          const res = await fetch(
+            `https://api.dreamingpolar.com/auth/files/${fileId}`,
+            { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!res.ok) console.warn(`Failed to delete cloud file: ${fileId}`);
+        } catch (e) {
+          console.warn('[cloud delete]', e);
+        }
+      }
+
+      // Delete local files from store
+      const store = _loadStore();
+      for (const key of localToDelete) {
+        const filename = store[key]?.filename;
+        if (filename) removeDataset(filename); // triggers dataset-updated → ARIA refreshes
+        delete store[key];
+      }
+      _saveStore(store);
+
+      _selected.clear();
+      _exitSelectMode();
+      document.dispatchEvent(new CustomEvent('nb-file-imported'));
+    } catch (err) {
+      console.error('[delete files]', err);
+    }
   });
 
   // ── Core import logic ─────────────────────────────────────────────────────
@@ -840,6 +867,11 @@ export function initFileManager() {
 
     const ago = _timeAgo(file.created_at * 1000);
 
+    // ── Select circle (visible in select mode) ────────────────────────────
+    const circle = document.createElement('span');
+    circle.className = 'rb-file-select-circle';
+    circle.innerHTML = `<i class="ti ti-check rb-file-check-icon"></i>`;
+
     // Create source status icon element
     const sourceIconHtml = source === 'cloud' 
       ? '<i class="ti ti-cloud" style="color:#3b82f6;font-size:12px;margin-right:4px;" title="云端文件"></i>'
@@ -856,11 +888,11 @@ export function initFileManager() {
         <button class="rb-file-action-btn rb-inject-cloud">
           <i class="ti"></i>
         </button>
-        <button class="rb-file-action-btn rb-delete-cloud" title="删除">
-          <i class="ti ti-trash"></i>
-        </button>
       </div>
     `;
+
+    // Insert circle at beginning
+    row.insertBefore(circle, row.firstChild);
 
     // 更新操作按钮的meta信息
     const actionBtn = row.querySelector('.rb-inject-cloud');
@@ -875,6 +907,7 @@ export function initFileManager() {
     // 根据screen类型调用对应的操作
     actionBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
+      if (_selectMode) return; // Don't fire action in select mode
       const meta = _getCloudActionMeta();
       const varName = file.filename.replace(/\.[^/.]+$/, '')
         .replace(/[^a-zA-Z0-9_]/g, '_');
@@ -930,22 +963,23 @@ export function initFileManager() {
       }
     });
 
-    // 删除
-    row.querySelector('.rb-delete-cloud').addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (!confirm(`确认删除 ${file.filename}？`)) return;
-      try {
-        const token = window.authClient.getAccessToken();
-        const res = await fetch(
-          `https://api.dreamingpolar.com/auth/files/${file.id}`,
-          { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (res.ok) {
-          row.remove();
+    // Shared click handler for select mode and regular clicks
+    row.addEventListener('click', () => {
+      if (_selectMode) {
+        // Toggle selection for cloud files
+        const cloudKey = `cloud_${file.id}`;
+        if (_selected.has(cloudKey)) {
+          _selected.delete(cloudKey);
+          row.classList.remove('rb-file-item--selected');
+        } else {
+          _selected.add(cloudKey);
+          row.classList.add('rb-file-item--selected');
         }
-      } catch (e) {
-        console.error('[cloud delete]', e);
+        _updateDeleteBar();
+        return;
       }
+      // In normal mode, click the action button
+      actionBtn.click();
     });
 
     return row;
