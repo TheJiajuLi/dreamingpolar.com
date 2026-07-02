@@ -559,9 +559,21 @@ function setupGridScreen() {
       );
       if (!res.ok) return local;
 
-      const cloudFiles = await res.json();
-      const cloudSources = (Array.isArray(cloudFiles) ? cloudFiles : [])
+      const cloudJson = await res.json();
+      const cloudFiles = Array.isArray(cloudJson) ? cloudJson : [];
+      const seen = new Map();
+      cloudFiles
         .filter(f => f?.file_type === 'data' && f?.filename && f?.id)
+        .sort((a, b) => {
+          const at = Date.parse(a?.created_at || 0) || 0;
+          const bt = Date.parse(b?.created_at || 0) || 0;
+          return bt - at;
+        })
+        .forEach(f => {
+          if (!seen.has(f.filename)) seen.set(f.filename, f);
+        });
+
+      const cloudSources = [...seen.values()]
         .map(f => ({
           varName: String(f.filename)
             .replace(/\.[^/.]+$/, '')
@@ -570,6 +582,7 @@ function setupGridScreen() {
           fileId: f.id,
           source: 'cloud',
           label: `☁ ${f.filename}`,
+          rows: null,
         }))
         .filter(src => !local.some(s => (s.filename || s.name) === src.filename));
 
@@ -1240,10 +1253,15 @@ function setupGridScreen() {
         item.onmouseleave = () => { item.style.background = ''; };
         const name = src.label ?? src.name ?? src.filename ?? '—';
         const varN = src.varName ?? src.name ?? '—';
-        const cnt  = src.rows ? (Array.isArray(src.rows) ? src.rows.length : src.rows) : '?';
+        const rowCount = Array.isArray(src.rows) ? src.rows.length : src.rows;
+        const cnt = rowCount != null
+          ? `${rowCount.toLocaleString()} 行`
+          : src.source === 'cloud'
+            ? '云端文件'
+            : '? 行';
         item.innerHTML =
           `<div style="font-weight:600;font-size:0.82rem;color:#0f172a">${name}</div>` +
-          `<div style="font-size:0.68rem;color:#94a3b8;font-family:monospace">${varN} · ${cnt} 行</div>`;
+          `<div style="font-size:0.68rem;color:#94a3b8;font-family:monospace">${varN} · ${cnt}</div>`;
         item.addEventListener('click', async () => {
           overlay.remove();
           if (src.source === 'cloud') {
