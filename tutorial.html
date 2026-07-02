@@ -6,6 +6,15 @@
   <title>教程详情 - Dreaming Polar</title>
   <link rel="icon" href="assets/app_logo/favicon.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <script type="module">
+    import { initAuth } from '/components/auth/auth_client.js';
+
+    initAuth().then(() => {
+      if (!window.authClient?.isLoggedIn()) {
+        console.warn('[tutorial] 未登录，点赞/评论功能需要先登录');
+      }
+    });
+  </script>
   <style>
     :root {
       --bg: #ffffff;

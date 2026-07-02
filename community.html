@@ -544,10 +544,25 @@
       }
     }
 
+    function hasLoginSession() {
+      if (window.authClient?.isLoggedIn?.()) return true;
+      if (/(?:^|;\s*)(?:accessToken|dp_access)=/.test(document.cookie || '')) return true;
+      return Boolean(
+        localStorage.getItem('dp-access-token') ||
+        localStorage.getItem('accessToken') ||
+        localStorage.getItem('token') ||
+        localStorage.getItem('dp-token')
+      );
+    }
+
     function bindFilters() {
       document.getElementById('main-filters').addEventListener('click', (e) => {
         const btn = e.target.closest('.pill[data-filter]');
         if (!btn) return;
+        if (btn.dataset.filter === 'favorites' && !hasLoginSession()) {
+          alert('请先登录查看收藏');
+          return;
+        }
         tutorialsState.mode = btn.dataset.filter;
         document.querySelectorAll('#main-filters .pill').forEach(x => x.classList.toggle('active', x === btn));
         applyFilters();

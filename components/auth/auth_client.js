@@ -6,6 +6,8 @@ import { initSync } from '../shared/notebook_sync.js';
 const AUTH_BASE = 'https://api.dreamingpolar.com/auth';
 
 let _accessToken = null;
+let _authInitPromise = null;
+let _authInited = false;
 
 async function authFetch(path, opts = {}) {
   const res = await fetch(`${AUTH_BASE}${path}`, {
@@ -127,6 +129,19 @@ window.authClient = { register, login, logout, getMe, updateMe, updateMeAvatar, 
                       silentRefresh, isLoggedIn, getAccessToken,
                       forgotPassword, resetPassword,
                       showResetPassword: (token) => _buildResetPage(token) };
+
+export function initAuth() {
+  if (_authInited) return Promise.resolve(window.authClient);
+  if (_authInitPromise) return _authInitPromise;
+
+  _authInitPromise = Promise.resolve().then(() => {
+    _initUI();
+    _authInited = true;
+    return window.authClient;
+  });
+
+  return _authInitPromise;
+}
 
 // ══════════════════════════════════════════════════════════════
 //  AUTH UI  — vertical toolbar button + modal + profile panel
@@ -553,4 +568,4 @@ function setupUserScreen() {
   window._dpAuthOpenPanel = () => window.screenController?.open('user');
 }
 
-_initUI();
+initAuth();
