@@ -1,21 +1,25 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    
-    const rewrite = (path) => {
-      const newUrl = new URL(path, url.origin);
-      return fetch(new Request(newUrl, request));
-    };
-
-    if (url.pathname === '/community') {
-      return rewrite('/community.html');
+    try {
+      if (url.pathname === '/community') {
+        return env.ASSETS.fetch(new Request(new URL('/community.html', url), request));
+      }
+      if (url.pathname.startsWith('/community/user/')) {
+        return env.ASSETS.fetch(new Request(new URL('/profile.html', url), request));
+      }
+      if (url.pathname.startsWith('/community/')) {
+        return env.ASSETS.fetch(new Request(new URL('/tutorial.html', url), request));
+      }
+      if (url.pathname === '/write') {
+        return env.ASSETS.fetch(new Request(new URL('/write.html', url), request));
+      }
+      return env.ASSETS.fetch(request);
+    } catch (e) {
+      return new Response(
+        `Error: ${e.message}`,
+        { status: 500, headers: { 'content-type': 'text/plain' } }
+      );
     }
-    if (url.pathname.startsWith('/community/')) {
-      return rewrite('/profile.html');
-    }
-    if (url.pathname === '/write') {
-      return rewrite('/write.html');
-    }
-    return fetch(request);
   },
 };
