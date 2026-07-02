@@ -5,7 +5,7 @@
 
 import { setDataset, removeDataset, getAllDatasets } from '../shared/dataset_store.js';
 import { ensureXlsx, parseToDataset }    from '../import/import_data.js';
-import { writeToFS }                     from '../compiler/compiler.js';
+import { writeToFS, injectDataFrame }                     from '../compiler/compiler.js';
 import { createSettingsPanel, getSettings } from './settings.js';
 import { logActivity } from '../shared/activity_logger.js';
 
@@ -205,6 +205,9 @@ function _detectActiveScreen() {
 export function initFileManager() {
   const rightBar = document.getElementById('right-bar');
   if (!rightBar) return;
+
+  // Ensure injectDataFrame is available globally
+  window.injectDataFrame = injectDataFrame;
 
   _syncStoreToDataset();
   _detectActiveScreen();  // Detect active screen on page load

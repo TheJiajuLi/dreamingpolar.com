@@ -113,8 +113,8 @@ function setupGenerativeScreen() {
 
   // ── Handle cloud file injection from file manager ──────────────────────────
   document.addEventListener('dp-send-to-aria', async (e) => {
-    const { filename, buffer, data, fileType, varName } = e.detail;
-    if (!filename || !buffer) return;
+    const { filename, data, fileType, varName } = e.detail;
+    if (!filename || !data) return;
     try {
       // Inject file data into Python kernel
       const resolvedVarName = varName || filename.replace(/\.[^/.]+$/, '')
@@ -122,7 +122,7 @@ function setupGenerativeScreen() {
       if (window.injectDataFrame) {
         await window.injectDataFrame(
           resolvedVarName,
-          new Uint8Array(buffer || data),
+          data instanceof Uint8Array ? data : new Uint8Array(data),
           fileType ?? 'csv',
           filename
         );
