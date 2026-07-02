@@ -272,44 +272,80 @@ if '_dp_kernel_ns' not in dir():
 
   _py.globals.set('_dp_inject_data', data);
   _py.globals.set('_dp_inject_name', varName);
+  _py.globals.set('_dp_inject_file', fileName || 'injected.sql');
+
+  _py.runPython(`
+# 统一转换：把JsProxy/memoryview转为Python原生类型
+if hasattr(_dp_inject_data, 'to_py'):
+    _raw = _dp_inject_data.to_py()
+else:
+    _raw = _dp_inject_data
+
+# 文本格式（csv/json/xml/text/sql等）转为str
+if not isinstance(_raw, str):
+    _text = bytes(_raw).decode('utf-8')
+else:
+    _text = _raw
+
+# 二进制格式（xlsx/xls）保持bytes
+_bytes = bytes(_raw) if not isinstance(_raw, str) else _raw.encode('utf-8')
+`);
 
   let rows = 0;
+  let result = null;
   try {
     if (fileType === 'csv') {
       _py.runPython(`
 import pandas as _pd_inj, io as _io_inj
-_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_csv(_io_inj.StringIO(_dp_inject_data))
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_csv(_io_inj.StringIO(_text))
 del _pd_inj, _io_inj
 `);
     } else if (fileType === 'json') {
       _py.runPython(`
 import pandas as _pd_inj, io as _io_inj
-_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_json(_io_inj.StringIO(_dp_inject_data))
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_json(_io_inj.StringIO(_text))
 del _pd_inj, _io_inj
 `);
     } else if (fileType === 'xlsx' || fileType === 'xls') {
       _py.runPython(`
 import pandas as _pd_inj, io as _io_inj
 _dp_kernel_ns[_dp_inject_name] = _pd_inj.read_excel(
-    _io_inj.BytesIO(_dp_inject_data.to_py())
+    _io_inj.BytesIO(_bytes)
 )
 del _pd_inj, _io_inj
 `);
     } else if (fileType === 'xml') {
       _py.runPython(`
 import pandas as _pd_inj, io as _io_inj
-_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_xml(_io_inj.StringIO(_dp_inject_data))
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.read_xml(_io_inj.StringIO(_text))
 del _pd_inj, _io_inj
+`);
+    } else if (fileType === 'text' || fileType === 'txt') {
+      _py.runPython(`
+import pandas as _pd_inj
+_lines = _text.strip().split('\\n')
+_dp_kernel_ns[_dp_inject_name] = _pd_inj.DataFrame({'line': _lines})
+del _pd_inj, _lines
+`);
+    } else if (fileType === 'sql') {
+      result = _py.runPython(`
+_path = '/home/pyodide/' + (_dp_inject_file or 'injected.sql')
+with open(_path, 'w', encoding='utf-8') as _f:
+    _f.write(_text)
+f"SQL文件已写入虚拟文件系统：{_dp_inject_file or 'injected.sql'}"
 `);
     } else {
       throw new Error(`Unsupported fileType: ${fileType}`);
     }
-    rows = _py.runPython(`len(_dp_kernel_ns[_dp_inject_name])`);
+    if (fileType !== 'sql') {
+      rows = _py.runPython(`len(_dp_kernel_ns[_dp_inject_name])`);
+    }
   } finally {
     _py.globals.delete('_dp_inject_data');
     _py.globals.delete('_dp_inject_name');
+    _py.globals.delete('_dp_inject_file');
   }
-  return { rows };
+  return { rows, result };
 }
 
 function _handleQuery() {
