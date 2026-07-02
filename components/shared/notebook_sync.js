@@ -77,20 +77,28 @@ async function _restoreFromCloud() {
 }
 
 /** Push all cells to cloud. */
-export async function syncToCloud() {
+export async function syncToCloud(cells) {
   if (!_notebookId || !window.authClient?.isLoggedIn() || !_syncEnabled()) return;
   try {
-    const cellEls = [...document.querySelectorAll('.nb-cell[data-nb-id]')];
-    const cells = cellEls.map((el, i) => ({
-      id:          el.dataset.nbId,
-      order_index: i,
-      language:    el.querySelector('.nb-lang-select')?.value ?? 'python',
-      code:        el.querySelector('.nb-editor')?.value ?? '',
-    }));
+    const payloadCells = Array.isArray(cells)
+      ? cells
+      : [...document.querySelectorAll('.nb-cell[data-nb-id]')].map((el, i) => ({
+          id:          el.dataset.nbId,
+          order_index: i,
+          language:    el.querySelector('.nb-lang-select')?.value ?? 'python',
+          code:        el.querySelector('.nb-editor')?.value ?? '',
+        }));
+
+    // 不允许用空 cells 覆盖云端有内容的版本
+    const hasContent = payloadCells.some(c => c.code?.trim());
+    if (!hasContent) {
+      console.warn('[sync] 跳过同步——所有cell都是空的');
+      return;
+    }
 
     const res = await _fetch(`/auth/notebooks/${_notebookId}/cells`, {
       method: 'PUT',
-      body:   JSON.stringify({ cells }),
+      body:   JSON.stringify({ cells: payloadCells }),
     });
 
     if (res?.ok) {
