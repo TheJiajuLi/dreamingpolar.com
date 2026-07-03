@@ -452,14 +452,18 @@ function fmt(n) {
   n = Number(n) || 0;
   return n >= 1000 ? (n/1000).toFixed(1).replace('.0','') + 'k' : String(n);
 }
-function timeAgo(d) {
-  if (!d) return '';
-  const s = (Date.now() - new Date(d)) / 1000;
-  if (s < 60) return '刚刚';
-  if (s < 3600) return ~~(s/60) + ' 分钟前';
-  if (s < 86400) return ~~(s/3600) + ' 小时前';
-  if (s < 2592000) return ~~(s/86400) + ' 天前';
-  return ~~(s/2592000) + ' 个月前';
+function timeAgo(ts) {
+  if (!ts) return '';
+  const ms = ts > 1e10 ? ts : ts * 1000;
+  const diff = Date.now() - ms;
+  const min = Math.floor(diff / 60000);
+  const hr  = Math.floor(diff / 3600000);
+  const day = Math.floor(diff / 86400000);
+  if (min < 1)  return '刚刚';
+  if (min < 60) return `${min}分钟前`;
+  if (hr  < 24) return `${hr}小时前`;
+  if (day < 30) return `${day}天前`;
+  return `${Math.floor(day / 30)}个月前`;
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -789,10 +793,10 @@ async function renderProfile() {
   guest.classList.add('hidden'); userEl.classList.remove('hidden');
 
   const u = S.user;
-  const name = u.username || u.name || u.email || '用户';
+  const username = u.username || u.name || '用户';
   const avEl = document.getElementById('p-av');
-  avEl.innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="${esc(name)}">` : esc(name.slice(0,1).toUpperCase());
-  document.getElementById('p-name').textContent = name;
+  avEl.innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="${esc(username)}">` : esc(username[0].toUpperCase());
+  document.getElementById('p-name').textContent = username;
   document.getElementById('p-bio').textContent = u.bio || 'Dreaming Polar 用户';
 
   loadPTuts(name);
