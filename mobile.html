@@ -324,6 +324,72 @@
     .sett-text-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
     .sett-chevron { color: var(--muted); font-size: 16px; flex-shrink: 0; }
 
+    /* ── MANAGE ── */
+    #s-manage, #s-manage-edit { overflow-y: hidden !important; }
+    .m-topbar { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .m-topbar-back { width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--bg); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .m-topbar-title { font-size: 17px; font-weight: 700; flex: 1; }
+    .m-topbar-action { display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 14px; border-radius: 18px; border: 1.5px solid var(--border); background: #fff; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; }
+    .manage-filter { display: flex; gap: 8px; padding: 12px 16px; background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+    .manage-filter::-webkit-scrollbar { display: none; }
+    .manage-pill { flex-shrink: 0; height: 32px; padding: 0 14px; border-radius: 16px; border: 1.5px solid var(--border); background: #fff; color: var(--muted); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap; }
+    .manage-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #manage-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .manage-card { background: var(--card); border-radius: 14px; overflow: hidden; }
+    .manage-card-top { display: flex; gap: 14px; padding: 14px; align-items: flex-start; }
+    .manage-thumb { width: 64px; height: 64px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .manage-card-body { flex: 1; min-width: 0; }
+    .manage-card-title { font-size: 15px; font-weight: 700; line-height: 1.35; margin-bottom: 6px; }
+    .manage-status-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .badge-pub  { background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+    .badge-draft{ background: #fff7ed; color: #ea8c00; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+    .manage-stats { display: flex; gap: 14px; font-size: 12px; color: var(--muted); padding: 10px 14px; border-top: 1px solid var(--border); }
+    .manage-stats span { display: flex; align-items: center; gap: 4px; }
+    .manage-actions { display: flex; border-top: 1px solid var(--border); }
+    .manage-act-btn { flex: 1; height: 44px; background: none; border: none; border-right: 1px solid var(--border); font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .manage-act-btn:last-child { border-right: none; }
+    .manage-act-btn:active { background: var(--bg); }
+    .manage-act-btn--danger { color: #ef4444; }
+    .manage-act-btn--pub { color: var(--green); }
+
+    /* ── EDITOR ── */
+    .editor-topbar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .editor-back { width: 32px; height: 32px; border: none; background: none; font-size: 20px; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .editor-tit { flex: 1; font-size: 16px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .editor-draft-btn { height: 34px; padding: 0 14px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); white-space: nowrap; }
+    .editor-draft-btn.saved { border-color: var(--accent); color: var(--accent); }
+    .editor-pub-btn { height: 34px; padding: 0 14px; border-radius: 8px; border: none; background: var(--accent); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .editor-pub-btn:disabled, .editor-draft-btn:disabled { opacity: .6; }
+    .editor-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
+    .editor-meta { display: flex; flex-direction: column; gap: 10px; }
+    .editor-meta input, .editor-meta textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-family: inherit; font-size: 15px; color: var(--text); background: var(--bg); outline: none; resize: none; }
+    .editor-meta input { height: 48px; font-weight: 700; }
+    .editor-meta textarea { min-height: 68px; line-height: 1.5; }
+    .editor-meta input:focus, .editor-meta textarea:focus { border-color: var(--accent); background: #fff; }
+    .ed-blocks-hdr { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .04em; padding: 4px 0 2px; }
+    .editor-block { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .editor-block-hdr { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .block-type-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+    .btb-text  { background: #e0e7ff; color: #4338ca; }
+    .btb-code  { background: #dcfce7; color: #15803d; }
+    .btb-latex { background: #f3e8ff; color: #7c3aed; }
+    .block-lang { font-size: 11px; color: var(--muted); }
+    .block-del  { margin-left: auto; width: 24px; height: 24px; border-radius: 6px; border: none; background: none; color: var(--muted); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .block-del:active { background: var(--bg); color: #ef4444; }
+    .editor-block textarea { display: block; width: 100%; padding: 10px 12px; border: none; outline: none; resize: none; font-family: inherit; font-size: 14px; line-height: 1.6; color: var(--text); background: transparent; min-height: 80px; }
+    .editor-block textarea.code-ta { font-family: 'JetBrains Mono', 'Menlo', monospace; font-size: 13px; }
+    .editor-add-bar { display: flex; gap: 8px; flex-shrink: 0; padding: 10px 16px 14px; background: #fff; border-top: 1px solid var(--border); }
+    .add-block-btn { flex: 1; height: 40px; border-radius: 10px; border: 1.5px dashed var(--border); background: #fff; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .add-block-btn:active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+    /* ── DELETE CONFIRM ── */
+    .del-sheet { text-align: center; padding: 8px 24px 44px; }
+    .del-icon { width: 60px; height: 60px; border-radius: 18px; background: #fee2e2; color: #ef4444; font-size: 26px; display: flex; align-items: center; justify-content: center; margin: 8px auto 14px; }
+    .del-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .del-sub { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+    .del-confirm-btn { width: 100%; height: 52px; background: #ef4444; color: #fff; border: none; border-radius: 14px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 12px; }
+    .del-cancel-btn { display: block; text-align: center; font-size: 15px; color: var(--muted); cursor: pointer; padding: 8px; }
+
     /* ── EDIT PROFILE SHEET ── */
     .edit-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 16px 0 22px; }
     .edit-avatar {
@@ -491,6 +557,44 @@
     </div>
   </section>
 
+  <!-- ── MANAGE ── -->
+  <section id="s-manage" class="m-screen">
+    <div class="m-topbar">
+      <button class="m-topbar-back" onclick="gotoProfile()"><i class="ti ti-arrow-left"></i></button>
+      <span class="m-topbar-title">管理内容</span>
+      <button class="m-topbar-action" onclick="window.location.href='/write'"><i class="ti ti-plus"></i> 新建</button>
+    </div>
+    <div class="manage-filter">
+      <button class="manage-pill active" data-mf="all" onclick="filterMyTuts('all')">全部</button>
+      <button class="manage-pill" data-mf="published" onclick="filterMyTuts('published')">已发布</button>
+      <button class="manage-pill" data-mf="draft" onclick="filterMyTuts('draft')">草稿</button>
+    </div>
+    <div id="manage-list"></div>
+  </section>
+
+  <!-- ── MANAGE EDIT ── -->
+  <section id="s-manage-edit" class="m-screen">
+    <div class="editor-topbar">
+      <button class="editor-back" onclick="editorBack()"><i class="ti ti-arrow-left"></i></button>
+      <span class="editor-tit" id="ed-tit-display">教程标题</span>
+      <button class="editor-draft-btn" id="ed-draft-btn" onclick="saveEditor('draft')">草稿</button>
+      <button class="editor-pub-btn" id="ed-pub-btn" onclick="saveEditor('published')">发布</button>
+    </div>
+    <div class="editor-body" id="editor-body">
+      <div class="editor-meta">
+        <input id="ed-title" placeholder="教程标题" type="text" oninput="document.getElementById('ed-tit-display').textContent=this.value||'教程标题'">
+        <textarea id="ed-summary" placeholder="简短描述这篇教程…"></textarea>
+      </div>
+      <div class="ed-blocks-hdr">内容 Blocks</div>
+      <div id="ed-blocks"></div>
+    </div>
+    <div class="editor-add-bar">
+      <button class="add-block-btn" onclick="addBlock('text')"><i class="ti ti-align-left"></i> 文本</button>
+      <button class="add-block-btn" onclick="addBlock('code')"><i class="ti ti-code"></i> 代码</button>
+      <button class="add-block-btn" onclick="addBlock('latex')"><i class="ti ti-math"></i> 公式</button>
+    </div>
+  </section>
+
 </main>
 
 <!-- ── NAV ── -->
@@ -512,6 +616,21 @@
     <div class="auth-field"><label>密码</label><input id="auth-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
     <div class="auth-err" id="auth-err"></div>
     <button class="auth-btn" id="auth-btn">登录</button>
+  </div>
+</div>
+
+<!-- ── DELETE CONFIRM SHEET ── -->
+<div id="m-delete" class="hidden">
+  <div class="auth-bd" id="del-bd"></div>
+  <div class="auth-sheet" style="padding:0">
+    <div class="del-sheet">
+      <div class="auth-handle" style="margin-bottom:12px"></div>
+      <div class="del-icon"><i class="ti ti-trash"></i></div>
+      <div class="del-title">删除这篇教程？</div>
+      <div class="del-sub">删除后无法恢复，所有点赞和评论也会一并删除。</div>
+      <button class="del-confirm-btn" onclick="doDelete()">确认删除</button>
+      <span class="del-cancel-btn" onclick="document.getElementById('m-delete').classList.add('hidden')">取消</span>
+    </div>
   </div>
 </div>
 
@@ -549,6 +668,9 @@ const S = {
   tutorials: [], tutTag: '', tutSearch: '', tutLoaded: false,
   liked: new Set(),
   ariaHistory: [], ariaData: null, ariaBusy: false, ariaGreeted: false,
+  myTuts: [], myFilter: 'all',
+  editTut: null, editBlocks: [],
+  deleteId: null,
 };
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
@@ -1060,6 +1182,14 @@ function renderSettings() {
           </div>
           <i class="ti ti-chevron-right sett-chevron"></i>
         </div>
+        <div class="settings-item settings-item--btn" onclick="gotoManage()">
+          <div class="sett-icon sett-icon--accent"><i class="ti ti-layout-list"></i></div>
+          <div class="sett-text">
+            <div class="sett-text-title">管理内容</div>
+            <div class="sett-text-sub">编辑、发布、删除教程</div>
+          </div>
+          <i class="ti ti-chevron-right sett-chevron"></i>
+        </div>
         <div class="settings-item settings-item--btn">
           <div class="sett-icon sett-icon--accent"><i class="ti ti-bell"></i></div>
           <div class="sett-text">
@@ -1114,21 +1244,251 @@ function renderSettings() {
     </div>`;
 }
 
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none;white-space:nowrap;animation:fadein .15s';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
 function clearCache() {
   localStorage.removeItem('dp_user');
   renderSettings();
-  const list = document.getElementById('p-list');
-  const toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;pointer-events:none';
-  toast.textContent = '缓存已清除';
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2000);
+  showToast('缓存已清除');
 }
 
 function doLogout() {
   S.token = null; S.user = null;
   localStorage.removeItem('dp_user');
   renderProfile();
+}
+
+// ── Manage Content ────────────────────────────────────────────────────────────
+function gotoManage() {
+  if (!S.token) { showAuth(); return; }
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-manage').classList.add('active');
+  document.getElementById('m-nav').style.display = 'none';
+  loadMyTuts();
+}
+
+function gotoProfile() {
+  document.getElementById('m-nav').style.display = '';
+  goto('profile');
+}
+
+async function loadMyTuts() {
+  const list = document.getElementById('manage-list');
+  list.innerHTML = '<div style="padding:32px;display:flex;justify-content:center"><div class="spin"></div></div>';
+  try {
+    const r = await fetch(`${API}/auth/tutorials`, {
+      credentials: 'include',
+      headers: S.token ? { Authorization: `Bearer ${S.token}` } : {},
+    });
+    const d = await r.json();
+    S.myTuts = Array.isArray(d) ? d : (d.tutorials ?? []);
+    renderMyTuts();
+  } catch { list.innerHTML = '<div class="comm-empty">加载失败，请稍后重试</div>'; }
+}
+
+function filterMyTuts(filter) {
+  S.myFilter = filter;
+  document.querySelectorAll('.manage-pill').forEach(p => p.classList.toggle('active', p.dataset.mf === filter));
+  renderMyTuts();
+}
+
+function renderMyTuts() {
+  const list = document.getElementById('manage-list');
+  const all = S.myTuts;
+  const pubCount   = all.filter(t => t.status === 'published').length;
+  const draftCount = all.filter(t => t.status !== 'published').length;
+  document.querySelector('.manage-pill[data-mf="all"]').textContent   = `全部 ${all.length}`;
+  document.querySelector('.manage-pill[data-mf="published"]').textContent = `已发布 ${pubCount}`;
+  document.querySelector('.manage-pill[data-mf="draft"]').textContent  = `草稿 ${draftCount}`;
+
+  let items = [...all];
+  if (S.myFilter === 'published') items = items.filter(t => t.status === 'published');
+  else if (S.myFilter === 'draft') items = items.filter(t => t.status !== 'published');
+
+  if (!items.length) {
+    const msgs = { all: '还没有创建任何教程', published: '没有已发布的教程', draft: '没有草稿' };
+    list.innerHTML = `<div class="comm-empty">${msgs[S.myFilter]||'暂无内容'}</div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(t => {
+    const isPub = t.status === 'published';
+    const id = tid(t);
+    const updAt = t.updated_at || t.created_at;
+    const comments = t.comments_count ?? t.comments ?? 0;
+    const badge = isPub ? '<span class="badge-pub">已发布</span>' : '<span class="badge-draft">草稿</span>';
+    const actions = isPub
+      ? `<button class="manage-act-btn" onclick="mEditTut('${esc(id)}')"><i class="ti ti-edit"></i> 编辑</button>
+         <button class="manage-act-btn" onclick="shareT('${esc(id)}')"><i class="ti ti-share"></i> 分享</button>
+         <button class="manage-act-btn" onclick="toggleStatus('${esc(id)}','published')"><i class="ti ti-eye-off"></i> 下架</button>
+         <button class="manage-act-btn manage-act-btn--danger" onclick="confirmDelete('${esc(id)}')"><i class="ti ti-trash"></i> 删除</button>`
+      : `<button class="manage-act-btn" onclick="mEditTut('${esc(id)}')"><i class="ti ti-edit"></i> 继续编辑</button>
+         <button class="manage-act-btn manage-act-btn--pub" onclick="toggleStatus('${esc(id)}','draft')"><i class="ti ti-send"></i> 发布</button>
+         <button class="manage-act-btn manage-act-btn--danger" onclick="confirmDelete('${esc(id)}')"><i class="ti ti-trash"></i> 删除</button>`;
+    return `<div class="manage-card">
+      <div class="manage-card-top">
+        <div class="manage-thumb" style="background:${coverBg(id)}">${coverIcon(ttags(t))}</div>
+        <div class="manage-card-body">
+          <div class="manage-card-title">${esc(t.title||'无标题')}</div>
+          <div class="manage-status-row">${badge}<span>${timeAgo(updAt)}更新</span></div>
+        </div>
+      </div>
+      <div class="manage-stats">
+        <span><i class="ti ti-eye"></i>${fmt(tviews(t))} 浏览</span>
+        <span><i class="ti ti-heart"></i>${fmt(tlikes(t))} 点赞</span>
+        <span><i class="ti ti-message"></i>${fmt(comments)} 评论</span>
+      </div>
+      <div class="manage-actions">${actions}</div>
+    </div>`;
+  }).join('');
+}
+
+function shareT(id) {
+  const url = `https://dreamingpolar.com/tutorial?id=${encodeURIComponent(id)}`;
+  navigator.clipboard.writeText(url)
+    .then(() => showToast('已复制分享链接'))
+    .catch(() => showToast('复制失败，请手动复制'));
+}
+
+async function toggleStatus(id, currentStatus) {
+  const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+  try {
+    const r = await fetch(`${API}/auth/tutorials/${encodeURIComponent(id)}`, {
+      method: 'PUT', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${S.token}` },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (!r.ok) throw new Error();
+    const tut = S.myTuts.find(t => tid(t) === id);
+    if (tut) tut.status = newStatus;
+    renderMyTuts();
+    showToast(newStatus === 'published' ? '已发布更新！' : '已下架');
+  } catch { showToast('操作失败，请重试'); }
+}
+
+function confirmDelete(id) {
+  S.deleteId = id;
+  document.getElementById('m-delete').classList.remove('hidden');
+}
+
+async function doDelete() {
+  const id = S.deleteId;
+  if (!id) return;
+  document.getElementById('m-delete').classList.add('hidden');
+  try {
+    const r = await fetch(`${API}/auth/tutorials/${encodeURIComponent(id)}`, {
+      method: 'DELETE', credentials: 'include',
+      headers: { Authorization: `Bearer ${S.token}` },
+    });
+    if (!r.ok) throw new Error();
+    S.myTuts = S.myTuts.filter(t => tid(t) !== id);
+    renderMyTuts();
+    showToast('已删除');
+  } catch { showToast('删除失败，请重试'); }
+  S.deleteId = null;
+}
+
+// ── Editor ────────────────────────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+function mEditTut(id) {
+  const tut = S.myTuts.find(t => tid(t) === id);
+  if (!tut) return;
+  S.editTut = tut;
+  const raw = tut.blocks || tut.content || [];
+  S.editBlocks = Array.isArray(raw)
+    ? raw.map(b => ({ ...b, _id: uid() }))
+    : [{ _id: uid(), type: 'text', content: String(raw) }];
+  if (!S.editBlocks.length) S.editBlocks = [{ _id: uid(), type: 'text', content: '' }];
+
+  document.getElementById('ed-title').value = tut.title || '';
+  document.getElementById('ed-summary').value = tut.summary || tut.description || '';
+  document.getElementById('ed-tit-display').textContent = tut.title || '无标题';
+
+  const draftBtn = document.getElementById('ed-draft-btn');
+  draftBtn.textContent = '草稿'; draftBtn.classList.remove('saved');
+
+  renderEditorBlocks();
+
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-manage-edit').classList.add('active');
+}
+
+function editorBack() {
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-manage').classList.add('active');
+}
+
+function renderEditorBlocks() {
+  const c = document.getElementById('ed-blocks');
+  c.innerHTML = S.editBlocks.map(b => {
+    const labels = { text: '文本', code: 'Python', latex: 'LaTeX' };
+    const badges = { text: 'btb-text', code: 'btb-code', latex: 'btb-latex' };
+    const label = labels[b.type] || b.type;
+    const badge = badges[b.type] || 'btb-text';
+    const langBadge = b.type === 'code' && b.language ? `<span class="block-lang">${esc(b.language)}</span>` : '';
+    const isCode = b.type === 'code';
+    const ph = b.type === 'code' ? '输入代码…' : b.type === 'latex' ? '输入 LaTeX 公式…' : '输入文本…';
+    return `<div class="editor-block" data-bid="${esc(b._id)}">
+      <div class="editor-block-hdr">
+        <span class="block-type-badge ${badge}">${label}</span>${langBadge}
+        <button class="block-del" onclick="removeBlock('${esc(b._id)}')"><i class="ti ti-x"></i></button>
+      </div>
+      <textarea class="${isCode?'code-ta':''}" placeholder="${ph}"
+        oninput="updateBlock('${esc(b._id)}',this.value);autoResize(this)"
+      >${esc(b.content||'')}</textarea>
+    </div>`;
+  }).join('');
+  c.querySelectorAll('textarea').forEach(autoResize);
+}
+
+function autoResize(ta) { ta.style.height = 'auto'; ta.style.height = Math.max(ta.scrollHeight, 80) + 'px'; }
+function updateBlock(id, val) { const b = S.editBlocks.find(b => b._id === id); if (b) b.content = val; }
+function removeBlock(id) { S.editBlocks = S.editBlocks.filter(b => b._id !== id); renderEditorBlocks(); }
+
+function addBlock(type) {
+  S.editBlocks.push({ _id: uid(), type, content: '', ...(type === 'code' ? { language: 'python' } : {}) });
+  renderEditorBlocks();
+  setTimeout(() => { const body = document.getElementById('editor-body'); body.scrollTop = body.scrollHeight; }, 50);
+}
+
+async function saveEditor(status) {
+  if (!S.editTut || !S.token) return;
+  const id = tid(S.editTut);
+  const title   = document.getElementById('ed-title').value.trim();
+  const summary = document.getElementById('ed-summary').value.trim();
+  const blocks  = S.editBlocks.map(({ _id, ...rest }) => rest);
+  const draftBtn = document.getElementById('ed-draft-btn');
+  const pubBtn   = document.getElementById('ed-pub-btn');
+  const isDraft  = status === 'draft';
+  draftBtn.disabled = true; pubBtn.disabled = true;
+  if (isDraft) draftBtn.textContent = '保存中…';
+  try {
+    const r = await fetch(`${API}/auth/tutorials/${encodeURIComponent(id)}`, {
+      method: 'PUT', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${S.token}` },
+      body: JSON.stringify({ status, title, summary, blocks }),
+    });
+    if (!r.ok) throw new Error();
+    const tut = S.myTuts.find(t => tid(t) === id);
+    if (tut) Object.assign(tut, { title, summary, blocks, status });
+    S.editTut = { ...S.editTut, title, summary, blocks, status };
+    document.getElementById('ed-tit-display').textContent = title || '无标题';
+    if (isDraft) {
+      draftBtn.textContent = '已保存草稿'; draftBtn.classList.add('saved');
+      setTimeout(() => { draftBtn.textContent = '草稿'; draftBtn.classList.remove('saved'); }, 2000);
+    } else {
+      showToast('已发布更新！');
+    }
+  } catch { showToast('保存失败，请重试'); }
+  finally { draftBtn.disabled = false; pubBtn.disabled = false; if (draftBtn.textContent === '保存中…') draftBtn.textContent = '草稿'; }
 }
 
 function showEditSheet() {
@@ -1226,7 +1586,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     else document.getElementById('p-list').innerHTML = '<div class="comm-empty">功能即将开放</div>';
   }));
 
-  // Edit profile sheet
+  // Delete confirm + edit profile sheets
+  document.getElementById('del-bd').addEventListener('click', () => document.getElementById('m-delete').classList.add('hidden'));
   document.getElementById('edit-bd').addEventListener('click', () => document.getElementById('m-edit').classList.add('hidden'));
 
   // Auth modal
