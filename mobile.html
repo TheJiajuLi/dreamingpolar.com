@@ -1092,6 +1092,13 @@ async function renderProfile() {
       <div class="p-name">${esc(username)}</div>
       ${handleLine ? `<div class="p-handle">${esc(handleLine)}</div>` : ''}
       <div class="p-bio">${esc(bio)}</div>
+      ${(() => {
+        const link = u.website || u.link || u.url || u.homepage || '';
+        if (!link) return '';
+        const href = link.startsWith('http') ? link : 'https://' + link;
+        const label = link.replace(/^https?:\/\//, '');
+        return `<a href="${esc(href)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--accent);font-weight:500;margin-top:4px;text-decoration:none"><i class="ti ti-link" style="font-size:14px"></i>${esc(label)}</a>`;
+      })()}
       ${interestsHtml}
     </div>
     <div class="p-stats" id="p-stats">
@@ -1562,10 +1569,10 @@ async function saveProfile() {
     const r = await fetch(`${API}/auth/me`, {
       method: 'PATCH', credentials: 'include',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${S.token}` },
-      body: JSON.stringify({ username, bio, website }),
+      body: JSON.stringify({ username, bio, website, link: website, homepage: website }),
     });
     if (!r.ok) { const d = await r.json().catch(()=>({})); throw new Error(d.message || '保存失败'); }
-    S.user = { ...S.user, username, bio, website };
+    S.user = { ...S.user, username, bio, website, link: website, homepage: website };
     localStorage.setItem('dp_user', JSON.stringify(S.user));
     document.getElementById('m-edit').classList.add('hidden');
     renderProfile();
