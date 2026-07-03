@@ -387,15 +387,54 @@
       return state.compiler;
     }
 
-    function flattenCompileOutput(output = []) {
-      return output.map((item) => {
-        if (item.type === 'text' || item.type === 'info') return item.content || '';
-        if (item.type === 'error') return `Error: ${item.content || ''}`;
-        if (item.type === 'html') return item.content || '';
-        if (item.type === 'latex') return item.content || '';
-        if (item.type === 'image') return '[image output]';
-        return JSON.stringify(item);
-      }).join('\n').trim();
+    function renderCompileOutput(outputEl, output = []) {
+      const filtered = (Array.isArray(output) ? output : []).filter(item => {
+        const t = item?.type;
+        return t !== 'viz-suggestion' && t !== 'missing-package' && t !== 'debug';
+      });
+
+      outputEl.innerHTML = '';
+      if (!filtered.length) {
+        outputEl.textContent = 'Executed (no output).';
+        return;
+      }
+
+      for (const item of filtered) {
+        if (!item) continue;
+
+        if (item.type === 'image' && item.content) {
+          const wrap = document.createElement('div');
+          wrap.style.display = 'flex';
+          wrap.style.justifyContent = 'center';
+          wrap.style.padding = '6px 0';
+
+          const img = document.createElement('img');
+          img.alt = 'Plot';
+          img.style.maxWidth = 'min(100%, 920px)';
+          img.style.width = 'auto';
+          img.style.height = 'auto';
+          img.style.display = 'block';
+          img.src = String(item.content).startsWith('data:image/')
+            ? item.content
+            : `data:image/png;base64,${item.content}`;
+
+          wrap.appendChild(img);
+          outputEl.appendChild(wrap);
+          continue;
+        }
+
+        const line = document.createElement('div');
+        if (item.type === 'text' || item.type === 'info') {
+          line.textContent = item.content || '';
+        } else if (item.type === 'error') {
+          line.textContent = `Error: ${item.content || ''}`;
+        } else if (item.type === 'html' || item.type === 'latex') {
+          line.textContent = item.content || '';
+        } else {
+          line.textContent = JSON.stringify(item);
+        }
+        outputEl.appendChild(line);
+      }
     }
 
     async function runCodeBlock(index, button) {
@@ -421,8 +460,7 @@
 
         const compiler = await ensureCompiler();
         const result = await compiler.compile(String(block.code || block.content || ''), 'python');
-        const output = flattenCompileOutput(result);
-        outputEl.textContent = output || 'Executed (no output).';
+        renderCompileOutput(outputEl, result);
       } catch (err) {
         outputEl.textContent = `执行失败: ${err.message}`;
       } finally {
