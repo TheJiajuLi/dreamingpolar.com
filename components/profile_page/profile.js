@@ -397,6 +397,51 @@ initAuth().catch(() => {});
         }
       }
 
+      // Fallback: load current tutorial and soft-delete via full update payload.
+      // Some backends validate title/body on PUT and reject status-only updates.
+      try {
+        const detailRes = await fetch(baseUrl, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (detailRes.ok) {
+          const detailData = await detailRes.json().catch(() => ({}));
+          const t = detailData?.tutorial || detailData?.data || detailData || {};
+          const payload = {
+            title: String(t.title || t.name || '已删除教程').trim(),
+            summary: String(t.summary || t.excerpt || t.description || '').trim(),
+            cover_image: String(t.cover_image || t.cover_url || t.cover || t.coverUrl || '').trim(),
+            tags: Array.isArray(t.tags) ? t.tags : [],
+            blocks: Array.isArray(t.blocks) ? t.blocks : [],
+            status: 'deleted',
+          };
+
+          const softRes = await fetch(baseUrl, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (softRes.ok) {
+            state.tutorials.published = (state.tutorials.published || []).filter((x) => tutorialId(x) !== id);
+            renderSidebar();
+            renderList();
+            return true;
+          }
+
+          const softErr = await softRes.json().catch(() => ({}));
+          lastMessage = softErr?.message || `删除失败: ${softRes.status}`;
+        }
+      } catch (err) {
+        lastMessage = err?.message || lastMessage;
+      }
+
       throw new Error(lastMessage);
     }
 
