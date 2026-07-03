@@ -519,12 +519,19 @@
     .nb-cell-output.nb-error { color:#ef4444; background:#fff1f2; }
     .nb-del-btn { width:24px; height:24px; border:none; background:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-left:4px; flex-shrink:0; }
     .nb-del-btn:active { background:var(--bg); color:#dc2626; }
-    .nb-toolbar { display:flex; border-top:1px solid var(--border); background:#fff; flex-shrink:0; overflow-x:auto; scrollbar-width:none; }
-    .nb-toolbar::-webkit-scrollbar { display:none; }
+    .nb-addbar { display:flex; border-top:1px solid var(--border); background:#fff; flex-shrink:0; overflow-x:auto; scrollbar-width:none; }
+    .nb-addbar::-webkit-scrollbar { display:none; }
     .nb-tool-btn { flex-shrink:0; height:48px; padding:0 14px; border:none; background:none; font-family:inherit; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:5px; border-right:1px solid var(--border); white-space:nowrap; }
     .nb-tool-btn:last-child { border-right:none; }
     .nb-tool-btn:active { background:var(--bg); }
     .nb-tool-btn i { font-size:16px; }
+    /* ── Desktop notebook component — mobile overrides ── */
+    #nb-cells-list .mirror-handle { display:none !important; }
+    #nb-cells-list .nb-cell { flex-direction:column !important; margin-bottom:10px; min-height:unset !important; }
+    #nb-cells-list .mirror-code-pane,
+    #nb-cells-list .mirror-out-pane { width:100% !important; max-width:100% !important; min-width:0 !important; }
+    #nb-cells-list .nb-add-row { opacity:1 !important; transform:scaleY(1) !important; height:36px !important; }
+    #nb-cells-list .notebook-editor-area { height:100%; }
 
     /* ── NEW NB SHEET ── */
     #m-new-nb { position:fixed; inset:0; z-index:1000; display:flex; align-items:flex-end; }
@@ -770,11 +777,7 @@
       <button class="nb-run-all-btn" id="nb-run-all-btn" onclick="runAllCells()"><i class="ti ti-player-play"></i> 全部运行</button>
     </div>
     <div class="nb-cells-scroll" id="nb-cells-list"></div>
-    <div class="nb-toolbar">
-      <button class="nb-tool-btn" onclick="addCell('python')"><i class="ti ti-code"></i> Python</button>
-      <button class="nb-tool-btn" onclick="addCell('latex')"><i class="ti ti-math"></i> LaTeX</button>
-      <button class="nb-tool-btn" onclick="addCell('markdown')"><i class="ti ti-markdown"></i> 文本</button>
-      <button class="nb-tool-btn"><i class="ti ti-upload"></i> 导入</button>
+    <div class="nb-addbar">
       <button class="nb-tool-btn" onclick="goto('aria')"><i class="ti ti-sparkles"></i> ARIA</button>
     </div>
   </section>
@@ -1819,6 +1822,7 @@ async function saveProfile() {
 let _nbCurrentId = null;
 let _nbCells = [];
 let _nbSaveTimer = null;
+let _nbDeskCssLoaded = false;
 
 function gotoNotebook() {
   document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
@@ -1945,28 +1949,62 @@ function createFromTemplate(name, lang) {
   openNbEditor(id);
 }
 
-function openNbEditor(id) {
+async function openNbEditor(id) {
   const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
   const nb = list.find(n => n.id === id);
   if (!nb) return;
   _nbCurrentId = id;
-  const defaultType = nb.lang === 'latex' ? 'latex' : 'python';
-  _nbCells = (nb.cells && nb.cells.length)
-    ? nb.cells.map(c => ({ ...c }))
-    : [{ id: uid(), type: defaultType, code: '', output: '', status: '' }];
   document.getElementById('nb-editor-name').textContent = getNbFilename(nb.name, nb.lang);
-  renderNbCells();
   document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('s-nb-editor').classList.add('active');
   document.getElementById('m-nav').style.display = 'none';
-  // bump to top of recent list
-  const updated = [{ ...nb, cells: _nbCells, updatedAt: Date.now() }, ...list.filter(n => n.id !== id)];
+  const updated = [{ ...nb, updatedAt: Date.now() }, ...list.filter(n => n.id !== id)];
   localStorage.setItem('nb-list', JSON.stringify(updated));
+
+  // Convert mobile cells → desktop format and pre-populate dreaming-polar-cells
+  const mobileCells = (nb.cells && nb.cells.length)
+    ? nb.cells
+    : [{ id: uid(), type: nb.lang === 'latex' ? 'latex' : 'python', code: '' }];
+  localStorage.setItem('dreaming-polar-cells',
+    JSON.stringify(mobileCells.map(c => ({ id: c.id, lang: c.type || 'python', code: c.code || '' }))));
+
+  // Inject desktop CSS once
+  if (!_nbDeskCssLoaded) {
+    _nbDeskCssLoaded = true;
+    ['/components/customise_code_block/customise_code_block.css',
+     '/components/screens/coding_screen/intelligent_coding_mode/intelligent_coding_mode.css',
+     '/components/screens/coding_screen/coding_screen_python/python_text_highlight/python_text_highlight.css',
+     '/components/screens/coding_screen/coding_screen_python/python_code-completion/python_code_completion.css',
+    ].forEach(href => {
+      const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href;
+      document.head.appendChild(l);
+    });
+  }
+
+  // Mount desktop notebook component
+  const wrap = document.getElementById('nb-cells-list');
+  wrap.innerHTML = '';
+  wrap.style.cssText = 'flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:0;gap:0';
+  const { init } = await import('/components/customise_code_block/customise_code_block.js');
+  init(wrap);
 }
 
 function exitNbEditor() {
-  saveNbNow();
+  // Save desktop cells back into nb-list
+  if (_nbCurrentId) {
+    const desktopCells = JSON.parse(localStorage.getItem('dreaming-polar-cells') || '[]');
+    const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
+    const idx = list.findIndex(n => n.id === _nbCurrentId);
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        cells: desktopCells.map(c => ({ id: c.id, type: c.lang || 'python', code: c.code || '', output: '', status: '' })),
+        updatedAt: Date.now(),
+      };
+      localStorage.setItem('nb-list', JSON.stringify(list));
+    }
+  }
   gotoNotebook();
 }
 
