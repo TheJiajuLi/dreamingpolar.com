@@ -229,6 +229,19 @@ const _CFM_TYPE_COLOR = {
 const _CFM_DATA_EXTS = new Set(['csv','json','xlsx','xls','xml']);
 const _CFM_IMAGE_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg', 'heic', 'heif']);
 
+function _isImageAssetFile(f) {
+  const ext = _ext(f);
+  const fileType = String(f?.file_type ?? f?.fileType ?? '').toLowerCase();
+  const mime = String(f?.mime_type ?? f?.mimeType ?? f?.content_type ?? '').toLowerCase();
+  return _CFM_IMAGE_EXTS.has(ext) || fileType === 'image' || mime.startsWith('image/');
+}
+
+function _isDataAssetFile(f) {
+  const ext = _ext(f);
+  const fileType = String(f?.file_type ?? f?.fileType ?? '').toLowerCase();
+  return _CFM_DATA_EXTS.has(ext) || fileType === 'data';
+}
+
 function _cfmRelTime(ts) {
   const m = Math.floor((Date.now() - ts) / 60000);
   if (m < 1)  return '刚刚';
@@ -430,11 +443,10 @@ function _buildCloudFileManager(pane) {
       return;
     }
 
-    const dataFiles = files.filter(f => _CFM_DATA_EXTS.has(_ext(f)));
-    const imageFiles = files.filter(f => _CFM_IMAGE_EXTS.has(_ext(f)));
+    const dataFiles = files.filter(f => _isDataAssetFile(f));
+    const imageFiles = files.filter(f => _isImageAssetFile(f));
     const codeFiles = files.filter(f => {
-      const ext = _ext(f);
-      return !_CFM_DATA_EXTS.has(ext) && !_CFM_IMAGE_EXTS.has(ext);
+      return !_isDataAssetFile(f) && !_isImageAssetFile(f);
     });
     const totalSize = files.reduce((s, f) => s + (f.size ?? 0), 0);
 
@@ -527,7 +539,7 @@ function _buildCloudFileManager(pane) {
   function _makeRow(f, isCode) {
     const filename = f.filename ?? f.name ?? '';
     const ext = _ext(f);
-    const isImage = _CFM_IMAGE_EXTS.has(ext);
+    const isImage = _isImageAssetFile(f);
     const color = _CFM_TYPE_COLOR[ext] ?? '#6366f1';
 
     const row = document.createElement('div');
@@ -540,7 +552,8 @@ function _buildCloudFileManager(pane) {
 
     // Icon
     const iconEl = document.createElement('i');
-    iconEl.className = `ti ${_CFM_TYPE_ICON[ext] ?? 'ti-file'} cfm-row-icon`;
+    const iconName = isImage ? 'ti-photo' : (_CFM_TYPE_ICON[ext] ?? 'ti-file');
+    iconEl.className = `ti ${iconName} cfm-row-icon`;
     iconEl.style.color = color;
 
     // Info block
