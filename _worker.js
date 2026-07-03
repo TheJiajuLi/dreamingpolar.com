@@ -1,16 +1,11 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    
-    // 静态资源直接pass through
-    const staticExts = ['png','ico','svg','jpg','jpeg',
-      'webp','gif','css','js','woff','woff2','ttf',
-      'json','map','txt'];
     const ext = url.pathname.split('.').pop()?.toLowerCase();
+    const staticExts = ['png','ico','svg','jpg','jpeg','webp','gif','css','js','woff','woff2','ttf','json','map'];
     if (staticExts.includes(ext)) {
       return fetch(request);
     }
-    
     if (url.pathname === '/community') {
       return Response.redirect(url.origin + '/community.html', 302);
     }
