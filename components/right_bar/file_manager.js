@@ -638,7 +638,13 @@ export function initFileManager() {
   manageBtn.title = '管理文件';
   manageBtn.textContent = '管理';
 
-  hdr.append(hdrTitle, importBtn, manageBtn, hdrClose);
+  const deleteSelBtn = document.createElement('button');
+  deleteSelBtn.className = 'rb-file-delete-inline-btn';
+  deleteSelBtn.title = '删除已选文件';
+  deleteSelBtn.textContent = '删除';
+  deleteSelBtn.hidden = true;
+
+  hdr.append(hdrTitle, importBtn, manageBtn, deleteSelBtn, hdrClose);
 
   const body = document.createElement('div');
   body.className = 'rb-file-body';
@@ -657,7 +663,14 @@ export function initFileManager() {
       _selected.add(key);
       itemEl.classList.add('rb-file-item--selected');
     }
+    _updateDeleteBtn();
     return true;
+  }
+
+  function _updateDeleteBtn() {
+    const n = _selected.size;
+    deleteSelBtn.disabled = n === 0;
+    deleteSelBtn.textContent = n > 0 ? `删除(${n})` : '删除';
   }
 
   // ── Select mode ───────────────────────────────────────────────────────────
@@ -666,7 +679,9 @@ export function initFileManager() {
     _selected.clear();
     manageBtn.textContent = '完成';
     manageBtn.classList.add('rb-file-manage-btn--active');
+    deleteSelBtn.hidden = false;
     panel.classList.add('rb-panel--select');
+    _updateDeleteBtn();
     _refresh().catch(console.error);
   }
   function _exitSelectMode() {
@@ -674,7 +689,9 @@ export function initFileManager() {
     _selected.clear();
     manageBtn.textContent = '管理';
     manageBtn.classList.remove('rb-file-manage-btn--active');
+    deleteSelBtn.hidden = true;
     panel.classList.remove('rb-panel--select');
+    _updateDeleteBtn();
     _refresh().catch(console.error);
   }
 
@@ -683,11 +700,13 @@ export function initFileManager() {
       _enterSelectMode();
       return;
     }
-    if (_selected.size > 0) {
-      await _deleteSelectedKeys(Array.from(_selected));
-      _exitSelectMode();
-      return;
-    }
+    // 完成只退出选择模式，不执行删除。
+    _exitSelectMode();
+  });
+
+  deleteSelBtn.addEventListener('click', async () => {
+    if (!_selectMode || _selected.size === 0) return;
+    await _deleteSelectedKeys(Array.from(_selected));
     _exitSelectMode();
   });
 

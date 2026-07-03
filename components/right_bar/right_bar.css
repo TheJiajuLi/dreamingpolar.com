@@ -525,6 +525,28 @@
 .rb-file-manage-btn:hover { border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
 .rb-file-manage-btn--active { background: var(--accent-soft, #e0e3ff); color: var(--accent, #6366f1); border-color: var(--accent, #6366f1); }
 
+.rb-file-delete-inline-btn {
+  font-size: 0.58rem;
+  font-family: var(--code-font, "JetBrains Mono", monospace);
+  padding: 2px 7px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: #fff1f2;
+  color: #dc2626;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s, opacity 0.12s;
+  flex-shrink: 0;
+}
+.rb-file-delete-inline-btn:hover:not(:disabled) {
+  background: #ffe4e6;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+.rb-file-delete-inline-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* Select circle on each item */
 .rb-file-select-circle {
   display: none;
