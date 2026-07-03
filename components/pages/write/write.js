@@ -14,6 +14,7 @@
     let currentTutorialId = null;
     let latestToken = null;
     let modalResolve = null;
+    let isSubmitting = false;
 
     const els = {
       titleInput: document.getElementById('title-input'),
@@ -769,6 +770,30 @@
       els.saveBtn.style.display = isEdit ? 'none' : '';
     }
 
+    function setTopActionDisabled(disabled) {
+      [els.saveBtn, els.updateBtn, els.publishBtn].forEach((btn) => {
+        if (!btn) return;
+        btn.disabled = !!disabled;
+      });
+    }
+
+    async function withSubmitLock(task) {
+      if (isSubmitting) {
+        els.saveStatus.textContent = '请求进行中，请稍候...';
+        return false;
+      }
+
+      isSubmitting = true;
+      setTopActionDisabled(true);
+      try {
+        await task();
+        return true;
+      } finally {
+        isSubmitting = false;
+        setTopActionDisabled(false);
+      }
+    }
+
     async function requestWithAuth(method, url, body) {
       const token = await ensureToken();
       if (!token) throw new Error('未登录或登录已过期，请先登录。');
@@ -815,42 +840,48 @@
 
     async function onSaveDraft() {
       if (!requireWriterLogin()) return;
-      try {
-        els.saveStatus.textContent = '保存中...';
-        await createTutorial('draft');
-        setSaved('草稿已保存');
-      } catch (e) {
-        els.saveStatus.textContent = `保存失败: ${e.message}`;
-      }
+      await withSubmitLock(async () => {
+        try {
+          els.saveStatus.textContent = '保存中...';
+          await createTutorial('draft');
+          setSaved('草稿已保存');
+        } catch (e) {
+          els.saveStatus.textContent = `保存失败: ${e.message}`;
+        }
+      });
     }
 
     async function onUpdate() {
       if (!requireWriterLogin()) return;
-      try {
-        els.saveStatus.textContent = '更新中...';
-        await updateTutorial('draft');
-        setSaved('已更新');
-      } catch (e) {
-        els.saveStatus.textContent = `更新失败: ${e.message}`;
-      }
+      await withSubmitLock(async () => {
+        try {
+          els.saveStatus.textContent = '更新中...';
+          await updateTutorial('draft');
+          setSaved('已更新');
+        } catch (e) {
+          els.saveStatus.textContent = `更新失败: ${e.message}`;
+        }
+      });
     }
 
     async function onPublish() {
       if (!requireWriterLogin()) return;
-      try {
-        els.saveStatus.textContent = '发布中...';
-        if (currentTutorialId) {
-          await updateTutorial('published');
-        } else {
-          await createTutorial('published');
+      await withSubmitLock(async () => {
+        try {
+          els.saveStatus.textContent = '发布中...';
+          if (currentTutorialId) {
+            await updateTutorial('published');
+          } else {
+            await createTutorial('published');
+          }
+          setSaved('发布成功，正在跳转...');
+          if (currentTutorialId) {
+            location.href = `/tutorial?id=${encodeURIComponent(currentTutorialId)}`;
+          }
+        } catch (e) {
+          els.saveStatus.textContent = `发布失败: ${e.message}`;
         }
-        setSaved('发布成功，正在跳转...');
-        if (currentTutorialId) {
-          location.href = `/tutorial?id=${encodeURIComponent(currentTutorialId)}`;
-        }
-      } catch (e) {
-        els.saveStatus.textContent = `发布失败: ${e.message}`;
-      }
+      });
     }
 
     async function loadExistingTutorial() {
