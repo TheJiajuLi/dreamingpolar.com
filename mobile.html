@@ -514,7 +514,7 @@
     .nb-cell-badge.markdown { background:#f1f5f9; color:#475569; }
     .nb-run-btn { margin-left:auto; width:28px; height:28px; border-radius:8px; border:1.5px solid var(--border); background:#fff; color:var(--text); font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
     .nb-run-btn:active { background:var(--bg); }
-    .nb-cell-code { display:block; width:100%; padding:12px; border:none; outline:none; resize:none; font-family:'Menlo','JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text); background:transparent; min-height:60px; box-sizing:border-box; overflow-x:auto; white-space:pre; word-wrap:normal; }
+    .nb-cell-code { display:block; width:100%; padding:12px; border:none; outline:none; resize:none; font-family:'Menlo','JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text); background:transparent; min-height:72px; max-height:400px; box-sizing:border-box; overflow-x:auto; overflow-y:hidden; white-space:pre; word-wrap:normal; }
     .nb-cell-output { padding:10px 12px; border-top:1px solid var(--border); background:#f8fafc; font-family:'Menlo','JetBrains Mono',monospace; font-size:12px; line-height:1.6; color:var(--text); overflow-x:auto; }
     .nb-cell-output.nb-error { color:#ef4444; background:#fff1f2; }
     .nb-del-btn { width:24px; height:24px; border:none; background:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-left:4px; flex-shrink:0; }
@@ -1983,7 +1983,12 @@ function _cellHtml(cell, num) {
   </div>`;
 }
 
-function _autoResizeNb(ta) { ta.style.height = 'auto'; ta.style.height = Math.max(ta.scrollHeight, 60) + 'px'; }
+function _autoResizeNb(ta) {
+  ta.style.height = 'auto';
+  const h = Math.min(Math.max(ta.scrollHeight, 72), 400);
+  ta.style.height = h + 'px';
+  ta.style.overflowY = ta.scrollHeight > 400 ? 'auto' : 'hidden';
+}
 
 function updateCellCode(id, val) {
   const c = _nbCells.find(c => c.id === id);
