@@ -1,10 +1,3 @@
-    import { initAuth } from '/components/auth/auth_client.js';
-
-    initAuth().then(() => {
-      if (!window.authClient?.isLoggedIn()) {
-        console.warn('[tutorial] 未登录，点赞/评论功能需要先登录');
-      }
-    });
     const API_BASE = 'https://api.dreamingpolar.com/auth';
     const id = new URLSearchParams(location.search).get('id')
       ?? location.pathname.split('/community/')[1];
@@ -633,4 +626,13 @@
       }
     }
 
-    boot();
+    if (window.authClient?.isLoggedIn?.()) {
+      boot();
+    } else {
+      document.addEventListener('auth-ready', () => {
+        if (!window.authClient?.isLoggedIn()) {
+          console.warn('[tutorial] 未登录，点赞/评论功能需要先登录');
+        }
+        boot();
+      }, { once: true });
+    }

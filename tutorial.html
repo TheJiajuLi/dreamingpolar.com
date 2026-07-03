@@ -9,6 +9,12 @@
   <link rel="stylesheet" href="/components/pages/tutorial/tutorial.css">
   <link rel="stylesheet" href="/components/auth/auth_screen.css">
   <link rel="stylesheet" href="/components/auth/auth_ui.css">
+  <script type="module">
+    import { initAuth } from '/components/auth/auth_client.js';
+    initAuth().then(() => {
+      document.dispatchEvent(new CustomEvent('auth-ready'));
+    });
+  </script>
 </head>
 <body>
   <header class="topbar">
