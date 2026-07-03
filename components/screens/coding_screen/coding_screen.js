@@ -326,12 +326,14 @@ function setupCodingScreen() {
   const ICON_CHECK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
   function _findMirrorOutPane(cellId) {
-    const cellEl = Array.from(document.querySelectorAll('.nb-cell[data-nb-id]'))
-      .find(el => el.dataset.nbId === cellId);
-    return cellEl?.querySelector('.mirror-out-pane') ?? null;
+    const id = String(cellId ?? '');
+    if (!id) return null;
+    const escId = window.CSS?.escape ? window.CSS.escape(id) : id.replace(/"/g, '\\"');
+    return document.querySelector(`.nb-cell[data-nb-id="${escId}"] .mirror-out-pane`) ?? null;
   }
 
-  function getOrCreateNbSection(cellId, cellLabel, lang) {
+  function getOrCreateNbSection(cellId, cellLabel, lang, options = {}) {
+    const { allowFallback = true } = options;
     if (nbSections.has(cellId)) {
       const sec = nbSections.get(cellId);
       const spanEl = sec.labelEl.querySelector('span');
@@ -438,6 +440,8 @@ function setupCodingScreen() {
     const mirrorOutPane = _findMirrorOutPane(cellId);
     if (mirrorOutPane) {
       mirrorOutPane.appendChild(sectionEl);
+    } else if (!allowFallback) {
+      return null;
     } else {
       console.warn('[mirror] No .mirror-out-pane for cell', cellId, '— falling back to output body');
       nbOutputBody.appendChild(sectionEl);
@@ -760,17 +764,36 @@ function setupCodingScreen() {
   });
 
   // Restore outputs from previous session on load
-  function _restoreStoredOutputs() {
+  function _restoreStoredOutputs(attempt = 0) {
     if (!getSettings().cacheNotebookOutput) return;  // setting OFF → skip restore
     let stored;
     stored = loadScopedJson(NB_OUTPUTS_KEY, {});
+    const missingCellIds = [];
     for (const [cellId, entry] of Object.entries(stored)) {
       if (!entry?.outputs?.length) continue;
-      const sec = getOrCreateNbSection(cellId, entry.label ?? cellId, entry.lang ?? 'python');
+      const sec = getOrCreateNbSection(cellId, entry.label ?? cellId, entry.lang ?? 'python', { allowFallback: false });
+      if (!sec) {
+        missingCellIds.push(cellId);
+        continue;
+      }
       _renderIntoSection(sec, entry.outputs, entry.sourceCode ?? null, entry.lang ?? 'python');
       // Only mark stale if user has NOT opted into caching — if they did, this IS the normal state
       // cacheNotebookOutput ON → no badge; OFF → show badge warning it's old data
     }
+
+    // Cells may not be mounted yet (e.g., right after cloud/local restore). Retry a few frames.
+    if (missingCellIds.length > 0 && attempt < 6) {
+      requestAnimationFrame(() => _restoreStoredOutputs(attempt + 1));
+      return;
+    }
+
+    // Still missing after retries -> stale cache entries from deleted/replaced cells.
+    if (missingCellIds.length > 0) {
+      const nextStored = { ...stored };
+      missingCellIds.forEach(id => { delete nextStored[id]; });
+      saveScopedJson(NB_OUTPUTS_KEY, nextStored);
+    }
+
     // Output panel is retired — sections live in mirror-out-pane inside each cell
   }
 
