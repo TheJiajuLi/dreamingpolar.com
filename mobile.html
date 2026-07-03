@@ -230,17 +230,18 @@
 
     /* ── PROFILE ── */
     #s-profile { background: var(--bg); }
-    .p-topbar {
-      display: flex; align-items: center; padding: 10px 16px;
-      background: #fff; flex-shrink: 0; position: sticky; top: 0; z-index: 10;
+    .prof-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px 0; position: sticky; top: 0; z-index: 10;
+      background: #fff;
     }
-    .p-topbar-logo { font-size: 11px; font-weight: 700; letter-spacing: .25em; color: var(--muted); flex: 1; }
-    .p-topbar-logo b { color: var(--accent); }
-    .p-topbar-menu {
-      width: 36px; height: 36px; border-radius: 10px; border: none;
-      background: transparent; color: var(--text); font-size: 22px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    .prof-topbar-logo { font-size: 16px; font-weight: 500; color: var(--text); }
+    .prof-topbar-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: none; background: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text);
     }
+    .prof-topbar-btn i { font-size: 20px; }
     .p-cover {
       height: 110px; background: var(--accent-light); position: relative;
       background-size: cover; background-position: center; flex-shrink: 0;
@@ -294,29 +295,34 @@
     .p-stat-item { display: flex; flex-direction: column; }
     .p-stat-item strong { font-size: 18px; font-weight: 800; line-height: 1.1; }
     .p-stat-item span { font-size: 12px; color: var(--muted); }
-    .p-tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 42px; z-index: 9; }
+    .p-tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 48px; z-index: 9; }
     .p-tab { flex: 1; height: 44px; background: none; border: none; border-bottom: 2px solid transparent; font-family: inherit; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .p-tab i { font-size: 20px; }
     .p-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .p-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-    .pg-item { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--bg); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .pg-item img { width: 100%; height: 100%; object-fit: cover; }
-    .pg-stats { position: absolute; bottom: 0; left: 0; right: 0; padding: 22px 7px 6px; background: linear-gradient(to top, rgba(0,0,0,.45), transparent); display: flex; gap: 8px; font-size: 11px; font-weight: 600; color: #fff; }
-    .pg-stats span { display: flex; align-items: center; gap: 2px; }
+    .p-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; margin-top: 2px; }
+    .p-grid-item { aspect-ratio: 3/4; background: var(--bg); position: relative; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .p-grid-item img { width: 100%; height: 100%; object-fit: cover; }
+    .p-grid-item-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 8px 8px; background: linear-gradient(transparent, rgba(0,0,0,.5)); }
+    .p-grid-item-title { font-size: 12px; color: #fff; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .p-grid-item-stats { display: flex; gap: 6px; font-size: 11px; color: rgba(255,255,255,.8); margin-top: 4px; }
+    .p-grid-item-stats span { display: flex; align-items: center; gap: 2px; }
     .login-prompt { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; gap: 16px; text-align: center; }
     .login-prompt i { font-size: 52px; color: var(--accent); opacity: .5; }
     .login-prompt h2 { font-size: 20px; font-weight: 700; }
     .login-prompt p { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
     /* ── SETTINGS SHEET ── */
-    .sett-sheet-item { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--text); border-top: 1px solid var(--border); }
-    .sett-sheet-item:first-child { border-top: none; }
-    .sett-sheet-item:active { background: var(--bg); }
-    .sett-sheet-item i:first-child { font-size: 20px; color: var(--muted); width: 24px; flex-shrink: 0; }
-    .sett-sheet-arrow { margin-left: auto; font-size: 15px; color: var(--muted); }
-    .sett-sheet-item.danger { color: #ef4444; }
-    .sett-sheet-item.danger i:first-child { color: #ef4444; }
-    .sett-sheet-divider { height: 8px; background: var(--bg); }
+    .setting-item { display: flex; align-items: center; gap: 14px; padding: 12px 4px; border-bottom: 0.5px solid var(--border); cursor: pointer; font-size: 15px; color: var(--text); }
+    .setting-item:last-child { border-bottom: none; }
+    .setting-item:active { opacity: .7; }
+    .setting-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .setting-icon i { font-size: 18px; }
+    .setting-icon.purple { background: #eef0ff; color: #6366f1; }
+    .setting-icon.blue   { background: #e6f1fb; color: #2563eb; }
+    .setting-icon.green  { background: #f0fdf4; color: #16a34a; }
+    .setting-icon.amber  { background: #fffbeb; color: #d97706; }
+    .setting-icon.gray   { background: var(--bg); color: var(--muted); }
+    .setting-icon.red    { background: #fef2f2; color: #dc2626; }
 
     /* ── MANAGE ── */
     #s-manage, #s-manage-edit { overflow-y: hidden !important; }
@@ -629,9 +635,12 @@
     </div>
     <div id="p-user" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow-y:auto">
       <!-- Topbar -->
-      <div class="p-topbar">
-        <span class="p-topbar-logo">极梦 <b>◆</b></span>
-        <button class="p-topbar-menu" id="p-menu-btn" title="设置"><i class="ti ti-menu-2"></i></button>
+      <div class="prof-topbar">
+        <div class="prof-topbar-logo">极梦</div>
+        <div style="display:flex;gap:4px">
+          <button class="prof-topbar-btn" onclick="shareProfile()" title="分享"><i class="ti ti-share"></i></button>
+          <button class="prof-topbar-btn" id="p-menu-btn" title="设置"><i class="ti ti-menu-2"></i></button>
+        </div>
       </div>
       <!-- Cover -->
       <div class="p-cover" id="p-cover">
@@ -645,7 +654,6 @@
         </div>
         <div class="p-av-actions">
           <button class="p-edit-btn" onclick="showEditSheet()">编辑资料</button>
-          <button class="p-share-btn" onclick="shareProfile()"><i class="ti ti-share"></i></button>
         </div>
       </div>
       <!-- Info -->
@@ -1288,8 +1296,48 @@ const INTEREST_ICONS = {
 };
 
 // ── Profile ───────────────────────────────────────────────────────────────────
-function openSettings() { document.getElementById('m-settings').classList.remove('hidden'); }
+function openSettings() { showSettings(); }
 function closeSettings() { document.getElementById('m-settings').classList.add('hidden'); }
+function showSettings() {
+  const sheet = document.createElement('div');
+  sheet.innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2000;display:flex;align-items:flex-end" onclick="this.remove()">
+      <div style="background:#fff;border-radius:24px 24px 0 0;padding:20px 20px 44px;width:100%" onclick="event.stopPropagation()">
+        <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+        <div class="setting-item" onclick="gotoManage();this.closest('[style]').remove()">
+          <div class="setting-icon purple"><i class="ti ti-layout-list"></i></div>
+          <span>管理内容</span>
+          <i class="ti ti-chevron-right" style="margin-left:auto;color:var(--muted);font-size:16px"></i>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon blue"><i class="ti ti-bell"></i></div>
+          <span>通知设置</span>
+          <i class="ti ti-chevron-right" style="margin-left:auto;color:var(--muted);font-size:16px"></i>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon green"><i class="ti ti-cloud"></i></div>
+          <span>云端存储</span>
+          <i class="ti ti-chevron-right" style="margin-left:auto;color:var(--muted);font-size:16px"></i>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon amber"><i class="ti ti-palette"></i></div>
+          <span>主题</span>
+          <i class="ti ti-chevron-right" style="margin-left:auto;color:var(--muted);font-size:16px"></i>
+        </div>
+        <div class="setting-item">
+          <div class="setting-icon gray"><i class="ti ti-language"></i></div>
+          <span>语言</span>
+          <i class="ti ti-chevron-right" style="margin-left:auto;color:var(--muted);font-size:16px"></i>
+        </div>
+        <div style="height:0.5px;background:var(--border);margin:8px 0"></div>
+        <div class="setting-item" onclick="doLogout();this.closest('[style]').remove()" style="color:#dc2626">
+          <div class="setting-icon red"><i class="ti ti-logout"></i></div>
+          <span style="color:#dc2626">退出登录</span>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(sheet);
+}
 
 async function renderProfile() {
   const guest = document.getElementById('p-guest');
@@ -1358,14 +1406,17 @@ function _gridItem(t) {
   const id = tid(t);
   const i = (t.title?.charCodeAt(0) || 0) % 5;
   const cover = t.cover_image || t.cover_url || t.cover || '';
-  const inner = cover
-    ? `<img src="${esc(cover)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.background='${_GRID_COLORS[i]}';this.remove()">`
-    : `<i class="ti ${_GRID_ICONS[i]}" style="font-size:32px;color:var(--accent);opacity:.4"></i>`;
-  return `<div class="pg-item" style="${cover ? '' : 'background:' + _GRID_COLORS[i]}" onclick="openTut('${esc(id)}')">
-    ${inner}
-    <div class="pg-stats">
-      <span><i class="ti ti-heart"></i>${fmt(tlikes(t))}</span>
-      <span><i class="ti ti-eye"></i>${fmt(tviews(t))}</span>
+  const imgHtml = cover
+    ? `<img src="${esc(cover)}" onerror="this.parentElement.style.background='${_GRID_COLORS[i]}';this.remove()">`
+    : `<i class="ti ${_GRID_ICONS[i]}" style="font-size:36px;color:var(--accent);opacity:.35"></i>`;
+  return `<div class="p-grid-item" style="${cover ? '' : 'background:' + _GRID_COLORS[i]}" onclick="openTut('${esc(id)}')">
+    ${imgHtml}
+    <div class="p-grid-item-overlay">
+      <div class="p-grid-item-title">${esc(t.title || '')}</div>
+      <div class="p-grid-item-stats">
+        <span><i class="ti ti-heart"></i>${fmt(tlikes(t))}</span>
+        <span><i class="ti ti-eye"></i>${fmt(tviews(t))}</span>
+      </div>
     </div>
   </div>`;
 }
@@ -1412,7 +1463,7 @@ async function loadPFavorites() {
 
 function loadPLiked() {
   document.getElementById('p-grid').innerHTML =
-    '<div style="grid-column:span 2;padding:48px 16px;text-align:center;color:var(--muted);font-size:14px">功能即将开放</div>';
+    '<div style="grid-column:span 2;padding:48px 16px;text-align:center;color:var(--muted);font-size:14px">还没有点赞的教程</div>';
 }
 
 function showToast(msg) {
@@ -1429,7 +1480,6 @@ function clearCache() {
 }
 
 function doLogout() {
-  closeSettings();
   S.token = null; S.user = null;
   localStorage.removeItem('jm-session');
   renderProfile();
@@ -2020,7 +2070,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Profile
   document.getElementById('p-login-btn').addEventListener('click', showAuth);
-  document.getElementById('p-menu-btn').addEventListener('click', openSettings);
+  document.getElementById('p-menu-btn').addEventListener('click', showSettings);
   document.querySelectorAll('.p-tab').forEach(t => t.addEventListener('click', () => {
     document.querySelectorAll('.p-tab').forEach(x => x.classList.remove('active')); t.classList.add('active');
     if (t.dataset.ptab === 'grid') loadPGrid(S.user?.username || '');
