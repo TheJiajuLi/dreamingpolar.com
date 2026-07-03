@@ -49,7 +49,7 @@ function _getSubtext() {
   if (hour >= 12 && hour < 14) return '午后时光，慢慢来。';
   if (hour >= 14 && hour < 18) return '下午好，状态怎么样？';
   if (hour >= 18 && hour < 22) return '忙了一天，辛苦了。';
-  return '夜深了，注意休息。';
+  return '注意休息。';
 }
 
 // ── SVG helpers ───────────────────────────────────────────────────────────────
@@ -102,11 +102,12 @@ function _buildDashboard() {
 
   function _renderGreeting(user) {
     const username = String(user?.username ?? '').trim() || '你';
+    const sub = String(_getSubtext() || '').replace(/^夜深了[，,\s]*/u, '');
     greeting.innerHTML = `
       <span class="esd-greeting-text">
         <span class="esd-greeting-user">${_esc(username)}</span>，${_getGreeting()}。
         <br>
-        <span class="esd-greeting-sub">${_getSubtext()}</span>
+        <span class="esd-greeting-sub">${_esc(sub)}</span>
       </span>
     `;
   }
