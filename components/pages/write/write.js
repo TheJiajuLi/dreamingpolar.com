@@ -670,18 +670,38 @@
       const imageUrl = data?.url
         || data?.public_url
         || data?.file_url
+        || data?.publicUrl
+        || data?.fileUrl
         || (() => {
-          const key = data?.cos_key || data?.id;
-          if (!key) return '';
-          if (String(key).startsWith('http://') || String(key).startsWith('https://')) {
-            return String(key);
+          const key = data?.cos_key || data?.cosKey || data?.key || data?.path || data?.file_key || data?.fileKey;
+          if (key) {
+            const rawKey = String(key);
+            if (rawKey.startsWith('http://') || rawKey.startsWith('https://')) {
+              return rawKey;
+            }
+            const noLeadSlash = rawKey.replace(/^\/+/, '');
+            const cleanKey = noLeadSlash.startsWith('users/') ? noLeadSlash : `users/${noLeadSlash}`;
+            return `https://dp-1317483118.cos.ap-hongkong.myqcloud.com/${cleanKey}`;
           }
-          const cleanKey = String(key).startsWith('users/') ? String(key) : `users/${String(key)}`;
-          return `https://dp-1317483118.cos.ap-hongkong.myqcloud.com/${cleanKey}`;
+          const id = data?.id;
+          if (id) return `${API_BASE.replace('/tutorials', '')}/files/${encodeURIComponent(String(id))}`;
+          return '';
         })();
 
       if (!imageUrl) throw new Error('上传成功但未返回图片地址');
       return imageUrl;
+    }
+
+    function normalizeImageUrl(v) {
+      const s = String(v || '').trim();
+      if (!s) return '';
+      if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:image/') || s.startsWith('blob:')) return s;
+      if (s.startsWith('users/') || s.includes('/')) {
+        const noLeadSlash = s.replace(/^\/+/, '');
+        const cleanKey = noLeadSlash.startsWith('users/') ? noLeadSlash : `users/${noLeadSlash}`;
+        return `https://dp-1317483118.cos.ap-hongkong.myqcloud.com/${cleanKey}`;
+      }
+      return `${API_BASE.replace('/tutorials', '')}/files/${encodeURIComponent(s)}`;
     }
 
     async function uploadImageToCOS(file) {
@@ -856,7 +876,7 @@
         tutorialMeta = {
           title: data.title || '',
           summary: data.summary || '',
-          cover_image: data.cover_image || '',
+          cover_image: normalizeImageUrl(data.cover_image || ''),
           tags: Array.isArray(data.tags) ? data.tags : [],
           status: data.status || 'draft'
         };
