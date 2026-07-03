@@ -13,6 +13,7 @@ const KEEP_LS_KEYS = new Set([
   'dp-rb-open',
   'dp-rb-pane',
   'dp-last-user-id',
+  'dp-last-user-key',
 ]);
 
 const KEEP_LS_PREFIXES = [
@@ -54,6 +55,14 @@ function clearBusinessCache() {
     if (!_shouldClearSessionStorageKey(k)) return;
     try { sessionStorage.removeItem(k); } catch (_) {}
   });
+}
+
+function _userIdentityKey(user) {
+  if (!user || typeof user !== 'object') return '';
+  if (user.id != null && String(user.id).trim()) return `id:${String(user.id).trim()}`;
+  if (user.username && String(user.username).trim()) return `username:${String(user.username).trim().toLowerCase()}`;
+  if (user.email && String(user.email).trim()) return `email:${String(user.email).trim().toLowerCase()}`;
+  return '';
 }
 
 let _accessToken = null;
@@ -113,6 +122,8 @@ export async function logout() {
   _accessToken = null;
   clearBusinessCache();
   clearUserCache();
+  try { localStorage.removeItem('dp-last-user-id'); } catch (_) {}
+  try { localStorage.removeItem('dp-last-user-key'); } catch (_) {}
 }
 
 export async function getMe() {
@@ -537,14 +548,20 @@ async function _fetchUser() {
   try {
     _uiUser = await getMe();
 
-    const prevUserId = localStorage.getItem('dp-last-user-id');
-    const currentUserId = _uiUser?.id != null ? String(_uiUser.id) : '';
-    if (prevUserId && currentUserId && prevUserId !== currentUserId) {
+    const prevUserKey = localStorage.getItem('dp-last-user-key') || localStorage.getItem('dp-last-user-id') || '';
+    const currentUserKey = _userIdentityKey(_uiUser);
+
+    if (prevUserKey && currentUserKey && prevUserKey !== currentUserKey) {
       // 用户切换，清空旧缓存
       clearBusinessCache();
+      clearUserCache();
     }
-    if (currentUserId) {
-      localStorage.setItem('dp-last-user-id', currentUserId);
+
+    if (currentUserKey) {
+      localStorage.setItem('dp-last-user-key', currentUserKey);
+      if (currentUserKey.startsWith('id:')) {
+        localStorage.setItem('dp-last-user-id', currentUserKey.slice(3));
+      }
     }
 
     saveUserCache(_uiUser);
