@@ -60,6 +60,23 @@ initAuth().catch(() => {});
       return '';
     }
 
+    function isDefaultAvatarValue(v) {
+      const s = String(v ?? '').trim();
+      if (!s) return true;
+      if (!/^https?:\/\//i.test(s) && !s.startsWith('data:image/')) return true;
+      const low = s.toLowerCase();
+      if (low.includes('ui-avatars.com')) return true;
+      if (low.includes('dicebear')) return true;
+      if (low.includes('gravatar.com/avatar/') && /[?&]d=/.test(low)) return true;
+      if (low.includes('default') || low.includes('placeholder') || low.includes('identicon')) return true;
+      return false;
+    }
+
+    function safeAvatar(...values) {
+      const raw = firstText(...values);
+      return isDefaultAvatarValue(raw) ? '' : raw;
+    }
+
     function formatNum(v) {
       const n = toNum(v);
       if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
@@ -168,7 +185,7 @@ initAuth().catch(() => {});
         state.profile = {
           username: user.username || state.username,
           name: firstText(user.name, user.display_name, user.nickname, user.username, state.username),
-          avatar: firstText(
+          avatar: safeAvatar(
             user.avatar,
             user.avatar_url,
             user.avatarUrl,
@@ -237,9 +254,9 @@ initAuth().catch(() => {});
         els.topAvatar.href = '/';
       }
 
-      const meAvatar = firstText(state.me?.avatar, state.me?.avatar_url, state.me?.avatarUrl, state.me?.photo, state.me?.image);
-      if (meAvatar) {
-        els.topAvatar.innerHTML = `<img src="${esc(meAvatar)}" alt="${esc(state.me?.username || username)}">`;
+      const displayTopAvatar = safeAvatar(state.me?.avatar, state.me?.avatar_url, state.me?.avatarUrl, state.me?.photo, state.me?.image);
+      if (displayTopAvatar) {
+        els.topAvatar.innerHTML = `<img src="${esc(displayTopAvatar)}" alt="${esc(state.me?.username || username)}">`;
       } else {
         const text = state.me?.username ? initials(state.me.username) : (username ? initials(username) : '我');
         els.topAvatar.textContent = text;
@@ -269,7 +286,10 @@ initAuth().catch(() => {});
     function renderSidebar() {
       const p = state.profile || { username: state.username, name: state.username, avatar: '', bio: '' };
       const isSelf = state.me?.username && state.me.username === (p.username || state.username);
-      const displayAvatar = firstText(p.avatar, isSelf ? firstText(state.me?.avatar, state.me?.avatar_url, state.me?.avatarUrl, state.me?.photo, state.me?.image) : '');
+      const displayAvatar = safeAvatar(
+        p.avatar,
+        isSelf ? safeAvatar(state.me?.avatar, state.me?.avatar_url, state.me?.avatarUrl, state.me?.photo, state.me?.image) : ''
+      );
       const displayBio = firstText(
         p.bio,
         isSelf ? firstText(state.me?.bio, state.me?.signature, state.me?.profile_bio, state.me?.about) : ''

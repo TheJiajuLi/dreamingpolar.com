@@ -115,6 +115,10 @@
       background: #f4f7ff;
       text-decoration: none;
       font-weight: 700;
+      font-size: 14px;
+      line-height: 1;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
     }
 
     .avatar-chip img {
@@ -151,7 +155,10 @@
       justify-content: center;
       background: linear-gradient(140deg, #5863f1, #7078ff);
       color: #fff;
-      font-size: 42px;
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
       font-weight: 700;
       margin-bottom: 12px;
     }

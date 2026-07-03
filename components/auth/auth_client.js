@@ -5,22 +5,54 @@ import { initSync } from '../shared/notebook_sync.js';
 
 const AUTH_BASE = 'https://api.dreamingpolar.com/auth';
 
-const CACHE_KEYS = [
-  'dreaming-polar-cells',
-  'dreaming-polar-inject-store',
-  'dreaming-polar-nb-outputs',
-  'dp-activity-log',
-  'dp-activity-events',
-  'dp-cloud-file-meta',
-  'dp-ai-chat-history',
-  'dp-grid-state',
-  'dp-code-file-store',
-  'dp-favorite-tutorials',
+const KEEP_LS_KEYS = new Set([
+  'theme',
+  'mathfield-font',
+  'dreaming-polar-lang',
+  'dp-settings',
+  'dp-rb-open',
+  'dp-rb-pane',
+  'dp-last-user-id',
+]);
+
+const KEEP_LS_PREFIXES = [
+  'dp-screen-',
+  'dp-nudge-snooze-',
 ];
 
+function _shouldClearLocalStorageKey(key) {
+  if (!key) return false;
+  if (KEEP_LS_KEYS.has(key)) return false;
+  if (KEEP_LS_PREFIXES.some((p) => key.startsWith(p))) return false;
+
+  // Clear all user/business state on account switch/logout.
+  return key.startsWith('dp-') || key.startsWith('dreaming-polar-');
+}
+
+function _shouldClearSessionStorageKey(key) {
+  if (!key) return false;
+  return key.startsWith('dp-') || key.startsWith('dreaming-polar-');
+}
+
 function clearBusinessCache() {
-  CACHE_KEYS.forEach((k) => {
+  const lsKeys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k) lsKeys.push(k);
+  }
+  lsKeys.forEach((k) => {
+    if (!_shouldClearLocalStorageKey(k)) return;
     try { localStorage.removeItem(k); } catch (_) {}
+  });
+
+  const ssKeys = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i);
+    if (k) ssKeys.push(k);
+  }
+  ssKeys.forEach((k) => {
+    if (!_shouldClearSessionStorageKey(k)) return;
+    try { sessionStorage.removeItem(k); } catch (_) {}
   });
 }
 
@@ -80,6 +112,7 @@ export async function logout() {
   await authFetch('/logout', { method: 'POST' }).catch(() => {});
   _accessToken = null;
   clearBusinessCache();
+  clearUserCache();
 }
 
 export async function getMe() {
