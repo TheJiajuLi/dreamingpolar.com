@@ -69,8 +69,12 @@
 
     function isPublishedTutorial(t) {
       const status = String(t?.status ?? '').toLowerCase();
-      if (!status) return true;
-      return status === 'published' || status === 'public';
+      if (status === 'published' || status === 'public') return true;
+      if (status === 'draft' || status === 'private' || status === 'deleted' || status === 'archived') return false;
+      if (status) return false;
+
+      // Backward-compatible records without status: only show if they have publish timestamp.
+      return Boolean(t?.published_at || t?.publishedAt);
     }
 
     function tutorialStats(t) {

@@ -633,6 +633,27 @@
       return getTokenFromCookie() || getDpAccessCookie() || getTokenFromLocalStorage();
     }
 
+    function getCachedUser() {
+      try {
+        const u = JSON.parse(localStorage.getItem('dp-auth-user') || 'null');
+        return u && u.username ? u : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function isWriterLoggedIn() {
+      if (window.authClient?.isLoggedIn?.()) return true;
+      return Boolean(getCachedUser() && getToken());
+    }
+
+    function requireWriterLogin() {
+      if (isWriterLoggedIn()) return true;
+      els.saveStatus.textContent = '未登录，无法发帖。请先登录。';
+      window.dpAuthModal?.open?.('login');
+      return false;
+    }
+
     function resolveUploadedImageUrl(data) {
       const directUrl = data?.url || data?.file_url || data?.fileUrl || data?.public_url || data?.publicUrl;
       if (directUrl) return directUrl;
@@ -756,6 +777,7 @@
     }
 
     async function onSaveDraft() {
+      if (!requireWriterLogin()) return;
       try {
         els.saveStatus.textContent = '保存中...';
         await createTutorial('draft');
@@ -766,6 +788,7 @@
     }
 
     async function onUpdate() {
+      if (!requireWriterLogin()) return;
       try {
         els.saveStatus.textContent = '更新中...';
         await updateTutorial('draft');
@@ -776,6 +799,7 @@
     }
 
     async function onPublish() {
+      if (!requireWriterLogin()) return;
       try {
         els.saveStatus.textContent = '发布中...';
         if (currentTutorialId) {
@@ -857,6 +881,9 @@
       bindMetaEditor();
       bindTopButtons();
       bindModal();
+      if (!isWriterLoggedIn()) {
+        els.saveStatus.textContent = '游客模式：仅可预览，登录后可保存/发布。';
+      }
       loadExistingTutorial();
     }
 

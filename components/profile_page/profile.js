@@ -48,6 +48,10 @@ initAuth().catch(() => {});
       return Number.isFinite(n) ? n : 0;
     }
 
+    function hasText(v) {
+      return String(v ?? '').trim().length > 0;
+    }
+
     function firstText(...values) {
       for (const v of values) {
         const s = String(v ?? '').trim();
@@ -266,6 +270,10 @@ initAuth().catch(() => {});
       const p = state.profile || { username: state.username, name: state.username, avatar: '', bio: '' };
       const isSelf = state.me?.username && state.me.username === (p.username || state.username);
       const displayAvatar = firstText(p.avatar, isSelf ? firstText(state.me?.avatar, state.me?.avatar_url, state.me?.avatarUrl, state.me?.photo, state.me?.image) : '');
+      const displayBio = firstText(
+        p.bio,
+        isSelf ? firstText(state.me?.bio, state.me?.signature, state.me?.profile_bio, state.me?.about) : ''
+      );
 
       if (displayAvatar) {
         els.profileAvatar.innerHTML = `<img src="${esc(displayAvatar)}" alt="${esc(p.name)}">`;
@@ -274,7 +282,7 @@ initAuth().catch(() => {});
       }
       els.profileName.textContent = p.name || state.username;
       els.profileHandle.textContent = `@${p.username || state.username}`;
-      els.profileBio.textContent = p.bio || '这个人很神秘，还没有填写简介。';
+      els.profileBio.textContent = hasText(displayBio) ? displayBio : '这个人很神秘，还没有填写简介。';
 
       const stats = calcStats(state.tutorials.published);
       els.statTutorials.textContent = formatNum(stats.tutorials);
@@ -334,18 +342,44 @@ initAuth().catch(() => {});
       } catch (_) {}
       if (!token) throw new Error('请先登录后再删除');
 
-      const res = await fetch(`https://api.dreamingpolar.com/auth/tutorials/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.message || `删除失败: ${res.status}`);
+      const baseUrl = `https://api.dreamingpolar.com/auth/tutorials/${encodeURIComponent(id)}`;
+      const attempts = [
+        { method: 'DELETE', url: baseUrl },
+        { method: 'PATCH', url: baseUrl, body: { status: 'deleted' } },
+        { method: 'PUT', url: baseUrl, body: { status: 'deleted' } },
+        { method: 'POST', url: `${baseUrl}/delete` },
+      ];
 
-      state.tutorials.published = (state.tutorials.published || []).filter((x) => tutorialId(x) !== id);
-      renderSidebar();
-      renderList();
-      return true;
+      let lastMessage = '删除失败，请稍后重试';
+
+      for (const req of attempts) {
+        try {
+          const res = await fetch(req.url, {
+            method: req.method,
+            credentials: 'include',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              ...(req.body ? { 'Content-Type': 'application/json' } : {}),
+            },
+            ...(req.body ? { body: JSON.stringify(req.body) } : {}),
+          });
+
+          if (res.ok) {
+            state.tutorials.published = (state.tutorials.published || []).filter((x) => tutorialId(x) !== id);
+            renderSidebar();
+            renderList();
+            return true;
+          }
+
+          const data = await res.json().catch(() => ({}));
+          lastMessage = data?.message || `删除失败: ${res.status}`;
+          if (![404, 405, 500].includes(res.status)) break;
+        } catch (err) {
+          lastMessage = err?.message || lastMessage;
+        }
+      }
+
+      throw new Error(lastMessage);
     }
 
     function emptyText(tab) {
