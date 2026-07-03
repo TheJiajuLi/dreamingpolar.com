@@ -74,7 +74,7 @@
       if (status) return false;
 
       // Backward-compatible records without status: only show if they have publish timestamp.
-      return Boolean(t?.published_at || t?.publishedAt);
+      return true; // status未知时默认显示
     }
 
     function tutorialStats(t) {
