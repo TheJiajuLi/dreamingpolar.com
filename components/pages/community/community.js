@@ -177,35 +177,42 @@
       cards.innerHTML = items.map(cardHtml).join('');
     }
 
-    function setupUserArea() {
-      let user = null;
-      try { user = window.authClient?.getUser?.() ?? window.dpAuthStore?.loadUserCache?.() ?? null; } catch (_) {}
+    async function setupUserArea() {
+      // Wait until auth_client initializes (independent page entry may race on first paint).
+      await new Promise(resolve => {
+        if (window.authClient) {
+          resolve();
+        } else {
+          document.addEventListener('auth-ready', resolve, { once: true });
+          setTimeout(resolve, 3000);
+        }
+      });
+
       const loginBtn = document.getElementById('login-btn');
       const avatarBtn = document.getElementById('avatar-btn');
+      if (!loginBtn || !avatarBtn) return;
 
-      let username = '';
-      try {
-        username = window.authClient?.getUser?.()?.username
-          ?? window.dpAuthStore?.loadUserCache?.()?.username
-          ?? '';
-      } catch (_) {}
+      if (window.authClient?.isLoggedIn?.()) {
+        let user = null;
+        try {
+          user = window.authClient.getUser?.()
+            ?? JSON.parse(localStorage.getItem('dp-auth-user') || '{}');
+        } catch (_) {
+          user = {};
+        }
 
-      if (username) {
-        avatarBtn.href = `/profile?username=${encodeURIComponent(username)}`;
-        avatarBtn.onclick = null;
-      } else {
-        avatarBtn.href = '/';
-      }
-
-      if (user && user.username) {
         loginBtn.style.display = 'none';
         avatarBtn.style.display = '';
-        avatarBtn.title = user.username;
         if (user.avatar) {
-          avatarBtn.innerHTML = `<img src="${esc(user.avatar)}" alt="${esc(user.username)}" style="width:100%;height:100%;object-fit:cover;border-radius:999px;">`;
+          avatarBtn.innerHTML = `<img src="${esc(user.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
         } else {
-          avatarBtn.textContent = initials(user.username);
+          avatarBtn.textContent = (user.username || '?')[0].toUpperCase();
         }
+        const username = user.username || '';
+        avatarBtn.href = `/community/user/${encodeURIComponent(username)}`;
+      } else {
+        loginBtn.style.display = '';
+        avatarBtn.style.display = 'none';
       }
     }
 
