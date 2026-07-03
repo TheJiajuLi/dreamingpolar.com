@@ -73,6 +73,13 @@
     .spin { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,.1); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .hidden { display: none !important; }
+    .like-btn {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 12px; color: var(--muted); background: none; border: none;
+      cursor: pointer; font-family: inherit; padding: 4px 2px; transition: color .15s;
+    }
+    .like-btn.liked { color: #ef4444; }
+    .like-btn:active { transform: scale(.88); }
 
     /* ── HOME ── */
     #s-home { background: #fff; padding-bottom: 40px; }
@@ -433,6 +440,7 @@ const API = 'https://api.dreamingpolar.com';
 const S = {
   token: null, user: null,
   tutorials: [], tutTag: '', tutSearch: '', tutLoaded: false,
+  liked: new Set(),
   ariaHistory: [], ariaData: null, ariaBusy: false, ariaGreeted: false,
 };
 
@@ -566,7 +574,9 @@ function renderFeed() {
         <div class="tut-foot">
           <div class="tut-author">${avHtml}<span class="tut-aname">${esc(author)}</span></div>
           <div class="tut-stats">
-            <span><i class="ti ti-heart"></i>${fmt(tlikes(t))}</span>
+            <button class="like-btn${S.liked.has(tid(t))?' liked':''}" onclick="likeTut('${esc(tid(t))}',event)">
+              <i class="ti ti-heart${S.liked.has(tid(t))?'-filled':''}"></i>${fmt(tlikes(t))}
+            </button>
             <span><i class="ti ti-eye"></i>${fmt(tviews(t))}</span>
           </div>
         </div>
@@ -575,7 +585,33 @@ function renderFeed() {
   }).join('');
 }
 
-function openTut(id) { window.location.href = '/community/' + encodeURIComponent(id); }
+function openTut(id) { window.location.href = '/tutorial?id=' + encodeURIComponent(id); }
+
+async function likeTut(id, e) {
+  e.stopPropagation();
+  if (!S.token) { showAuth(); return; }
+  const was = S.liked.has(id);
+  was ? S.liked.delete(id) : S.liked.add(id);
+  // Optimistic render
+  const tut = S.tutorials.find(t => tid(t) === id);
+  if (tut) {
+    const key = tut.likes_count !== undefined ? 'likes_count' : 'likes';
+    tut[key] = (tut[key] ?? 0) + (was ? -1 : 1);
+  }
+  renderFeed();
+  try {
+    const r = await fetch(`${API}/auth/tutorials/${encodeURIComponent(id)}/like`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${S.token}` },
+    });
+    if (!r.ok) throw new Error();
+  } catch {
+    // Rollback
+    was ? S.liked.add(id) : S.liked.delete(id);
+    if (tut) { const key = tut.likes_count !== undefined ? 'likes_count' : 'likes'; tut[key] = (tut[key] ?? 0) + (was ? 1 : -1); }
+    renderFeed();
+  }
+}
 
 // ── ARIA ──────────────────────────────────────────────────────────────────────
 const ARIA_SYS =
@@ -689,6 +725,7 @@ async function handleCSV(file) {
 async function sendAria(text) {
   text = text.trim();
   if (!text || S.ariaBusy) return;
+  if (!S.token) { showAuth(); return; }
   S.ariaBusy = true;
   document.getElementById('aria-send').disabled = true;
   document.getElementById('aria-input').value = '';
@@ -758,20 +795,6 @@ async function renderProfile() {
   document.getElementById('p-name').textContent = name;
   document.getElementById('p-bio').textContent = u.bio || 'Dreaming Polar 用户';
 
-  try {
-    const r = await fetch(`${API}/auth/users/${encodeURIComponent(name)}`, { credentials: 'include' });
-    if (r.ok) {
-      const d = await r.json();
-      const tc = d.tutorials_count ?? 0;
-      const lk = d.likes_received ?? d.total_likes ?? 0;
-      const vw = d.views_total ?? d.total_views ?? 0;
-      document.getElementById('p-stats').innerHTML = `
-        <div class="p-stat"><strong>${tc}</strong><span>教程</span></div>
-        <div class="p-stat"><strong>${fmt(lk)}</strong><span>获赞</span></div>
-        <div class="p-stat"><strong>${fmt(vw)}</strong><span>浏览</span></div>`;
-    }
-  } catch {}
-
   loadPTuts(name);
 }
 
@@ -782,6 +805,13 @@ async function loadPTuts(username) {
     const r = await fetch(`${API}/auth/tutorials?author=${encodeURIComponent(username)}&status=published`);
     const d = await r.json();
     const items = Array.isArray(d) ? d : (d.tutorials ?? []);
+    // Compute stats from tutorial list
+    const totalLikes = items.reduce((s, t) => s + tlikes(t), 0);
+    const totalViews = items.reduce((s, t) => s + tviews(t), 0);
+    document.getElementById('p-stats').innerHTML = `
+      <div class="p-stat"><strong>${items.length}</strong><span>教程</span></div>
+      <div class="p-stat"><strong>${fmt(totalLikes)}</strong><span>获赞</span></div>
+      <div class="p-stat"><strong>${fmt(totalViews)}</strong><span>浏览</span></div>`;
     if (!items.length) { list.innerHTML = '<div class="comm-empty">还没有发布的教程</div>'; return; }
     list.innerHTML = items.map(t => `
       <div class="p-item" onclick="openTut('${esc(tid(t))}')">
@@ -817,7 +847,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('comm-write').addEventListener('click', () => {
     if (!S.user) { showAuth(); return; }
-    window.location.href = '/write.html';
+    window.location.href = '/write';
   });
 
   // ARIA
