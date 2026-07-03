@@ -130,6 +130,11 @@ initAuth().catch(() => {});
       return toNum(t.views_count ?? t.views);
     }
 
+    function tutorialOwnerId(t) {
+      const value = t?.user_id ?? t?.userId ?? t?.author_id ?? t?.authorId ?? t?.user?.id ?? t?.author?.id ?? '';
+      return String(value || '').trim();
+    }
+
     function showState(msg = '', show = false) {
       els.state.textContent = msg;
       els.state.style.display = show ? '' : 'none';
@@ -329,9 +334,9 @@ initAuth().catch(() => {});
       const cover = tutorialCover(t);
       const id = tutorialId(t);
       const href = id ? `/tutorial?id=${encodeURIComponent(id)}` : '/community';
-      const p = state.profile || { username: state.username };
-      const isSelf = state.me?.username && state.me.username === (p.username || state.username);
-      const canDelete = isSelf && state.currentTab === 'published' && tutorialStatus(t) !== 'deleted';
+      const currentUserId = String(window.authClient?.getUser?.()?.id ?? state.me?.id ?? '').trim();
+      const isOwner = !!currentUserId && currentUserId === tutorialOwnerId(t);
+      const canDelete = isOwner && state.currentTab === 'published' && tutorialStatus(t) !== 'deleted';
 
       return `
         <article class="card" data-id="${esc(id)}" data-href="${href}">

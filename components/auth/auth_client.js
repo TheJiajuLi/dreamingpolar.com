@@ -5,55 +5,20 @@ import { initSync } from '../shared/notebook_sync.js';
 
 const AUTH_BASE = 'https://api.dreamingpolar.com/auth';
 
-const KEEP_LS_KEYS = new Set([
-  'theme',
-  'mathfield-font',
-  'dreaming-polar-lang',
-  'dp-settings',
-  'dp-rb-open',
-  'dp-rb-pane',
-  'dp-last-user-id',
-  'dp-last-user-key',
-]);
-
-const KEEP_LS_PREFIXES = [
-  'dp-screen-',
-  'dp-nudge-snooze-',
+const CACHE_KEYS = [
+  'dreaming-polar-cells',
+  'dreaming-polar-inject-store',
+  'dreaming-polar-nb-outputs',
+  'dp-activity-log',
+  'dp-activity-events',
+  'dp-cloud-file-meta',
+  'dp-favorite-tutorials',
+  'dp-auth-user',
 ];
 
-function _shouldClearLocalStorageKey(key) {
-  if (!key) return false;
-  if (KEEP_LS_KEYS.has(key)) return false;
-  if (KEEP_LS_PREFIXES.some((p) => key.startsWith(p))) return false;
-
-  // Clear all user/business state on account switch/logout.
-  return key.startsWith('dp-') || key.startsWith('dreaming-polar-');
-}
-
-function _shouldClearSessionStorageKey(key) {
-  if (!key) return false;
-  return key.startsWith('dp-') || key.startsWith('dreaming-polar-');
-}
-
 function clearBusinessCache() {
-  const lsKeys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k) lsKeys.push(k);
-  }
-  lsKeys.forEach((k) => {
-    if (!_shouldClearLocalStorageKey(k)) return;
+  CACHE_KEYS.forEach((k) => {
     try { localStorage.removeItem(k); } catch (_) {}
-  });
-
-  const ssKeys = [];
-  for (let i = 0; i < sessionStorage.length; i++) {
-    const k = sessionStorage.key(i);
-    if (k) ssKeys.push(k);
-  }
-  ssKeys.forEach((k) => {
-    if (!_shouldClearSessionStorageKey(k)) return;
-    try { sessionStorage.removeItem(k); } catch (_) {}
   });
 }
 
@@ -192,6 +157,7 @@ export async function updateMeBio(bio) {
 
 window.authClient = { register, login, logout, getMe, updateMe, updateMeAvatar, updateMeBio, authedFetch,
                       silentRefresh, isLoggedIn, getAccessToken,
+                      getUser: () => _uiUser,
                       forgotPassword, resetPassword,
                       showResetPassword: (token) => _buildResetPage(token) };
 
@@ -549,20 +515,16 @@ async function _fetchUser() {
   try {
     _uiUser = await getMe();
 
-    const prevUserKey = localStorage.getItem('dp-last-user-key') || localStorage.getItem('dp-last-user-id') || '';
-    const currentUserKey = _userIdentityKey(_uiUser);
-
-    if (prevUserKey && currentUserKey && prevUserKey !== currentUserKey) {
+    const prevUserId = localStorage.getItem('dp-last-user-id');
+    const currentUserId = _uiUser?.id != null ? String(_uiUser.id) : '';
+    if (prevUserId && currentUserId && prevUserId !== currentUserId) {
       // 用户切换，清空旧缓存
       clearBusinessCache();
       clearUserCache();
     }
 
-    if (currentUserKey) {
-      localStorage.setItem('dp-last-user-key', currentUserKey);
-      if (currentUserKey.startsWith('id:')) {
-        localStorage.setItem('dp-last-user-id', currentUserKey.slice(3));
-      }
+    if (currentUserId) {
+      localStorage.setItem('dp-last-user-id', currentUserId);
     }
 
     saveUserCache(_uiUser);
