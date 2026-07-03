@@ -700,39 +700,35 @@ function _renderProfile(screen) {
     const file = fileInput.files?.[0];
     if (!file) return;
     try {
-      // Compress to 200×200 via canvas
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const img = new Image();
-          img.onload = () => {
-            const size = 200;
-            const canvas = document.createElement('canvas');
-            canvas.width = canvas.height = size;
-            const ctx = canvas.getContext('2d');
-            const scale = Math.max(size / img.width, size / img.height);
-            const w = img.width * scale, h = img.height * scale;
-            ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-            resolve(canvas.toDataURL('image/jpeg', 0.85));
-          };
-          img.onerror = reject;
-          img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      _setAvatarDisplay(base64);
-      const updatedUser = { ...window._dpGetAuthUser(), avatar: base64 };
-      window._dpGetAuthUser = () => updatedUser;
-      try { localStorage.setItem('dp-auth-user', JSON.stringify(updatedUser)); } catch (_) {}
       // Ensure token is valid before writing to backend
       if (!window.authClient?.isLoggedIn()) {
         await window.authClient?.silentRefresh().catch(() => {});
       }
-      window.authClient?.updateMeAvatar(base64)
-        .then(() => console.log('[avatar] saved to cloud'))
-        .catch(e => console.warn('[avatar] save failed:', e.message));
+
+      const token = window.authClient?.getAccessToken?.();
+      if (!token) throw new Error('请先登录');
+
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const res = await fetch('https://api.dreamingpolar.com/auth/update-avatar', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || `上传失败: ${res.status}`);
+
+      const avatarUrl = String(data?.avatar || '').trim();
+      if (!avatarUrl) throw new Error('上传成功但未返回头像地址');
+
+      _setAvatarDisplay(avatarUrl);
+      const updatedUser = { ...window._dpGetAuthUser(), avatar: avatarUrl };
+      window._dpGetAuthUser = () => updatedUser;
+      try { localStorage.setItem('dp-auth-user', JSON.stringify(updatedUser)); } catch (_) {}
+      document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: updatedUser } }));
+      console.log('[avatar] saved to cloud');
     } catch (e) {
       console.warn('[avatar upload]', e);
     }
