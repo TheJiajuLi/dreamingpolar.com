@@ -898,8 +898,10 @@ export async function getDataSample(varName, n = 300) {
 }
 
 export async function previewClean(varName, op) {
-  if (!_pyodide) throw new Error('Kernel not ready — run a cell first');
-  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');
+  await _initWorker();
+  if (!_pyodide || !_pyodide.runPython('"_dp_kernel_ns" in globals()')) {
+    throw new Error('KERNEL_NOT_READY');
+  }
   _pyodide.globals.set('_dp_clean_var', varName);
   try {
     if (op === 'dropna') {
@@ -944,7 +946,10 @@ _j.dumps({'candidates': _cands, 'total': int(len(_df))})
 }
 
 export async function applyClean(varName, op, extra = null) {
-  if (!_pyodide) throw new Error('Python runtime not loaded');
+  await _initWorker();
+  if (!_pyodide || !_pyodide.runPython('"_dp_kernel_ns" in globals()')) {
+    throw new Error('KERNEL_NOT_READY');
+  }
   _pyodide.globals.set('_dp_clean_var', varName);
   try {
     let result;
@@ -1006,8 +1011,10 @@ _j.dumps({'applied': _applied, 'errors': _errors})
 // Throws on failure (caller must handle and display the error to the user).
 
 export async function exportDataFrame(varName, format) {
-  if (!_pyodide) throw new Error('Python runtime not loaded');
-  if (!_pyodide.runPython('"_dp_kernel_ns" in globals()')) throw new Error('KERNEL_NOT_READY');
+  await _initWorker();
+  if (!_pyodide || !_pyodide.runPython('"_dp_kernel_ns" in globals()')) {
+    throw new Error('KERNEL_NOT_READY');
+  }
 
   // Load format-specific packages on demand — don't assume they were loaded
   // earlier (the user may export without ever having imported the same format).
