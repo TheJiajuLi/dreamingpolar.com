@@ -365,8 +365,6 @@ initAuth().catch(() => {});
       const baseUrl = `https://api.dreamingpolar.com/auth/tutorials/${encodeURIComponent(id)}`;
       const attempts = [
         { method: 'DELETE', url: baseUrl },
-        { method: 'PATCH', url: baseUrl, body: { status: 'deleted' } },
-        { method: 'PUT', url: baseUrl, body: { status: 'deleted' } },
         { method: 'POST', url: `${baseUrl}/delete` },
       ];
 
