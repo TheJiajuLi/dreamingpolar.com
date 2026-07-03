@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#6366f1">
+  <title>Dreaming Polar</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <style>
+    :root {
+      --accent: #6366f1;
+      --accent-light: rgba(99,102,241,0.1);
+      --green: #16a34a;
+      --orange: #ea8c00;
+      --bg: #f4f5f7;
+      --card: #fff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --nav-h: 60px;
+      --r: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* screens */
+    #m-screens { flex: 1; position: relative; overflow: hidden; }
+    .m-screen {
+      position: absolute; inset: 0;
+      overflow-y: auto; display: none; flex-direction: column;
+      -webkit-overflow-scrolling: touch;
+    }
+    .m-screen.active { display: flex; }
+    #s-aria { overflow-y: hidden; }
+
+    /* bottom nav */
+    #m-nav {
+      height: var(--nav-h); background: #fff;
+      border-top: 1px solid var(--border);
+      display: flex; flex-shrink: 0;
+    }
+    .m-tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 10px; font-family: inherit;
+      padding: 6px 0; transition: color .15s;
+    }
+    .m-tab i { font-size: 22px; }
+    .m-tab.active { color: var(--accent); }
+
+    /* common */
+    .m-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 44px; padding: 0 22px; border-radius: 22px; border: none;
+      font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .m-btn:active { transform: scale(.97); opacity: .85; }
+    .m-btn--primary { background: var(--accent); color: #fff; }
+    .m-btn--outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .spin { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,.1); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+
+    /* ── HOME ── */
+    #s-home { background: #fff; padding-bottom: 40px; }
+    .home-logo { text-align: center; padding: 36px 0 0; font-size: 11px; font-weight: 700; letter-spacing: .25em; color: var(--muted); }
+    .home-logo b { color: var(--accent); }
+    .home-hero { padding: 28px 24px 28px; text-align: center; }
+    .home-hero h1 { font-size: 30px; font-weight: 800; line-height: 1.25; letter-spacing: -.5px; margin-bottom: 12px; }
+    .home-hero p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 28px; }
+    .home-cta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .home-features { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+    .feat-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 16px; display: flex; align-items: center; gap: 16px;
+      cursor: pointer; transition: background .15s;
+    }
+    .feat-card:active { background: var(--bg); }
+    .feat-icon {
+      width: 50px; height: 50px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .fi-aria { background: rgba(99,102,241,.12); color: var(--accent); }
+    .fi-comm { background: rgba(22,163,74,.1); color: var(--green); }
+    .fi-nb   { background: rgba(234,140,0,.1); color: var(--orange); }
+    .feat-body h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .feat-body p  { font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .feat-badge { font-size: 10px; font-weight: 600; background: rgba(0,0,0,.06); padding: 2px 7px; border-radius: 10px; color: var(--muted); margin-top: 4px; display: inline-block; }
+
+    /* ── COMMUNITY ── */
+    #s-community { background: var(--bg); }
+    .comm-top {
+      background: #fff; padding: 12px 16px;
+      display: flex; gap: 10px; align-items: center;
+      position: sticky; top: 0; z-index: 10;
+      border-bottom: 1px solid var(--border);
+    }
+    .comm-sw { flex: 1; position: relative; }
+    .comm-sw i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+    .comm-search {
+      width: 100%; height: 40px; border: 1.5px solid var(--border); border-radius: 20px;
+      padding: 0 16px 0 38px; font-family: inherit; font-size: 14px;
+      background: var(--bg); color: var(--text); outline: none;
+    }
+    .comm-search:focus { border-color: var(--accent); }
+    .comm-write {
+      width: 40px; height: 40px; border-radius: 20px;
+      background: var(--accent-light); color: var(--accent); border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .comm-tags {
+      display: flex; gap: 8px; padding: 12px 16px;
+      overflow-x: auto; scrollbar-width: none;
+      background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .comm-tags::-webkit-scrollbar { display: none; }
+    .tag-chip {
+      flex-shrink: 0; height: 32px; padding: 0 14px; border-radius: 16px;
+      border: 1.5px solid var(--border); background: #fff; color: var(--muted);
+      font-size: 13px; font-family: inherit; font-weight: 500; cursor: pointer; white-space: nowrap;
+    }
+    .tag-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #comm-feed { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .tut-card { background: var(--card); border-radius: var(--r); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); cursor: pointer; }
+    .tut-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+    .tut-ph { width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; font-size: 38px; }
+    .tut-info { padding: 12px 14px 14px; }
+    .tut-tags { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .tut-tag { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-light); padding: 2px 8px; border-radius: 8px; }
+    .tut-title { font-size: 16px; font-weight: 700; line-height: 1.35; margin-bottom: 10px; }
+    .tut-foot { display: flex; align-items: center; justify-content: space-between; }
+    .tut-author { display: flex; align-items: center; gap: 8px; }
+    .tut-av {
+      width: 26px; height: 26px; border-radius: 50%; background: var(--accent);
+      color: #fff; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+    }
+    .tut-av img { width: 100%; height: 100%; object-fit: cover; }
+    .tut-aname { font-size: 13px; color: var(--muted); }
+    .tut-stats { display: flex; gap: 10px; font-size: 12px; color: var(--muted); }
+    .tut-stats span { display: flex; align-items: center; gap: 3px; }
+    .comm-empty { padding: 48px 16px; text-align: center; color: var(--muted); font-size: 14px; }
+    .comm-loading { padding: 48px; display: flex; justify-content: center; }
+
+    /* ── ARIA ── */
+    #s-aria { background: #fff; }
+    .aria-hdr {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .aria-av {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: var(--accent-light); color: var(--accent);
+      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+    }
+    .aria-hdr-info { flex: 1; }
+    .aria-hdr-info h2 { font-size: 16px; font-weight: 700; }
+    .aria-hdr-info p { font-size: 12px; color: var(--muted); }
+    .aria-up-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--bg); border: 1.5px solid var(--border); color: var(--muted);
+      display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer;
+    }
+    .aria-chips {
+      display: flex; gap: 8px; padding: 10px 16px;
+      overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    .aria-chips::-webkit-scrollbar { display: none; }
+    .aria-chip {
+      flex-shrink: 0; height: 34px; padding: 0 14px; border-radius: 17px;
+      border: 1.5px solid var(--border); background: #fff; color: var(--text);
+      font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap;
+    }
+    .aria-chip:active { background: var(--bg); }
+    .aria-msgs {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .aria-row { display: flex; gap: 8px; align-items: flex-start; }
+    .aria-row-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--accent-light); color: var(--accent);
+      display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px;
+    }
+    .aria-bubble {
+      max-width: 82%; padding: 10px 14px; border-radius: 16px;
+      font-size: 14px; line-height: 1.6;
+    }
+    .aria-bubble--user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+    .aria-bubble--ai   { background: #f1f3f5; color: var(--text); border-bottom-left-radius: 4px; }
+    .aria-bubble--ai strong { font-weight: 700; }
+    .aria-data-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 8px; font-size: 13px; }
+    .aria-dc-title { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .aria-dc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .aria-dc-stat strong { font-size: 22px; font-weight: 800; display: block; line-height: 1.1; }
+    .aria-dc-stat span { font-size: 11px; color: var(--muted); }
+    .aria-input-bar {
+      border-top: 1px solid var(--border); padding: 10px 12px;
+      display: flex; gap: 8px; align-items: center; background: #fff; flex-shrink: 0;
+    }
+    .aria-input {
+      flex: 1; height: 42px; border: 1.5px solid var(--border); border-radius: 21px;
+      padding: 0 16px; font-family: inherit; font-size: 14px; color: var(--text);
+      background: var(--bg); outline: none;
+    }
+    .aria-input:focus { border-color: var(--accent); }
+    .aria-send {
+      width: 42px; height: 42px; border-radius: 21px; background: var(--accent);
+      color: #fff; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .aria-send:disabled { opacity: .5; cursor: default; }
+
+    /* ── PROFILE ── */
+    #s-profile { background: var(--bg); }
+    .p-hdr { background: #fff; padding: 32px 24px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+    .p-avatar {
+      width: 80px; height: 80px; border-radius: 50%; background: var(--accent);
+      color: #fff; font-size: 32px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .p-name { font-size: 22px; font-weight: 800; }
+    .p-bio { font-size: 13px; color: var(--muted); text-align: center; }
+    .p-stats { display: flex; width: 100%; margin-top: 8px; }
+    .p-stat { flex: 1; text-align: center; padding: 8px 0; }
+    .p-stat + .p-stat { border-left: 1px solid var(--border); }
+    .p-stat strong { font-size: 22px; font-weight: 800; display: block; }
+    .p-stat span { font-size: 12px; color: var(--muted); }
+    .p-tabs { display: flex; background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .p-tab {
+      flex: 1; height: 44px; background: none; border: none;
+      border-bottom: 2px solid transparent; font-family: inherit;
+      font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer;
+    }
+    .p-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    #p-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .p-item {
+      background: var(--card); border-radius: 12px; padding: 14px;
+      display: flex; align-items: center; gap: 14px; cursor: pointer;
+    }
+    .p-thumb { width: 60px; height: 60px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .p-item h4 { font-size: 14px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
+    .p-item p  { font-size: 12px; color: var(--muted); }
+    .login-prompt { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; gap: 16px; text-align: center; }
+    .login-prompt i { font-size: 52px; color: var(--accent); opacity: .5; }
+    .login-prompt h2 { font-size: 20px; font-weight: 700; }
+    .login-prompt p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── AUTH SHEET ── */
+    #m-auth { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; }
+    .auth-bd { position: absolute; inset: 0; background: rgba(0,0,0,.4); }
+    .auth-sheet {
+      position: relative; background: #fff; border-radius: 20px 20px 0 0;
+      padding: 20px 24px 44px; width: 100%; max-height: 80vh; overflow-y: auto;
+    }
+    .auth-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+    .auth-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .auth-field { margin-bottom: 14px; }
+    .auth-field label { font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; }
+    .auth-field input {
+      width: 100%; height: 48px; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 0 14px; font-family: inherit; font-size: 15px; color: var(--text); outline: none;
+    }
+    .auth-field input:focus { border-color: var(--accent); }
+    .auth-err { color: #ef4444; font-size: 13px; margin-bottom: 10px; min-height: 16px; }
+    .auth-btn {
+      width: 100%; height: 50px; background: var(--accent); color: #fff; border: none;
+      border-radius: 12px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 4px;
+    }
+    .auth-btn:disabled { opacity: .6; }
+  </style>
+</head>
+<body>
+
+<main id="m-screens">
+
+  <!-- ── HOME ── -->
+  <section id="s-home" class="m-screen active">
+    <div class="home-logo">DREAMING <b>◆</b> POLAR</div>
+    <div class="home-hero">
+      <h1>数据分析，<br>用说话的方式</h1>
+      <p>上传数据，直接用中文提问。<br>ARIA 分析助手秒出洞察。</p>
+      <div class="home-cta">
+        <button class="m-btn m-btn--primary" id="cta-aria">开始分析</button>
+        <button class="m-btn m-btn--outline" id="cta-comm">浏览社区</button>
+      </div>
+    </div>
+    <div class="home-features">
+      <div class="feat-card" id="fc-aria">
+        <div class="feat-icon fi-aria"><i class="ti ti-sparkles"></i></div>
+        <div class="feat-body">
+          <h3>ARIA 分析助手</h3>
+          <p>上传 CSV 直接对话，获得真实数据驱动的洞察，不是套话</p>
+        </div>
+      </div>
+      <div class="feat-card" id="fc-comm">
+        <div class="feat-icon fi-comm"><i class="ti ti-planet"></i></div>
+        <div class="feat-body">
+          <h3>数据科学社区</h3>
+          <p>真实可运行的教程，代码直接在浏览器跑，无需安装环境</p>
+        </div>
+      </div>
+      <div class="feat-card" id="fc-nb">
+        <div class="feat-icon fi-nb"><i class="ti ti-brand-python"></i></div>
+        <div class="feat-body">
+          <h3>Power Notebook</h3>
+          <p>完整 Python 环境，pandas、matplotlib 开箱即用，桌面端专属</p>
+          <span class="feat-badge">桌面端体验更佳</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COMMUNITY ── -->
+  <section id="s-community" class="m-screen">
+    <div class="comm-top">
+      <div class="comm-sw">
+        <i class="ti ti-search"></i>
+        <input class="comm-search" id="comm-search" placeholder="搜索教程、作者..." type="search">
+      </div>
+      <button class="comm-write" id="comm-write" title="写教程"><i class="ti ti-edit"></i></button>
+    </div>
+    <div class="comm-tags" id="comm-tags">
+      <button class="tag-chip active" data-tag="">全部</button>
+      <button class="tag-chip" data-tag="latest">最新</button>
+      <button class="tag-chip" data-tag="hot">热门</button>
+      <button class="tag-chip" data-tag="Python">Python</button>
+      <button class="tag-chip" data-tag="LaTeX">LaTeX</button>
+      <button class="tag-chip" data-tag="机器学习">机器学习</button>
+      <button class="tag-chip" data-tag="数据可视化">数据可视化</button>
+    </div>
+    <div class="comm-loading" id="comm-loading"><div class="spin"></div></div>
+    <div id="comm-feed"></div>
+  </section>
+
+  <!-- ── ARIA ── -->
+  <section id="s-aria" class="m-screen">
+    <div class="aria-hdr">
+      <div class="aria-av"><i class="ti ti-sparkles"></i></div>
+      <div class="aria-hdr-info">
+        <h2>ARIA 分析助手</h2>
+        <p id="aria-status">随时提问，或上传数据文件</p>
+      </div>
+      <button class="aria-up-btn" id="aria-up-btn" title="上传 CSV"><i class="ti ti-upload"></i></button>
+      <input type="file" id="aria-file" accept=".csv" style="display:none">
+    </div>
+    <div class="aria-chips" id="aria-chips">
+      <button class="aria-chip">数据有什么特点？</button>
+      <button class="aria-chip">帮我看分布</button>
+      <button class="aria-chip">有没有异常值？</button>
+      <button class="aria-chip">帮我做趋势分析</button>
+      <button class="aria-chip">相关性分析</button>
+    </div>
+    <div class="aria-msgs" id="aria-msgs"></div>
+    <div class="aria-input-bar">
+      <input class="aria-input" id="aria-input" placeholder="继续提问..." type="text" autocomplete="off">
+      <button class="aria-send" id="aria-send"><i class="ti ti-send"></i></button>
+    </div>
+  </section>
+
+  <!-- ── PROFILE ── -->
+  <section id="s-profile" class="m-screen">
+    <div class="login-prompt" id="p-guest">
+      <i class="ti ti-user-circle"></i>
+      <h2>登录查看个人中心</h2>
+      <p>登录后可查看你发布的教程、<br>收藏内容和账号设置</p>
+      <button class="m-btn m-btn--primary" id="p-login-btn">登录 / 注册</button>
+    </div>
+    <div id="p-user" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow-y:auto">
+      <div class="p-hdr">
+        <div class="p-avatar" id="p-av"></div>
+        <div class="p-name" id="p-name"></div>
+        <div class="p-bio"  id="p-bio"></div>
+        <div class="p-stats" id="p-stats"></div>
+      </div>
+      <div class="p-tabs">
+        <button class="p-tab active" data-ptab="published">发布的教程</button>
+        <button class="p-tab" data-ptab="favorites">收藏</button>
+        <button class="p-tab" data-ptab="settings">设置</button>
+      </div>
+      <div id="p-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── NAV ── -->
+<nav id="m-nav">
+  <button class="m-tab active" data-tab="home"><i class="ti ti-home"></i><span>首页</span></button>
+  <button class="m-tab" data-tab="community"><i class="ti ti-planet"></i><span>社区</span></button>
+  <button class="m-tab" data-tab="aria"><i class="ti ti-sparkles"></i><span>ARIA</span></button>
+  <button class="m-tab" data-tab="profile"><i class="ti ti-user"></i><span>我的</span></button>
+</nav>
+
+<!-- ── AUTH SHEET ── -->
+<div id="m-auth" class="hidden">
+  <div class="auth-bd" id="auth-bd"></div>
+  <div class="auth-sheet">
+    <div class="auth-handle"></div>
+    <div class="auth-title">欢迎回来</div>
+    <div class="auth-sub">登录 Dreaming Polar，开启数据分析之旅</div>
+    <div class="auth-field"><label>邮箱</label><input id="auth-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
+    <div class="auth-field"><label>密码</label><input id="auth-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="auth-err" id="auth-err"></div>
+    <button class="auth-btn" id="auth-btn">登录</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const API = 'https://api.dreamingpolar.com';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const S = {
+  token: null, user: null,
+  tutorials: [], tutTag: '', tutSearch: '', tutLoaded: false,
+  ariaHistory: [], ariaData: null, ariaBusy: false, ariaGreeted: false,
+};
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt(n) {
+  n = Number(n) || 0;
+  return n >= 1000 ? (n/1000).toFixed(1).replace('.0','') + 'k' : String(n);
+}
+function timeAgo(d) {
+  if (!d) return '';
+  const s = (Date.now() - new Date(d)) / 1000;
+  if (s < 60) return '刚刚';
+  if (s < 3600) return ~~(s/60) + ' 分钟前';
+  if (s < 86400) return ~~(s/3600) + ' 小时前';
+  if (s < 2592000) return ~~(s/86400) + ' 天前';
+  return ~~(s/2592000) + ' 个月前';
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function tryRefresh() {
+  try {
+    const r = await fetch(`${API}/auth/refresh`, { method: 'POST', credentials: 'include' });
+    if (!r.ok) return false;
+    const d = await r.json();
+    S.token = d.accessToken; S.user = d.user;
+    return true;
+  } catch { return false; }
+}
+
+async function doLogin(email, pw) {
+  const r = await fetch(`${API}/auth/login`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: pw }),
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.message || '登录失败');
+  S.token = d.accessToken; S.user = d.user;
+}
+
+function showAuth() { document.getElementById('m-auth').classList.remove('hidden'); }
+function hideAuth() {
+  document.getElementById('m-auth').classList.add('hidden');
+  document.getElementById('auth-err').textContent = '';
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function goto(id) {
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  document.querySelector(`.m-tab[data-tab="${id}"]`).classList.add('active');
+  if (id === 'community' && !S.tutLoaded) loadFeed();
+  if (id === 'profile') renderProfile();
+  if (id === 'aria' && !S.ariaGreeted) initAriaGreeting();
+}
+
+// ── Community ─────────────────────────────────────────────────────────────────
+const COVER_COLORS = ['#e8eaff','#e6f4ea','#fff3e0','#fce4ec','#e3f2fd','#f3e5f5'];
+function coverBg(id) {
+  let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % COVER_COLORS.length;
+  return COVER_COLORS[h];
+}
+function coverIcon(tags) {
+  const t = (tags || []).join(' ').toLowerCase();
+  if (t.includes('python')) return '🐍';
+  if (t.includes('latex') || t.includes('数学')) return '√x';
+  if (t.includes('机器') || t.includes('ml')) return '🤖';
+  if (t.includes('可视')) return '📈';
+  return '📊';
+}
+function tid(t)      { return t.id ?? t._id ?? ''; }
+function tcover(t)   { return t.cover_image ?? t.cover_url ?? t.cover ?? ''; }
+function tauthor(t)  { return t.author_name ?? t.author?.name ?? t.username ?? '匿名'; }
+function tavatar(t)  { return t.author_avatar ?? t.author?.avatar ?? ''; }
+function ttags(t)    { return Array.isArray(t.tags) ? t.tags.filter(Boolean) : []; }
+function tlikes(t)   { return t.likes_count ?? t.likes ?? 0; }
+function tviews(t)   { return t.views_count ?? t.views ?? 0; }
+
+async function loadFeed() {
+  S.tutLoaded = true;
+  document.getElementById('comm-loading').classList.remove('hidden');
+  document.getElementById('comm-feed').innerHTML = '';
+  try {
+    const r = await fetch(`${API}/auth/tutorials?status=published&limit=100`);
+    const d = await r.json();
+    const list = Array.isArray(d) ? d : (d.tutorials ?? d.data ?? []);
+    S.tutorials = list.filter(t => !t.status || t.status === 'published');
+  } catch { S.tutorials = []; }
+  document.getElementById('comm-loading').classList.add('hidden');
+  renderFeed();
+}
+
+function renderFeed() {
+  const feed = document.getElementById('comm-feed');
+  let items = [...S.tutorials];
+  const q = S.tutSearch.trim().toLowerCase();
+  if (q) items = items.filter(t =>
+    (t.title||'').toLowerCase().includes(q) ||
+    tauthor(t).toLowerCase().includes(q) ||
+    ttags(t).some(x => x.toLowerCase().includes(q))
+  );
+  const tag = S.tutTag;
+  if (tag === 'latest') items.sort((a,b) => new Date(b.created_at||0)-new Date(a.created_at||0));
+  else if (tag === 'hot') items.sort((a,b) => (tlikes(b)+tviews(b))-(tlikes(a)+tviews(a)));
+  else if (tag && tag !== 'latest' && tag !== 'hot')
+    items = items.filter(t => ttags(t).some(x => x.toLowerCase() === tag.toLowerCase()));
+
+  if (!items.length) { feed.innerHTML = '<div class="comm-empty">暂无教程</div>'; return; }
+  feed.innerHTML = items.map(t => {
+    const tags = ttags(t);
+    const author = tauthor(t); const av = tavatar(t); const init = author.slice(0,1);
+    const avHtml = av
+      ? `<div class="tut-av"><img src="${esc(av)}" alt="${esc(author)}" loading="lazy"></div>`
+      : `<div class="tut-av">${esc(init)}</div>`;
+    const cover = tcover(t);
+    const coverHtml = cover
+      ? `<img class="tut-cover" src="${esc(cover)}" alt="${esc(t.title||'')}" loading="lazy">`
+      : `<div class="tut-ph" style="background:${coverBg(tid(t))}">${coverIcon(tags)}</div>`;
+    const tagsHtml = tags.slice(0,2).map(g=>`<span class="tut-tag">${esc(g)}</span>`).join('');
+    return `<div class="tut-card" onclick="openTut('${esc(tid(t))}')">
+      ${coverHtml}
+      <div class="tut-info">
+        ${tagsHtml ? `<div class="tut-tags">${tagsHtml}</div>` : ''}
+        <div class="tut-title">${esc(t.title||'无标题')}</div>
+        <div class="tut-foot">
+          <div class="tut-author">${avHtml}<span class="tut-aname">${esc(author)}</span></div>
+          <div class="tut-stats">
+            <span><i class="ti ti-heart"></i>${fmt(tlikes(t))}</span>
+            <span><i class="ti ti-eye"></i>${fmt(tviews(t))}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openTut(id) { window.location.href = '/community/' + encodeURIComponent(id); }
+
+// ── ARIA ──────────────────────────────────────────────────────────────────────
+const ARIA_SYS =
+  'You are ARIA (小梦), the AI data analysis assistant of Dreaming Polar (极梦). ' +
+  '你是 Dreaming Polar 的 AI 数据分析助手。帮助用户分析数据，提供洞察，解释统计概念。' +
+  '用中文回答，简洁直接，语气友好但有分析师的专业感。' +
+  '回答中可用 **粗体** 标注关键数字，用短段落而非长列表。';
+
+function fmtAI(txt) {
+  return esc(txt)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function addMsg(role, text) {
+  const msgs = document.getElementById('aria-msgs');
+  let el;
+  if (role === 'user') {
+    el = document.createElement('div');
+    el.className = 'aria-bubble aria-bubble--user';
+    el.textContent = text;
+  } else {
+    el = document.createElement('div');
+    el.className = 'aria-row';
+    el.innerHTML = `<div class="aria-row-icon"><i class="ti ti-sparkles"></i></div><div class="aria-bubble aria-bubble--ai" style="flex:1;max-width:calc(82% - 36px)"></div>`;
+    el._box = el.querySelector('.aria-bubble--ai');
+    if (text) el._box.innerHTML = fmtAI(text);
+  }
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+  return el;
+}
+
+function parseCSV(raw) {
+  const lines = raw.trim().split(/\r?\n/);
+  if (lines.length < 2) return null;
+  const split = l => l.split(',').map(v => v.trim().replace(/^"|"$/g,''));
+  const headers = split(lines[0]);
+  const rows = lines.slice(1).filter(l=>l.trim()).map(l=>{
+    const v = split(l);
+    return headers.reduce((o,h,i)=>{o[h]=v[i]??'';return o;},{});
+  });
+  return { headers, rows };
+}
+
+function csvStats(p) {
+  const { headers, rows } = p;
+  const dateCols = headers.filter(h =>
+    /date|time|dt|year|month/i.test(h) ||
+    rows.slice(0,5).some(r => /^\d{4}[-/]/.test(r[h]||''))
+  );
+  let dateRange = '';
+  if (dateCols.length) {
+    const vals = rows.map(r=>r[dateCols[0]]).filter(Boolean).sort();
+    if (vals.length > 1) {
+      const y1 = vals[0].slice(0,4), y2 = vals[vals.length-1].slice(0,4);
+      dateRange = y1 === y2 ? y1 : y1 + '–' + y2;
+    }
+  }
+  const missing = headers.reduce((s,h) => s + rows.filter(r => !r[h]||r[h]==='null'||r[h]==='NaN').length, 0);
+  const missingPct = rows.length ? Math.round(missing/(rows.length*headers.length)*100) : 0;
+  return { rows: rows.length, cols: headers.length, dateCols, dateRange, missingPct };
+}
+
+function initAriaGreeting() {
+  S.ariaGreeted = true;
+  const el = addMsg('ai', '你好！我是 ARIA，你的 AI 数据分析助手。\n\n你可以直接向我提问，或者点击右上角 **上传** 按钮导入 CSV 数据，我来帮你分析。');
+  S.ariaHistory.push({ role: 'assistant', content: '你好！我是 ARIA，你的 AI 数据分析助手。你可以直接向我提问，或者上传 CSV 数据，我来帮你分析。' });
+}
+
+async function handleCSV(file) {
+  const text = await file.text().catch(() => null);
+  if (!text) return;
+  const parsed = parseCSV(text);
+  if (!parsed) { alert('文件格式不正确，请上传 CSV 文件'); return; }
+  const stats = csvStats(parsed);
+  S.ariaData = { name: file.name, ...parsed, stats };
+  S.ariaHistory = [];
+  document.getElementById('aria-msgs').innerHTML = '';
+  document.getElementById('aria-status').textContent = `已加载 ${file.name} · ${parsed.rows.length.toLocaleString()} 行`;
+
+  // Welcome card
+  const row = document.createElement('div');
+  row.className = 'aria-row';
+  const colPreview = parsed.headers.slice(0,3).join('、') + (parsed.headers.length > 3 ? '…' : '');
+  const timeHtml = stats.dateRange
+    ? `<div class="aria-dc-stat"><strong>${esc(stats.dateRange)}</strong><span>时间跨度</span></div>` : '';
+  row.innerHTML = `
+    <div class="aria-row-icon"><i class="ti ti-sparkles"></i></div>
+    <div style="flex:1;min-width:0">
+      <div class="aria-bubble aria-bubble--ai" style="margin-bottom:8px;max-width:100%">
+        你好！已加载 <strong>${esc(file.name)}</strong>，共 ${parsed.rows.length.toLocaleString()} 行 × ${stats.cols} 列（${esc(colPreview)}）。
+      </div>
+      <div class="aria-data-card">
+        <div class="aria-dc-title">数据概览</div>
+        <div class="aria-dc-grid">
+          <div class="aria-dc-stat"><strong>${parsed.rows.length.toLocaleString()}</strong><span>总行数</span></div>
+          <div class="aria-dc-stat"><strong>${stats.cols}</strong><span>列数</span></div>
+          ${timeHtml}
+          <div class="aria-dc-stat"><strong>${stats.missingPct}%</strong><span>缺失值</span></div>
+        </div>
+      </div>
+      <div class="aria-bubble aria-bubble--ai" style="margin-top:8px;max-width:100%">有什么想分析的吗？</div>
+    </div>`;
+  document.getElementById('aria-msgs').appendChild(row);
+  document.getElementById('aria-msgs').scrollTop = 9999;
+
+  S.ariaHistory.push({ role: 'assistant', content: `你好！已加载 ${file.name}，共 ${parsed.rows.length} 行 × ${stats.cols} 列（${parsed.headers.join('、')}）。有什么想分析的吗？` });
+}
+
+async function sendAria(text) {
+  text = text.trim();
+  if (!text || S.ariaBusy) return;
+  S.ariaBusy = true;
+  document.getElementById('aria-send').disabled = true;
+  document.getElementById('aria-input').value = '';
+
+  addMsg('user', text);
+
+  const messages = [...S.ariaHistory];
+  // Inject data context into first real user message
+  if (S.ariaData && !messages.some(m => m.role === 'user' && m.content.includes('数据集：'))) {
+    const d = S.ariaData;
+    const sample = d.rows.slice(0,5).map(r => d.headers.map(h=>r[h]).join(',')).join('\n');
+    messages.push({ role: 'user', content: `数据集：${d.name}，${d.rows.length} 行 × ${d.stats.cols} 列\n列名：${d.headers.join('、')}\n前5行样本：\n${sample}\n\n用户问题：${text}` });
+  } else {
+    messages.push({ role: 'user', content: text });
+  }
+
+  const aiEl = addMsg('ai', '');
+  let accum = '';
+
+  try {
+    const r = await fetch(`${API}/api/ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, system: ARIA_SYS, max_tokens: 800, stream: true }),
+    });
+    if (!r.ok) throw new Error(`请求失败 (${r.status})`);
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]') break;
+        try {
+          const j = JSON.parse(raw);
+          const chunk = j.delta?.text ?? j.choices?.[0]?.delta?.content ?? '';
+          if (chunk) { accum += chunk; aiEl._box.innerHTML = fmtAI(accum); document.getElementById('aria-msgs').scrollTop = 9999; }
+        } catch {}
+      }
+    }
+  } catch (e) {
+    aiEl._box.innerHTML = `<span style="color:#ef4444">请求失败：${esc(e.message)}</span>`;
+  }
+
+  S.ariaHistory.push({ role: 'user', content: text });
+  if (accum) S.ariaHistory.push({ role: 'assistant', content: accum });
+  S.ariaBusy = false;
+  document.getElementById('aria-send').disabled = false;
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+async function renderProfile() {
+  const guest = document.getElementById('p-guest');
+  const userEl = document.getElementById('p-user');
+  if (!S.user) { guest.classList.remove('hidden'); userEl.classList.add('hidden'); return; }
+  guest.classList.add('hidden'); userEl.classList.remove('hidden');
+
+  const u = S.user;
+  const name = u.username || u.name || u.email || '用户';
+  const avEl = document.getElementById('p-av');
+  avEl.innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="${esc(name)}">` : esc(name.slice(0,1).toUpperCase());
+  document.getElementById('p-name').textContent = name;
+  document.getElementById('p-bio').textContent = u.bio || 'Dreaming Polar 用户';
+
+  try {
+    const r = await fetch(`${API}/auth/users/${encodeURIComponent(name)}`, { credentials: 'include' });
+    if (r.ok) {
+      const d = await r.json();
+      const tc = d.tutorials_count ?? 0;
+      const lk = d.likes_received ?? d.total_likes ?? 0;
+      const vw = d.views_total ?? d.total_views ?? 0;
+      document.getElementById('p-stats').innerHTML = `
+        <div class="p-stat"><strong>${tc}</strong><span>教程</span></div>
+        <div class="p-stat"><strong>${fmt(lk)}</strong><span>获赞</span></div>
+        <div class="p-stat"><strong>${fmt(vw)}</strong><span>浏览</span></div>`;
+    }
+  } catch {}
+
+  loadPTuts(name);
+}
+
+async function loadPTuts(username) {
+  const list = document.getElementById('p-list');
+  list.innerHTML = '<div style="padding:24px;display:flex;justify-content:center"><div class="spin"></div></div>';
+  try {
+    const r = await fetch(`${API}/auth/tutorials?author=${encodeURIComponent(username)}&status=published`);
+    const d = await r.json();
+    const items = Array.isArray(d) ? d : (d.tutorials ?? []);
+    if (!items.length) { list.innerHTML = '<div class="comm-empty">还没有发布的教程</div>'; return; }
+    list.innerHTML = items.map(t => `
+      <div class="p-item" onclick="openTut('${esc(tid(t))}')">
+        <div class="p-thumb" style="background:${coverBg(tid(t))}">${coverIcon(ttags(t))}</div>
+        <div>
+          <h4>${esc(t.title||'无标题')}</h4>
+          <p><i class="ti ti-heart"></i> ${fmt(tlikes(t))} &nbsp;·&nbsp; ${timeAgo(t.created_at)}</p>
+        </div>
+      </div>`).join('');
+  } catch { list.innerHTML = '<div class="comm-empty">加载失败，请稍后再试</div>'; }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  // Nav
+  document.querySelectorAll('.m-tab').forEach(b => b.addEventListener('click', () => goto(b.dataset.tab)));
+
+  // Home
+  document.getElementById('cta-aria').addEventListener('click', () => goto('aria'));
+  document.getElementById('cta-comm').addEventListener('click', () => goto('community'));
+  document.getElementById('fc-aria').addEventListener('click', () => goto('aria'));
+  document.getElementById('fc-comm').addEventListener('click', () => goto('community'));
+  document.getElementById('fc-nb').addEventListener('click', () => {
+    if (confirm('Power Notebook 在桌面端体验更佳，是否前往桌面版？')) window.location.href = '/';
+  });
+
+  // Community
+  document.getElementById('comm-search').addEventListener('input', e => { S.tutSearch = e.target.value; renderFeed(); });
+  document.getElementById('comm-tags').addEventListener('click', e => {
+    const chip = e.target.closest('.tag-chip'); if (!chip) return;
+    document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active'); S.tutTag = chip.dataset.tag; renderFeed();
+  });
+  document.getElementById('comm-write').addEventListener('click', () => {
+    if (!S.user) { showAuth(); return; }
+    window.location.href = '/write.html';
+  });
+
+  // ARIA
+  document.getElementById('aria-up-btn').addEventListener('click', () => document.getElementById('aria-file').click());
+  document.getElementById('aria-file').addEventListener('change', e => {
+    const f = e.target.files[0]; if (f) handleCSV(f); e.target.value = '';
+  });
+  document.getElementById('aria-chips').addEventListener('click', e => {
+    const chip = e.target.closest('.aria-chip'); if (!chip) return;
+    if (!S.ariaGreeted) initAriaGreeting();
+    sendAria(chip.textContent);
+  });
+  document.getElementById('aria-send').addEventListener('click', () => sendAria(document.getElementById('aria-input').value));
+  document.getElementById('aria-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAria(e.target.value); }
+  });
+
+  // Profile
+  document.getElementById('p-login-btn').addEventListener('click', showAuth);
+  document.querySelectorAll('.p-tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.p-tab').forEach(x => x.classList.remove('active')); t.classList.add('active');
+    if (t.dataset.ptab === 'published') loadPTuts(S.user?.username || '');
+    else document.getElementById('p-list').innerHTML = '<div class="comm-empty">功能即将开放</div>';
+  }));
+
+  // Auth modal
+  document.getElementById('auth-bd').addEventListener('click', hideAuth);
+  document.getElementById('auth-btn').addEventListener('click', async () => {
+    const email = document.getElementById('auth-email').value.trim();
+    const pw    = document.getElementById('auth-pw').value;
+    const errEl = document.getElementById('auth-err');
+    const btn   = document.getElementById('auth-btn');
+    if (!email || !pw) { errEl.textContent = '请填写邮箱和密码'; return; }
+    btn.textContent = '登录中…'; btn.disabled = true; errEl.textContent = '';
+    try {
+      await doLogin(email, pw);
+      hideAuth(); renderProfile();
+    } catch (e) { errEl.textContent = e.message; }
+    finally { btn.textContent = '登录'; btn.disabled = false; }
+  });
+  ['auth-email','auth-pw'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('auth-btn').click();
+    });
+  });
+
+  // Silent auth
+  await tryRefresh();
+
+  // Preload community in background
+  loadFeed();
+});
+</script>
+</body>
+</html>

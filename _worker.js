@@ -15,6 +15,9 @@ export default {
     if (url.pathname === '/write') {
       return Response.redirect(url.origin + '/write.html', 302);
     }
+    if (url.pathname === '/mobile') {
+      return Response.redirect(url.origin + '/mobile.html', 302);
+    }
     return env.ASSETS.fetch(request);
   },
 };
