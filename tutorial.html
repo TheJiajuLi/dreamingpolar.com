@@ -23,7 +23,7 @@
         <img src="assets/app_logo/favicon.png" alt="Dreaming Polar">
         <span>Dreaming Polar</span>
       </a>
-      <a class="back-link" href="/community"><i class="ti ti-arrow-left"></i> 返回社区</a>
+      <a class="back-link" href="/community" onclick="event.preventDefault();history.length>1?history.back():location.href='/community'"><i class="ti ti-arrow-left"></i> 返回社区</a>
       <div class="author-inline" id="top-author"></div>
       <div class="like-wrap">
         <button class="action-btn" id="like-btn" type="button"><i class="ti ti-heart"></i><span id="like-btn-label">点赞</span></button>

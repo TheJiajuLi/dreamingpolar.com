@@ -270,6 +270,22 @@
     .login-prompt h2 { font-size: 20px; font-weight: 700; }
     .login-prompt p { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
+    /* ── SETTINGS ── */
+    .settings-list { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .settings-section { background: var(--card); border-radius: 12px; overflow: hidden; }
+    .settings-label { font-size: 11px; font-weight: 700; color: var(--muted); padding: 10px 16px 4px; letter-spacing: .06em; text-transform: uppercase; }
+    .settings-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-top: 1px solid var(--border);
+    }
+    .settings-section .settings-item:first-child { border-top: none; }
+    .settings-item--btn { cursor: pointer; }
+    .settings-item--btn:active { background: var(--bg); }
+    .settings-item-lbl { font-size: 15px; }
+    .settings-item-val { font-size: 14px; color: var(--muted); max-width: 55%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+    .settings-item--danger { justify-content: flex-start; gap: 10px; color: #ef4444; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .settings-item--danger:active { background: #fff5f5; }
+
     /* ── AUTH SHEET ── */
     #m-auth { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; }
     .auth-bd { position: absolute; inset: 0; background: rgba(0,0,0,.4); }
@@ -467,6 +483,21 @@ function timeAgo(ts) {
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
+async function fetchMe() {
+  if (!S.token) return;
+  try {
+    const r = await fetch(`${API}/auth/me`, {
+      credentials: 'include',
+      headers: { Authorization: `Bearer ${S.token}` },
+    });
+    if (r.ok) {
+      const me = await r.json();
+      S.user = me;
+    }
+  } catch {}
+  if (S.user) localStorage.setItem('dp_user', JSON.stringify(S.user));
+}
+
 async function tryRefresh() {
   try {
     const r = await fetch(`${API}/auth/refresh`, { method: 'POST', credentials: 'include' });
@@ -474,6 +505,7 @@ async function tryRefresh() {
     const d = await r.json();
     S.token = d.accessToken;
     S.user = d.user ?? { username: d.username, id: d.userId };
+    await fetchMe();
     return true;
   } catch { return false; }
 }
@@ -488,6 +520,7 @@ async function doLogin(email, pw) {
   if (!r.ok) throw new Error(d.message || '登录失败');
   S.token = d.accessToken;
   S.user = d.user ?? { username: d.username, id: d.userId };
+  await fetchMe();
 }
 
 function showAuth() { document.getElementById('m-auth').classList.remove('hidden'); }
@@ -793,13 +826,17 @@ async function renderProfile() {
   guest.classList.add('hidden'); userEl.classList.remove('hidden');
 
   const u = S.user;
-  const username = u.username || u.name || '用户';
+  console.log('S.user:', JSON.stringify(u));
+  const username = u.username || u.name || u.user_name || u.email || '?';
   const avEl = document.getElementById('p-av');
   avEl.innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="${esc(username)}">` : esc(username[0].toUpperCase());
   document.getElementById('p-name').textContent = username;
   document.getElementById('p-bio').textContent = u.bio || 'Dreaming Polar 用户';
 
-  loadPTuts(name);
+  // Reset to published tab
+  document.querySelectorAll('.p-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.p-tab[data-ptab="published"]').classList.add('active');
+  loadPTuts(username);
 }
 
 async function loadPTuts(username) {
@@ -826,6 +863,53 @@ async function loadPTuts(username) {
         </div>
       </div>`).join('');
   } catch { list.innerHTML = '<div class="comm-empty">加载失败，请稍后再试</div>'; }
+}
+
+function renderSettings() {
+  const u = S.user || {};
+  const username = u.username || u.name || u.user_name || '—';
+  const email = u.email || '';
+  document.getElementById('p-list').innerHTML = `
+    <div class="settings-list">
+      <div class="settings-section">
+        <div class="settings-label">账号</div>
+        <div class="settings-item">
+          <span class="settings-item-lbl">用户名</span>
+          <span class="settings-item-val">${esc(username)}</span>
+        </div>
+        ${email ? `<div class="settings-item"><span class="settings-item-lbl">邮箱</span><span class="settings-item-val">${esc(email)}</span></div>` : ''}
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">数据</div>
+        <div class="settings-item settings-item--btn" onclick="clearCache()">
+          <span class="settings-item-lbl">清除本地缓存</span>
+          <i class="ti ti-trash" style="color:var(--muted);font-size:18px"></i>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-item settings-item--danger" onclick="doLogout()">
+          <i class="ti ti-logout" style="font-size:18px"></i>
+          <span>退出登录</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function clearCache() {
+  localStorage.removeItem('dp_user');
+  renderSettings();
+  const list = document.getElementById('p-list');
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;pointer-events:none';
+  toast.textContent = '缓存已清除';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+function doLogout() {
+  S.token = null; S.user = null;
+  localStorage.removeItem('dp_user');
+  renderProfile();
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
@@ -874,6 +958,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.p-tab').forEach(t => t.addEventListener('click', () => {
     document.querySelectorAll('.p-tab').forEach(x => x.classList.remove('active')); t.classList.add('active');
     if (t.dataset.ptab === 'published') loadPTuts(S.user?.username || '');
+    else if (t.dataset.ptab === 'settings') renderSettings();
     else document.getElementById('p-list').innerHTML = '<div class="comm-empty">功能即将开放</div>';
   }));
 
@@ -897,6 +982,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (e.key === 'Enter') document.getElementById('auth-btn').click();
     });
   });
+
+  // Restore cached user for instant render, then verify with refresh
+  try { const c = localStorage.getItem('dp_user'); if (c) S.user = JSON.parse(c); } catch {}
 
   // Silent auth
   await tryRefresh();
