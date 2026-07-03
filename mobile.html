@@ -236,35 +236,70 @@
 
     /* ── PROFILE ── */
     #s-profile { background: var(--bg); }
-    .p-hdr { background: #fff; padding: 32px 24px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+    .p-hdr { background: var(--card); }
+    .p-hdr-band { background: var(--accent-light); padding: 24px 20px 18px; }
+    .p-hdr-top { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 14px; }
+    .p-avatar-wrap { position: relative; flex-shrink: 0; }
     .p-avatar {
-      width: 80px; height: 80px; border-radius: 50%; background: var(--accent);
-      color: #fff; font-size: 32px; font-weight: 700;
+      width: 76px; height: 76px; border-radius: 50%; background: var(--accent);
+      color: #fff; font-size: 30px; font-weight: 700;
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .p-name { font-size: 22px; font-weight: 800; }
-    .p-bio { font-size: 13px; color: var(--muted); text-align: center; }
-    .p-stats { display: flex; width: 100%; margin-top: 8px; }
-    .p-stat { flex: 1; text-align: center; padding: 8px 0; }
+    .p-cam {
+      position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; border-radius: 50%;
+      background: #fff; border: 2px solid var(--accent-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--text); cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,.15);
+    }
+    .p-hdr-btns { display: flex; gap: 8px; margin-left: auto; padding-bottom: 4px; }
+    .p-edit-btn {
+      display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 14px;
+      border-radius: 18px; border: 1.5px solid rgba(0,0,0,.12); background: #fff;
+      font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer;
+    }
+    .p-share-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid rgba(0,0,0,.12); background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--text); cursor: pointer;
+    }
+    .p-name { font-size: 22px; font-weight: 800; margin-bottom: 3px; }
+    .p-handle { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .p-bio { font-size: 14px; color: var(--text); line-height: 1.5; margin-bottom: 14px; }
+    .p-interests { display: flex; gap: 8px; flex-wrap: wrap; }
+    .p-interest {
+      display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 12px;
+      border-radius: 16px; border: 1.5px solid rgba(0,0,0,.1); background: #fff;
+      font-size: 12px; font-weight: 500; color: var(--text);
+    }
+    .p-interest i { font-size: 13px; }
+    .p-stats { display: flex; background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .p-stat { flex: 1; text-align: center; padding: 14px 0; }
     .p-stat + .p-stat { border-left: 1px solid var(--border); }
-    .p-stat strong { font-size: 22px; font-weight: 800; display: block; }
-    .p-stat span { font-size: 12px; color: var(--muted); }
-    .p-tabs { display: flex; background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .p-stat strong { font-size: 19px; font-weight: 800; display: block; line-height: 1.1; margin-bottom: 2px; }
+    .p-stat span { font-size: 11px; color: var(--muted); }
+    .p-tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
     .p-tab {
-      flex: 1; height: 44px; background: none; border: none;
+      flex: 1; height: 46px; background: none; border: none;
       border-bottom: 2px solid transparent; font-family: inherit;
-      font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
     }
+    .p-tab i { font-size: 15px; }
     .p-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    #p-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
-    .p-item {
-      background: var(--card); border-radius: 12px; padding: 14px;
-      display: flex; align-items: center; gap: 14px; cursor: pointer;
-    }
-    .p-thumb { width: 60px; height: 60px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .p-item h4 { font-size: 14px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
-    .p-item p  { font-size: 12px; color: var(--muted); }
+    #p-list { background: var(--card); }
+    .p-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; border-bottom: 1px solid var(--border); }
+    .p-item:last-child { border-bottom: none; }
+    .p-thumb { width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .p-item-body { flex: 1; min-width: 0; }
+    .p-item h4 { font-size: 15px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+    .p-item-stats { display: flex; gap: 12px; font-size: 12px; color: var(--muted); align-items: center; }
+    .p-item-stats span { display: flex; align-items: center; gap: 3px; }
+    .p-section-hdr { padding: 14px 16px 8px; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .04em; background: var(--card); }
+    .p-fav-author { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .p-fav-av { width: 18px; height: 18px; border-radius: 50%; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .login-prompt { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; gap: 16px; text-align: center; }
     .login-prompt i { font-size: 52px; color: var(--accent); opacity: .5; }
     .login-prompt h2 { font-size: 20px; font-weight: 700; }
@@ -272,19 +307,57 @@
 
     /* ── SETTINGS ── */
     .settings-list { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-    .settings-section { background: var(--card); border-radius: 12px; overflow: hidden; }
-    .settings-label { font-size: 11px; font-weight: 700; color: var(--muted); padding: 10px 16px 4px; letter-spacing: .06em; text-transform: uppercase; }
-    .settings-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px; border-top: 1px solid var(--border);
-    }
+    .settings-section { background: var(--card); border-radius: 14px; overflow: hidden; }
+    .settings-label { font-size: 12px; font-weight: 700; color: var(--muted); padding: 12px 16px 4px; letter-spacing: .04em; }
+    .settings-item { display: flex; align-items: center; padding: 13px 14px; border-top: 1px solid var(--border); gap: 12px; }
     .settings-section .settings-item:first-child { border-top: none; }
     .settings-item--btn { cursor: pointer; }
     .settings-item--btn:active { background: var(--bg); }
-    .settings-item-lbl { font-size: 15px; }
-    .settings-item-val { font-size: 14px; color: var(--muted); max-width: 55%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-    .settings-item--danger { justify-content: flex-start; gap: 10px; color: #ef4444; font-size: 15px; font-weight: 600; cursor: pointer; }
-    .settings-item--danger:active { background: #fff5f5; }
+    .sett-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+    .sett-icon--accent { background: rgba(99,102,241,.14); color: var(--accent); }
+    .sett-icon--green  { background: rgba(22,163,74,.12);  color: var(--green); }
+    .sett-icon--orange { background: rgba(234,140,0,.12);  color: var(--orange); }
+    .sett-icon--red    { background: rgba(239,68,68,.1);   color: #ef4444; }
+    .sett-icon--muted  { background: rgba(100,116,139,.1); color: var(--muted); }
+    .sett-text { flex: 1; min-width: 0; }
+    .sett-text-title { font-size: 15px; font-weight: 500; }
+    .sett-text-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .sett-chevron { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+    /* ── EDIT PROFILE SHEET ── */
+    .edit-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 16px 0 22px; }
+    .edit-avatar {
+      position: relative; width: 80px; height: 80px; border-radius: 50%;
+      background: var(--accent); overflow: hidden; cursor: pointer;
+    }
+    .edit-av-txt {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 32px; font-weight: 700;
+    }
+    .edit-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .edit-av-cam {
+      position: absolute; bottom: 0; right: 0; width: 26px; height: 26px; border-radius: 50%;
+      background: #fff; border: 2px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.2); z-index: 1;
+    }
+    .edit-av-lbl { font-size: 14px; color: var(--accent); font-weight: 600; cursor: pointer; }
+    .edit-field { margin-bottom: 14px; }
+    .edit-field label { font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; }
+    .edit-field input, .edit-field textarea {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 12px 14px; font-family: inherit; font-size: 15px; color: var(--text);
+      background: var(--bg); outline: none; resize: none;
+    }
+    .edit-field input { height: 48px; }
+    .edit-field textarea { height: 76px; line-height: 1.5; }
+    .edit-field input:focus, .edit-field textarea:focus { border-color: var(--accent); background: #fff; }
+    .edit-save {
+      width: 100%; height: 52px; background: var(--text); color: #fff; border: none;
+      border-radius: 14px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 4px;
+    }
+    .edit-save:disabled { opacity: .6; }
+    .edit-cancel { display: block; text-align: center; margin-top: 14px; font-size: 14px; color: var(--muted); cursor: pointer; padding: 4px; }
 
     /* ── AUTH SHEET ── */
     #m-auth { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; }
@@ -408,16 +481,11 @@
       <button class="m-btn m-btn--primary" id="p-login-btn">登录 / 注册</button>
     </div>
     <div id="p-user" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow-y:auto">
-      <div class="p-hdr">
-        <div class="p-avatar" id="p-av"></div>
-        <div class="p-name" id="p-name"></div>
-        <div class="p-bio"  id="p-bio"></div>
-        <div class="p-stats" id="p-stats"></div>
-      </div>
+      <div class="p-hdr" id="p-hdr"></div>
       <div class="p-tabs">
-        <button class="p-tab active" data-ptab="published">发布的教程</button>
-        <button class="p-tab" data-ptab="favorites">收藏</button>
-        <button class="p-tab" data-ptab="settings">设置</button>
+        <button class="p-tab active" data-ptab="published"><i class="ti ti-layout-grid"></i>发布</button>
+        <button class="p-tab" data-ptab="favorites"><i class="ti ti-bookmark"></i>收藏</button>
+        <button class="p-tab" data-ptab="settings"><i class="ti ti-settings"></i>设置</button>
       </div>
       <div id="p-list"></div>
     </div>
@@ -444,6 +512,29 @@
     <div class="auth-field"><label>密码</label><input id="auth-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
     <div class="auth-err" id="auth-err"></div>
     <button class="auth-btn" id="auth-btn">登录</button>
+  </div>
+</div>
+
+<!-- ── EDIT PROFILE SHEET ── -->
+<div id="m-edit" class="hidden">
+  <div class="auth-bd" id="edit-bd"></div>
+  <div class="auth-sheet">
+    <div class="auth-handle"></div>
+    <div class="auth-title">编辑资料</div>
+    <div class="edit-avatar-wrap">
+      <div class="edit-avatar" id="edit-avatar" onclick="document.getElementById('edit-av-file').click()">
+        <div id="edit-av-content"></div>
+        <div class="edit-av-cam"><i class="ti ti-camera"></i></div>
+      </div>
+      <input type="file" id="edit-av-file" accept="image/*" style="display:none">
+      <span class="edit-av-lbl" onclick="document.getElementById('edit-av-file').click()">更换头像</span>
+    </div>
+    <div class="edit-field"><label>用户名</label><input id="edit-username" type="text" placeholder="你的用户名" autocomplete="off"></div>
+    <div class="edit-field"><label>个人简介</label><textarea id="edit-bio" placeholder="介绍一下自己…"></textarea></div>
+    <div class="edit-field"><label>个人主页链接</label><input id="edit-website" type="url" placeholder="https://…"></div>
+    <div class="auth-err" id="edit-err"></div>
+    <button class="edit-save" id="edit-save-btn" onclick="saveProfile()">保存</button>
+    <span class="edit-cancel" onclick="document.getElementById('m-edit').classList.add('hidden')">取消</span>
   </div>
 </div>
 
@@ -818,6 +909,12 @@ async function sendAria(text) {
   document.getElementById('aria-send').disabled = false;
 }
 
+const INTEREST_ICONS = {
+  'Python':'ti-brand-python','LaTeX':'ti-math','可视化':'ti-chart-bar',
+  '机器学习':'ti-robot','数据分析':'ti-table','SQL':'ti-database',
+  '统计':'ti-chart-dots','深度学习':'ti-brain','数据清洗':'ti-filter',
+};
+
 // ── Profile ───────────────────────────────────────────────────────────────────
 async function renderProfile() {
   const guest = document.getElementById('p-guest');
@@ -826,12 +923,45 @@ async function renderProfile() {
   guest.classList.add('hidden'); userEl.classList.remove('hidden');
 
   const u = S.user;
-  console.log('S.user:', JSON.stringify(u));
   const username = u.username || u.name || u.user_name || u.email || '?';
-  const avEl = document.getElementById('p-av');
-  avEl.innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="${esc(username)}">` : esc(username[0].toUpperCase());
-  document.getElementById('p-name').textContent = username;
-  document.getElementById('p-bio').textContent = u.bio || 'Dreaming Polar 用户';
+  const handle = u.username ? `@${u.username}` : '';
+  const role = u.role || '';
+  const handleLine = [handle, role].filter(Boolean).join(' · ');
+  const bio = u.bio || 'Dreaming Polar 用户';
+  const interests = Array.isArray(u.tags) ? u.tags : (Array.isArray(u.interests) ? u.interests : []);
+  const followers = u.followers_count ?? u.followers ?? 0;
+
+  const avatarHtml = u.avatar
+    ? `<img src="${esc(u.avatar)}" alt="${esc(username)}">`
+    : esc(username[0].toUpperCase());
+
+  const interestsHtml = interests.length ? `<div class="p-interests" style="margin-top:14px">${
+    interests.slice(0,4).map(t => `<span class="p-interest"><i class="ti ${INTEREST_ICONS[t]||'ti-tag'}"></i>${esc(t)}</span>`).join('')
+  }</div>` : '';
+
+  document.getElementById('p-hdr').innerHTML = `
+    <div class="p-hdr-band">
+      <div class="p-hdr-top">
+        <div class="p-avatar-wrap">
+          <div class="p-avatar">${avatarHtml}</div>
+          <div class="p-cam" onclick="showEditSheet()"><i class="ti ti-camera"></i></div>
+        </div>
+        <div class="p-hdr-btns">
+          <button class="p-edit-btn" onclick="showEditSheet()"><i class="ti ti-edit"></i> 编辑资料</button>
+          <button class="p-share-btn"><i class="ti ti-share"></i></button>
+        </div>
+      </div>
+      <div class="p-name">${esc(username)}</div>
+      ${handleLine ? `<div class="p-handle">${esc(handleLine)}</div>` : ''}
+      <div class="p-bio">${esc(bio)}</div>
+      ${interestsHtml}
+    </div>
+    <div class="p-stats" id="p-stats">
+      <div class="p-stat"><strong>—</strong><span>教程</span></div>
+      <div class="p-stat"><strong>—</strong><span>获赞</span></div>
+      <div class="p-stat"><strong>—</strong><span>浏览</span></div>
+      <div class="p-stat"><strong>${fmt(followers)}</strong><span>粉丝</span></div>
+    </div>`;
 
   // Reset to published tab
   document.querySelectorAll('.p-tab').forEach(t => t.classList.remove('active'));
@@ -846,50 +976,139 @@ async function loadPTuts(username) {
     const r = await fetch(`${API}/auth/tutorials?author=${encodeURIComponent(username)}&status=published`);
     const d = await r.json();
     const items = Array.isArray(d) ? d : (d.tutorials ?? []);
-    // Compute stats from tutorial list
     const totalLikes = items.reduce((s, t) => s + tlikes(t), 0);
     const totalViews = items.reduce((s, t) => s + tviews(t), 0);
-    document.getElementById('p-stats').innerHTML = `
-      <div class="p-stat"><strong>${items.length}</strong><span>教程</span></div>
-      <div class="p-stat"><strong>${fmt(totalLikes)}</strong><span>获赞</span></div>
-      <div class="p-stat"><strong>${fmt(totalViews)}</strong><span>浏览</span></div>`;
-    if (!items.length) { list.innerHTML = '<div class="comm-empty">还没有发布的教程</div>'; return; }
-    list.innerHTML = items.map(t => `
+    const statsEl = document.getElementById('p-stats');
+    if (statsEl) {
+      const followers = S.user?.followers_count ?? S.user?.followers ?? 0;
+      statsEl.innerHTML = `
+        <div class="p-stat"><strong>${items.length}</strong><span>教程</span></div>
+        <div class="p-stat"><strong>${fmt(totalLikes)}</strong><span>获赞</span></div>
+        <div class="p-stat"><strong>${fmt(totalViews)}</strong><span>浏览</span></div>
+        <div class="p-stat"><strong>${fmt(followers)}</strong><span>粉丝</span></div>`;
+    }
+    if (!items.length) {
+      list.innerHTML = '<div class="p-section-hdr">发布的教程</div><div class="comm-empty">还没有发布的教程</div>';
+      return;
+    }
+    list.innerHTML = '<div class="p-section-hdr">发布的教程</div>' + items.map(t => `
       <div class="p-item" onclick="openTut('${esc(tid(t))}')">
         <div class="p-thumb" style="background:${coverBg(tid(t))}">${coverIcon(ttags(t))}</div>
-        <div>
+        <div class="p-item-body">
           <h4>${esc(t.title||'无标题')}</h4>
-          <p><i class="ti ti-heart"></i> ${fmt(tlikes(t))} &nbsp;·&nbsp; ${timeAgo(t.created_at)}</p>
+          <div class="p-item-stats">
+            <span><i class="ti ti-heart"></i>${fmt(tlikes(t))}</span>
+            <span><i class="ti ti-eye"></i>${fmt(tviews(t))}</span>
+            <span><i class="ti ti-clock"></i>${timeAgo(t.created_at)}</span>
+          </div>
         </div>
       </div>`).join('');
   } catch { list.innerHTML = '<div class="comm-empty">加载失败，请稍后再试</div>'; }
 }
 
+async function renderFavorites() {
+  const list = document.getElementById('p-list');
+  list.innerHTML = '<div style="padding:24px;display:flex;justify-content:center"><div class="spin"></div></div>';
+  try {
+    const r = await fetch(`${API}/auth/tutorials/favorites`, {
+      credentials: 'include',
+      headers: S.token ? { Authorization: `Bearer ${S.token}` } : {},
+    });
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    const items = Array.isArray(d) ? d : (d.tutorials ?? d.favorites ?? []);
+    if (!items.length) {
+      list.innerHTML = '<div class="p-section-hdr">收藏的教程</div><div class="comm-empty">还没有收藏的教程</div>';
+      return;
+    }
+    const AV_COLORS = ['#6366f1','#16a34a','#ea8c00','#8b5cf6','#0ea5e9','#ec4899'];
+    function favColor(name) {
+      let h = 0; for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) % AV_COLORS.length;
+      return AV_COLORS[h];
+    }
+    list.innerHTML = '<div class="p-section-hdr">收藏的教程</div>' + items.map(t => {
+      const author = tauthor(t);
+      const favTime = t.favorited_at || t.saved_at || t.created_at;
+      return `<div class="p-item" onclick="openTut('${esc(tid(t))}')">
+        <div class="p-thumb" style="background:${coverBg(tid(t))}">${coverIcon(ttags(t))}</div>
+        <div class="p-item-body">
+          <h4>${esc(t.title||'无标题')}</h4>
+          <div class="p-fav-author">
+            <div class="p-fav-av" style="background:${favColor(author)}">${esc((author[0]||'?').toUpperCase())}</div>
+            <span>${esc(author)} · ${timeAgo(favTime)}收藏</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch {
+    list.innerHTML = '<div class="p-section-hdr">收藏的教程</div><div class="comm-empty">功能即将开放</div>';
+  }
+}
+
 function renderSettings() {
   const u = S.user || {};
-  const username = u.username || u.name || u.user_name || '—';
   const email = u.email || '';
   document.getElementById('p-list').innerHTML = `
     <div class="settings-list">
       <div class="settings-section">
         <div class="settings-label">账号</div>
-        <div class="settings-item">
-          <span class="settings-item-lbl">用户名</span>
-          <span class="settings-item-val">${esc(username)}</span>
+        <div class="settings-item settings-item--btn" onclick="showEditSheet()">
+          <div class="sett-icon sett-icon--accent"><i class="ti ti-user"></i></div>
+          <div class="sett-text">
+            <div class="sett-text-title">编辑资料</div>
+            <div class="sett-text-sub">头像、用户名、简介</div>
+          </div>
+          <i class="ti ti-chevron-right sett-chevron"></i>
         </div>
-        ${email ? `<div class="settings-item"><span class="settings-item-lbl">邮箱</span><span class="settings-item-val">${esc(email)}</span></div>` : ''}
+        <div class="settings-item settings-item--btn">
+          <div class="sett-icon sett-icon--accent"><i class="ti ti-bell"></i></div>
+          <div class="sett-text">
+            <div class="sett-text-title">通知设置</div>
+            <div class="sett-text-sub">点赞、评论、关注</div>
+          </div>
+          <i class="ti ti-chevron-right sett-chevron"></i>
+        </div>
+        <div class="settings-item settings-item--btn">
+          <div class="sett-icon sett-icon--green"><i class="ti ti-cloud"></i></div>
+          <div class="sett-text">
+            <div class="sett-text-title">云端存储</div>
+            <div class="sett-text-sub">— / 1 GB</div>
+          </div>
+          <i class="ti ti-chevron-right sett-chevron"></i>
+        </div>
+        ${email ? `<div class="settings-item">
+          <div class="sett-icon sett-icon--muted"><i class="ti ti-mail"></i></div>
+          <div class="sett-text">
+            <div class="sett-text-title">邮箱</div>
+            <div class="sett-text-sub">${esc(email)}</div>
+          </div>
+        </div>` : ''}
       </div>
       <div class="settings-section">
-        <div class="settings-label">数据</div>
+        <div class="settings-label">偏好</div>
+        <div class="settings-item settings-item--btn">
+          <div class="sett-icon sett-icon--orange"><i class="ti ti-palette"></i></div>
+          <div class="sett-text">
+            <div class="sett-text-title">主题</div>
+            <div class="sett-text-sub">跟随系统</div>
+          </div>
+          <i class="ti ti-chevron-right sett-chevron"></i>
+        </div>
         <div class="settings-item settings-item--btn" onclick="clearCache()">
-          <span class="settings-item-lbl">清除本地缓存</span>
-          <i class="ti ti-trash" style="color:var(--muted);font-size:18px"></i>
+          <div class="sett-icon sett-icon--muted"><i class="ti ti-trash"></i></div>
+          <div class="sett-text">
+            <div class="sett-text-title">清除本地缓存</div>
+            <div class="sett-text-sub">释放存储空间</div>
+          </div>
+          <i class="ti ti-chevron-right sett-chevron"></i>
         </div>
       </div>
       <div class="settings-section">
-        <div class="settings-item settings-item--danger" onclick="doLogout()">
-          <i class="ti ti-logout" style="font-size:18px"></i>
-          <span>退出登录</span>
+        <div class="settings-item settings-item--btn" onclick="doLogout()">
+          <div class="sett-icon sett-icon--red"><i class="ti ti-logout"></i></div>
+          <div class="sett-text">
+            <div class="sett-text-title" style="color:#ef4444;font-weight:600">退出登录</div>
+          </div>
         </div>
       </div>
     </div>`;
@@ -910,6 +1129,50 @@ function doLogout() {
   S.token = null; S.user = null;
   localStorage.removeItem('dp_user');
   renderProfile();
+}
+
+function showEditSheet() {
+  const u = S.user || {};
+  const username = u.username || u.name || '';
+  const content = document.getElementById('edit-av-content');
+  if (u.avatar) {
+    content.innerHTML = `<img src="${esc(u.avatar)}" alt="">`;
+  } else {
+    content.className = 'edit-av-txt';
+    content.textContent = (username[0] || '?').toUpperCase();
+  }
+  document.getElementById('edit-username').value = username;
+  document.getElementById('edit-bio').value = u.bio || '';
+  document.getElementById('edit-website').value = u.website || u.homepage || '';
+  document.getElementById('edit-err').textContent = '';
+  document.getElementById('m-edit').classList.remove('hidden');
+}
+
+async function saveProfile() {
+  if (!S.token) return;
+  const username = document.getElementById('edit-username').value.trim();
+  const bio      = document.getElementById('edit-bio').value.trim();
+  const website  = document.getElementById('edit-website').value.trim();
+  const errEl    = document.getElementById('edit-err');
+  const btn      = document.getElementById('edit-save-btn');
+  if (!username) { errEl.textContent = '用户名不能为空'; return; }
+  btn.disabled = true; btn.textContent = '保存中…';
+  try {
+    const r = await fetch(`${API}/auth/me`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${S.token}` },
+      body: JSON.stringify({ username, bio, website }),
+    });
+    if (!r.ok) { const d = await r.json().catch(()=>({})); throw new Error(d.message || '保存失败'); }
+    S.user = { ...S.user, username, bio, website };
+    localStorage.setItem('dp_user', JSON.stringify(S.user));
+    document.getElementById('m-edit').classList.add('hidden');
+    renderProfile();
+  } catch(e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '保存';
+  }
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
@@ -958,9 +1221,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.p-tab').forEach(t => t.addEventListener('click', () => {
     document.querySelectorAll('.p-tab').forEach(x => x.classList.remove('active')); t.classList.add('active');
     if (t.dataset.ptab === 'published') loadPTuts(S.user?.username || '');
+    else if (t.dataset.ptab === 'favorites') renderFavorites();
     else if (t.dataset.ptab === 'settings') renderSettings();
     else document.getElementById('p-list').innerHTML = '<div class="comm-empty">功能即将开放</div>';
   }));
+
+  // Edit profile sheet
+  document.getElementById('edit-bd').addEventListener('click', () => document.getElementById('m-edit').classList.add('hidden'));
 
   // Auth modal
   document.getElementById('auth-bd').addEventListener('click', hideAuth);
