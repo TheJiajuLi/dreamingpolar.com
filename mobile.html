@@ -236,94 +236,93 @@
 
     /* ── PROFILE ── */
     #s-profile { background: var(--bg); }
-    .p-hdr { background: var(--card); }
-    .p-hdr-band { background: var(--accent-light); padding: 24px 20px 18px; position: relative; background-size: cover; background-position: center; }
-    .p-banner-cam { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,.35); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; backdrop-filter: blur(4px); }
-    .p-hdr-top { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 14px; }
+    .p-topbar {
+      display: flex; align-items: center; padding: 10px 16px;
+      background: #fff; flex-shrink: 0; position: sticky; top: 0; z-index: 10;
+    }
+    .p-topbar-logo { font-size: 11px; font-weight: 700; letter-spacing: .25em; color: var(--muted); flex: 1; }
+    .p-topbar-logo b { color: var(--accent); }
+    .p-topbar-menu {
+      width: 36px; height: 36px; border-radius: 10px; border: none;
+      background: transparent; color: var(--text); font-size: 22px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .p-cover {
+      height: 110px; background: var(--accent-light); position: relative;
+      background-size: cover; background-position: center; flex-shrink: 0;
+    }
+    .p-cover-cam {
+      position: absolute; top: 8px; right: 8px; width: 32px; height: 32px;
+      border-radius: 50%; background: rgba(0,0,0,.32); color: #fff; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; backdrop-filter: blur(4px);
+    }
+    .p-av-row {
+      display: flex; align-items: flex-end; gap: 12px;
+      padding: 0 16px; margin-top: -36px; margin-bottom: 12px; background: #fff;
+    }
     .p-avatar-wrap { position: relative; flex-shrink: 0; }
     .p-avatar {
-      width: 76px; height: 76px; border-radius: 50%; background: var(--accent);
-      color: #fff; font-size: 30px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      width: 72px; height: 72px; border-radius: 50%; background: var(--accent);
+      color: #fff; font-size: 28px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; border: 3px solid #fff;
     }
     .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .p-cam {
-      position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; border-radius: 50%;
-      background: #fff; border: 2px solid var(--accent-light);
+      position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; border-radius: 50%;
+      background: #fff; border: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: 12px; color: var(--text); cursor: pointer;
-      box-shadow: 0 1px 4px rgba(0,0,0,.15);
+      font-size: 11px; color: var(--text); cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
     }
-    .p-hdr-btns { display: flex; gap: 8px; margin-left: auto; padding-bottom: 4px; }
+    .p-av-actions { display: flex; gap: 8px; margin-left: auto; padding-bottom: 4px; }
     .p-edit-btn {
-      display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 14px;
-      border-radius: 18px; border: 1.5px solid rgba(0,0,0,.12); background: #fff;
+      display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 14px;
+      border-radius: 17px; border: 1.5px solid rgba(0,0,0,.14); background: #fff;
       font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer;
     }
     .p-share-btn {
-      width: 36px; height: 36px; border-radius: 50%;
-      border: 1.5px solid rgba(0,0,0,.12); background: #fff;
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1.5px solid rgba(0,0,0,.14); background: #fff;
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px; color: var(--text); cursor: pointer;
+      font-size: 15px; color: var(--text); cursor: pointer;
     }
-    .p-name { font-size: 22px; font-weight: 800; margin-bottom: 3px; }
-    .p-handle { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
-    .p-bio { font-size: 14px; color: var(--text); line-height: 1.5; margin-bottom: 14px; }
-    .p-interests { display: flex; gap: 8px; flex-wrap: wrap; }
-    .p-interest {
-      display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 12px;
-      border-radius: 16px; border: 1.5px solid rgba(0,0,0,.1); background: #fff;
-      font-size: 12px; font-weight: 500; color: var(--text);
-    }
-    .p-interest i { font-size: 13px; }
-    .p-stats { display: flex; background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .p-stat { flex: 1; text-align: center; padding: 14px 0; }
-    .p-stat + .p-stat { border-left: 1px solid var(--border); }
-    .p-stat strong { font-size: 19px; font-weight: 800; display: block; line-height: 1.1; margin-bottom: 2px; }
-    .p-stat span { font-size: 11px; color: var(--muted); }
-    .p-tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
-    .p-tab {
-      flex: 1; height: 46px; background: none; border: none;
-      border-bottom: 2px solid transparent; font-family: inherit;
-      font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-    }
-    .p-tab i { font-size: 15px; }
+    .p-info { padding: 4px 16px 14px; background: #fff; }
+    .p-name { font-size: 20px; font-weight: 800; margin-bottom: 2px; }
+    .p-handle { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .p-bio { font-size: 14px; color: var(--text); line-height: 1.5; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .p-link { display: none; align-items: center; gap: 4px; font-size: 13px; color: var(--accent); font-weight: 500; text-decoration: none; margin-bottom: 10px; }
+    .p-link i { font-size: 13px; }
+    .p-tag-row { display: none; gap: 8px; flex-wrap: wrap; }
+    .p-tag { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 14px; border: 1.5px solid var(--border); font-size: 12px; font-weight: 500; color: var(--text); background: #fff; }
+    .p-stats-row { display: flex; padding: 12px 24px 14px; gap: 32px; background: #fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .p-stat-item { display: flex; flex-direction: column; }
+    .p-stat-item strong { font-size: 18px; font-weight: 800; line-height: 1.1; }
+    .p-stat-item span { font-size: 12px; color: var(--muted); }
+    .p-tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 42px; z-index: 9; }
+    .p-tab { flex: 1; height: 44px; background: none; border: none; border-bottom: 2px solid transparent; font-family: inherit; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .p-tab i { font-size: 20px; }
     .p-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    #p-list { background: var(--card); }
-    .p-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; border-bottom: 1px solid var(--border); }
-    .p-item:last-child { border-bottom: none; }
-    .p-thumb { width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-    .p-item-body { flex: 1; min-width: 0; }
-    .p-item h4 { font-size: 15px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
-    .p-item-stats { display: flex; gap: 12px; font-size: 12px; color: var(--muted); align-items: center; }
-    .p-item-stats span { display: flex; align-items: center; gap: 3px; }
-    .p-section-hdr { padding: 14px 16px 8px; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .04em; background: var(--card); }
-    .p-fav-author { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .p-fav-av { width: 18px; height: 18px; border-radius: 50%; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .p-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+    .pg-item { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--bg); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .pg-item img { width: 100%; height: 100%; object-fit: cover; }
+    .pg-stats { position: absolute; bottom: 0; left: 0; right: 0; padding: 22px 7px 6px; background: linear-gradient(to top, rgba(0,0,0,.45), transparent); display: flex; gap: 8px; font-size: 11px; font-weight: 600; color: #fff; }
+    .pg-stats span { display: flex; align-items: center; gap: 2px; }
     .login-prompt { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; gap: 16px; text-align: center; }
     .login-prompt i { font-size: 52px; color: var(--accent); opacity: .5; }
     .login-prompt h2 { font-size: 20px; font-weight: 700; }
     .login-prompt p { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
-    /* ── SETTINGS ── */
-    .settings-list { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-    .settings-section { background: var(--card); border-radius: 14px; overflow: hidden; }
-    .settings-label { font-size: 12px; font-weight: 700; color: var(--muted); padding: 12px 16px 4px; letter-spacing: .04em; }
-    .settings-item { display: flex; align-items: center; padding: 13px 14px; border-top: 1px solid var(--border); gap: 12px; }
-    .settings-section .settings-item:first-child { border-top: none; }
-    .settings-item--btn { cursor: pointer; }
-    .settings-item--btn:active { background: var(--bg); }
-    .sett-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
-    .sett-icon--accent { background: rgba(99,102,241,.14); color: var(--accent); }
-    .sett-icon--green  { background: rgba(22,163,74,.12);  color: var(--green); }
-    .sett-icon--orange { background: rgba(234,140,0,.12);  color: var(--orange); }
-    .sett-icon--red    { background: rgba(239,68,68,.1);   color: #ef4444; }
-    .sett-icon--muted  { background: rgba(100,116,139,.1); color: var(--muted); }
-    .sett-text { flex: 1; min-width: 0; }
-    .sett-text-title { font-size: 15px; font-weight: 500; }
-    .sett-text-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
-    .sett-chevron { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+    /* ── SETTINGS SHEET ── */
+    .sett-sheet-item { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--text); border-top: 1px solid var(--border); }
+    .sett-sheet-item:first-child { border-top: none; }
+    .sett-sheet-item:active { background: var(--bg); }
+    .sett-sheet-item i:first-child { font-size: 20px; color: var(--muted); width: 24px; flex-shrink: 0; }
+    .sett-sheet-arrow { margin-left: auto; font-size: 15px; color: var(--muted); }
+    .sett-sheet-item.danger { color: #ef4444; }
+    .sett-sheet-item.danger i:first-child { color: #ef4444; }
+    .sett-sheet-divider { height: 8px; background: var(--bg); }
 
     /* ── MANAGE ── */
     #s-manage, #s-manage-edit { overflow-y: hidden !important; }
@@ -541,20 +540,55 @@
 
   <!-- ── PROFILE ── -->
   <section id="s-profile" class="m-screen">
-    <div class="login-prompt" id="p-guest">
+    <div class="login-prompt hidden" id="p-guest">
       <i class="ti ti-user-circle"></i>
       <h2>登录查看个人中心</h2>
-      <p>登录后可查看你发布的教程、<br>收藏内容和账号设置</p>
+      <p>登录后可查看你发布的教程、<br>收藏内容和个人主页</p>
       <button class="m-btn m-btn--primary" id="p-login-btn">登录 / 注册</button>
     </div>
     <div id="p-user" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow-y:auto">
-      <div class="p-hdr" id="p-hdr"></div>
-      <div class="p-tabs">
-        <button class="p-tab active" data-ptab="published"><i class="ti ti-layout-grid"></i>发布</button>
-        <button class="p-tab" data-ptab="favorites"><i class="ti ti-bookmark"></i>收藏</button>
-        <button class="p-tab" data-ptab="settings"><i class="ti ti-settings"></i>设置</button>
+      <!-- Topbar -->
+      <div class="p-topbar">
+        <span class="p-topbar-logo">极梦 <b>◆</b></span>
+        <button class="p-topbar-menu" id="p-menu-btn" title="设置"><i class="ti ti-menu-2"></i></button>
       </div>
-      <div id="p-list"></div>
+      <!-- Cover -->
+      <div class="p-cover" id="p-cover">
+        <button class="p-cover-cam" onclick="changeBanner()" title="更换背景图"><i class="ti ti-camera"></i></button>
+      </div>
+      <!-- Avatar row -->
+      <div class="p-av-row">
+        <div class="p-avatar-wrap">
+          <div class="p-avatar" id="p-avatar-el">?</div>
+          <div class="p-cam" onclick="showEditSheet()"><i class="ti ti-camera"></i></div>
+        </div>
+        <div class="p-av-actions">
+          <button class="p-edit-btn" onclick="showEditSheet()">编辑资料</button>
+          <button class="p-share-btn" onclick="shareProfile()"><i class="ti ti-share"></i></button>
+        </div>
+      </div>
+      <!-- Info -->
+      <div class="p-info">
+        <div class="p-name" id="p-name">?</div>
+        <div class="p-handle" id="p-handle" style="display:none"></div>
+        <div class="p-bio" id="p-bio" style="display:none"></div>
+        <a class="p-link" id="p-link" target="_blank" rel="noopener"><i class="ti ti-link"></i><span id="p-link-text"></span></a>
+        <div class="p-tag-row" id="p-tags"></div>
+      </div>
+      <!-- Stats -->
+      <div class="p-stats-row">
+        <div class="p-stat-item"><strong id="ps-tuts">—</strong><span>教程</span></div>
+        <div class="p-stat-item"><strong id="ps-likes">—</strong><span>获赞</span></div>
+        <div class="p-stat-item"><strong id="ps-fans">—</strong><span>粉丝</span></div>
+      </div>
+      <!-- Tabs -->
+      <div class="p-tabs">
+        <button class="p-tab active" data-ptab="grid"><i class="ti ti-layout-grid"></i></button>
+        <button class="p-tab" data-ptab="favorites"><i class="ti ti-bookmark"></i></button>
+        <button class="p-tab" data-ptab="liked"><i class="ti ti-heart"></i></button>
+      </div>
+      <!-- Grid -->
+      <div class="p-grid" id="p-grid"></div>
     </div>
   </section>
 
@@ -655,6 +689,34 @@
     <div class="auth-err" id="edit-err"></div>
     <button class="edit-save" id="edit-save-btn" onclick="saveProfile()">保存</button>
     <span class="edit-cancel" onclick="document.getElementById('m-edit').classList.add('hidden')">取消</span>
+  </div>
+</div>
+
+<!-- ── SETTINGS SHEET ── -->
+<div id="m-settings" class="hidden">
+  <div class="auth-bd" id="settings-bd"></div>
+  <div class="auth-sheet" style="padding:0">
+    <div style="padding:20px 20px 0"><div class="auth-handle"></div></div>
+    <div class="sett-sheet-item" onclick="gotoManage();closeSettings()">
+      <i class="ti ti-layout-list"></i><span>管理内容</span><i class="ti ti-chevron-right sett-sheet-arrow"></i>
+    </div>
+    <div class="sett-sheet-item">
+      <i class="ti ti-bell"></i><span>通知设置</span><i class="ti ti-chevron-right sett-sheet-arrow"></i>
+    </div>
+    <div class="sett-sheet-item">
+      <i class="ti ti-cloud"></i><span>云端存储</span><i class="ti ti-chevron-right sett-sheet-arrow"></i>
+    </div>
+    <div class="sett-sheet-item">
+      <i class="ti ti-palette"></i><span>主题</span><i class="ti ti-chevron-right sett-sheet-arrow"></i>
+    </div>
+    <div class="sett-sheet-item">
+      <i class="ti ti-language"></i><span>语言</span><i class="ti ti-chevron-right sett-sheet-arrow"></i>
+    </div>
+    <div class="sett-sheet-divider"></div>
+    <div class="sett-sheet-item danger" onclick="doLogout()">
+      <i class="ti ti-logout"></i><span>退出登录</span>
+    </div>
+    <div style="height:24px"></div>
   </div>
 </div>
 
@@ -1059,6 +1121,9 @@ const INTEREST_ICONS = {
 };
 
 // ── Profile ───────────────────────────────────────────────────────────────────
+function openSettings() { document.getElementById('m-settings').classList.remove('hidden'); }
+function closeSettings() { document.getElementById('m-settings').classList.add('hidden'); }
+
 async function renderProfile() {
   const guest = document.getElementById('p-guest');
   const userEl = document.getElementById('p-user');
@@ -1066,101 +1131,100 @@ async function renderProfile() {
   guest.classList.add('hidden'); userEl.classList.remove('hidden');
 
   const u = S.user;
-  const username = u.username || u.name || u.user_name || u.email || '?';
+  const username = u.username || u.name || u.email || '?';
   const handle = u.username ? `@${u.username}` : '';
-  const role = u.role || '';
-  const handleLine = [handle, role].filter(Boolean).join(' · ');
-  const bio = u.bio || '极梦用户';
+  const bio = u.bio || '';
+  const link = u.website || u.link || u.url || u.homepage || '';
   const interests = Array.isArray(u.tags) ? u.tags : (Array.isArray(u.interests) ? u.interests : []);
   const followers = u.followers_count ?? u.followers ?? 0;
 
-  const avatarHtml = u.avatar
+  // Cover
+  const coverEl = document.getElementById('p-cover');
+  coverEl.style.backgroundImage = u.banner ? `url('${esc(u.banner)}')` : '';
+
+  // Avatar
+  const avatarEl = document.getElementById('p-avatar-el');
+  avatarEl.innerHTML = u.avatar
     ? `<img src="${esc(u.avatar)}" alt="${esc(username)}">`
-    : esc(username[0].toUpperCase());
+    : esc((username[0] || '?').toUpperCase());
 
-  const interestsHtml = interests.length ? `<div class="p-interests" style="margin-top:14px">${
-    interests.slice(0,4).map(t => `<span class="p-interest"><i class="ti ${INTEREST_ICONS[t]||'ti-tag'}"></i>${esc(t)}</span>`).join('')
-  }</div>` : '';
+  // Text fields
+  document.getElementById('p-name').textContent = username;
+  const handleEl = document.getElementById('p-handle');
+  handleEl.textContent = handle; handleEl.style.display = handle ? '' : 'none';
+  const bioEl = document.getElementById('p-bio');
+  bioEl.textContent = bio; bioEl.style.display = bio ? '' : 'none';
 
-  const bannerStyle = S.user?.banner ? `background-image:url('${esc(S.user.banner)}')` : '';
-  document.getElementById('p-hdr').innerHTML = `
-    <div class="p-hdr-band" id="p-band" style="${bannerStyle}">
-      <button class="p-banner-cam" onclick="changeBanner()" title="更换背景图"><i class="ti ti-camera"></i></button>
-      <div class="p-hdr-top">
-        <div class="p-avatar-wrap">
-          <div class="p-avatar">${avatarHtml}</div>
-          <div class="p-cam" onclick="showEditSheet()"><i class="ti ti-camera"></i></div>
-        </div>
-        <div class="p-hdr-btns">
-          <button class="p-edit-btn" onclick="showEditSheet()"><i class="ti ti-edit"></i> 编辑资料</button>
-          <button class="p-share-btn" onclick="shareProfile()"><i class="ti ti-share"></i></button>
-        </div>
-      </div>
-      <div class="p-name">${esc(username)}</div>
-      ${handleLine ? `<div class="p-handle">${esc(handleLine)}</div>` : ''}
-      <div class="p-bio">${esc(bio)}</div>
-      ${(() => {
-        const link = u.website || u.link || u.url || u.homepage || '';
-        if (!link) return '';
-        const href = link.startsWith('http') ? link : 'https://' + link;
-        const label = link.replace(/^https?:\/\//, '');
-        return `<a href="${esc(href)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--accent);font-weight:500;margin-top:4px;text-decoration:none"><i class="ti ti-link" style="font-size:14px"></i>${esc(label)}</a>`;
-      })()}
-      ${interestsHtml}
-    </div>
-    <div class="p-stats" id="p-stats">
-      <div class="p-stat"><strong>—</strong><span>教程</span></div>
-      <div class="p-stat"><strong>—</strong><span>获赞</span></div>
-      <div class="p-stat"><strong>—</strong><span>浏览</span></div>
-      <div class="p-stat"><strong>${fmt(followers)}</strong><span>粉丝</span></div>
-    </div>`;
+  // Link
+  const linkEl = document.getElementById('p-link');
+  const linkText = document.getElementById('p-link-text');
+  if (link) {
+    linkEl.href = link.startsWith('http') ? link : 'https://' + link;
+    linkText.textContent = link.replace(/^https?:\/\//, '');
+    linkEl.style.display = 'inline-flex';
+  } else {
+    linkEl.style.display = 'none';
+  }
 
-  // Reset to published tab
+  // Tags
+  const tagsEl = document.getElementById('p-tags');
+  if (interests.length) {
+    tagsEl.innerHTML = interests.slice(0,5).map(t => `<span class="p-tag">${esc(t)}</span>`).join('');
+    tagsEl.style.display = 'flex';
+  } else {
+    tagsEl.style.display = 'none';
+  }
+
+  // Stats - followers immediate, rest from API
+  document.getElementById('ps-fans').textContent = fmt(followers);
+
+  // Reset grid tab
   document.querySelectorAll('.p-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector('.p-tab[data-ptab="published"]').classList.add('active');
-  loadPTuts(username);
+  document.querySelector('.p-tab[data-ptab="grid"]').classList.add('active');
+  loadPGrid(username);
 }
 
-async function loadPTuts(username) {
-  const list = document.getElementById('p-list');
-  list.innerHTML = '<div style="padding:24px;display:flex;justify-content:center"><div class="spin"></div></div>';
+const _GRID_COLORS = ['#eef0ff','#f0fdf4','#fff7ed','#fdf4ff','#e6f1fb'];
+const _GRID_ICONS  = ['ti-chart-line','ti-math','ti-robot','ti-brand-python','ti-chart-bar'];
+
+function _gridItem(t) {
+  const id = tid(t);
+  const i = (t.title?.charCodeAt(0) || 0) % 5;
+  const cover = t.cover_image || t.cover_url || t.cover || '';
+  const inner = cover
+    ? `<img src="${esc(cover)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.background='${_GRID_COLORS[i]}';this.remove()">`
+    : `<i class="ti ${_GRID_ICONS[i]}" style="font-size:32px;color:var(--accent);opacity:.4"></i>`;
+  return `<div class="pg-item" style="${cover ? '' : 'background:' + _GRID_COLORS[i]}" onclick="openTut('${esc(id)}')">
+    ${inner}
+    <div class="pg-stats">
+      <span><i class="ti ti-heart"></i>${fmt(tlikes(t))}</span>
+      <span><i class="ti ti-eye"></i>${fmt(tviews(t))}</span>
+    </div>
+  </div>`;
+}
+
+async function loadPGrid(username) {
+  const grid = document.getElementById('p-grid');
+  grid.innerHTML = '<div style="grid-column:span 2;padding:32px;display:flex;justify-content:center"><div class="spin"></div></div>';
   try {
     const r = await fetch(`${API}/auth/tutorials?author=${encodeURIComponent(username)}&status=published`);
     const d = await r.json();
     const items = Array.isArray(d) ? d : (d.tutorials ?? []);
-    const totalLikes = items.reduce((s, t) => s + tlikes(t), 0);
-    const totalViews = items.reduce((s, t) => s + tviews(t), 0);
-    const statsEl = document.getElementById('p-stats');
-    if (statsEl) {
-      const followers = S.user?.followers_count ?? S.user?.followers ?? 0;
-      statsEl.innerHTML = `
-        <div class="p-stat"><strong>${items.length}</strong><span>教程</span></div>
-        <div class="p-stat"><strong>${fmt(totalLikes)}</strong><span>获赞</span></div>
-        <div class="p-stat"><strong>${fmt(totalViews)}</strong><span>浏览</span></div>
-        <div class="p-stat"><strong>${fmt(followers)}</strong><span>粉丝</span></div>`;
-    }
+    document.getElementById('ps-tuts').textContent = items.length;
+    document.getElementById('ps-likes').textContent = fmt(items.reduce((s, t) => s + tlikes(t), 0));
     if (!items.length) {
-      list.innerHTML = '<div class="p-section-hdr">发布的教程</div><div class="comm-empty">还没有发布的教程</div>';
+      grid.innerHTML = '<div style="grid-column:span 2;padding:48px 16px;text-align:center;color:var(--muted);font-size:14px">还没有发布的教程</div>';
       return;
     }
-    list.innerHTML = '<div class="p-section-hdr">发布的教程</div>' + items.map(t => `
-      <div class="p-item" onclick="openTut('${esc(tid(t))}')">
-        <div class="p-thumb">${thumbHtml(t)}</div>
-        <div class="p-item-body">
-          <h4>${esc(t.title||'无标题')}</h4>
-          <div class="p-item-stats">
-            <span><i class="ti ti-heart"></i>${fmt(tlikes(t))}</span>
-            <span><i class="ti ti-eye"></i>${fmt(tviews(t))}</span>
-            <span><i class="ti ti-clock"></i>${timeAgo(t.created_at)}</span>
-          </div>
-        </div>
-      </div>`).join('');
-  } catch { list.innerHTML = '<div class="comm-empty">加载失败，请稍后再试</div>'; }
+    grid.innerHTML = items.map(_gridItem).join('');
+  } catch {
+    grid.innerHTML = '<div style="grid-column:span 2;padding:48px 16px;text-align:center;color:var(--muted);font-size:14px">加载失败</div>';
+  }
 }
 
-async function renderFavorites() {
-  const list = document.getElementById('p-list');
-  list.innerHTML = '<div style="padding:24px;display:flex;justify-content:center"><div class="spin"></div></div>';
+async function loadPFavorites() {
+  const grid = document.getElementById('p-grid');
+  grid.innerHTML = '<div style="grid-column:span 2;padding:32px;display:flex;justify-content:center"><div class="spin"></div></div>';
   try {
     const r = await fetch(`${API}/auth/tutorials/favorites`, {
       credentials: 'include',
@@ -1170,108 +1234,18 @@ async function renderFavorites() {
     const d = await r.json();
     const items = Array.isArray(d) ? d : (d.tutorials ?? d.favorites ?? []);
     if (!items.length) {
-      list.innerHTML = '<div class="p-section-hdr">收藏的教程</div><div class="comm-empty">还没有收藏的教程</div>';
+      grid.innerHTML = '<div style="grid-column:span 2;padding:48px 16px;text-align:center;color:var(--muted);font-size:14px">还没有收藏的教程</div>';
       return;
     }
-    const AV_COLORS = ['#6366f1','#16a34a','#ea8c00','#8b5cf6','#0ea5e9','#ec4899'];
-    function favColor(name) {
-      let h = 0; for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) % AV_COLORS.length;
-      return AV_COLORS[h];
-    }
-    list.innerHTML = '<div class="p-section-hdr">收藏的教程</div>' + items.map(t => {
-      const author = tauthor(t);
-      const favTime = t.favorited_at || t.saved_at || t.created_at;
-      return `<div class="p-item" onclick="openTut('${esc(tid(t))}')">
-        <div class="p-thumb">${thumbHtml(t)}</div>
-        <div class="p-item-body">
-          <h4>${esc(t.title||'无标题')}</h4>
-          <div class="p-fav-author">
-            <div class="p-fav-av" style="background:${favColor(author)}">${esc((author[0]||'?').toUpperCase())}</div>
-            <span>${esc(author)} · ${timeAgo(favTime)}收藏</span>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
+    grid.innerHTML = items.map(_gridItem).join('');
   } catch {
-    list.innerHTML = '<div class="p-section-hdr">收藏的教程</div><div class="comm-empty">功能即将开放</div>';
+    grid.innerHTML = '<div style="grid-column:span 2;padding:48px 16px;text-align:center;color:var(--muted);font-size:14px">功能即将开放</div>';
   }
 }
 
-function renderSettings() {
-  const u = S.user || {};
-  const email = u.email || '';
-  document.getElementById('p-list').innerHTML = `
-    <div class="settings-list">
-      <div class="settings-section">
-        <div class="settings-label">账号</div>
-        <div class="settings-item settings-item--btn" onclick="showEditSheet()">
-          <div class="sett-icon sett-icon--accent"><i class="ti ti-user"></i></div>
-          <div class="sett-text">
-            <div class="sett-text-title">编辑资料</div>
-            <div class="sett-text-sub">头像、用户名、简介</div>
-          </div>
-          <i class="ti ti-chevron-right sett-chevron"></i>
-        </div>
-        <div class="settings-item settings-item--btn" onclick="gotoManage()">
-          <div class="sett-icon sett-icon--accent"><i class="ti ti-layout-list"></i></div>
-          <div class="sett-text">
-            <div class="sett-text-title">管理内容</div>
-            <div class="sett-text-sub">编辑、发布、删除教程</div>
-          </div>
-          <i class="ti ti-chevron-right sett-chevron"></i>
-        </div>
-        <div class="settings-item settings-item--btn">
-          <div class="sett-icon sett-icon--accent"><i class="ti ti-bell"></i></div>
-          <div class="sett-text">
-            <div class="sett-text-title">通知设置</div>
-            <div class="sett-text-sub">点赞、评论、关注</div>
-          </div>
-          <i class="ti ti-chevron-right sett-chevron"></i>
-        </div>
-        <div class="settings-item settings-item--btn">
-          <div class="sett-icon sett-icon--green"><i class="ti ti-cloud"></i></div>
-          <div class="sett-text">
-            <div class="sett-text-title">云端存储</div>
-            <div class="sett-text-sub">— / 1 GB</div>
-          </div>
-          <i class="ti ti-chevron-right sett-chevron"></i>
-        </div>
-        ${email ? `<div class="settings-item">
-          <div class="sett-icon sett-icon--muted"><i class="ti ti-mail"></i></div>
-          <div class="sett-text">
-            <div class="sett-text-title">邮箱</div>
-            <div class="sett-text-sub">${esc(email)}</div>
-          </div>
-        </div>` : ''}
-      </div>
-      <div class="settings-section">
-        <div class="settings-label">偏好</div>
-        <div class="settings-item settings-item--btn">
-          <div class="sett-icon sett-icon--orange"><i class="ti ti-palette"></i></div>
-          <div class="sett-text">
-            <div class="sett-text-title">主题</div>
-            <div class="sett-text-sub">跟随系统</div>
-          </div>
-          <i class="ti ti-chevron-right sett-chevron"></i>
-        </div>
-        <div class="settings-item settings-item--btn" onclick="clearCache()">
-          <div class="sett-icon sett-icon--muted"><i class="ti ti-trash"></i></div>
-          <div class="sett-text">
-            <div class="sett-text-title">清除本地缓存</div>
-            <div class="sett-text-sub">释放存储空间</div>
-          </div>
-          <i class="ti ti-chevron-right sett-chevron"></i>
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="settings-item settings-item--btn" onclick="doLogout()">
-          <div class="sett-icon sett-icon--red"><i class="ti ti-logout"></i></div>
-          <div class="sett-text">
-            <div class="sett-text-title" style="color:#ef4444;font-weight:600">退出登录</div>
-          </div>
-        </div>
-      </div>
-    </div>`;
+function loadPLiked() {
+  document.getElementById('p-grid').innerHTML =
+    '<div style="grid-column:span 2;padding:48px 16px;text-align:center;color:var(--muted);font-size:14px">功能即将开放</div>';
 }
 
 function showToast(msg) {
@@ -1284,11 +1258,11 @@ function showToast(msg) {
 
 function clearCache() {
   localStorage.removeItem('jm-session');
-  renderSettings();
   showToast('缓存已清除');
 }
 
 function doLogout() {
+  closeSettings();
   S.token = null; S.user = null;
   localStorage.removeItem('jm-session');
   renderProfile();
@@ -1561,8 +1535,8 @@ function changeBanner() {
     reader.onload = ev => {
       const dataUrl = ev.target.result;
       if (S.user) { S.user.banner = dataUrl; saveSession(); }
-      const band = document.getElementById('p-band');
-      if (band) band.style.backgroundImage = `url('${dataUrl}')`;
+      const cover = document.getElementById('p-cover');
+      if (cover) cover.style.backgroundImage = `url('${dataUrl}')`;
       showToast('背景图已更新');
     };
     reader.readAsDataURL(file);
@@ -1657,17 +1631,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Profile
   document.getElementById('p-login-btn').addEventListener('click', showAuth);
+  document.getElementById('p-menu-btn').addEventListener('click', openSettings);
   document.querySelectorAll('.p-tab').forEach(t => t.addEventListener('click', () => {
     document.querySelectorAll('.p-tab').forEach(x => x.classList.remove('active')); t.classList.add('active');
-    if (t.dataset.ptab === 'published') loadPTuts(S.user?.username || '');
-    else if (t.dataset.ptab === 'favorites') renderFavorites();
-    else if (t.dataset.ptab === 'settings') renderSettings();
-    else document.getElementById('p-list').innerHTML = '<div class="comm-empty">功能即将开放</div>';
+    if (t.dataset.ptab === 'grid') loadPGrid(S.user?.username || '');
+    else if (t.dataset.ptab === 'favorites') loadPFavorites();
+    else if (t.dataset.ptab === 'liked') loadPLiked();
   }));
 
-  // Delete confirm + edit profile sheets
+  // Delete confirm + edit profile + settings sheets
   document.getElementById('del-bd').addEventListener('click', () => document.getElementById('m-delete').classList.add('hidden'));
   document.getElementById('edit-bd').addEventListener('click', () => document.getElementById('m-edit').classList.add('hidden'));
+  document.getElementById('settings-bd').addEventListener('click', closeSettings);
 
   // Auth modal
   document.getElementById('auth-bd').addEventListener('click', hideAuth);
