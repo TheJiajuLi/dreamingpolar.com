@@ -514,9 +514,11 @@
     .nb-cell-badge.markdown { background:#f1f5f9; color:#475569; }
     .nb-run-btn { margin-left:auto; width:28px; height:28px; border-radius:8px; border:1.5px solid var(--border); background:#fff; color:var(--text); font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
     .nb-run-btn:active { background:var(--bg); }
-    .nb-cell-code { display:block; width:100%; padding:12px; border:none; outline:none; resize:none; font-family:'Menlo','JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text); background:transparent; min-height:60px; box-sizing:border-box; }
-    .nb-cell-output { padding:10px 12px; border-top:1px solid var(--border); background:#f8fafc; font-family:'Menlo','JetBrains Mono',monospace; font-size:12px; line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-all; }
+    .nb-cell-code { display:block; width:100%; padding:12px; border:none; outline:none; resize:none; font-family:'Menlo','JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text); background:transparent; min-height:60px; box-sizing:border-box; overflow-x:auto; white-space:pre; word-wrap:normal; }
+    .nb-cell-output { padding:10px 12px; border-top:1px solid var(--border); background:#f8fafc; font-family:'Menlo','JetBrains Mono',monospace; font-size:12px; line-height:1.6; color:var(--text); overflow-x:auto; }
     .nb-cell-output.nb-error { color:#ef4444; background:#fff1f2; }
+    .nb-del-btn { width:24px; height:24px; border:none; background:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:6px; margin-left:4px; flex-shrink:0; }
+    .nb-del-btn:active { background:var(--bg); color:#dc2626; }
     .nb-toolbar { display:flex; border-top:1px solid var(--border); background:#fff; flex-shrink:0; overflow-x:auto; scrollbar-width:none; }
     .nb-toolbar::-webkit-scrollbar { display:none; }
     .nb-tool-btn { flex-shrink:0; height:48px; padding:0 14px; border:none; background:none; font-family:inherit; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:5px; border-right:1px solid var(--border); white-space:nowrap; }
@@ -1954,6 +1956,7 @@ function renderNbCells() {
   if (!container) return;
   container.innerHTML = _nbCells.map((cell, i) => _cellHtml(cell, i + 1)).join('');
   container.querySelectorAll('textarea.nb-cell-code').forEach(ta => _autoResizeNb(ta));
+  _nbCells.forEach(cell => { if (cell.output) renderCellOutput(cell.id, cell.output); });
 }
 
 function _cellHtml(cell, num) {
@@ -1961,21 +1964,22 @@ function _cellHtml(cell, num) {
   const badgeLabel = type === 'python' ? 'Python' : type === 'latex' ? 'LaTeX' : '文本';
   const ph = type === 'python' ? '# Python 代码…' : type === 'latex' ? '输入 LaTeX 公式…' : '输入文本…';
   const stateClass = cell.status === 'running' ? ' running' : cell.status === 'success' ? ' nb-success' : cell.status === 'error' ? ' nb-error' : '';
-  const outputHtml = cell.output
-    ? `<div class="nb-cell-output${cell.status === 'error' ? ' nb-error' : ''}">${esc(cell.output)}</div>` : '';
   const numHtml = cell.status === 'running'
     ? '<div class="spin" style="width:14px;height:14px;border-width:1.5px"></div>'
     : String(num);
+  const outStyle = cell.output ? '' : 'display:none';
+  const outClass = `nb-cell-output${cell.status === 'error' ? ' nb-error' : ''}`;
   return `<div class="nb-cell${stateClass}" id="cell-${esc(cell.id)}">
     <div class="nb-cell-hdr">
       <span class="nb-cell-num" id="cellnum-${esc(cell.id)}">${numHtml}</span>
       <span class="nb-cell-badge ${esc(type)}">${badgeLabel}</span>
       <button class="nb-run-btn" onclick="runCell('${esc(cell.id)}')"><i class="ti ti-player-play" style="font-size:12px"></i></button>
+      <button class="nb-del-btn" onclick="deleteCell('${esc(cell.id)}')"><i class="ti ti-x" style="font-size:13px"></i></button>
     </div>
     <textarea class="nb-cell-code" placeholder="${ph}" data-cid="${esc(cell.id)}"
       oninput="updateCellCode('${esc(cell.id)}',this.value);_autoResizeNb(this)"
     >${esc(cell.code)}</textarea>
-    ${outputHtml}
+    <div class="${outClass}" id="out-${esc(cell.id)}" style="${outStyle}"></div>
   </div>`;
 }
 
@@ -2039,7 +2043,10 @@ async function runCell(id) {
   const newHtml = _cellHtml(cell, idx + 1);
   cellEl.outerHTML = newHtml;
   const newEl = document.getElementById('cell-' + id);
-  if (newEl) newEl.querySelectorAll('textarea.nb-cell-code').forEach(ta => _autoResizeNb(ta));
+  if (newEl) {
+    newEl.querySelectorAll('textarea.nb-cell-code').forEach(ta => _autoResizeNb(ta));
+    if (cell.output) renderCellOutput(id, cell.output);
+  }
   scheduleNbSave();
 }
 
@@ -2048,6 +2055,51 @@ async function runAllCells() {
   if (btn) btn.disabled = true;
   for (const cell of _nbCells) await runCell(cell.id);
   if (btn) btn.disabled = false;
+}
+
+function renderCellOutput(cellId, outputs) {
+  const el = document.getElementById('out-' + cellId);
+  if (!el) return;
+  if (!outputs) { el.style.display = 'none'; return; }
+  if (typeof outputs === 'string') {
+    try { outputs = JSON.parse(outputs); }
+    catch { el.style.display = ''; el.textContent = outputs; return; }
+  }
+  if (!Array.isArray(outputs)) outputs = [outputs];
+  el.style.display = '';
+  el.innerHTML = '';
+  outputs.forEach(item => {
+    const div = document.createElement('div');
+    if (item.type === 'latex') {
+      div.innerHTML = item.content || '';
+      el.appendChild(div);
+      if (window.MathJax) MathJax.typesetPromise([div]).catch(() => {});
+    } else if (item.type === 'image') {
+      const img = document.createElement('img');
+      img.src = item.content || '';
+      img.style.cssText = 'max-width:100%;border-radius:8px;margin-top:4px;display:block';
+      el.appendChild(img);
+    } else if (item.type === 'error') {
+      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:#dc2626;line-height:1.5;white-space:pre-wrap;border-left:2px solid #fca5a5;padding-left:8px';
+      div.textContent = item.content || item.text || '';
+      el.appendChild(div);
+    } else {
+      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:var(--text);line-height:1.5;white-space:pre-wrap';
+      div.textContent = item.content || item.text || String(item);
+      el.appendChild(div);
+    }
+  });
+}
+
+function deleteCell(cellId) {
+  const el = document.getElementById('cell-' + cellId);
+  if (el) el.remove();
+  _nbCells = _nbCells.filter(c => c.id !== cellId);
+  document.querySelectorAll('.nb-cell-num').forEach((numEl, i) => {
+    if (numEl.querySelector('.spin')) return;
+    numEl.textContent = i + 1;
+  });
+  scheduleNbSave();
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
@@ -2141,5 +2193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!S.tutLoaded) loadFeed();
 });
 </script>
+<script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']]},startup:{ready(){MathJax.startup.defaultReady();}}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 </body>
 </html>
