@@ -129,7 +129,7 @@
           ${coverHtml}
           <div class="content">
             <h3 class="title">${esc(title)}</h3>
-            <a class="author" href="${authorLink}">${avatarHtml}<span>${esc(author)}</span></a>
+            <div class="author" onclick="event.preventDefault();event.stopPropagation();location.href='${authorLink}'">${avatarHtml}<span>${esc(author)}</span></div>
             <p class="summary">${esc(summary)}</p>
             <div class="badge-list">${badgeHtml}</div>
             <div class="meta">
