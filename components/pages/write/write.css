@@ -277,6 +277,41 @@
       background: #eaf2ff;
     }
 
+    .tag-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px 4px 10px;
+      border: 1px dashed #c7d7ee;
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    #custom-tag-input {
+      width: 140px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+      color: #4c6788;
+    }
+
+    #custom-tag-input::placeholder {
+      color: #8ea0b9;
+    }
+
+    #add-custom-tag {
+      width: 26px;
+      height: 26px;
+      border: 0;
+      border-radius: 999px;
+      background: #eaf2ff;
+      color: #1f5bd3;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
     #block-list {
       display: flex;
       flex-direction: column;

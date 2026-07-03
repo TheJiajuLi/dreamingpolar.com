@@ -122,10 +122,53 @@
         els.coverPreview.textContent = '无封面';
       }
 
-      els.metaTags.innerHTML = TAGS.map(tag => {
+      const builtInTagsHtml = TAGS.map(tag => {
         const active = tutorialMeta.tags.includes(tag) ? 'active' : '';
         return `<button type="button" class="tag-chip ${active}" data-tag="${esc(tag)}">${esc(tag)}</button>`;
       }).join('');
+
+      const customTagsHtml = tutorialMeta.tags
+        .filter(tag => !TAGS.includes(tag))
+        .map(tag => `<button type="button" class="tag-chip active" data-tag="${esc(tag)}" data-custom="1">${esc(tag)} ×</button>`)
+        .join('');
+
+      els.metaTags.innerHTML = `${builtInTagsHtml}${customTagsHtml}
+        <div class="tag-input-wrap">
+          <input type="text" id="custom-tag-input" placeholder="输入自定义标签..." maxlength="20">
+          <button type="button" id="add-custom-tag">+</button>
+        </div>`;
+
+      bindCustomTagInput();
+    }
+
+    function addCustomTag(value) {
+      const tag = String(value || '').trim();
+      if (!tag) return;
+      if (tutorialMeta.tags.includes(tag)) return;
+      if (tutorialMeta.tags.length >= 5) {
+        alert('最多添加5个标签');
+        return;
+      }
+
+      tutorialMeta.tags.push(tag);
+      markDirty();
+      renderMeta();
+      renderPreview();
+    }
+
+    function bindCustomTagInput() {
+      const customInput = document.getElementById('custom-tag-input');
+      const addTagBtn = document.getElementById('add-custom-tag');
+      if (!customInput || !addTagBtn) return;
+
+      customInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addCustomTag(customInput.value);
+        }
+      });
+
+      addTagBtn.addEventListener('click', () => addCustomTag(customInput.value));
     }
 
     function typeBadge(type) {
@@ -646,6 +689,10 @@
         if (tutorialMeta.tags.includes(tag)) {
           tutorialMeta.tags = tutorialMeta.tags.filter(t => t !== tag);
         } else {
+          if (tutorialMeta.tags.length >= 5) {
+            alert('最多添加5个标签');
+            return;
+          }
           tutorialMeta.tags.push(tag);
         }
         markDirty();
