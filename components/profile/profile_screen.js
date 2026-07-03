@@ -272,10 +272,40 @@ function _buildCloudFileManager(pane) {
   progressWrap.appendChild(progressFill);
   pane.appendChild(progressWrap);
 
+  // ── Always-visible upload entry (independent from file cards) ─────────────
+  const uploadBar = document.createElement('div');
+  uploadBar.className = 'cfm-upload-bar';
+  const uploadHint = document.createElement('span');
+  uploadHint.className = 'cfm-upload-hint';
+  uploadHint.textContent = '支持拖拽文件到下方区域';
+  const uploadBtn = document.createElement('button');
+  uploadBtn.className = 'cfm-global-upload-btn';
+  uploadBtn.innerHTML = `<i class="ti ti-upload"></i> 上传`;
+  uploadBtn.addEventListener('click', () => _triggerUpload());
+  uploadBar.append(uploadHint, uploadBtn);
+  pane.appendChild(uploadBar);
+
   // ── List container ────────────────────────────────────────────────────────
   const listEl = document.createElement('div');
   listEl.className = 'cfm-list';
   pane.appendChild(listEl);
+
+  // Global drag-and-drop target: available whether cards exist or not.
+  listEl.addEventListener('dragover', e => {
+    e.preventDefault();
+    listEl.classList.add('cfm-list--drop-over');
+  });
+  listEl.addEventListener('dragleave', e => {
+    if (!listEl.contains(e.relatedTarget)) {
+      listEl.classList.remove('cfm-list--drop-over');
+    }
+  });
+  listEl.addEventListener('drop', e => {
+    e.preventDefault();
+    listEl.classList.remove('cfm-list--drop-over');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) _triggerUpload(file);
+  });
 
   // ── Shared upload logic (button + drag-drop) ──────────────────────────────
   function _triggerUpload(fileArg) {
@@ -368,7 +398,7 @@ function _buildCloudFileManager(pane) {
     listEl.appendChild(card);
   }
 
-  function _emptyState(title, hint, showUpload = true) {
+  function _emptyState(title, hint, showUpload = false) {
     const wrap = document.createElement('div');
     wrap.className = 'cfm-empty-state';
     wrap.innerHTML = `
@@ -396,7 +426,7 @@ function _buildCloudFileManager(pane) {
   function _render(files) {
     listEl.innerHTML = '';
     if (!files.length) {
-      listEl.appendChild(_emptyState('还没有云端文件', '拖拽文件到此处，或点击上传'));
+      listEl.appendChild(_emptyState('还没有云端文件', '点击上方上传，或将文件拖拽到此处'));
       return;
     }
 
