@@ -24,7 +24,7 @@
     }
 
     function tutorialCover(t) {
-      return t.cover_url || t.cover || t.coverUrl || '';
+      return t.cover_image || t.cover_url || t.cover || t.coverUrl || '';
     }
 
     function tutorialTitle(t) {

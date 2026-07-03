@@ -667,17 +667,21 @@
     }
 
     function resolveUploadedImageUrl(data) {
-      const directUrl = data?.url || data?.file_url || data?.fileUrl || data?.public_url || data?.publicUrl;
-      if (directUrl) return directUrl;
+      const imageUrl = data?.url
+        || data?.public_url
+        || data?.file_url
+        || (() => {
+          const key = data?.cos_key || data?.id;
+          if (!key) return '';
+          if (String(key).startsWith('http://') || String(key).startsWith('https://')) {
+            return String(key);
+          }
+          const cleanKey = String(key).startsWith('users/') ? String(key) : `users/${String(key)}`;
+          return `https://dp-1317483118.cos.ap-hongkong.myqcloud.com/${cleanKey}`;
+        })();
 
-      const key = data?.cos_key || data?.cosKey || data?.id;
-      if (!key) throw new Error('上传成功但未返回图片地址');
-
-      if (String(key).startsWith('http://') || String(key).startsWith('https://')) {
-        return String(key);
-      }
-
-      return `https://dp-1317483118.cos.ap-hongkong.myqcloud.com/users/${key}`;
+      if (!imageUrl) throw new Error('上传成功但未返回图片地址');
+      return imageUrl;
     }
 
     async function uploadImageToCOS(file) {
