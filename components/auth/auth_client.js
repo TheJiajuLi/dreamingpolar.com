@@ -65,36 +65,6 @@ function _userIdentityKey(user) {
   return '';
 }
 
-function _syncUserFromStorage() {
-  const cached = loadUserCache();
-  const nextUser = (cached && typeof cached === 'object') ? cached : null;
-  const prevKey = _userIdentityKey(_uiUser);
-  const nextKey = _userIdentityKey(nextUser);
-
-  if (prevKey && nextKey && prevKey !== nextKey) {
-    clearBusinessCache();
-  }
-
-  if (prevKey === nextKey) return;
-
-  _uiUser = nextUser;
-  _updateVtBtn();
-  _renderProfile();
-  document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: _uiUser } }));
-}
-
-function _bindCrossTabAuthSync() {
-  window.addEventListener('storage', (e) => {
-    if (e.storageArea !== localStorage) return;
-    if (e.key && !['dp-auth-user', 'dp-last-user-key', 'dp-last-user-id'].includes(e.key)) return;
-    _syncUserFromStorage();
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return;
-    _syncUserFromStorage();
-  });
-}
 
 let _accessToken = null;
 let _authInitPromise = null;
@@ -253,7 +223,6 @@ let _uiProfile = null;
 function _initUI() {
   _buildOverlay();
   _buildProfile();
-  _bindCrossTabAuthSync();
   const go = () => {
     setupUserScreen();
     _buildVtBtn();
