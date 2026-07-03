@@ -398,6 +398,19 @@
       top: 86px;
       display: grid;
       gap: 14px;
+      transition: opacity 0.16s ease, transform 0.16s ease;
+    }
+
+    .sidebar.is-collapsed {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      gap: 0;
     }
 
     .card {

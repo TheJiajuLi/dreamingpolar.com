@@ -590,11 +590,30 @@
       });
       els.commentSubmit.addEventListener('click', submitComment);
 
+      const sidebar = document.querySelector('.sidebar');
+      const expandSidebar = () => sidebar?.classList.remove('is-collapsed');
+      const collapseSidebar = () => sidebar?.classList.add('is-collapsed');
+
+      els.topAuthor?.addEventListener('click', () => {
+        expandSidebar();
+      });
+
       document.addEventListener('click', (e) => {
         const target = e.target;
         if (!(target instanceof Element)) return;
-        const isBlankArea = target === document.body || target.classList.contains('page') || target.classList.contains('comments');
-        if (!isBlankArea) return;
+        if (target.closest('.sidebar')) return;
+        if (target.closest('.author-inline')) {
+          expandSidebar();
+          return;
+        }
+
+        const isBlankArea =
+          target === document.body ||
+          target.classList.contains('page') ||
+          target.classList.contains('article') ||
+          target.classList.contains('comments') ||
+          target.classList.contains('block-list');
+        if (isBlankArea) collapseSidebar();
 
         window.dpAuthModal?.close?.();
         document.querySelector('.au-profile.au-open')?.classList.remove('au-open');
