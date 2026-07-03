@@ -461,10 +461,39 @@ initAuth().catch(() => {});
       });
     }
 
+    function bindAuthStateSync() {
+      document.addEventListener('dp-auth-state', (e) => {
+        const prevMe = state.me?.username || '';
+        const nextUser = e?.detail?.user || window._dpGetAuthUser?.() || null;
+        state.me = nextUser && nextUser.username ? nextUser : null;
+        renderTopAvatar();
+
+        // If user switched accounts while viewing their own old profile,
+        // jump to the new self profile to avoid cross-account confusion.
+        const viewed = String(state.username || '').trim();
+        const nextMe = String(state.me?.username || '').trim();
+        if (prevMe && viewed && nextMe && viewed === prevMe && nextMe !== viewed) {
+          location.href = `/profile?username=${encodeURIComponent(nextMe)}`;
+          return;
+        }
+
+        renderSidebar();
+        renderList();
+      });
+
+      document.addEventListener('dp-auth-logout', () => {
+        state.me = null;
+        renderTopAvatar();
+        renderSidebar();
+        renderList();
+      });
+    }
+
     async function boot() {
       bindTabs();
       bindListActions();
       bindBlankDismiss();
+      bindAuthStateSync();
       loadMeFromCache();
       renderTopAvatar();
       showState('正在加载用户主页...', true);
