@@ -460,7 +460,8 @@ async function tryRefresh() {
     const r = await fetch(`${API}/auth/refresh`, { method: 'POST', credentials: 'include' });
     if (!r.ok) return false;
     const d = await r.json();
-    S.token = d.accessToken; S.user = d.user;
+    S.token = d.accessToken;
+    S.user = d.user ?? { username: d.username, id: d.userId };
     return true;
   } catch { return false; }
 }
@@ -473,7 +474,8 @@ async function doLogin(email, pw) {
   });
   const d = await r.json();
   if (!r.ok) throw new Error(d.message || '登录失败');
-  S.token = d.accessToken; S.user = d.user;
+  S.token = d.accessToken;
+  S.user = d.user ?? { username: d.username, id: d.userId };
 }
 
 function showAuth() { document.getElementById('m-auth').classList.remove('hidden'); }
