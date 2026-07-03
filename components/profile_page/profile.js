@@ -91,6 +91,10 @@ initAuth().catch(() => {});
       return t.cover_url || t.cover || t.coverUrl || t.cover_image || '';
     }
 
+    function tutorialStatus(t) {
+      return String(t?.status || '').toLowerCase();
+    }
+
     function tutorialTags(t) {
       if (Array.isArray(t.tags)) return t.tags.filter(Boolean);
       if (typeof t.tags === 'string') return t.tags.split(',').map(x => x.trim()).filter(Boolean);
@@ -223,7 +227,7 @@ initAuth().catch(() => {});
       } catch (_) {}
 
       if (username) {
-        els.topAvatar.href = `/community/user/${encodeURIComponent(username)}`;
+        els.topAvatar.href = `/profile?username=${encodeURIComponent(username)}`;
         els.topAvatar.onclick = null;
       } else {
         els.topAvatar.href = '/';
@@ -296,10 +300,14 @@ initAuth().catch(() => {});
       const time = formatDate(t.published_at || t.created_at || t.updated_at || Date.now());
       const cover = tutorialCover(t);
       const id = tutorialId(t);
-      const href = id ? `/community/${encodeURIComponent(id)}` : '/community';
+      const href = id ? `/tutorial?id=${encodeURIComponent(id)}` : '/community';
+      const p = state.profile || { username: state.username };
+      const isSelf = state.me?.username && state.me.username === (p.username || state.username);
+      const canDelete = isSelf && state.currentTab === 'published' && tutorialStatus(t) !== 'deleted';
 
       return `
-        <a class="card" href="${href}">
+        <article class="card" data-id="${esc(id)}" data-href="${href}">
+          ${canDelete ? '<button class="card-delete-btn" type="button" title="删除教程"><i class="ti ti-trash"></i></button>' : ''}
           <div class="card-cover">${cover ? `<img src="${esc(cover)}" alt="${esc(title)}">` : '<i class="ti ti-chart-line" style="font-size:36px;"></i>'}</div>
           <div class="card-body">
             <div class="badge-row">${tags.length ? tags.map(tag => `<span class="badge">${esc(tag)}</span>`).join('') : '<span class="badge">未分类</span>'}</div>
@@ -311,8 +319,33 @@ initAuth().catch(() => {});
               <span><i class="ti ti-clock"></i>${esc(time)}</span>
             </div>
           </div>
-        </a>
+        </article>
       `;
+    }
+
+    async function deleteTutorial(id) {
+      if (!id) throw new Error('教程ID无效');
+      const ok = confirm('确认删除这篇教程吗？删除后将无法恢复。');
+      if (!ok) return false;
+
+      let token = '';
+      try {
+        token = window.authClient?.getAccessToken?.() || '';
+      } catch (_) {}
+      if (!token) throw new Error('请先登录后再删除');
+
+      const res = await fetch(`https://api.dreamingpolar.com/auth/tutorials/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || `删除失败: ${res.status}`);
+
+      state.tutorials.published = (state.tutorials.published || []).filter((x) => tutorialId(x) !== id);
+      renderSidebar();
+      renderList();
+      return true;
     }
 
     function emptyText(tab) {
@@ -356,8 +389,34 @@ initAuth().catch(() => {});
       });
     }
 
+    function bindListActions() {
+      els.list.addEventListener('click', async (e) => {
+        const delBtn = e.target.closest('.card-delete-btn');
+        if (delBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const card = delBtn.closest('.card[data-id]');
+          if (!card) return;
+          const id = card.dataset.id;
+          try {
+            await deleteTutorial(id);
+          } catch (err) {
+            alert(err.message || '删除失败');
+          }
+          return;
+        }
+
+        const card = e.target.closest('.card[data-href]');
+        if (!card) return;
+        const href = card.dataset.href;
+        if (!href) return;
+        location.href = href;
+      });
+    }
+
     async function boot() {
       bindTabs();
+      bindListActions();
       loadMeFromCache();
       renderTopAvatar();
       showState('正在加载用户主页...', true);

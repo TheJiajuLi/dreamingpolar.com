@@ -58,6 +58,14 @@
       return s || fallback;
     }
 
+    function firstText(...values) {
+      for (const v of values) {
+        const s = String(v ?? '').trim();
+        if (s) return s;
+      }
+      return '';
+    }
+
     function initials(name = '') {
       const normalized = String(name).trim();
       if (!normalized) return 'DP';
@@ -70,7 +78,9 @@
 
     function formatTime(v) {
       if (!v) return '';
-      const date = new Date(v);
+      const raw = Number(v);
+      const normalized = Number.isFinite(raw) && raw < 1e12 ? raw * 1000 : v;
+      const date = new Date(normalized);
       if (Number.isNaN(date.getTime())) return String(v);
       return date.toLocaleString('zh-CN', {
         year: 'numeric',
@@ -183,10 +193,10 @@
     function authorOf(tutorial) {
       const a = tutorial?.author || tutorial?.user || tutorial?.creator || {};
       return {
-        username: text(a.username || tutorial?.author_username, ''),
-        name: text(a.name || a.username || tutorial?.author_name, '匿名作者'),
-        avatar: text(a.avatar || a.avatar_url || a.photo || tutorial?.author_avatar, ''),
-        bio: text(a.bio || tutorial?.author_bio, '这位作者还没有填写简介。'),
+        username: firstText(a.username, tutorial?.author_username, tutorial?.username),
+        name: text(firstText(a.name, tutorial?.author_name, a.username, tutorial?.author_username, tutorial?.username), '匿名作者'),
+        avatar: firstText(a.avatar, a.avatar_url, a.avatarUrl, a.photo, a.image, tutorial?.author_avatar, tutorial?.author_avatar_url, tutorial?.avatar, tutorial?.avatar_url),
+        bio: text(firstText(a.bio, tutorial?.author_bio), '这位作者还没有填写简介。'),
         role: text(a.role || a.title || tutorial?.author_role, '创作者'),
         id: a.id || tutorial?.author_id || '',
       };
@@ -195,7 +205,7 @@
     function renderTopAndSidebar() {
       const tutorial = state.tutorial || {};
       const author = authorOf(tutorial);
-      const profileHref = author.username ? `/community/user/${encodeURIComponent(author.username)}` : '#';
+      const profileHref = author.username ? `/profile?username=${encodeURIComponent(author.username)}` : '#';
 
       els.title.textContent = text(tutorial.title, '未命名教程');
       els.summary.textContent = text(tutorial.summary, '');
@@ -204,7 +214,7 @@
       const tags = Array.isArray(tutorial.tags) ? tutorial.tags.filter(Boolean) : [];
       const metaBits = [
         text(tutorial.read_time || tutorial.reading_time, ''),
-        formatTime(tutorial.created_at || tutorial.createdAt || tutorial.updated_at),
+        formatTime(tutorial.published_at || tutorial.publishedAt || tutorial.created_at || tutorial.createdAt || tutorial.updated_at || tutorial.updatedAt),
       ].filter(Boolean);
 
       els.meta.innerHTML = `
@@ -332,7 +342,7 @@
       els.relatedList.innerHTML = state.related.map((item) => {
         const title = text(item.title, '未命名教程');
         const author = authorOf(item).name;
-        const href = `/community/${encodeURIComponent(item.id || item._id || '')}`;
+        const href = `/tutorial?id=${encodeURIComponent(item.id || item._id || '')}`;
         return `
           <a class="related-item" href="${href}">
             <p class="related-title">${escapeHtml(title)}</p>
@@ -393,7 +403,7 @@
       } catch (_) {}
 
       if (username) {
-        avatarBtn.href = `/community/user/${encodeURIComponent(username)}`;
+        avatarBtn.href = `/profile?username=${encodeURIComponent(username)}`;
         avatarBtn.onclick = null;
       } else {
         avatarBtn.href = '/';

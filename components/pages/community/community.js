@@ -42,15 +42,35 @@
     }
 
     function tutorialAuthor(t) {
-      return t.author_name || t.username || t.author?.username || '匿名作者';
+      return t.author_name || t.author?.name || t.author_username || t.username || t.author?.username || '匿名作者';
     }
 
     function tutorialAuthorUsername(t) {
-      return t.author_username || t.username || t.author?.username || '';
+      return t.author_username || t.author?.username || t.username || '';
     }
 
     function tutorialAuthorAvatar(t) {
-      return t.author_avatar || t.avatar_url || t.author?.avatar || '';
+      return t.author_avatar || t.author_avatar_url || t.avatar || t.avatar_url || t.author?.avatar || t.author?.avatar_url || '';
+    }
+
+    function tutorialId(t) {
+      return String(t.id ?? t.tutorial_id ?? t.tutorialId ?? t._id ?? '');
+    }
+
+    function normalizeList(data) {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.tutorials)) return data.tutorials;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.results)) return data.results;
+      if (Array.isArray(data?.list)) return data.list;
+      return [];
+    }
+
+    function isPublishedTutorial(t) {
+      const status = String(t?.status ?? '').toLowerCase();
+      if (!status) return true;
+      return status === 'published' || status === 'public';
     }
 
     function tutorialStats(t) {
@@ -90,15 +110,18 @@
         : `<span class="avatar">${esc(initials(author))}</span>`;
 
       const authorLink = authorUsername
-        ? `/community/user/${encodeURIComponent(authorUsername)}`
+        ? `/profile?username=${encodeURIComponent(authorUsername)}`
         : '#';
+
+      const tid = tutorialId(t);
+      const tutorialLink = tid ? `/tutorial?id=${encodeURIComponent(tid)}` : '#';
 
       const coverHtml = cover
         ? `<img class="cover" src="${esc(cover)}" alt="${esc(title)}">`
         : '<div class="cover"></div>';
 
       return `
-        <article class="card">
+        <a class="card" href="${tutorialLink}">
           ${coverHtml}
           <div class="content">
             <h3 class="title">${esc(title)}</h3>
@@ -111,7 +134,7 @@
               <span><i class="ti ti-clock"></i>${formatDate(stats.ts)}</span>
             </div>
           </div>
-        </article>
+        </a>
       `;
     }
 
@@ -136,7 +159,7 @@
       } else if (tutorialsState.mode === 'hot') {
         items.sort((a, b) => (tutorialStats(b).likes + tutorialStats(b).views) - (tutorialStats(a).likes + tutorialStats(a).views));
       } else if (tutorialsState.mode === 'favorites') {
-        items = items.filter(t => tutorialsState.favs.has(String(t.id ?? t.tutorial_id ?? '')));
+        items = items.filter(t => tutorialsState.favs.has(tutorialId(t)));
       }
 
       const cards = document.getElementById('cards');
@@ -164,7 +187,7 @@
       } catch (_) {}
 
       if (username) {
-        avatarBtn.href = `/community/user/${encodeURIComponent(username)}`;
+        avatarBtn.href = `/profile?username=${encodeURIComponent(username)}`;
         avatarBtn.onclick = null;
       } else {
         avatarBtn.href = '/';
@@ -223,11 +246,21 @@
 
     async function loadTutorials() {
       setState('正在加载社区教程...', true);
+      const urls = [
+        'https://api.dreamingpolar.com/auth/tutorials?status=published',
+        'https://api.dreamingpolar.com/auth/tutorials?status=published&limit=100',
+        'https://api.dreamingpolar.com/auth/tutorials',
+      ];
       try {
-        const resp = await fetch('https://api.dreamingpolar.com/auth/tutorials?status=published', { credentials: 'include' });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        tutorialsState.all = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+        let list = [];
+        for (const url of urls) {
+          const resp = await fetch(url, { credentials: 'include' });
+          if (!resp.ok) continue;
+          const data = await resp.json().catch(() => ({}));
+          list = normalizeList(data);
+          if (list.length) break;
+        }
+        tutorialsState.all = list.filter(isPublishedTutorial);
       } catch (err) {
         console.error('[community] load tutorials failed', err);
         tutorialsState.all = [];

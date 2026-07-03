@@ -100,7 +100,7 @@
       } catch (_) {}
 
       if (username) {
-        avatarBtn.href = `/community/user/${encodeURIComponent(username)}`;
+        avatarBtn.href = `/profile?username=${encodeURIComponent(username)}`;
         avatarBtn.onclick = null;
       } else {
         avatarBtn.href = '/';
@@ -785,7 +785,7 @@
         }
         setSaved('发布成功，正在跳转...');
         if (currentTutorialId) {
-          location.href = `/community/${encodeURIComponent(currentTutorialId)}`;
+          location.href = `/tutorial?id=${encodeURIComponent(currentTutorialId)}`;
         }
       } catch (e) {
         els.saveStatus.textContent = `发布失败: ${e.message}`;
