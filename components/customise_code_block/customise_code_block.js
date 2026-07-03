@@ -1258,6 +1258,17 @@ export function init(container, externalTopbar) {
   document.addEventListener('dp-cloud-restore', ({ detail: { cells } }) => {
     if (!Array.isArray(cells) || !cells.length) return;
     const sorted = [...cells].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+
+    // Skip rebuild when cloud payload is effectively identical to current cells.
+    const sameAsCurrent =
+      _cells.length === sorted.length &&
+      _cells.every((c, i) =>
+        c.id === (sorted[i].id ?? '') &&
+        _normalizeLang(c.lang) === _normalizeLang(sorted[i].language ?? 'python') &&
+        (c.editor?.value ?? '') === (sorted[i].code ?? '')
+      );
+    if (sameAsCurrent) return;
+
     _cells = sorted.map(d => makeCell(_normalizeLang(d.language ?? 'python'), d.code ?? '', d.id ?? uid()));
     rebuildCells();
     saveAll(); // persist to localStorage so next cold load also gets the cloud data
