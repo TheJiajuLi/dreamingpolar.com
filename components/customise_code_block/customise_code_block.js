@@ -1259,6 +1259,17 @@ export function init(container, externalTopbar) {
     if (!Array.isArray(cells) || !cells.length) return;
     const sorted = [...cells].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
 
+    // Local-first restore strategy:
+    // If there is already visible local code, keep current DOM/state to avoid
+    // a clear-and-rebuild flicker right after refresh.
+    const hasLocalContent = _cells.some(c => (c.editor?.value ?? '').trim().length > 0);
+    if (hasLocalContent) {
+      // Persist current local snapshot and heal cloud in background.
+      saveAll(true);
+      setTimeout(() => window._dpSync?.syncToCloud(), 0);
+      return;
+    }
+
     // Skip rebuild when cloud payload is effectively identical to current cells.
     const sameAsCurrent =
       _cells.length === sorted.length &&
