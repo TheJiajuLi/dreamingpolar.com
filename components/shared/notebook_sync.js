@@ -89,10 +89,10 @@ export async function syncToCloud(cells) {
           code:        el.querySelector('.nb-editor')?.value ?? '',
         }));
 
-    // 不允许用空 cells 覆盖云端有内容的版本
-    const hasContent = payloadCells.some(c => c.code?.trim());
-    if (!hasContent) {
-      console.warn('[sync] 跳过同步——所有cell都是空的');
+    // Only skip truly invalid payloads.
+    // Empty code in existing cells can be a valid user intent (clear all code).
+    if (!payloadCells.length) {
+      console.warn('[sync] 跳过同步——payload 为空');
       return;
     }
 

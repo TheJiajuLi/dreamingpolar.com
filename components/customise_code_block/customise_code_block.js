@@ -1260,10 +1260,10 @@ export function init(container, externalTopbar) {
     const sorted = [...cells].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
 
     // Local-first restore strategy:
-    // If there is already visible local code, keep current DOM/state to avoid
-    // a clear-and-rebuild flicker right after refresh.
-    const hasLocalContent = _cells.some(c => (c.editor?.value ?? '').trim().length > 0);
-    if (hasLocalContent) {
+    // If we already have a local snapshot (even with empty code), keep it.
+    // This prevents deleted/cleared code from being resurrected by stale cloud state.
+    const hasLocalSnapshot = Array.isArray(loadScopedJson(CELLS_KEY, null));
+    if (hasLocalSnapshot) {
       // Persist current local snapshot and heal cloud in background.
       saveAll(true);
       setTimeout(() => window._dpSync?.syncToCloud(), 0);
