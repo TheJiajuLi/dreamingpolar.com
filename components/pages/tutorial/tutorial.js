@@ -626,13 +626,18 @@
       }
     }
 
-    if (window.authClient?.isLoggedIn?.()) {
+    let _booted = false;
+    function bootOnce() {
+      if (_booted) return;
+      _booted = true;
       boot();
-    } else {
-      document.addEventListener('auth-ready', () => {
-        if (!window.authClient?.isLoggedIn()) {
-          console.warn('[tutorial] 未登录，点赞/评论功能需要先登录');
-        }
-        boot();
-      }, { once: true });
     }
+
+    // Never block tutorial rendering on auth initialization.
+    bootOnce();
+
+    document.addEventListener('auth-ready', () => {
+      if (!window.authClient?.isLoggedIn?.()) {
+        console.warn('[tutorial] 未登录，点赞/评论功能需要先登录');
+      }
+    }, { once: true });
