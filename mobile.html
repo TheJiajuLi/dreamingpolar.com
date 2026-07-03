@@ -664,8 +664,9 @@
 const API = 'https://api.dreamingpolar.com';
 
 // ── State ─────────────────────────────────────────────────────────────────────
+const _saved = (() => { try { return JSON.parse(localStorage.getItem('jm-session') || '{}'); } catch { return {}; } })();
 const S = {
-  token: null, user: null,
+  token: _saved.token || null, user: _saved.user || null,
   tutorials: [], tutTag: '', tutSearch: '', tutLoaded: false,
   liked: new Set(),
   ariaHistory: [], ariaData: null, ariaBusy: false, ariaGreeted: false,
@@ -673,6 +674,11 @@ const S = {
   editTut: null, editBlocks: [],
   deleteId: null,
 };
+
+// ── Session persistence ───────────────────────────────────────────────────────
+function saveSession() {
+  localStorage.setItem('jm-session', JSON.stringify({ token: S.token, user: S.user }));
+}
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
 function esc(s) {
@@ -709,7 +715,7 @@ async function fetchMe() {
       S.user = me;
     }
   } catch {}
-  if (S.user) localStorage.setItem('dp_user', JSON.stringify(S.user));
+  if (S.user) saveSession();
 }
 
 async function tryRefresh() {
@@ -749,6 +755,7 @@ function goto(id) {
   document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('s-' + id).classList.add('active');
   document.querySelector(`.m-tab[data-tab="${id}"]`).classList.add('active');
+  localStorage.setItem('jm-last-tab', id);
   if (id === 'community' && !S.tutLoaded) loadFeed();
   if (id === 'profile') renderProfile();
   if (id === 'aria' && !S.ariaGreeted) initAriaGreeting();
@@ -1086,7 +1093,7 @@ async function renderProfile() {
         </div>
         <div class="p-hdr-btns">
           <button class="p-edit-btn" onclick="showEditSheet()"><i class="ti ti-edit"></i> 编辑资料</button>
-          <button class="p-share-btn"><i class="ti ti-share"></i></button>
+          <button class="p-share-btn" onclick="shareProfile()"><i class="ti ti-share"></i></button>
         </div>
       </div>
       <div class="p-name">${esc(username)}</div>
@@ -1276,14 +1283,14 @@ function showToast(msg) {
 }
 
 function clearCache() {
-  localStorage.removeItem('dp_user');
+  localStorage.removeItem('jm-session');
   renderSettings();
   showToast('缓存已清除');
 }
 
 function doLogout() {
   S.token = null; S.user = null;
-  localStorage.removeItem('dp_user');
+  localStorage.removeItem('jm-session');
   renderProfile();
 }
 
@@ -1349,7 +1356,7 @@ function renderMyTuts() {
     const badge = isPub ? '<span class="badge-pub">已发布</span>' : '<span class="badge-draft">草稿</span>';
     const actions = isPub
       ? `<button class="manage-act-btn" onclick="mEditTut('${esc(id)}')"><i class="ti ti-edit"></i> 编辑</button>
-         <button class="manage-act-btn" onclick="shareT('${esc(id)}')"><i class="ti ti-share"></i> 分享</button>
+         <button class="manage-act-btn" onclick="shareTutorial('${esc(id)}')"><i class="ti ti-share"></i> 分享</button>
          <button class="manage-act-btn" onclick="toggleStatus('${esc(id)}','published')"><i class="ti ti-eye-off"></i> 下架</button>
          <button class="manage-act-btn manage-act-btn--danger" onclick="confirmDelete('${esc(id)}')"><i class="ti ti-trash"></i> 删除</button>`
       : `<button class="manage-act-btn" onclick="mEditTut('${esc(id)}')"><i class="ti ti-edit"></i> 继续编辑</button>
@@ -1373,17 +1380,41 @@ function renderMyTuts() {
   }).join('');
 }
 
-async function shareT(id) {
+async function shareTutorial(id, title) {
   const tut = S.myTuts.find(t => tid(t) === id) || S.tutorials.find(t => tid(t) === id);
-  const title = tut?.title || '一篇好教程';
+  const ttl = title || tut?.title || '一篇好教程';
   const url = `https://dreamingpolar.com/tutorial?id=${encodeURIComponent(id)}`;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title, text: `在极梦发现了一篇好教程：${title}`, url });
-    } catch(e) { if (e.name !== 'AbortError') showToast('分享失败'); }
-  } else {
-    try { await navigator.clipboard.writeText(url); showToast('已复制分享链接'); }
-    catch { showToast('复制失败，请手动复制'); }
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: ttl, text: `在极梦发现了一篇好教程：${ttl}`, url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      showToast('链接已复制');
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      try { await navigator.clipboard.writeText(url); showToast('链接已复制'); }
+      catch { showToast('请手动复制：' + url); }
+    }
+  }
+}
+
+async function shareProfile() {
+  const username = S.user?.username || '';
+  const url = `https://dreamingpolar.com/community/user/${encodeURIComponent(username)}`;
+  const title = `${username} 的极梦主页`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text: `在极梦看看 ${username} 的数据分析教程`, url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      showToast('链接已复制');
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      try { await navigator.clipboard.writeText(url); showToast('链接已复制'); }
+      catch { showToast('请手动复制：' + url); }
+    }
   }
 }
 
@@ -1529,7 +1560,7 @@ function changeBanner() {
     const reader = new FileReader();
     reader.onload = ev => {
       const dataUrl = ev.target.result;
-      if (S.user) { S.user.banner = dataUrl; localStorage.setItem('dp_user', JSON.stringify(S.user)); }
+      if (S.user) { S.user.banner = dataUrl; saveSession(); }
       const band = document.getElementById('p-band');
       if (band) band.style.backgroundImage = `url('${dataUrl}')`;
       showToast('背景图已更新');
@@ -1573,7 +1604,7 @@ async function saveProfile() {
     });
     if (!r.ok) { const d = await r.json().catch(()=>({})); throw new Error(d.message || '保存失败'); }
     S.user = { ...S.user, username, bio, website, link: website, homepage: website };
-    localStorage.setItem('dp_user', JSON.stringify(S.user));
+    saveSession();
     document.getElementById('m-edit').classList.add('hidden');
     renderProfile();
   } catch(e) {
@@ -1659,14 +1690,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Restore cached user for instant render, then verify with refresh
-  try { const c = localStorage.getItem('dp_user'); if (c) S.user = JSON.parse(c); } catch {}
+  // S.token + S.user already restored from jm-session at init — go to last tab immediately
+  const _lastTab = localStorage.getItem('jm-last-tab') || 'home';
+  goto(_lastTab);
 
-  // Silent auth
-  await tryRefresh();
+  // Background token refresh — verify session validity
+  tryRefresh().then(ok => {
+    if (!ok) {
+      localStorage.removeItem('jm-session');
+      S.token = null; S.user = null;
+      if (document.getElementById('s-profile').classList.contains('active')) renderProfile();
+    }
+  });
 
-  // Preload community in background
-  loadFeed();
+  // Preload community (skip if goto already triggered it)
+  if (!S.tutLoaded) loadFeed();
 });
 </script>
 </body>
