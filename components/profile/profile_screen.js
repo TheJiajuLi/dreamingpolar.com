@@ -227,6 +227,7 @@ const _CFM_TYPE_COLOR = {
   py: '#eab308', md: '#8b5cf6', tex: '#8b5cf6', html: '#f97316',
 };
 const _CFM_DATA_EXTS = new Set(['csv','json','xlsx','xls','xml']);
+const _CFM_IMAGE_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg', 'heic', 'heif']);
 
 function _cfmRelTime(ts) {
   const m = Math.floor((Date.now() - ts) / 60000);
@@ -400,7 +401,11 @@ function _buildCloudFileManager(pane) {
     }
 
     const dataFiles = files.filter(f => _CFM_DATA_EXTS.has(_ext(f)));
-    const codeFiles = files.filter(f => !_CFM_DATA_EXTS.has(_ext(f)));
+    const imageFiles = files.filter(f => _CFM_IMAGE_EXTS.has(_ext(f)));
+    const codeFiles = files.filter(f => {
+      const ext = _ext(f);
+      return !_CFM_DATA_EXTS.has(ext) && !_CFM_IMAGE_EXTS.has(ext);
+    });
     const totalSize = files.reduce((s, f) => s + (f.size ?? 0), 0);
 
     // Stats row
@@ -416,6 +421,10 @@ function _buildCloudFileManager(pane) {
     }
     if (codeFiles.length) {
       listEl.appendChild(_makeCard('代码文件', 'ti-file-code', codeFiles, true, animIdx, false));
+      animIdx += codeFiles.length;
+    }
+    if (imageFiles.length) {
+      listEl.appendChild(_makeCard('创作素材', 'ti-photo', imageFiles, false, animIdx, false));
     }
 
     // Models placeholder
@@ -488,6 +497,7 @@ function _buildCloudFileManager(pane) {
   function _makeRow(f, isCode) {
     const filename = f.filename ?? f.name ?? '';
     const ext = _ext(f);
+    const isImage = _CFM_IMAGE_EXTS.has(ext);
     const color = _CFM_TYPE_COLOR[ext] ?? '#6366f1';
 
     const row = document.createElement('div');
@@ -546,7 +556,7 @@ function _buildCloudFileManager(pane) {
     const actions = document.createElement('div');
     actions.className = 'cfm-row-actions';
 
-    if (!isCode) {
+    if (!isCode && !isImage) {
       const injectBtn = document.createElement('button');
       injectBtn.className = 'cfm-row-btn';
       injectBtn.title = '注入到 Python 内核';
