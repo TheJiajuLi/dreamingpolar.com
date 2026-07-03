@@ -442,6 +442,91 @@
       border-radius: 12px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 4px;
     }
     .auth-btn:disabled { opacity: .6; }
+
+    /* ── NOTEBOOK ── */
+    #s-notebook { background: #fff; }
+    .nb-home-topbar { display:flex; align-items:center; padding:14px 16px; background:#fff; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .nb-home-title { font-size:18px; font-weight:700; flex:1; }
+    .nb-topbar-btn { width:38px; height:38px; border-radius:10px; border:1.5px solid var(--border); background:#fff; color:var(--text); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .nb-home-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .nb-hero { padding:24px 16px 16px; }
+    .nb-greeting { font-size:13px; color:var(--muted); margin-bottom:6px; }
+    .nb-hero-title { font-size:26px; font-weight:800; margin-bottom:20px; letter-spacing:-.5px; }
+    .nb-new-btn { width:100%; height:52px; background:#fff; border:1.5px solid var(--border); border-radius:14px; font-family:inherit; font-size:16px; font-weight:500; color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .nb-new-btn:active { background:var(--bg); }
+    .nb-section-hdr { display:flex; align-items:center; justify-content:space-between; padding:20px 16px 10px; }
+    .nb-section-hdr span { font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.04em; }
+    .nb-empty { padding:20px 16px; font-size:14px; color:var(--muted); text-align:center; }
+    .nb-recent-item { display:flex; align-items:center; gap:14px; padding:14px 16px; background:#fff; border-bottom:1px solid var(--border); cursor:pointer; }
+    .nb-recent-item:active { background:var(--bg); }
+    .nb-recent-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+    .nb-recent-icon.nb-purple { background:#eef0ff; color:#6366f1; }
+    .nb-recent-icon.nb-green  { background:#f0fdf4; color:#16a34a; }
+    .nb-recent-icon.nb-amber  { background:#fffbeb; color:#d97706; }
+    .nb-recent-icon.nb-blue   { background:#e6f1fb; color:#2563eb; }
+    .nb-recent-icon.nb-pink   { background:#fdf4ff; color:#a855f7; }
+    .nb-recent-info { flex:1; min-width:0; }
+    .nb-recent-name { font-size:15px; font-weight:600; margin-bottom:5px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .nb-recent-meta { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+    .nb-lang-badge { padding:1px 7px; border-radius:6px; font-size:11px; font-weight:700; }
+    .nb-lang-badge.python { background:#e0e7ff; color:#4338ca; }
+    .nb-lang-badge.latex  { background:#f3e8ff; color:#7c3aed; }
+    .nb-lang-badge.mixed  { background:#fff7ed; color:#c2410c; }
+    .nb-folder-item { display:flex; align-items:center; gap:14px; padding:14px 16px; background:#fff; border-bottom:1px solid var(--border); cursor:pointer; }
+    .nb-folder-item:active { background:var(--bg); }
+    .nb-folder-icon { width:40px; height:40px; border-radius:12px; background:#fff7ed; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .nb-folder-name { flex:1; font-size:15px; font-weight:500; }
+    .nb-folder-count { font-size:13px; color:var(--muted); margin-right:4px; }
+    .nb-templates { display:flex; gap:12px; padding:0 16px 24px; overflow-x:auto; scrollbar-width:none; }
+    .nb-templates::-webkit-scrollbar { display:none; }
+    .nb-template { flex-shrink:0; width:100px; background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:14px 10px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; }
+    .nb-template:active { background:var(--bg); }
+    .nb-tpl-icon { width:48px; height:48px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:22px; }
+    .nb-tpl-icon.nb-purple { background:#eef0ff; color:#6366f1; }
+    .nb-tpl-icon.nb-green  { background:#f0fdf4; color:#16a34a; }
+    .nb-tpl-icon.nb-amber  { background:#fffbeb; color:#d97706; }
+    .nb-tpl-icon.nb-pink   { background:#fdf4ff; color:#a855f7; }
+    .nb-tpl-name { font-size:12px; font-weight:600; color:var(--text); text-align:center; }
+
+    /* ── NB EDITOR ── */
+    #s-nb-editor { overflow-y:hidden !important; }
+    .nb-editor-top { display:flex; align-items:center; gap:10px; padding:12px 14px; background:#fff; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .nb-editor-back { width:34px; height:34px; border:none; background:none; font-size:20px; cursor:pointer; color:var(--text); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .nb-editor-name-el { flex:1; font-size:16px; font-weight:700; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .nb-run-all-btn { display:inline-flex; align-items:center; gap:5px; height:34px; padding:0 12px; border-radius:8px; border:none; background:var(--accent); color:#fff; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+    .nb-run-all-btn:disabled { opacity:.6; }
+    .nb-cells-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px; display:flex; flex-direction:column; gap:10px; }
+    .nb-cell { background:#fff; border:1.5px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color .2s; }
+    .nb-cell.running   { border-color:var(--accent); }
+    .nb-cell.nb-success { border-color:#16a34a; }
+    .nb-cell.nb-error   { border-color:#ef4444; }
+    .nb-cell-hdr { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border); background:#f8fafc; }
+    .nb-cell-num { font-size:12px; font-weight:700; color:var(--muted); min-width:18px; text-align:center; display:flex; align-items:center; justify-content:center; }
+    .nb-cell-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; }
+    .nb-cell-badge.python   { background:#e0e7ff; color:#4338ca; }
+    .nb-cell-badge.latex    { background:#f3e8ff; color:#7c3aed; }
+    .nb-cell-badge.markdown { background:#f1f5f9; color:#475569; }
+    .nb-run-btn { margin-left:auto; width:28px; height:28px; border-radius:8px; border:1.5px solid var(--border); background:#fff; color:var(--text); font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .nb-run-btn:active { background:var(--bg); }
+    .nb-cell-code { display:block; width:100%; padding:12px; border:none; outline:none; resize:none; font-family:'Menlo','JetBrains Mono',monospace; font-size:13px; line-height:1.6; color:var(--text); background:transparent; min-height:60px; box-sizing:border-box; }
+    .nb-cell-output { padding:10px 12px; border-top:1px solid var(--border); background:#f8fafc; font-family:'Menlo','JetBrains Mono',monospace; font-size:12px; line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-all; }
+    .nb-cell-output.nb-error { color:#ef4444; background:#fff1f2; }
+    .nb-toolbar { display:flex; border-top:1px solid var(--border); background:#fff; flex-shrink:0; overflow-x:auto; scrollbar-width:none; }
+    .nb-toolbar::-webkit-scrollbar { display:none; }
+    .nb-tool-btn { flex-shrink:0; height:48px; padding:0 14px; border:none; background:none; font-family:inherit; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:5px; border-right:1px solid var(--border); white-space:nowrap; }
+    .nb-tool-btn:last-child { border-right:none; }
+    .nb-tool-btn:active { background:var(--bg); }
+    .nb-tool-btn i { font-size:16px; }
+
+    /* ── NEW NB SHEET ── */
+    #m-new-nb { position:fixed; inset:0; z-index:1000; display:flex; align-items:flex-end; }
+    .nb-name-input { width:100%; height:48px; border:1.5px solid var(--border); border-radius:10px; padding:0 14px; font-family:inherit; font-size:15px; color:var(--text); outline:none; background:#fff; }
+    .nb-name-input:focus { border-color:var(--accent); }
+    .nb-type-row { display:flex; gap:10px; margin:14px 0; }
+    .nb-type-btn { flex:1; height:44px; border:1.5px solid var(--border); border-radius:10px; background:#fff; font-family:inherit; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; }
+    .nb-type-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+    .nb-create-btn { width:100%; height:52px; background:var(--accent); color:#fff; border:none; border-radius:14px; font-family:inherit; font-size:16px; font-weight:700; cursor:pointer; margin-top:8px; }
+    .nb-create-btn:disabled { opacity:.6; }
   </style>
 </head>
 <body>
@@ -626,6 +711,72 @@
     </div>
   </section>
 
+  <!-- ── NOTEBOOK ── -->
+  <section id="s-notebook" class="m-screen">
+    <div class="nb-home-topbar">
+      <div class="nb-home-title">极梦 Notebook</div>
+      <button class="nb-topbar-btn" onclick="showNewNbSheet()" title="新建"><i class="ti ti-plus"></i></button>
+    </div>
+    <div class="nb-home-scroll">
+      <div class="nb-hero">
+        <div class="nb-greeting" id="nb-greeting">你好 👋</div>
+        <div class="nb-hero-title">从哪里开始？</div>
+        <button class="nb-new-btn" onclick="showNewNbSheet()"><i class="ti ti-plus"></i>新建 Notebook</button>
+      </div>
+      <div class="nb-section-hdr"><span>最近打开</span></div>
+      <div id="nb-recent-list"></div>
+      <div class="nb-section-hdr"><span>文件夹</span></div>
+      <div class="nb-folder-item">
+        <div class="nb-folder-icon"><i class="ti ti-folder"></i></div>
+        <span class="nb-folder-name">数据分析项目</span>
+        <span class="nb-folder-count">4 个</span>
+        <i class="ti ti-chevron-right" style="color:var(--muted)"></i>
+      </div>
+      <div class="nb-folder-item">
+        <div class="nb-folder-icon"><i class="ti ti-folder"></i></div>
+        <span class="nb-folder-name">LaTeX 公式库</span>
+        <span class="nb-folder-count">8 个</span>
+        <i class="ti ti-chevron-right" style="color:var(--muted)"></i>
+      </div>
+      <div class="nb-section-hdr"><span>模板</span></div>
+      <div class="nb-templates">
+        <div class="nb-template" onclick="createFromTemplate('数据分析','python')">
+          <div class="nb-tpl-icon nb-purple"><i class="ti ti-chart-bar"></i></div>
+          <div class="nb-tpl-name">数据分析</div>
+        </div>
+        <div class="nb-template" onclick="createFromTemplate('机器学习','python')">
+          <div class="nb-tpl-icon nb-green"><i class="ti ti-robot"></i></div>
+          <div class="nb-tpl-name">机器学习</div>
+        </div>
+        <div class="nb-template" onclick="createFromTemplate('数学推导','latex')">
+          <div class="nb-tpl-icon nb-amber"><i class="ti ti-math"></i></div>
+          <div class="nb-tpl-name">数学推导</div>
+        </div>
+        <div class="nb-template" onclick="createFromTemplate('ARIA分析','python')">
+          <div class="nb-tpl-icon nb-pink"><i class="ti ti-sparkles"></i></div>
+          <div class="nb-tpl-name">ARIA 分析</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── NB EDITOR ── -->
+  <section id="s-nb-editor" class="m-screen">
+    <div class="nb-editor-top">
+      <button class="nb-editor-back" onclick="exitNbEditor()"><i class="ti ti-arrow-left"></i></button>
+      <div class="nb-editor-name-el" id="nb-editor-name">Notebook</div>
+      <button class="nb-run-all-btn" id="nb-run-all-btn" onclick="runAllCells()"><i class="ti ti-player-play"></i> 全部运行</button>
+    </div>
+    <div class="nb-cells-scroll" id="nb-cells-list"></div>
+    <div class="nb-toolbar">
+      <button class="nb-tool-btn" onclick="addCell('python')"><i class="ti ti-code"></i> Python</button>
+      <button class="nb-tool-btn" onclick="addCell('latex')"><i class="ti ti-math"></i> LaTeX</button>
+      <button class="nb-tool-btn" onclick="addCell('markdown')"><i class="ti ti-markdown"></i> 文本</button>
+      <button class="nb-tool-btn"><i class="ti ti-upload"></i> 导入</button>
+      <button class="nb-tool-btn" onclick="goto('aria')"><i class="ti ti-sparkles"></i> ARIA</button>
+    </div>
+  </section>
+
 </main>
 
 <!-- ── NAV ── -->
@@ -713,6 +864,25 @@
       <i class="ti ti-logout"></i><span>退出登录</span>
     </div>
     <div style="height:24px"></div>
+  </div>
+</div>
+
+<!-- ── NEW NB SHEET ── -->
+<div id="m-new-nb" class="hidden">
+  <div class="auth-bd" id="new-nb-bd"></div>
+  <div class="auth-sheet">
+    <div class="auth-handle"></div>
+    <div class="auth-title">新建 Notebook</div>
+    <div class="auth-sub">选择类型，开始你的分析之旅</div>
+    <input id="nb-name-input" class="nb-name-input" type="text" placeholder="Notebook 名称" autocomplete="off">
+    <div class="nb-type-row">
+      <button class="nb-type-btn active" data-type="python" onclick="selectNbType(this)"><i class="ti ti-code"></i> Python</button>
+      <button class="nb-type-btn" data-type="latex" onclick="selectNbType(this)"><i class="ti ti-math"></i> LaTeX</button>
+      <button class="nb-type-btn" data-type="mixed" onclick="selectNbType(this)">混合</button>
+    </div>
+    <div class="auth-err" id="new-nb-err"></div>
+    <button class="nb-create-btn" onclick="createNewNb()">创建</button>
+    <span class="edit-cancel" onclick="document.getElementById('m-new-nb').classList.add('hidden')">取消</span>
   </div>
 </div>
 
@@ -809,6 +979,7 @@ function hideAuth() {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function goto(id) {
+  document.getElementById('m-nav').style.display = '';
   document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('s-' + id).classList.add('active');
@@ -1585,19 +1756,230 @@ async function saveProfile() {
 }
 
 // ── Notebook ──────────────────────────────────────────────────────────────────
+let _nbCurrentId = null;
+let _nbCells = [];
+let _nbSaveTimer = null;
+
 function gotoNotebook() {
-  const sheet = document.createElement('div');
-  sheet.innerHTML = `
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2000;display:flex;align-items:flex-end" onclick="this.parentElement.remove()">
-      <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 44px;width:100%" onclick="event.stopPropagation()">
-        <div style="width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:0 auto 20px"></div>
-        <div style="font-size:40px;text-align:center;margin-bottom:12px">💻</div>
-        <div style="font-size:17px;font-weight:500;color:#0f172a;text-align:center;margin-bottom:8px">Power Notebook</div>
-        <div style="font-size:14px;color:#64748b;text-align:center;line-height:1.6;margin-bottom:24px">完整的 Python 编程环境，<br>桌面端体验更佳。</div>
-        <button onclick="window.open('https://dreamingpolar.com','_blank')" style="width:100%;height:50px;background:#6366f1;border:none;border-radius:14px;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">打开桌面版</button>
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-notebook').classList.add('active');
+  document.getElementById('m-nav').style.display = '';
+  setGreeting();
+  renderRecentNbs();
+}
+
+function setGreeting() {
+  const h = new Date().getHours();
+  const el = document.getElementById('nb-greeting');
+  if (!el) return;
+  el.textContent = h < 12 ? '早上好 👋' : h < 18 ? '下午好 👋' : '晚上好 👋';
+}
+
+function renderRecentNbs() {
+  const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
+  const el = document.getElementById('nb-recent-list');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = '<div class="nb-empty">还没有 Notebook，新建一个开始吧</div>';
+    return;
+  }
+  const colors = ['nb-purple','nb-green','nb-amber','nb-blue','nb-pink'];
+  const icons  = ['ti-chart-line','ti-math','ti-robot','ti-brand-python','ti-chart-bar'];
+  el.innerHTML = list.slice(0, 5).map((nb, i) => `
+    <div class="nb-recent-item" onclick="openNbEditor('${esc(nb.id)}')">
+      <div class="nb-recent-icon ${colors[i % 5]}"><i class="ti ${icons[i % 5]}"></i></div>
+      <div class="nb-recent-info">
+        <div class="nb-recent-name">${esc(nb.name)}</div>
+        <div class="nb-recent-meta">
+          <span class="nb-lang-badge ${esc(nb.lang)}">${nb.lang === 'latex' ? 'LaTeX' : nb.lang === 'mixed' ? '混合' : 'Python'}</span>
+          <span>${(nb.cells || []).length} cells</span>
+          <span>${timeAgo(nb.updatedAt || nb.createdAt)}</span>
+        </div>
       </div>
-    </div>`;
-  document.body.appendChild(sheet);
+      <i class="ti ti-chevron-right" style="color:var(--muted);flex-shrink:0"></i>
+    </div>`).join('');
+}
+
+function showNewNbSheet() {
+  document.getElementById('nb-name-input').value = '';
+  document.getElementById('new-nb-err').textContent = '';
+  document.querySelectorAll('.nb-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === 'python'));
+  document.getElementById('m-new-nb').classList.remove('hidden');
+  setTimeout(() => document.getElementById('nb-name-input').focus(), 120);
+}
+
+function selectNbType(btn) {
+  document.querySelectorAll('.nb-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function createNewNb() {
+  const name = document.getElementById('nb-name-input').value.trim();
+  const lang = document.querySelector('.nb-type-btn.active')?.dataset.type || 'python';
+  if (!name) { document.getElementById('new-nb-err').textContent = '请输入 Notebook 名称'; return; }
+  const id = 'nb-' + Date.now();
+  const nb = { id, name, lang, cells: [], createdAt: Date.now(), updatedAt: Date.now() };
+  const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
+  list.unshift(nb);
+  localStorage.setItem('nb-list', JSON.stringify(list));
+  document.getElementById('m-new-nb').classList.add('hidden');
+  openNbEditor(id);
+}
+
+const _NB_TEMPLATES = {
+  '数据分析': [
+    { type: 'python', code: 'import pandas as pd\nimport matplotlib.pyplot as plt\n\n# 读取数据\ndf = pd.read_csv("data.csv")\ndf.head()' },
+    { type: 'python', code: '# 基本统计描述\ndf.describe()' },
+  ],
+  '机器学习': [
+    { type: 'python', code: 'from sklearn.model_selection import train_test_split\nfrom sklearn.ensemble import RandomForestClassifier\nimport pandas as pd\n\ndf = pd.read_csv("data.csv")' },
+    { type: 'python', code: '# 划分训练集和测试集\nX = df.drop("target", axis=1)\ny = df["target"]\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)\nprint(X_train.shape, X_test.shape)' },
+  ],
+  '数学推导': [
+    { type: 'latex', code: '\\text{泰勒展开：}\nf(x) = f(a) + f\'(a)(x-a) + \\frac{f\'\'(a)}{2!}(x-a)^2 + \\cdots' },
+    { type: 'latex', code: '\\int_{-\\infty}^{+\\infty} e^{-x^2} \\, dx = \\sqrt{\\pi}' },
+  ],
+  'ARIA分析': [
+    { type: 'python', code: '# 配合 ARIA 分析助手使用\n# 点击工具栏 ARIA 按钮，用中文提问\nimport pandas as pd\ndf = pd.read_csv("your_data.csv")\ndf.info()' },
+  ],
+};
+
+function createFromTemplate(name, lang) {
+  const cells = (_NB_TEMPLATES[name] || [{ type: lang === 'latex' ? 'latex' : 'python', code: '' }])
+    .map(c => ({ id: uid(), type: c.type, code: c.code, output: '', status: '' }));
+  const id = 'nb-' + Date.now();
+  const nb = { id, name, lang, cells, createdAt: Date.now(), updatedAt: Date.now() };
+  const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
+  list.unshift(nb);
+  localStorage.setItem('nb-list', JSON.stringify(list));
+  openNbEditor(id);
+}
+
+function openNbEditor(id) {
+  const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
+  const nb = list.find(n => n.id === id);
+  if (!nb) return;
+  _nbCurrentId = id;
+  const defaultType = nb.lang === 'latex' ? 'latex' : 'python';
+  _nbCells = (nb.cells && nb.cells.length)
+    ? nb.cells.map(c => ({ ...c }))
+    : [{ id: uid(), type: defaultType, code: '', output: '', status: '' }];
+  document.getElementById('nb-editor-name').textContent = nb.name;
+  renderNbCells();
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-nb-editor').classList.add('active');
+  document.getElementById('m-nav').style.display = 'none';
+  // bump to top of recent list
+  const updated = [{ ...nb, cells: _nbCells, updatedAt: Date.now() }, ...list.filter(n => n.id !== id)];
+  localStorage.setItem('nb-list', JSON.stringify(updated));
+}
+
+function exitNbEditor() {
+  saveNbNow();
+  gotoNotebook();
+}
+
+function renderNbCells() {
+  const container = document.getElementById('nb-cells-list');
+  if (!container) return;
+  container.innerHTML = _nbCells.map((cell, i) => _cellHtml(cell, i + 1)).join('');
+  container.querySelectorAll('textarea.nb-cell-code').forEach(ta => _autoResizeNb(ta));
+}
+
+function _cellHtml(cell, num) {
+  const type = cell.type || 'python';
+  const badgeLabel = type === 'python' ? 'Python' : type === 'latex' ? 'LaTeX' : '文本';
+  const ph = type === 'python' ? '# Python 代码…' : type === 'latex' ? '输入 LaTeX 公式…' : '输入文本…';
+  const stateClass = cell.status === 'running' ? ' running' : cell.status === 'success' ? ' nb-success' : cell.status === 'error' ? ' nb-error' : '';
+  const outputHtml = cell.output
+    ? `<div class="nb-cell-output${cell.status === 'error' ? ' nb-error' : ''}">${esc(cell.output)}</div>` : '';
+  const numHtml = cell.status === 'running'
+    ? '<div class="spin" style="width:14px;height:14px;border-width:1.5px"></div>'
+    : String(num);
+  return `<div class="nb-cell${stateClass}" id="cell-${esc(cell.id)}">
+    <div class="nb-cell-hdr">
+      <span class="nb-cell-num" id="cellnum-${esc(cell.id)}">${numHtml}</span>
+      <span class="nb-cell-badge ${esc(type)}">${badgeLabel}</span>
+      <button class="nb-run-btn" onclick="runCell('${esc(cell.id)}')"><i class="ti ti-player-play" style="font-size:12px"></i></button>
+    </div>
+    <textarea class="nb-cell-code" placeholder="${ph}" data-cid="${esc(cell.id)}"
+      oninput="updateCellCode('${esc(cell.id)}',this.value);_autoResizeNb(this)"
+    >${esc(cell.code)}</textarea>
+    ${outputHtml}
+  </div>`;
+}
+
+function _autoResizeNb(ta) { ta.style.height = 'auto'; ta.style.height = Math.max(ta.scrollHeight, 60) + 'px'; }
+
+function updateCellCode(id, val) {
+  const c = _nbCells.find(c => c.id === id);
+  if (c) { c.code = val; scheduleNbSave(); }
+}
+
+function scheduleNbSave() {
+  clearTimeout(_nbSaveTimer);
+  _nbSaveTimer = setTimeout(saveNbNow, 1000);
+}
+
+function saveNbNow() {
+  if (!_nbCurrentId) return;
+  const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
+  const idx = list.findIndex(n => n.id === _nbCurrentId);
+  if (idx === -1) return;
+  list[idx] = { ...list[idx], cells: _nbCells.map(({ id, type, code, output, status }) => ({ id, type, code, output, status })), updatedAt: Date.now() };
+  localStorage.setItem('nb-list', JSON.stringify(list));
+}
+
+function addCell(type) {
+  const newCell = { id: uid(), type, code: '', output: '', status: '' };
+  _nbCells.push(newCell);
+  const container = document.getElementById('nb-cells-list');
+  if (!container) return;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = _cellHtml(newCell, _nbCells.length);
+  const el = wrapper.firstElementChild;
+  container.appendChild(el);
+  el.querySelectorAll('textarea.nb-cell-code').forEach(ta => { _autoResizeNb(ta); ta.focus(); });
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  scheduleNbSave();
+}
+
+async function runCell(id) {
+  const cell = _nbCells.find(c => c.id === id);
+  if (!cell) return;
+  const cellEl = document.getElementById('cell-' + id);
+  const numEl  = document.getElementById('cellnum-' + id);
+  if (!cellEl || !numEl) return;
+
+  cell.status = 'running';
+  cellEl.className = 'nb-cell running';
+  numEl.innerHTML = '<div class="spin" style="width:14px;height:14px;border-width:1.5px"></div>';
+
+  try {
+    const { compile } = await import('/components/compiler/compiler.js');
+    const result = await compile(cell.code, cell.type === 'latex' ? 'latex' : 'python');
+    cell.output = typeof result === 'string' ? result : (result?.output ?? result?.stdout ?? JSON.stringify(result));
+    cell.status = 'success';
+  } catch (e) {
+    cell.output = String(e?.message || e);
+    cell.status = 'error';
+  }
+
+  const idx = _nbCells.indexOf(cell);
+  const newHtml = _cellHtml(cell, idx + 1);
+  cellEl.outerHTML = newHtml;
+  const newEl = document.getElementById('cell-' + id);
+  if (newEl) newEl.querySelectorAll('textarea.nb-cell-code').forEach(ta => _autoResizeNb(ta));
+  scheduleNbSave();
+}
+
+async function runAllCells() {
+  const btn = document.getElementById('nb-run-all-btn');
+  if (btn) btn.disabled = true;
+  for (const cell of _nbCells) await runCell(cell.id);
+  if (btn) btn.disabled = false;
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
@@ -1646,10 +2028,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if (t.dataset.ptab === 'liked') loadPLiked();
   }));
 
-  // Delete confirm + edit profile + settings sheets
+  // Delete confirm + edit profile + settings + new-nb sheets
   document.getElementById('del-bd').addEventListener('click', () => document.getElementById('m-delete').classList.add('hidden'));
   document.getElementById('edit-bd').addEventListener('click', () => document.getElementById('m-edit').classList.add('hidden'));
   document.getElementById('settings-bd').addEventListener('click', closeSettings);
+  document.getElementById('new-nb-bd').addEventListener('click', () => document.getElementById('m-new-nb').classList.add('hidden'));
 
   // Auth modal
   document.getElementById('auth-bd').addEventListener('click', hideAuth);
