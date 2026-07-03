@@ -55,6 +55,19 @@
       width: auto;
     }
 
+    .logo-back-hint {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: #415a7d;
+      background: #fff;
+      font-size: 16px;
+    }
+
     .search-wrap {
       flex: 1;
       position: relative;
