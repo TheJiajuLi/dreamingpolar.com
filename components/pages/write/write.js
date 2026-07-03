@@ -466,7 +466,8 @@
           els.modalCancel.disabled = true;
 
           try {
-            const imageUrl = await uploadImageToCOS(file);
+            const croppedFile = await cropCoverToRatio(file, 16 / 9);
+            const imageUrl = await uploadImageToCOS(croppedFile);
             tutorialMeta.cover_image = imageUrl;
             markDirty('封面已更新，待保存');
             renderMeta();
@@ -487,6 +488,59 @@
       markDirty('封面已更新，待保存');
       renderMeta();
       renderPreview();
+    }
+
+    async function cropCoverToRatio(file, ratio = 16 / 9) {
+      if (!(file instanceof File) || !file.type.startsWith('image/')) return file;
+
+      const img = await new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(image);
+        };
+        image.onerror = (err) => {
+          URL.revokeObjectURL(url);
+          reject(err);
+        };
+        image.src = url;
+      }).catch(() => null);
+
+      if (!img) return file;
+
+      const srcW = img.naturalWidth || img.width;
+      const srcH = img.naturalHeight || img.height;
+      if (!srcW || !srcH) return file;
+
+      let cropW = srcW;
+      let cropH = Math.round(cropW / ratio);
+      if (cropH > srcH) {
+        cropH = srcH;
+        cropW = Math.round(cropH * ratio);
+      }
+
+      const sx = Math.max(0, Math.floor((srcW - cropW) / 2));
+      const sy = Math.max(0, Math.floor((srcH - cropH) / 2));
+      const maxW = 1600;
+      const outW = Math.min(cropW, maxW);
+      const outH = Math.round(outW / ratio);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return file;
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, outW, outH);
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+      if (!blob) return file;
+
+      const base = (file.name || 'cover').replace(/\.[^.]+$/, '');
+      return new File([blob], `${base}-cover.jpg`, { type: 'image/jpeg' });
     }
 
     function bindToolbar() {
