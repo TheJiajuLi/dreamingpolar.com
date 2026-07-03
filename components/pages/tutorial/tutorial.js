@@ -25,7 +25,6 @@
       likeBtn: document.getElementById('like-btn'),
       likeBtnLabel: document.getElementById('like-btn-label'),
       favBtn: document.getElementById('fav-btn'),
-      avatarBtn: document.getElementById('avatar-btn'),
       authorAvatar: document.getElementById('author-avatar'),
       authorName: document.getElementById('author-name'),
       authorRole: document.getElementById('author-role'),
@@ -382,35 +381,6 @@
       els.commentStatus.style.color = isError ? '#b42318' : '#667085';
     }
 
-    function initTopAvatarLink() {
-      const avatarBtn = els.avatarBtn;
-      if (!avatarBtn) return;
-
-      let username = '';
-      let user = null;
-      try {
-        user = window.authClient?.getUser?.() ?? window.dpAuthStore?.loadUserCache?.() ?? null;
-        username = window.authClient?.getUser?.()?.username
-          ?? window.dpAuthStore?.loadUserCache?.()?.username
-          ?? '';
-      } catch (_) {}
-
-      if (username) {
-        avatarBtn.href = `/profile?username=${encodeURIComponent(username)}`;
-        avatarBtn.onclick = null;
-      } else {
-        avatarBtn.href = '/';
-      }
-
-      if (user?.avatar) {
-        avatarBtn.innerHTML = `<img src="${escapeHtml(user.avatar)}" alt="${escapeHtml(user.username || username || 'me')}">`;
-      } else if (username) {
-        avatarBtn.textContent = String(username).slice(0, 2).toUpperCase();
-      } else {
-        avatarBtn.textContent = '我';
-      }
-    }
-
     async function ensureCompiler() {
       if (state.compiler) return state.compiler;
       state.compiler = await import('/components/compiler/compiler.js');
@@ -615,7 +585,6 @@
     }
 
     async function boot() {
-      initTopAvatarLink();
       bindEvents();
       try {
         await loadTutorial();
