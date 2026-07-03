@@ -1,6 +1,10 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const staticExts = ['.png','.ico','.svg','.jpg','.jpeg','.webp','.css','.js','.woff','.woff2'];
+    if (staticExts.some(ext => url.pathname.endsWith(ext))) {
+      return fetch(request);
+    }
     if (url.pathname === '/community') {
       return Response.redirect(url.origin + '/community.html', 302);
     }

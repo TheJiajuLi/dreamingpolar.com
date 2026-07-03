@@ -595,7 +595,7 @@ async function tryRefresh() {
     if (!r.ok) return false;
     const d = await r.json();
     S.token = d.accessToken;
-    S.user = d.user ?? { username: d.username, id: d.userId };
+    S.user = d.user ?? { username: d.username, id: d.userId ?? '' };
     await fetchMe();
     return true;
   } catch { return false; }
@@ -610,7 +610,7 @@ async function doLogin(email, pw) {
   const d = await r.json();
   if (!r.ok) throw new Error(d.message || '登录失败');
   S.token = d.accessToken;
-  S.user = d.user ?? { username: d.username, id: d.userId };
+  S.user = { username: d.username, id: d.userId ?? '' };
   await fetchMe();
 }
 
