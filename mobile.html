@@ -756,6 +756,19 @@ function goto(id) {
 
 // ── Community ─────────────────────────────────────────────────────────────────
 const COVER_COLORS = ['#e8eaff','#e6f4ea','#fff3e0','#fce4ec','#e3f2fd','#f3e5f5'];
+function randomThumb(title) {
+  const colors = ['#eef0ff','#f0fdf4','#fff7ed','#fdf4ff','#e6f1fb'];
+  const icons  = ['📊','🐍','📐','🤖','📈'];
+  const i = (title || '').charCodeAt(0) % 5;
+  return `<div style="width:100%;height:100%;background:${colors[i]};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px">${icons[i]}</div>`;
+}
+function thumbHtml(t) {
+  const cover = t.cover_image || t.cover_url || t.cover || '';
+  return cover
+    ? `<img src="${esc(cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px" onerror="this.parentElement.innerHTML=randomThumb('${esc(t.title||'')}')">`
+    : randomThumb(t.title || '');
+}
+
 function coverBg(id) {
   let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % COVER_COLORS.length;
   return COVER_COLORS[h];
@@ -1118,7 +1131,7 @@ async function loadPTuts(username) {
     }
     list.innerHTML = '<div class="p-section-hdr">发布的教程</div>' + items.map(t => `
       <div class="p-item" onclick="openTut('${esc(tid(t))}')">
-        <div class="p-thumb" style="background:${coverBg(tid(t))}">${coverIcon(ttags(t))}</div>
+        <div class="p-thumb">${thumbHtml(t)}</div>
         <div class="p-item-body">
           <h4>${esc(t.title||'无标题')}</h4>
           <div class="p-item-stats">
@@ -1155,7 +1168,7 @@ async function renderFavorites() {
       const author = tauthor(t);
       const favTime = t.favorited_at || t.saved_at || t.created_at;
       return `<div class="p-item" onclick="openTut('${esc(tid(t))}')">
-        <div class="p-thumb" style="background:${coverBg(tid(t))}">${coverIcon(ttags(t))}</div>
+        <div class="p-thumb">${thumbHtml(t)}</div>
         <div class="p-item-body">
           <h4>${esc(t.title||'无标题')}</h4>
           <div class="p-fav-author">

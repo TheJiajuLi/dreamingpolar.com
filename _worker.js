@@ -1,8 +1,9 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const staticExts = ['.png','.ico','.svg','.jpg','.jpeg','.webp','.css','.js','.woff','.woff2'];
-    if (staticExts.some(ext => url.pathname.endsWith(ext))) {
+    const ext = url.pathname.split('.').pop().toLowerCase();
+    const staticExts = ['png','ico','svg','jpg','jpeg','webp','gif','css','js','woff','woff2','ttf','json'];
+    if (staticExts.includes(ext)) {
       return fetch(request);
     }
     if (url.pathname === '/community') {
