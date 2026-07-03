@@ -58,6 +58,18 @@
       return '';
     }
 
+    function normalizeImageUrl(v) {
+      const s = String(v || '').trim();
+      if (!s) return '';
+      if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:image/') || s.startsWith('blob:')) return s;
+      if (s.startsWith('users/') || s.includes('/')) {
+        const noLeadSlash = s.replace(/^\/+/, '');
+        const cleanKey = noLeadSlash.startsWith('users/') ? noLeadSlash : `users/${noLeadSlash}`;
+        return `https://dp-1317483118.cos.ap-hongkong.myqcloud.com/${cleanKey}`;
+      }
+      return `${API_BASE}/files/${encodeURIComponent(s)}`;
+    }
+
     function initials(name = '') {
       const normalized = String(name).trim();
       if (!normalized) return 'DP';
@@ -218,8 +230,15 @@
         ${tags.length ? `<span>·</span><span>${tags.map(t => `#${t}`).join(' ')}</span>` : ''}
       `;
 
-      if (tutorial.cover_image) {
-        els.cover.src = tutorial.cover_image;
+      const coverUrl = normalizeImageUrl(firstText(
+        tutorial.cover_image,
+        tutorial.cover_url,
+        tutorial.cover,
+        tutorial.coverUrl,
+      ));
+
+      if (coverUrl) {
+        els.cover.src = coverUrl;
         els.cover.style.display = '';
       } else {
         els.cover.style.display = 'none';

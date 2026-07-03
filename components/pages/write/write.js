@@ -775,9 +775,6 @@
         || data?.publicUrl
         || data?.fileUrl
         || (() => {
-          const id = data?.id;
-          if (id) return `${API_BASE.replace('/tutorials', '')}/files/${encodeURIComponent(String(id))}`;
-
           const key = data?.cos_key || data?.cosKey || data?.key || data?.path || data?.file_key || data?.fileKey;
           if (key) {
             const rawKey = String(key);
@@ -788,6 +785,9 @@
             const cleanKey = noLeadSlash.startsWith('users/') ? noLeadSlash : `users/${noLeadSlash}`;
             return `https://dp-1317483118.cos.ap-hongkong.myqcloud.com/${cleanKey}`;
           }
+
+          const id = data?.id;
+          if (id) return `${API_BASE.replace('/tutorials', '')}/files/${encodeURIComponent(String(id))}`;
           return '';
         })();
 
