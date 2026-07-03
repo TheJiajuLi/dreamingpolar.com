@@ -414,9 +414,23 @@ initAuth().catch(() => {});
       });
     }
 
+    function bindBlankDismiss() {
+      document.addEventListener('click', (e) => {
+        const target = e.target;
+        if (!(target instanceof Element)) return;
+        const isBlankArea = target === document.body || target.classList.contains('page') || target.classList.contains('main');
+        if (!isBlankArea) return;
+
+        window.dpAuthModal?.close?.();
+        document.querySelector('.au-profile.au-open')?.classList.remove('au-open');
+        document.querySelector('.au-overlay.au-open')?.classList.remove('au-open');
+      });
+    }
+
     async function boot() {
       bindTabs();
       bindListActions();
+      bindBlankDismiss();
       loadMeFromCache();
       renderTopAvatar();
       showState('正在加载用户主页...', true);

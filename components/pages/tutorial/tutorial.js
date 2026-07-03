@@ -589,6 +589,17 @@
         alert('收藏功能即将上线');
       });
       els.commentSubmit.addEventListener('click', submitComment);
+
+      document.addEventListener('click', (e) => {
+        const target = e.target;
+        if (!(target instanceof Element)) return;
+        const isBlankArea = target === document.body || target.classList.contains('page') || target.classList.contains('comments');
+        if (!isBlankArea) return;
+
+        window.dpAuthModal?.close?.();
+        document.querySelector('.au-profile.au-open')?.classList.remove('au-open');
+        document.querySelector('.au-overlay.au-open')?.classList.remove('au-open');
+      });
     }
 
     async function boot() {
