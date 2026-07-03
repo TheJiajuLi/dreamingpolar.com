@@ -5,6 +5,25 @@ import { initSync } from '../shared/notebook_sync.js';
 
 const AUTH_BASE = 'https://api.dreamingpolar.com/auth';
 
+const CACHE_KEYS = [
+  'dreaming-polar-cells',
+  'dreaming-polar-inject-store',
+  'dreaming-polar-nb-outputs',
+  'dp-activity-log',
+  'dp-activity-events',
+  'dp-cloud-file-meta',
+  'dp-ai-chat-history',
+  'dp-grid-state',
+  'dp-code-file-store',
+  'dp-favorite-tutorials',
+];
+
+function clearBusinessCache() {
+  CACHE_KEYS.forEach((k) => {
+    try { localStorage.removeItem(k); } catch (_) {}
+  });
+}
+
 let _accessToken = null;
 let _authInitPromise = null;
 let _authInited = false;
@@ -60,6 +79,7 @@ export async function logout() {
   clearTimeout(_refreshTimer);
   await authFetch('/logout', { method: 'POST' }).catch(() => {});
   _accessToken = null;
+  clearBusinessCache();
 }
 
 export async function getMe() {
@@ -481,7 +501,23 @@ function _renderProfile() {
 
 // ── Helpers ───────────────────────────────────────────────────
 async function _fetchUser() {
-  try { _uiUser = await getMe(); saveUserCache(_uiUser); } catch { _uiUser = null; }
+  try {
+    _uiUser = await getMe();
+
+    const prevUserId = localStorage.getItem('dp-last-user-id');
+    const currentUserId = _uiUser?.id != null ? String(_uiUser.id) : '';
+    if (prevUserId && currentUserId && prevUserId !== currentUserId) {
+      // 用户切换，清空旧缓存
+      clearBusinessCache();
+    }
+    if (currentUserId) {
+      localStorage.setItem('dp-last-user-id', currentUserId);
+    }
+
+    saveUserCache(_uiUser);
+  } catch {
+    _uiUser = null;
+  }
   _updateVtBtn();
   _renderProfile();
   document.dispatchEvent(new CustomEvent('dp-auth-login', { detail: _uiUser }));
