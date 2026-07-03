@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
-  <title>Dreaming Polar</title>
+  <title>极梦</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
   <style>
@@ -237,7 +237,8 @@
     /* ── PROFILE ── */
     #s-profile { background: var(--bg); }
     .p-hdr { background: var(--card); }
-    .p-hdr-band { background: var(--accent-light); padding: 24px 20px 18px; }
+    .p-hdr-band { background: var(--accent-light); padding: 24px 20px 18px; position: relative; background-size: cover; background-position: center; }
+    .p-banner-cam { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,.35); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; backdrop-filter: blur(4px); }
     .p-hdr-top { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 14px; }
     .p-avatar-wrap { position: relative; flex-shrink: 0; }
     .p-avatar {
@@ -456,7 +457,7 @@
 
   <!-- ── HOME ── -->
   <section id="s-home" class="m-screen active">
-    <div class="home-logo">DREAMING <b>◆</b> POLAR</div>
+    <div class="home-logo">极梦 <b>◆</b></div>
     <div class="home-hero">
       <h1>数据分析，<br>用说话的方式</h1>
       <p>上传数据，直接用中文提问。<br>ARIA 分析助手秒出洞察。</p>
@@ -611,7 +612,7 @@
   <div class="auth-sheet">
     <div class="auth-handle"></div>
     <div class="auth-title">欢迎回来</div>
-    <div class="auth-sub">登录 Dreaming Polar，开启数据分析之旅</div>
+    <div class="auth-sub">登录极梦，开启数据分析之旅</div>
     <div class="auth-field"><label>邮箱</label><input id="auth-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
     <div class="auth-field"><label>密码</label><input id="auth-pw" type="password" placeholder="••••••••" autocomplete="current-password"></div>
     <div class="auth-err" id="auth-err"></div>
@@ -865,8 +866,8 @@ async function likeTut(id, e) {
 
 // ── ARIA ──────────────────────────────────────────────────────────────────────
 const ARIA_SYS =
-  'You are ARIA (小梦), the AI data analysis assistant of Dreaming Polar (极梦). ' +
-  '你是 Dreaming Polar 的 AI 数据分析助手。帮助用户分析数据，提供洞察，解释统计概念。' +
+  'You are ARIA (小梦), the AI data analysis assistant of 极梦 (Dreaming Polar). ' +
+  '你是极梦的 AI 数据分析助手。帮助用户分析数据，提供洞察，解释统计概念。' +
   '用中文回答，简洁直接，语气友好但有分析师的专业感。' +
   '回答中可用 **粗体** 标注关键数字，用短段落而非长列表。';
 
@@ -1049,7 +1050,7 @@ async function renderProfile() {
   const handle = u.username ? `@${u.username}` : '';
   const role = u.role || '';
   const handleLine = [handle, role].filter(Boolean).join(' · ');
-  const bio = u.bio || 'Dreaming Polar 用户';
+  const bio = u.bio || '极梦用户';
   const interests = Array.isArray(u.tags) ? u.tags : (Array.isArray(u.interests) ? u.interests : []);
   const followers = u.followers_count ?? u.followers ?? 0;
 
@@ -1061,8 +1062,10 @@ async function renderProfile() {
     interests.slice(0,4).map(t => `<span class="p-interest"><i class="ti ${INTEREST_ICONS[t]||'ti-tag'}"></i>${esc(t)}</span>`).join('')
   }</div>` : '';
 
+  const bannerStyle = S.user?.banner ? `background-image:url('${esc(S.user.banner)}')` : '';
   document.getElementById('p-hdr').innerHTML = `
-    <div class="p-hdr-band">
+    <div class="p-hdr-band" id="p-band" style="${bannerStyle}">
+      <button class="p-banner-cam" onclick="changeBanner()" title="更换背景图"><i class="ti ti-camera"></i></button>
       <div class="p-hdr-top">
         <div class="p-avatar-wrap">
           <div class="p-avatar">${avatarHtml}</div>
@@ -1350,11 +1353,18 @@ function renderMyTuts() {
   }).join('');
 }
 
-function shareT(id) {
+async function shareT(id) {
+  const tut = S.myTuts.find(t => tid(t) === id) || S.tutorials.find(t => tid(t) === id);
+  const title = tut?.title || '一篇好教程';
   const url = `https://dreamingpolar.com/tutorial?id=${encodeURIComponent(id)}`;
-  navigator.clipboard.writeText(url)
-    .then(() => showToast('已复制分享链接'))
-    .catch(() => showToast('复制失败，请手动复制'));
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text: `在极梦发现了一篇好教程：${title}`, url });
+    } catch(e) { if (e.name !== 'AbortError') showToast('分享失败'); }
+  } else {
+    try { await navigator.clipboard.writeText(url); showToast('已复制分享链接'); }
+    catch { showToast('复制失败，请手动复制'); }
+  }
 }
 
 async function toggleStatus(id, currentStatus) {
@@ -1489,6 +1499,24 @@ async function saveEditor(status) {
     }
   } catch { showToast('保存失败，请重试'); }
   finally { draftBtn.disabled = false; pubBtn.disabled = false; if (draftBtn.textContent === '保存中…') draftBtn.textContent = '草稿'; }
+}
+
+function changeBanner() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      if (S.user) { S.user.banner = dataUrl; localStorage.setItem('dp_user', JSON.stringify(S.user)); }
+      const band = document.getElementById('p-band');
+      if (band) band.style.backgroundImage = `url('${dataUrl}')`;
+      showToast('背景图已更新');
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
 }
 
 function showEditSheet() {
