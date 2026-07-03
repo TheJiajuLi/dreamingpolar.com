@@ -735,19 +735,11 @@
       </div>
       <div class="nb-section-hdr"><span>最近打开</span></div>
       <div id="nb-recent-list"></div>
-      <div class="nb-section-hdr"><span>文件夹</span></div>
-      <div class="nb-folder-item">
-        <div class="nb-folder-icon"><i class="ti ti-folder"></i></div>
-        <span class="nb-folder-name">数据分析项目</span>
-        <span class="nb-folder-count">4 个</span>
-        <i class="ti ti-chevron-right" style="color:var(--muted)"></i>
+      <div class="nb-section-hdr">
+        <span>文件夹</span>
+        <span onclick="createFolder()" style="font-size:13px;color:var(--accent);cursor:pointer;font-weight:600">+ 新建</span>
       </div>
-      <div class="nb-folder-item">
-        <div class="nb-folder-icon"><i class="ti ti-folder"></i></div>
-        <span class="nb-folder-name">LaTeX 公式库</span>
-        <span class="nb-folder-count">8 个</span>
-        <i class="ti ti-chevron-right" style="color:var(--muted)"></i>
-      </div>
+      <div id="nb-folders-list"></div>
       <div class="nb-section-hdr"><span>模板</span></div>
       <div class="nb-templates">
         <div class="nb-template" onclick="createFromTemplate('数据分析','python')">
@@ -983,13 +975,14 @@ async function doLogin(email, pw) {
   const newUserId = String(S.user?.id || S.user?.userId || '');
   const prevUserId = localStorage.getItem('jm-prev-user-id') || '';
   if (prevUserId && prevUserId !== newUserId) {
-    localStorage.removeItem('jm-tutorials');
-    localStorage.removeItem('jm-profile');
-    localStorage.removeItem('jm-favorites');
+    ['jm-tutorials','jm-profile'].forEach(k => localStorage.removeItem(k));
     S.tutLoaded = false;
     S.tutorials = []; S.myTuts = [];
   }
   if (newUserId) localStorage.setItem('jm-prev-user-id', newUserId);
+  // Force refresh after login
+  renderProfile();
+  if (!S.tutLoaded) loadFeed();
 }
 
 function showAuth() { document.getElementById('m-auth').classList.remove('hidden'); }
@@ -1497,11 +1490,8 @@ function doLogout() {
   S.tutLoaded = false;
   S.ariaGreeted = false;
   S.tutorials = []; S.myTuts = [];
-  localStorage.removeItem('jm-session');
-  localStorage.removeItem('jm-last-tab');
-  localStorage.removeItem('jm-tutorials');
-  localStorage.removeItem('jm-profile');
-  localStorage.removeItem('jm-favorites');
+  ['jm-session','jm-last-tab','jm-prev-user-id',
+   'jm-tutorials','jm-profile','jm-favorites'].forEach(k => localStorage.removeItem(k));
   goto('home');
 }
 
@@ -1837,6 +1827,7 @@ function gotoNotebook() {
   document.getElementById('m-nav').style.display = '';
   setGreeting();
   renderRecentNbs();
+  renderFolders();
 }
 
 function setGreeting() {
@@ -1860,7 +1851,7 @@ function renderRecentNbs() {
     <div class="nb-recent-item" onclick="openNbEditor('${esc(nb.id)}')">
       <div class="nb-recent-icon ${colors[i % 5]}"><i class="ti ${icons[i % 5]}"></i></div>
       <div class="nb-recent-info">
-        <div class="nb-recent-name">${esc(nb.name)}</div>
+        <div class="nb-recent-name">${esc(getNbFilename(nb.name, nb.lang))}</div>
         <div class="nb-recent-meta">
           <span class="nb-lang-badge ${esc(nb.lang)}">${nb.lang === 'latex' ? 'LaTeX' : nb.lang === 'mixed' ? '混合' : 'Python'}</span>
           <span>${(nb.cells || []).length} cells</span>
@@ -1869,6 +1860,34 @@ function renderRecentNbs() {
       </div>
       <i class="ti ti-chevron-right" style="color:var(--muted);flex-shrink:0"></i>
     </div>`).join('');
+}
+
+function createFolder() {
+  const name = prompt('文件夹名称');
+  if (!name || !name.trim()) return;
+  const folders = JSON.parse(localStorage.getItem('nb-folders') || '[]');
+  folders.push({ id: 'f-' + Date.now(), name: name.trim(), notebooks: [] });
+  localStorage.setItem('nb-folders', JSON.stringify(folders));
+  renderFolders();
+}
+
+function renderFolders() {
+  const folders = JSON.parse(localStorage.getItem('nb-folders') || '[]');
+  const el = document.getElementById('nb-folders-list');
+  if (!el) return;
+  el.innerHTML = folders.map(f => `
+    <div class="nb-folder-item">
+      <div class="nb-folder-icon"><i class="ti ti-folder"></i></div>
+      <span class="nb-folder-name">${esc(f.name)}</span>
+      <span class="nb-folder-count">${f.notebooks?.length || 0} 个</span>
+      <i class="ti ti-chevron-right" style="color:var(--muted)"></i>
+    </div>`).join('');
+}
+
+function getNbFilename(name, lang) {
+  if (!name || name.includes('.')) return name || 'untitled';
+  const ext = { python: '.py', latex: '.tex', markdown: '.md', mixed: '.ipynb' }[lang] || '.ipynb';
+  return name + ext;
 }
 
 function showNewNbSheet() {
@@ -1935,7 +1954,7 @@ function openNbEditor(id) {
   _nbCells = (nb.cells && nb.cells.length)
     ? nb.cells.map(c => ({ ...c }))
     : [{ id: uid(), type: defaultType, code: '', output: '', status: '' }];
-  document.getElementById('nb-editor-name').textContent = nb.name;
+  document.getElementById('nb-editor-name').textContent = getNbFilename(nb.name, nb.lang);
   renderNbCells();
   document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.m-tab').forEach(b => b.classList.remove('active'));
