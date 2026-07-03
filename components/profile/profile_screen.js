@@ -229,15 +229,19 @@ const _CFM_TYPE_COLOR = {
 const _CFM_DATA_EXTS = new Set(['csv','json','xlsx','xls','xml']);
 const _CFM_IMAGE_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg', 'heic', 'heif']);
 
+function _cfmExt(f) {
+  return (f?.filename ?? f?.name ?? '').split('.').pop().toLowerCase();
+}
+
 function _isImageAssetFile(f) {
-  const ext = _ext(f);
+  const ext = _cfmExt(f);
   const fileType = String(f?.file_type ?? f?.fileType ?? '').toLowerCase();
   const mime = String(f?.mime_type ?? f?.mimeType ?? f?.content_type ?? '').toLowerCase();
   return _CFM_IMAGE_EXTS.has(ext) || fileType === 'image' || mime.startsWith('image/');
 }
 
 function _isDataAssetFile(f) {
-  const ext = _ext(f);
+  const ext = _cfmExt(f);
   const fileType = String(f?.file_type ?? f?.fileType ?? '').toLowerCase();
   return _CFM_DATA_EXTS.has(ext) || fileType === 'data';
 }
@@ -433,7 +437,7 @@ function _buildCloudFileManager(pane) {
   }
 
   function _ext(f) {
-    return (f.filename ?? f.name ?? '').split('.').pop().toLowerCase();
+    return _cfmExt(f);
   }
 
   function _render(files) {
