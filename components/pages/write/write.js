@@ -1,10 +1,4 @@
     import { initAuth } from '/components/auth/auth_client.js';
-
-    initAuth().then(() => {
-      if (!window.authClient?.isLoggedIn()) {
-        console.warn('[write] 未登录，保存/发布功能需要先登录');
-      }
-    });
     const API_BASE = 'https://api.dreamingpolar.com/auth/tutorials';
     const TAGS = ['Python', '数据分析', '可视化', '机器学习', 'LaTeX', '入门'];
 
@@ -647,6 +641,24 @@
       return Boolean(getCachedUser() && getToken());
     }
 
+    function syncWriterAuthStatus() {
+      const text = String(els.saveStatus.textContent || '');
+      const isAuthHint = /^(游客模式|未登录|登录恢复中)/.test(text);
+
+      if (isWriterLoggedIn()) {
+        if (isAuthHint) els.saveStatus.textContent = '';
+        return;
+      }
+
+      if (getCachedUser()) {
+        // Cached user exists but token may still be restoring via refresh.
+        els.saveStatus.textContent = '登录恢复中...';
+        return;
+      }
+
+      els.saveStatus.textContent = '游客模式：仅可预览，登录后可保存/发布。';
+    }
+
     function requireWriterLogin() {
       if (isWriterLoggedIn()) return true;
       els.saveStatus.textContent = '未登录，无法发帖。请先登录。';
@@ -871,6 +883,18 @@
       });
     }
 
+    function bindAuthStateSync() {
+      document.addEventListener('dp-auth-state', () => {
+        initTopAvatarLink();
+        syncWriterAuthStatus();
+      });
+
+      document.addEventListener('dp-auth-logout', () => {
+        initTopAvatarLink();
+        syncWriterAuthStatus();
+      });
+    }
+
     function init() {
       initTopAvatarLink();
       renderMeta();
@@ -881,9 +905,17 @@
       bindMetaEditor();
       bindTopButtons();
       bindModal();
-      if (!isWriterLoggedIn()) {
-        els.saveStatus.textContent = '游客模式：仅可预览，登录后可保存/发布。';
-      }
+      bindAuthStateSync();
+      syncWriterAuthStatus();
+
+      initAuth().then(() => {
+        initTopAvatarLink();
+        syncWriterAuthStatus();
+        if (!window.authClient?.isLoggedIn()) {
+          console.warn('[write] 未登录，保存/发布功能需要先登录');
+        }
+      });
+
       loadExistingTutorial();
     }
 
