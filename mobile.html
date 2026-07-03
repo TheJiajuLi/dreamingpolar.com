@@ -89,24 +89,18 @@
     .home-hero h1 { font-size: 30px; font-weight: 800; line-height: 1.25; letter-spacing: -.5px; margin-bottom: 12px; }
     .home-hero p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 28px; }
     .home-cta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .home-features { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
-    .feat-card {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
-      padding: 16px; display: flex; align-items: center; gap: 16px;
-      cursor: pointer; transition: background .15s;
-    }
-    .feat-card:active { background: var(--bg); }
-    .feat-icon {
-      width: 50px; height: 50px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; flex-shrink: 0;
-    }
-    .fi-aria { background: rgba(99,102,241,.12); color: var(--accent); }
-    .fi-comm { background: rgba(22,163,74,.1); color: var(--green); }
-    .fi-nb   { background: rgba(234,140,0,.1); color: var(--orange); }
-    .feat-body h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-    .feat-body p  { font-size: 13px; color: var(--muted); line-height: 1.4; }
-    .feat-badge { font-size: 10px; font-weight: 600; background: rgba(0,0,0,.06); padding: 2px 7px; border-radius: 10px; color: var(--muted); margin-top: 4px; display: inline-block; }
+    .app-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:20px 16px}
+    .app-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .app-item:active{opacity:0.7}
+    .app-icon{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:2px}
+    .ai-purple{background:#eef0ff;color:#6366f1}
+    .ai-green{background:#f0fdf4;color:#16a34a}
+    .ai-blue{background:#e6f1fb;color:#2563eb}
+    .ai-amber{background:#fffbeb;color:#d97706}
+    .ai-pink{background:#fdf4ff;color:#a855f7}
+    .ai-gray{background:#f1f5f9;color:#94a3b8}
+    .app-name{font-size:13px;font-weight:500;color:var(--text)}
+    .app-sub{font-size:11px;color:var(--muted)}
 
     /* ── COMMUNITY ── */
     #s-community { background: var(--bg); }
@@ -465,28 +459,30 @@
         <button class="m-btn m-btn--outline" id="cta-comm">浏览社区</button>
       </div>
     </div>
-    <div class="home-features">
-      <div class="feat-card" id="fc-aria">
-        <div class="feat-icon fi-aria"><i class="ti ti-sparkles"></i></div>
-        <div class="feat-body">
-          <h3>ARIA 分析助手</h3>
-          <p>上传 CSV 直接对话，获得真实数据驱动的洞察，不是套话</p>
-        </div>
+    <div class="app-grid">
+      <div class="app-item" onclick="goto('aria')">
+        <div class="app-icon ai-purple"><i class="ti ti-sparkles"></i></div>
+        <div class="app-name">ARIA</div><div class="app-sub">数据对话</div>
       </div>
-      <div class="feat-card" id="fc-comm">
-        <div class="feat-icon fi-comm"><i class="ti ti-planet"></i></div>
-        <div class="feat-body">
-          <h3>数据科学社区</h3>
-          <p>真实可运行的教程，代码直接在浏览器跑，无需安装环境</p>
-        </div>
+      <div class="app-item" onclick="goto('community')">
+        <div class="app-icon ai-green"><i class="ti ti-planet"></i></div>
+        <div class="app-name">社区</div><div class="app-sub">教程浏览</div>
       </div>
-      <div class="feat-card" id="fc-nb">
-        <div class="feat-icon fi-nb"><i class="ti ti-brand-python"></i></div>
-        <div class="feat-body">
-          <h3>Power Notebook</h3>
-          <p>完整 Python 环境，pandas、matplotlib 开箱即用，桌面端专属</p>
-          <span class="feat-badge">桌面端体验更佳</span>
-        </div>
+      <div class="app-item" onclick="gotoNotebook()">
+        <div class="app-icon ai-blue"><i class="ti ti-notebook"></i></div>
+        <div class="app-name">Notebook</div><div class="app-sub">Python 环境</div>
+      </div>
+      <div class="app-item" onclick="location.href='/write'">
+        <div class="app-icon ai-amber"><i class="ti ti-pencil-plus"></i></div>
+        <div class="app-name">写教程</div><div class="app-sub">分享知识</div>
+      </div>
+      <div class="app-item" onclick="goto('profile')">
+        <div class="app-icon ai-pink"><i class="ti ti-user"></i></div>
+        <div class="app-name">我的</div><div class="app-sub">个人中心</div>
+      </div>
+      <div class="app-item" style="opacity:0.4">
+        <div class="app-icon ai-gray"><i class="ti ti-chart-dots"></i></div>
+        <div class="app-name">Grid</div><div class="app-sub">即将上线</div>
       </div>
     </div>
   </section>
@@ -1588,6 +1584,22 @@ async function saveProfile() {
   }
 }
 
+// ── Notebook ──────────────────────────────────────────────────────────────────
+function gotoNotebook() {
+  const sheet = document.createElement('div');
+  sheet.innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2000;display:flex;align-items:flex-end" onclick="this.parentElement.remove()">
+      <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 44px;width:100%" onclick="event.stopPropagation()">
+        <div style="width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:0 auto 20px"></div>
+        <div style="font-size:40px;text-align:center;margin-bottom:12px">💻</div>
+        <div style="font-size:17px;font-weight:500;color:#0f172a;text-align:center;margin-bottom:8px">Power Notebook</div>
+        <div style="font-size:14px;color:#64748b;text-align:center;line-height:1.6;margin-bottom:24px">完整的 Python 编程环境，<br>桌面端体验更佳。</div>
+        <button onclick="window.open('https://dreamingpolar.com','_blank')" style="width:100%;height:50px;background:#6366f1;border:none;border-radius:14px;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">打开桌面版</button>
+      </div>
+    </div>`;
+  document.body.appendChild(sheet);
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Nav
@@ -1596,11 +1608,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Home
   document.getElementById('cta-aria').addEventListener('click', () => goto('aria'));
   document.getElementById('cta-comm').addEventListener('click', () => goto('community'));
-  document.getElementById('fc-aria').addEventListener('click', () => goto('aria'));
-  document.getElementById('fc-comm').addEventListener('click', () => goto('community'));
-  document.getElementById('fc-nb').addEventListener('click', () => {
-    if (confirm('Power Notebook 在桌面端体验更佳，是否前往桌面版？')) window.location.href = '/';
-  });
 
   // Community
   document.getElementById('comm-search').addEventListener('input', e => { S.tutSearch = e.target.value; renderFeed(); });
