@@ -977,6 +977,17 @@ async function doLogin(email, pw) {
   S.token = d.accessToken;
   S.user = { username: d.username, id: d.userId ?? '' };
   await fetchMe();
+  // Clear stale cache when a different account logs in
+  const newUserId = String(S.user?.id || S.user?.userId || '');
+  const prevUserId = localStorage.getItem('jm-prev-user-id') || '';
+  if (prevUserId && prevUserId !== newUserId) {
+    localStorage.removeItem('jm-tutorials');
+    localStorage.removeItem('jm-profile');
+    localStorage.removeItem('jm-favorites');
+    S.tutLoaded = false;
+    S.tutorials = []; S.myTuts = [];
+  }
+  if (newUserId) localStorage.setItem('jm-prev-user-id', newUserId);
 }
 
 function showAuth() { document.getElementById('m-auth').classList.remove('hidden'); }
@@ -1481,8 +1492,15 @@ function clearCache() {
 
 function doLogout() {
   S.token = null; S.user = null;
+  S.tutLoaded = false;
+  S.ariaGreeted = false;
+  S.tutorials = []; S.myTuts = [];
   localStorage.removeItem('jm-session');
-  renderProfile();
+  localStorage.removeItem('jm-last-tab');
+  localStorage.removeItem('jm-tutorials');
+  localStorage.removeItem('jm-profile');
+  localStorage.removeItem('jm-favorites');
+  goto('home');
 }
 
 // ── Manage Content ────────────────────────────────────────────────────────────
@@ -2095,7 +2113,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.textContent = '登录中…'; btn.disabled = true; errEl.textContent = '';
     try {
       await doLogin(email, pw);
-      hideAuth(); renderProfile();
+      hideAuth();
+      await renderProfile();
     } catch (e) { errEl.textContent = e.message; }
     finally { btn.textContent = '登录'; btn.disabled = false; }
   });
