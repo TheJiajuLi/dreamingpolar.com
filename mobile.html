@@ -2034,13 +2034,16 @@ async function runCell(id) {
   cellEl.className = 'nb-cell running';
   numEl.innerHTML = '<div class="spin" style="width:14px;height:14px;border-width:1.5px"></div>';
 
+  let rawResult = null;
   try {
     const { compile } = await import('/components/compiler/compiler.js');
-    const result = await compile(cell.code, cell.type === 'latex' ? 'latex' : 'python');
-    cell.output = typeof result === 'string' ? result : (result?.output ?? result?.stdout ?? JSON.stringify(result));
+    rawResult = await compile(cell.code, cell.type === 'latex' ? 'latex' : 'python');
+    cell.output = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
     cell.status = 'success';
   } catch (e) {
-    cell.output = String(e?.message || e);
+    const msg = String(e?.message || e);
+    rawResult = [{ type: 'error', content: msg }];
+    cell.output = JSON.stringify(rawResult);
     cell.status = 'error';
   }
 
@@ -2050,7 +2053,8 @@ async function runCell(id) {
   const newEl = document.getElementById('cell-' + id);
   if (newEl) {
     newEl.querySelectorAll('textarea.nb-cell-code').forEach(ta => _autoResizeNb(ta));
-    if (cell.output) renderCellOutput(id, cell.output);
+    const outEl = document.getElementById('out-' + id);
+    if (outEl && rawResult) renderNbOutput(outEl, rawResult);
   }
   scheduleNbSave();
 }
@@ -2062,8 +2066,7 @@ async function runAllCells() {
   if (btn) btn.disabled = false;
 }
 
-function renderCellOutput(cellId, outputs) {
-  const el = document.getElementById('out-' + cellId);
+function renderNbOutput(el, outputs) {
   if (!el) return;
   if (!outputs) { el.style.display = 'none'; return; }
   if (typeof outputs === 'string') {
@@ -2074,26 +2077,40 @@ function renderCellOutput(cellId, outputs) {
   el.style.display = '';
   el.innerHTML = '';
   outputs.forEach(item => {
+    if (item.type === 'viz-suggestion' || item.type === 'missing-package') return;
     const div = document.createElement('div');
-    if (item.type === 'latex') {
-      div.innerHTML = item.content || '';
-      el.appendChild(div);
-      if (window.MathJax) MathJax.typesetPromise([div]).catch(() => {});
+    if (item.type === 'text' || item.type === 'stdout') {
+      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:var(--text);line-height:1.6;white-space:pre-wrap;padding:8px 10px';
+      div.textContent = item.content || item.text || '';
+    } else if (item.type === 'error') {
+      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:#dc2626;line-height:1.5;white-space:pre-wrap;border-left:2px solid #fca5a5;padding:8px 10px 8px 12px';
+      div.textContent = (item.content || item.text || '').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
     } else if (item.type === 'image') {
       const img = document.createElement('img');
       img.src = item.content || '';
-      img.style.cssText = 'max-width:100%;border-radius:8px;margin-top:4px;display:block';
-      el.appendChild(img);
-    } else if (item.type === 'error') {
-      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:#dc2626;line-height:1.5;white-space:pre-wrap;border-left:2px solid #fca5a5;padding-left:8px';
-      div.textContent = item.content || item.text || '';
+      img.style.cssText = 'max-width:100%;border-radius:6px;display:block;margin:8px 10px';
+      div.appendChild(img);
+    } else if (item.type === 'latex') {
+      div.style.cssText = 'padding:8px 10px;font-size:14px';
+      div.innerHTML = item.content || '';
       el.appendChild(div);
+      if (window.MathJax) MathJax.typesetPromise([div]).catch(() => {});
+      return;
+    } else if (item.type === 'html') {
+      div.style.cssText = 'padding:4px 10px';
+      div.innerHTML = item.content || '';
+    } else if (item.type === 'dataframe' || item.type === 'table') {
+      div.style.cssText = 'overflow-x:auto;padding:4px 10px';
+      div.innerHTML = item.content || '';
     } else {
-      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:var(--text);line-height:1.5;white-space:pre-wrap';
-      div.textContent = item.content || item.text || String(item);
-      el.appendChild(div);
+      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:var(--text);line-height:1.5;white-space:pre-wrap;padding:8px 10px';
+      div.textContent = item.content || item.text || JSON.stringify(item);
     }
+    el.appendChild(div);
   });
+}
+function renderCellOutput(cellId, outputs) {
+  renderNbOutput(document.getElementById('out-' + cellId), outputs);
 }
 
 function deleteCell(cellId) {
