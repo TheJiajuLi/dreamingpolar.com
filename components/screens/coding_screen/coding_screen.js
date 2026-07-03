@@ -797,13 +797,21 @@ function setupCodingScreen() {
     // Output panel is retired — sections live in mirror-out-pane inside each cell
   }
 
-  if (window.authClient?.isLoggedIn?.()) {
-    document.addEventListener('dp-cloud-restore', () => {
-      requestAnimationFrame(() => _restoreStoredOutputs());
-    }, { once: true });
-  } else {
-    setTimeout(() => _restoreStoredOutputs(), 500);
+  let _restoreQueued = false;
+  function _scheduleRestoreStoredOutputs() {
+    if (_restoreQueued) return;
+    _restoreQueued = true;
+    requestAnimationFrame(() => {
+      _restoreQueued = false;
+      _restoreStoredOutputs();
+    });
   }
+
+  // Restore on initial paint and on auth/cloud lifecycle transitions.
+  setTimeout(() => _scheduleRestoreStoredOutputs(), 300);
+  document.addEventListener('dp-cloud-restore', () => _scheduleRestoreStoredOutputs());
+  document.addEventListener('auth-ready', () => _scheduleRestoreStoredOutputs());
+  document.addEventListener('dp-auth-state', () => _scheduleRestoreStoredOutputs());
 
   // Clear stale mark when the cell produces fresh output
   document.addEventListener('compile-result', ({ detail }) => {

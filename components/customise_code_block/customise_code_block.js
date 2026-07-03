@@ -300,7 +300,19 @@ function uid() {
 
 function _persistCellsToLocal() {
   const data = _cells.map(c => ({ id: c.id, lang: c.lang, code: c.editor.value }));
+  // Write both scoped (current source of truth) and legacy key for compatibility.
+  try { saveScopedJson(CELLS_KEY, data); } catch (_) {}
   try { localStorage.setItem(CELLS_KEY, JSON.stringify(data)); } catch (_) {}
+}
+
+function _loadPersistedCells() {
+  const scoped = loadScopedJson(CELLS_KEY, null);
+  if (Array.isArray(scoped)) return scoped;
+  try {
+    const legacy = JSON.parse(localStorage.getItem(CELLS_KEY) || 'null');
+    if (Array.isArray(legacy)) return legacy;
+  } catch (_) {}
+  return null;
 }
 
 function saveAll(immediate = false) {
@@ -1216,7 +1228,7 @@ async function runAll(btn) {
 
 export function init(container, externalTopbar) {
   let savedData = null;
-  savedData = loadScopedJson(CELLS_KEY, null);
+  savedData = _loadPersistedCells();
 
   if (!Array.isArray(savedData) || !savedData.length) {
     const legacyCode = localStorage.getItem(OLD_CODE_KEY) ?? '';
@@ -1262,7 +1274,7 @@ export function init(container, externalTopbar) {
     // Local-first restore strategy:
     // If we already have a local snapshot (even with empty code), keep it.
     // This prevents deleted/cleared code from being resurrected by stale cloud state.
-    const hasLocalSnapshot = Array.isArray(loadScopedJson(CELLS_KEY, null));
+    const hasLocalSnapshot = Array.isArray(_loadPersistedCells());
     if (hasLocalSnapshot) {
       // Persist current local snapshot and heal cloud in background.
       saveAll(true);
