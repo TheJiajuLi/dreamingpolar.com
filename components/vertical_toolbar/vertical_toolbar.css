@@ -59,6 +59,12 @@
   color: var(--text, #0f172a);
 }
 
+/* Planet glyph renders visually smaller than other Tabler icons; normalize it. */
+#vt-community .ti-planet {
+  font-size: 16px;
+  line-height: 1;
+}
+
 /* ── Active indicator bar ────────────────────────────────────────────────── */
 
 .vt-btn.active::before {
