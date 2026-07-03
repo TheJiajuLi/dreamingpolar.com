@@ -126,10 +126,10 @@
 
     .page {
       width: min(1220px, 100% - 36px);
-      margin: 20px auto 34px;
+      margin: 18px auto 30px;
       display: grid;
       grid-template-columns: 220px minmax(0, 1fr);
-      gap: 26px;
+      gap: 24px;
       align-items: start;
     }
 
@@ -137,7 +137,7 @@
       position: sticky;
       top: 90px;
       border-right: 1px solid var(--line);
-      padding-right: 18px;
+      padding-right: 16px;
       min-height: calc(100vh - 120px);
     }
 
@@ -165,20 +165,20 @@
 
     .name {
       margin: 0;
-      font-size: 36px;
+      font-size: 48px;
       line-height: 1.2;
     }
 
     .handle {
       margin: 4px 0 10px;
       color: #7d8798;
-      font-size: 18px;
+      font-size: 13px;
     }
 
     .bio {
       margin: 0;
       color: #3f4653;
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1.55;
       min-height: 52px;
     }
@@ -231,7 +231,7 @@
       border-radius: 999px;
       background: #f1f3ff;
       color: #4958f0;
-      font-size: 20px;
+      font-size: 14px;
       line-height: 1.2;
       white-space: nowrap;
     }
@@ -253,8 +253,8 @@
       border: 0;
       background: none;
       color: #6f7889;
-      padding: 12px 0;
-      font-size: 32px;
+      padding: 10px 0;
+      font-size: 22px;
       line-height: 1;
       cursor: pointer;
       white-space: nowrap;
@@ -280,7 +280,7 @@
       display: grid;
       grid-template-columns: 150px minmax(0, 1fr);
       gap: 16px;
-      padding: 16px;
+      padding: 18px;
       text-decoration: none;
       color: inherit;
       box-shadow: var(--shadow);
@@ -329,7 +329,7 @@
 
     .card-title {
       margin: 0;
-      font-size: 36px;
+      font-size: 20px;
       line-height: 1.28;
       color: #1f2430;
     }
@@ -337,7 +337,7 @@
     .card-summary {
       margin: 0;
       color: #666f7f;
-      font-size: 28px;
+      font-size: 16px;
       line-height: 1.45;
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -384,11 +384,11 @@
         min-height: auto;
       }
 
-      .name { font-size: 32px; }
+      .name { font-size: 38px; }
       .bio { font-size: 16px; }
-      .tab-btn { font-size: 28px; }
-      .card-title { font-size: 28px; }
-      .card-summary { font-size: 22px; }
+      .tab-btn { font-size: 20px; }
+      .card-title { font-size: 18px; }
+      .card-summary { font-size: 15px; }
     }
 
     @media (max-width: 700px) {
@@ -403,10 +403,10 @@
         height: 168px;
       }
 
-      .name { font-size: 28px; }
+      .name { font-size: 32px; }
       .stat-number { font-size: 28px; }
-      .tab-btn { font-size: 22px; }
-      .card-title { font-size: 24px; }
-      .card-summary { font-size: 18px; }
-      .tag { font-size: 16px; }
+      .tab-btn { font-size: 18px; }
+      .card-title { font-size: 17px; }
+      .card-summary { font-size: 14px; }
+      .tag { font-size: 13px; }
     }

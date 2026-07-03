@@ -48,6 +48,14 @@ initAuth().catch(() => {});
       return Number.isFinite(n) ? n : 0;
     }
 
+    function firstText(...values) {
+      for (const v of values) {
+        const s = String(v ?? '').trim();
+        if (s) return s;
+      }
+      return '';
+    }
+
     function formatNum(v) {
       const n = toNum(v);
       if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
@@ -106,7 +114,19 @@ initAuth().catch(() => {});
       return {
         username: t.author_username || t.username || t.author?.username || state.username,
         name: t.author_name || t.author?.name || t.author_username || t.username || state.username,
-        avatar: t.author_avatar || t.avatar_url || t.author?.avatar || '',
+        avatar: firstText(
+          t.author_avatar,
+          t.author_avatar_url,
+          t.avatar,
+          t.avatar_url,
+          t.avatarUrl,
+          t.author?.avatar,
+          t.author?.avatar_url,
+          t.author?.avatarUrl,
+          t.author?.photo,
+          t.author?.photo_url,
+          t.author?.image
+        ),
         bio: t.author_bio || t.author?.bio || '',
       };
     }
@@ -139,8 +159,18 @@ initAuth().catch(() => {});
         if (!user) throw new Error('empty');
         state.profile = {
           username: user.username || state.username,
-          name: user.name || user.username || state.username,
-          avatar: user.avatar || user.avatar_url || '',
+          name: firstText(user.name, user.display_name, user.nickname, user.username, state.username),
+          avatar: firstText(
+            user.avatar,
+            user.avatar_url,
+            user.avatarUrl,
+            user.profile_image,
+            user.profile_image_url,
+            user.profileImage,
+            user.photo,
+            user.photo_url,
+            user.image
+          ),
           bio: user.bio || '',
         };
       } catch (_) {
@@ -199,8 +229,9 @@ initAuth().catch(() => {});
         els.topAvatar.href = '/';
       }
 
-      if (state.me?.avatar) {
-        els.topAvatar.innerHTML = `<img src="${esc(state.me.avatar)}" alt="${esc(state.me.username)}">`;
+      const meAvatar = firstText(state.me?.avatar, state.me?.avatar_url, state.me?.avatarUrl, state.me?.photo, state.me?.image);
+      if (meAvatar) {
+        els.topAvatar.innerHTML = `<img src="${esc(meAvatar)}" alt="${esc(state.me?.username || username)}">`;
       } else {
         const text = state.me?.username ? initials(state.me.username) : (username ? initials(username) : '我');
         els.topAvatar.textContent = text;
@@ -229,9 +260,11 @@ initAuth().catch(() => {});
 
     function renderSidebar() {
       const p = state.profile || { username: state.username, name: state.username, avatar: '', bio: '' };
+      const isSelf = state.me?.username && state.me.username === (p.username || state.username);
+      const displayAvatar = firstText(p.avatar, isSelf ? firstText(state.me?.avatar, state.me?.avatar_url, state.me?.avatarUrl, state.me?.photo, state.me?.image) : '');
 
-      if (p.avatar) {
-        els.profileAvatar.innerHTML = `<img src="${esc(p.avatar)}" alt="${esc(p.name)}">`;
+      if (displayAvatar) {
+        els.profileAvatar.innerHTML = `<img src="${esc(displayAvatar)}" alt="${esc(p.name)}">`;
       } else {
         els.profileAvatar.textContent = initials(p.name);
       }
@@ -244,7 +277,6 @@ initAuth().catch(() => {});
       els.statLikes.textContent = formatNum(stats.likes);
       els.statViews.textContent = formatNum(stats.views);
 
-      const isSelf = state.me?.username && state.me.username === (p.username || state.username);
       els.followGroup.style.display = isSelf ? 'none' : '';
 
       const skills = calcSkills(state.tutorials.published);
