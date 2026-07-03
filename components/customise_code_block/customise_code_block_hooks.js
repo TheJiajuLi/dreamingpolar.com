@@ -8,6 +8,7 @@ export function attachCellHooks({
   cell, PLACEHOLDER, ICON_COPY, ICON_CHECK,
   autoResize, saveAll, rebuildCells, cellLabel,
   getCells, setCells, getRunSeq, bumpRunSeq,
+  syncToCloud,
   normalizeLang,
   flushPendingInjects,
   buildImportCellCode,   // optional: auto-fill code when editor is empty
@@ -148,7 +149,8 @@ export function attachCellHooks({
     document.dispatchEvent(new CustomEvent('notebook-cell-deleted', { detail: { cellId: cell.id } }));
     setCells(cells.filter(c => c !== cell));
     rebuildCells();
-    saveAll();
+    saveAll(true);
+    syncToCloud?.();
   });
 
   copyBtn.addEventListener('click', () => {

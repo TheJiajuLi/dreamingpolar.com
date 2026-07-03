@@ -1059,44 +1059,39 @@ export function initFileManager() {
         }
       } else {
         // notebook：走智能插入路径（与本地文件一致）
-        try {
-          const data = await _getCloudFileData(file.id);
-          const ext = file.filename.split('.').pop().toLowerCase();
-          const varName = file.filename.replace(/\.[^/.]+$/, '')
-            .replace(/[^a-zA-Z0-9_]/g, '_');
+        const ext = file.filename.split('.').pop().toLowerCase();
+        const varName = file.filename.replace(/\.[^/.]+$/, '')
+          .replace(/[^a-zA-Z0-9_]/g, '_');
 
-          // 先注入内核（写入Pyodide FS）
-          if (window.injectDataFrame) {
-            await window.injectDataFrame(varName, data, ext, file.filename);
+        // 先立即插入代码，用户可立刻看到反馈
+        const code = `# "${file.filename}" → ${varName}\nimport pandas as pd\n${varName} = pd.read_csv("${file.filename}")\nprint(${varName}.shape)\n${varName}.head()`;
+        document.dispatchEvent(new CustomEvent('rb-file-smart-click', {
+          detail: {
+            code,
+            entry: {
+              varName,
+              filename: file.filename,
+              fileType: ext,
+              rows: null,
+              columns: null,
+              source: 'cloud',
+            },
           }
+        }));
 
-          // Sync cloud file to inject-store so refresh-time preloading can restore it.
-          _upsertCloudInjectStore({
-            cloudId: file.id,
-            varName,
-            filename: file.filename,
-            fileType: ext,
-            data,
-            size: file.size_bytes,
+        // 然后后台异步下载注入，不阻塞 UI
+        _getCloudFileData(file.id).then(data => {
+          return Promise.resolve(window.injectDataFrame?.(varName, data, ext, file.filename)).then(() => {
+            _upsertCloudInjectStore({
+              cloudId: file.id,
+              varName,
+              filename: file.filename,
+              fileType: ext,
+              data,
+              size: file.size_bytes,
+            });
           });
-
-          // 统一走智能插入路径：FileTracker 检查 / 跳转 / 空白cell插入
-          document.dispatchEvent(new CustomEvent('rb-file-smart-click', {
-            detail: {
-              code: _buildCode({ varName, fileType: ext, filename: file.filename }),
-              entry: {
-                varName,
-                filename: file.filename,
-                fileType: ext,
-                rows: null,
-                columns: null,
-                source: 'cloud',
-              },
-            }
-          }));
-        } catch (e) {
-          console.error('[cloud notebook insert]', e);
-        }
+        }).catch(e => console.error('[inject]', e));
       }
     });
 

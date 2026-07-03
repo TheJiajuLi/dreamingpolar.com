@@ -748,7 +748,7 @@ function setupCodingScreen() {
   });
 
   // Restore outputs from previous session on load
-  ;(function _restoreStoredOutputs() {
+  function _restoreStoredOutputs() {
     if (!getSettings().cacheNotebookOutput) return;  // setting OFF → skip restore
     let stored;
     stored = loadScopedJson(NB_OUTPUTS_KEY, {});
@@ -760,7 +760,15 @@ function setupCodingScreen() {
       // cacheNotebookOutput ON → no badge; OFF → show badge warning it's old data
     }
     // Output panel is retired — sections live in mirror-out-pane inside each cell
-  })();
+  }
+
+  if (window.authClient?.isLoggedIn?.()) {
+    document.addEventListener('dp-cloud-restore', () => {
+      requestAnimationFrame(() => _restoreStoredOutputs());
+    }, { once: true });
+  } else {
+    setTimeout(() => _restoreStoredOutputs(), 500);
+  }
 
   // Clear stale mark when the cell produces fresh output
   document.addEventListener('compile-result', ({ detail }) => {

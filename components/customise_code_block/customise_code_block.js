@@ -298,11 +298,19 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-function saveAll() {
+function _persistCellsToLocal() {
+  const data = _cells.map(c => ({ id: c.id, lang: c.lang, code: c.editor.value }));
+  try { localStorage.setItem(CELLS_KEY, JSON.stringify(data)); } catch (_) {}
+}
+
+function saveAll(immediate = false) {
   clearTimeout(_saveTimer);
+  if (immediate) {
+    _persistCellsToLocal();
+    return;
+  }
   _saveTimer = setTimeout(() => {
-    const data = _cells.map(c => ({ id: c.id, lang: c.lang, code: c.editor.value }));
-    try { localStorage.setItem(CELLS_KEY, JSON.stringify(data)); } catch (_) {}
+    _persistCellsToLocal();
   }, 400);
 }
 
@@ -795,7 +803,8 @@ function makeCell(lang = 'python', code = '', id = uid()) {
         cell._outputAC?.abort();
         setCells(cells.filter(c => c !== cell));
         rebuildCells();
-        saveAll();
+        saveAll(true);
+        _cloudSync();
       }
     }
   }
@@ -995,6 +1004,7 @@ function makeCell(lang = 'python', code = '', id = uid()) {
     cell, PLACEHOLDER, ICON_COPY, ICON_CHECK,
     autoResize, saveAll, rebuildCells, cellLabel,
     getCells, setCells, getRunSeq, bumpRunSeq,
+    syncToCloud: _cloudSync,
     normalizeLang: _normalizeLang,
     flushPendingInjects:  _flushPendingInjects,
     buildImportCellCode:  _buildImportCellCode,
