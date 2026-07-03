@@ -290,6 +290,8 @@
     }
 
     setupUserArea();
+    document.addEventListener('auth-ready', () => { setupUserArea(); });
+    document.addEventListener('dp-auth-state', () => { setupUserArea(); });
     bindFilters();
     loadFavorites();
     loadTutorials();

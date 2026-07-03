@@ -7,6 +7,12 @@
   <link rel="icon" href="assets/app_logo/favicon.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="/components/pages/community/community.css">
+  <script type="module">
+    import { initAuth } from '/components/auth/auth_client.js';
+    initAuth().finally(() => {
+      document.dispatchEvent(new CustomEvent('auth-ready'));
+    });
+  </script>
 </head>
 <body>
   <header class="topbar">
