@@ -8,6 +8,7 @@ import { ensureXlsx, parseToDataset }    from '../import/import_data.js';
 import { writeToFS, injectDataFrame }                     from '../compiler/compiler.js';
 import { createSettingsPanel, getSettings } from './settings.js';
 import { logActivity } from '../shared/activity_logger.js';
+import { loadScopedJson, saveScopedJson } from '../auth/auth_hooks.js';
 
 const INJECT_KEY      = 'dreaming-polar-inject-store';
 const CODE_FILE_KEY   = 'dp-code-file-store';
@@ -60,11 +61,10 @@ function _getCloudActionMeta() {
 }
 
 function _recordRecentFile({ name, varName, size, fileType }) {
-  let files;
-  try { files = JSON.parse(localStorage.getItem(RECENT_FILES_KEY) ?? '[]'); } catch { files = []; }
+  let files = loadScopedJson(RECENT_FILES_KEY, []);
   files = files.filter(f => f.name !== name);
   files.unshift({ name, varName, size, fileType, openedAt: Date.now() });
-  try { localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(files.slice(0, MAX_RECENT_FILES))); } catch (_) {}
+  saveScopedJson(RECENT_FILES_KEY, files.slice(0, MAX_RECENT_FILES));
 }
 
 const LANG_ICON = {
@@ -84,10 +84,10 @@ const LANG_EXT = {
 };
 
 function _loadCodeStore() {
-  try { return JSON.parse(localStorage.getItem(CODE_FILE_KEY) ?? '{}'); } catch { return {}; }
+  return loadScopedJson(CODE_FILE_KEY, {});
 }
 function _saveCodeStore(store) {
-  try { localStorage.setItem(CODE_FILE_KEY, JSON.stringify(store)); } catch {}
+  saveScopedJson(CODE_FILE_KEY, store);
 }
 
 const TYPE_ICON = {
@@ -100,13 +100,13 @@ const TYPE_ICON = {
 
 // ── inject-store helpers ──────────────────────────────────────────────────────
 function _loadStore() {
-  try { return JSON.parse(localStorage.getItem(INJECT_KEY) ?? '{}'); }
-  catch { return {}; }
+  return loadScopedJson(INJECT_KEY, {});
 }
 
 function _saveStore(store) {
-  try { localStorage.setItem(INJECT_KEY, JSON.stringify(store)); }
-  catch (e) { console.warn('[file-manager] localStorage quota exceeded:', e.message); }
+  if (!saveScopedJson(INJECT_KEY, store)) {
+    console.warn('[file-manager] localStorage quota exceeded; inject store not saved');
+  }
 }
 
 function _upsertCloudInjectStore({
@@ -520,7 +520,7 @@ export function initFileManager() {
   function _onSettingChange(key, val) {
     if (key === 'cacheNotebookOutput' && !val) {
       // clear output cache when disabled
-      try { localStorage.removeItem('dreaming-polar-nb-outputs'); } catch (_) {}
+      try { window.dpAuthStore?.clearScopedJson?.('dreaming-polar-nb-outputs'); } catch (_) {}
     }
   }
 

@@ -6,6 +6,7 @@ import { downloadBlob }                      from '../shared/file_download.js';
 import { getSettings }                       from '../right_bar/settings.js';
 import { recordRecentItem }                  from '../empty_state_dashboard/empty_state_dashboard.js';
 import { parseToDataset }                    from '../import/import_data.js';
+import { loadScopedJson, saveScopedJson }     from '../auth/auth_hooks.js';
 
 const INJECT_KEY = 'dreaming-polar-inject-store';
 const CLOUD_META_KEY = 'dp-cloud-file-meta';
@@ -32,20 +33,14 @@ function _formatBytes(sizeBytes) {
 }
 
 function _getCloudMetaCache(fileId) {
-  try {
-    const cache = JSON.parse(localStorage.getItem(CLOUD_META_KEY) || '{}');
-    return cache[fileId] || null;
-  } catch {
-    return null;
-  }
+  const cache = loadScopedJson(CLOUD_META_KEY, {});
+  return cache[fileId] || null;
 }
 
 function _setCloudMetaCache(fileId, rows, cols) {
-  try {
-    const cache = JSON.parse(localStorage.getItem(CLOUD_META_KEY) || '{}');
-    cache[fileId] = { rows, cols, updatedAt: Date.now() };
-    localStorage.setItem(CLOUD_META_KEY, JSON.stringify(cache));
-  } catch {}
+  const cache = loadScopedJson(CLOUD_META_KEY, {});
+  cache[fileId] = { rows, cols, updatedAt: Date.now() };
+  saveScopedJson(CLOUD_META_KEY, cache);
 }
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
@@ -571,7 +566,7 @@ function setupGridScreen() {
     const sources = [];
     getAllDatasets().forEach(ds => sources.push({ _from: 'store', ...ds }));
     try {
-      const store = JSON.parse(localStorage.getItem(INJECT_KEY) ?? '{}');
+      const store = loadScopedJson(INJECT_KEY, {});
       Object.values(store).forEach(entry => {
         if (!entry?.filename) return;
         const dup = sources.find(s => s.filename === entry.filename || s.name === entry.filename);

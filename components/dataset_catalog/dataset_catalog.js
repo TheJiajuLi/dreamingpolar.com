@@ -5,6 +5,7 @@
 
 import { getCellDatasetInfo } from '../customise_code_block/customise_code_block.js';
 import { getAllDatasets }      from '../shared/dataset_store.js';
+import { loadScopedJson } from '../auth/auth_hooks.js';
 
 const INJECT_KEY = 'dreaming-polar-inject-store';
 
@@ -17,8 +18,7 @@ const TYPE_ICON = {
 };
 
 function _loadStore() {
-  try { return JSON.parse(localStorage.getItem(INJECT_KEY) ?? '{}'); }
-  catch { return {}; }
+  return loadScopedJson(INJECT_KEY, {});
 }
 
 // Build a merged dataset list with all info we can find

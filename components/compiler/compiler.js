@@ -7,6 +7,7 @@ import {
   preflightWarnings,
 } from '../screens/coding_screen/coding_screen_python/pyodide_error_handling.js';
 import { logActivity } from '../shared/activity_logger.js';
+import { loadScopedJson } from '../auth/auth_hooks.js';
 
 const PYODIDE_VERSION = '314.0.0';
 const PYODIDE_INDEX   = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
@@ -106,7 +107,7 @@ function _initWorker() {
   try {
     const s = JSON.parse(localStorage.getItem('dp-settings') ?? '{}');
     if (s.cacheKernelData !== false) {
-      const store = JSON.parse(localStorage.getItem('dreaming-polar-inject-store') ?? '{}');
+      const store = loadScopedJson('dreaming-polar-inject-store', {});
       injectFiles = Object.values(store)
         .filter(e => e?.filename && e?.data != null)
         .map(entry => ({
@@ -176,9 +177,7 @@ async function _preWriteInjectStore(py) {
     if (s.cacheKernelData === false) return;
   } catch (_) {}
 
-  let store;
-  try { store = JSON.parse(localStorage.getItem(_INJECT_KEY) ?? '{}'); }
-  catch { return; }
+  const store = loadScopedJson(_INJECT_KEY, {});
 
   const entries = Object.values(store).filter(e => e?.filename && e?.data != null);
   if (!entries.length) return;

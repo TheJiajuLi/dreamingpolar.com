@@ -54,7 +54,7 @@ async function lpPost(path, body) {
 }
 
 function lpGoApp(userData) {
-  try { localStorage.setItem('dp-auth-user', JSON.stringify(userData)); } catch (_) {}
+  window.dpAuthStore?.saveUserCache?.(userData);
   window.location.replace('/index.html?from=landing');
 }
 
@@ -134,13 +134,13 @@ document.getElementById('lp-forgot-email')?.addEventListener('keydown', e => {
 // ── Auto-redirect logged-in users ─────────────────────────────────────────────
 (async () => {
   try {
-    const cached = localStorage.getItem('dp-auth-user');
-    if (cached) {
-      const res = await fetch(_AUTH + '/auth/refresh',
-        { method: 'POST', credentials: 'include' });
-      if (res.ok) { window.location.replace('/index.html?from=landing'); return; }
-      else { localStorage.removeItem('dp-auth-user'); }
+    const res = await fetch(_AUTH + '/auth/refresh',
+      { method: 'POST', credentials: 'include' });
+    if (res.ok) {
+      window.location.replace('/index.html?from=landing');
+      return;
     }
+    window.dpAuthStore?.clearUserCache?.();
   } catch (_) {}
 })();
 

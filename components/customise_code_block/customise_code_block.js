@@ -12,6 +12,7 @@ import { createSourceWidget } from '../look_up_source/look_up_source.js';
 import { createImportBtn } from '../import/import_btn.js';
 import { getSettings } from '../right_bar/settings.js';
 import { createLoadDataBtn } from '../import/import_data.js';
+import { loadScopedJson, saveScopedJson } from '../auth/auth_hooks.js';
 import { attachGhostText }  from './nb_ghost.js';
 import { scheduleSave as _cloudScheduleSave, syncToCloud as _cloudSync } from '../shared/notebook_sync.js';
 import { setDataset } from '../shared/dataset_store.js';
@@ -68,16 +69,14 @@ function _deserializeData({ s, isBase64 }) {
 }
 
 function _loadInjectStore() {
-  try { return JSON.parse(localStorage.getItem(INJECT_KEY) ?? '{}'); } catch { return {}; }
+  return loadScopedJson(INJECT_KEY, {});
 }
 
 function _saveInjectStore() {
   // Merge-save: start from existing store so file-manager entries (keyed by
   // "fm_*") and any cell entries whose _pendingInject is temporarily null
   // (e.g. during kernel reset) are NOT wiped out by an intermediate saveAll().
-  let store;
-  try { store = JSON.parse(localStorage.getItem(INJECT_KEY) ?? '{}'); }
-  catch { store = {}; }
+  let store = loadScopedJson(INJECT_KEY, {});
 
   _cells.forEach(c => {
     if (c._pendingInject && c._datasetInfo) {
@@ -99,7 +98,7 @@ function _saveInjectStore() {
     // store[c.id] untouched — it will be re-armed by _restoreInjectData().
   });
   try {
-    localStorage.setItem(INJECT_KEY, JSON.stringify(store));
+    saveScopedJson(INJECT_KEY, store);
   } catch (e) {
     // Quota exceeded — warn but don't crash (data just won't persist)
     console.warn('[inject-store] localStorage quota exceeded; import data will not survive refresh:', e.message);
@@ -110,7 +109,7 @@ function _removeFromInjectStore(cellId) {
   const store = _loadInjectStore();
   if (cellId in store) {
     delete store[cellId];
-    try { localStorage.setItem(INJECT_KEY, JSON.stringify(store)); } catch (_) {}
+    saveScopedJson(INJECT_KEY, store);
   }
 }
 
@@ -243,10 +242,10 @@ let _lastFocusedCellId = null; // track most recently focused cell for rb-insert
 const _FILE_CELL_MAP_KEY = 'dp-file-cell-map';
 const FileTracker = {
   _get() {
-    try { return JSON.parse(localStorage.getItem(_FILE_CELL_MAP_KEY) ?? '{}'); } catch { return {}; }
+    return loadScopedJson(_FILE_CELL_MAP_KEY, {});
   },
   _set(map) {
-    try { localStorage.setItem(_FILE_CELL_MAP_KEY, JSON.stringify(map)); } catch {}
+    saveScopedJson(_FILE_CELL_MAP_KEY, map);
   },
   /** Register that `filename` lives in `cellId`. */
   track(filename, cellId) {
@@ -783,9 +782,9 @@ function makeCell(lang = 'python', code = '', id = uid()) {
   function _doSaveFile(filename) {
     filename = filename.trim();
     if (!filename) return;
-    const store = JSON.parse(localStorage.getItem(CODE_FILE_KEY) ?? '{}');
+    const store = loadScopedJson(CODE_FILE_KEY, {});
     store[filename] = { filename, language: _normalizeLang(cell.lang), cellId: cell.id, code: cell.editor.value, savedAt: Date.now() };
-    localStorage.setItem(CODE_FILE_KEY, JSON.stringify(store));
+    saveScopedJson(CODE_FILE_KEY, store);
     writeCodeFileToFS(filename, cell.editor.value);
     cell._savedFilename = filename;
     _hideSaveInput();
@@ -1207,7 +1206,7 @@ async function runAll(btn) {
 
 export function init(container, externalTopbar) {
   let savedData = null;
-  try { savedData = JSON.parse(localStorage.getItem(CELLS_KEY)); } catch (_) {}
+  savedData = loadScopedJson(CELLS_KEY, null);
 
   if (!Array.isArray(savedData) || !savedData.length) {
     const legacyCode = localStorage.getItem(OLD_CODE_KEY) ?? '';

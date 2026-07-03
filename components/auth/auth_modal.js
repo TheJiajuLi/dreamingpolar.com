@@ -3,6 +3,8 @@
 // Usage:  <script type="module" src="/components/auth/auth_modal.js"></script>
 // API:    window.dpAuthModal.open('login' | 'register')
 
+import { saveUserCache, loadUserCache, clearUserCache } from './auth_hooks.js';
+
 const _AUTH = 'https://api.dreamingpolar.com';
 
 // ── Inject CSS ────────────────────────────────────────────────────────────────
@@ -135,7 +137,7 @@ function _updateNav(user) {
 
 // ── On login success ──────────────────────────────────────────────────────────
 function _onLoginSuccess(userData) {
-  try { localStorage.setItem('dp-auth-user', JSON.stringify(userData)); } catch (_) {}
+  saveUserCache(userData);
   _updateNav(userData);
   _close();
   document.dispatchEvent(new CustomEvent('dp-auth-login', { detail: { user: userData } }));
@@ -252,19 +254,19 @@ _q('dp-forgot-email').addEventListener('keydown', e => {
 // ── Restore logged-in state on page load ──────────────────────────────────────
 (async () => {
   try {
-    const cached = localStorage.getItem('dp-auth-user');
+    const cached = loadUserCache();
     if (cached) {
       const res = await fetch(_AUTH + '/auth/refresh', { method: 'POST', credentials: 'include' });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
-        _updateNav(JSON.parse(cached));
+        _updateNav(cached);
         if (data.accessToken) {
           // Store refreshed token if auth_client is loaded
           if (window.authClient?.silentRefresh) await window.authClient.silentRefresh().catch(() => {});
         }
         return;
       }
-      localStorage.removeItem('dp-auth-user');
+      clearUserCache();
     }
   } catch (_) {}
 })();

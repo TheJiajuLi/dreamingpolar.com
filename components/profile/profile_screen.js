@@ -1,6 +1,7 @@
 // ── Profile Screen ───────────────────────────────────────────────────────────
 import { logActivity } from '../shared/activity_logger.js';
 import { injectDataFrame } from '../compiler/compiler.js';
+import { loadScopedJson } from '../auth/auth_hooks.js';
 
 const AUTH_BASE = 'https://api.dreamingpolar.com/auth';
 
@@ -39,7 +40,7 @@ function _dayLabel(ts) {
 
 // ── Heatmap ───────────────────────────────────────────────────────────────────
 function _buildHeatmap() {
-  const log = (() => { try { return JSON.parse(localStorage.getItem(ACTIVITY_LOG_KEY) ?? '{}'); } catch { return {}; } })();
+  const log = loadScopedJson(ACTIVITY_LOG_KEY, {});
   const wrap = document.createElement('div');
   wrap.className = 'prof-heatmap';
   const today = new Date(); today.setHours(0,0,0,0);
@@ -68,7 +69,7 @@ function _buildHeatmap() {
 
 // ── Activity feed ─────────────────────────────────────────────────────────────
 function _buildActivityFeed() {
-  const events = (() => { try { return JSON.parse(localStorage.getItem(ACTIVITY_EVENTS_KEY) ?? '[]'); } catch { return []; } })();
+  const events = loadScopedJson(ACTIVITY_EVENTS_KEY, []);
   const frag = document.createDocumentFragment();
 
   if (!events.length) {
@@ -122,7 +123,7 @@ const _ICON_SVG = {
 
 // ── Recent notebooks ──────────────────────────────────────────────────────────
 function _buildRecentNotebooks() {
-  const items = (() => { try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]'); } catch { return []; } })();
+  const items = loadScopedJson(RECENT_KEY, []);
   const top3 = items.slice(0, 3);
 
   if (!top3.length) {
@@ -726,7 +727,7 @@ function _renderProfile(screen) {
       _setAvatarDisplay(avatarUrl);
       const updatedUser = { ...window._dpGetAuthUser(), avatar: avatarUrl };
       window._dpGetAuthUser = () => updatedUser;
-      try { localStorage.setItem('dp-auth-user', JSON.stringify(updatedUser)); } catch (_) {}
+      window.authClient?.setUser?.(updatedUser);
       document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: updatedUser } }));
       console.log('[avatar] saved to cloud');
     } catch (e) {
@@ -835,7 +836,7 @@ function _renderProfile(screen) {
     _closeBio();
     const updatedUser = { ...window._dpGetAuthUser(), bio: newBio };
     window._dpGetAuthUser = () => updatedUser;
-    try { localStorage.setItem('dp-auth-user', JSON.stringify(updatedUser)); } catch (_) {}
+    window.authClient?.setUser?.(updatedUser);
     _renderBioDisplay();
     bioOk.textContent = '';
     bioForm.style.display = 'none';

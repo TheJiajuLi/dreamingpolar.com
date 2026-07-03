@@ -2,12 +2,27 @@ import { initAuth } from '/components/auth/auth_client.js';
 
 initAuth().catch(() => {});
 
+    const isSelfProfileRoute = location.pathname === '/profile' || location.pathname === '/profile/';
     const username = new URLSearchParams(location.search).get('username')
       ?? location.pathname.split('/community/user/')[1];
-    if (!username) location.href = '/community';
+
+    function getAuthUserFromAnySource() {
+      try {
+        return window.authClient?.getUser?.()
+          ?? window._dpGetAuthUser?.()
+          ?? window.dpAuthStore?.loadUserCache?.()
+          ?? null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    const fallbackMeUsername = String(getAuthUserFromAnySource()?.username || '').trim();
+    const initialUsername = String(username || (isSelfProfileRoute ? fallbackMeUsername : '')).trim();
+    if (!initialUsername) location.href = '/community';
 
     const state = {
-      username: decodeURIComponent(username),
+      username: decodeURIComponent(initialUsername),
       profile: null,
       tutorials: {
         published: [],
@@ -58,6 +73,10 @@ initAuth().catch(() => {});
         if (s) return s;
       }
       return '';
+    }
+
+    function normalizeUsername(v) {
+      return String(v ?? '').trim().toLowerCase();
     }
 
     function isDefaultAvatarValue(v) {
@@ -135,6 +154,32 @@ initAuth().catch(() => {});
       return String(value || '').trim();
     }
 
+    function tutorialOwnerUsername(t) {
+      return firstText(t?.author_username, t?.username, t?.author?.username, t?.user?.username);
+    }
+
+    function setViewedUsername(username) {
+      const next = String(username || '').trim();
+      if (!next) return;
+      state.username = next;
+
+      if (isSelfProfileRoute) {
+        const url = new URL(location.href);
+        url.searchParams.set('username', next);
+        history.replaceState(null, '', url.toString());
+      }
+    }
+
+    function filterPublishedForViewedUser(list) {
+      const viewed = normalizeUsername(state.username);
+      if (!viewed) return list;
+
+      return (Array.isArray(list) ? list : []).filter((t) => {
+        const owner = normalizeUsername(tutorialOwnerUsername(t));
+        return !owner || owner === viewed;
+      });
+    }
+
     function showState(msg = '', show = false) {
       els.state.textContent = msg;
       els.state.style.display = show ? '' : 'none';
@@ -178,8 +223,27 @@ initAuth().catch(() => {});
 
     async function loadPublishedTutorials() {
       const data = await fetchJson(`https://api.dreamingpolar.com/auth/tutorials?author=${encodeURIComponent(state.username)}&status=published`);
-      state.tutorials.published = normalizeList(data);
+      state.tutorials.published = filterPublishedForViewedUser(normalizeList(data));
       return state.tutorials.published;
+    }
+
+    async function reloadProfileByUsername(username) {
+      setViewedUsername(username);
+      state.profile = null;
+      state.currentTab = 'published';
+      state.tutorials = { published: [], favorites: [], likes: [] };
+
+      els.tabs.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.tab === 'published');
+      });
+
+      els.list.innerHTML = '';
+      showState('正在加载用户主页...', true);
+
+      await loadPublishedTutorials();
+      await loadProfileFromApi();
+      renderSidebar();
+      renderList();
     }
 
     async function loadProfileFromApi() {
@@ -239,7 +303,7 @@ initAuth().catch(() => {});
 
     function loadMeFromCache() {
       try {
-        const u = JSON.parse(localStorage.getItem('dp-auth-user') || 'null');
+        const u = window.authClient?.getUser?.() ?? window.dpAuthStore?.loadUserCache?.() ?? null;
         if (u && u.username) state.me = u;
       } catch (_) {}
     }
@@ -248,7 +312,7 @@ initAuth().catch(() => {});
       let username = '';
       try {
         username = window.authClient?.getUser?.()?.username
-          ?? JSON.parse(localStorage.getItem('dp-auth-user') || '{}')?.username
+          ?? window.dpAuthStore?.loadUserCache?.()?.username
           ?? '';
       } catch (_) {}
 
@@ -531,17 +595,20 @@ initAuth().catch(() => {});
 
     function bindAuthStateSync() {
       document.addEventListener('dp-auth-state', (e) => {
-        const prevMe = state.me?.username || '';
+        const prevMe = normalizeUsername(state.me?.username || '');
         const nextUser = e?.detail?.user || window._dpGetAuthUser?.() || null;
         state.me = nextUser && nextUser.username ? nextUser : null;
         renderTopAvatar();
 
-        // If user switched accounts while viewing their own old profile,
-        // jump to the new self profile to avoid cross-account confusion.
-        const viewed = String(state.username || '').trim();
-        const nextMe = String(state.me?.username || '').trim();
-        if (prevMe && viewed && nextMe && viewed === prevMe && nextMe !== viewed) {
-          location.href = `/profile?username=${encodeURIComponent(nextMe)}`;
+        const viewed = normalizeUsername(state.username);
+        const nextMe = normalizeUsername(state.me?.username || '');
+
+        // On /profile route we always show current logged-in user's own profile,
+        // so account switches cannot keep rendering stale previous-account tutorials.
+        if (isSelfProfileRoute && nextMe && viewed !== nextMe) {
+          reloadProfileByUsername(nextMe).catch((err) => {
+            showState(`加载失败：${err.message || '未知错误'}`, true);
+          });
           return;
         }
 
@@ -563,6 +630,13 @@ initAuth().catch(() => {});
       bindBlankDismiss();
       bindAuthStateSync();
       loadMeFromCache();
+
+      const meOnBoot = normalizeUsername(getAuthUserFromAnySource()?.username || state.me?.username || '');
+      const viewedOnBoot = normalizeUsername(state.username);
+      if (isSelfProfileRoute && meOnBoot && viewedOnBoot !== meOnBoot) {
+        setViewedUsername(meOnBoot);
+      }
+
       renderTopAvatar();
       showState('正在加载用户主页...', true);
 

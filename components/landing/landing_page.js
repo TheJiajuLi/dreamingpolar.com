@@ -7,13 +7,10 @@ const RELEASES_URL = '/content_pages/releases/releases.json';
 // Redirect logged-in users directly to the app
 (function checkAuth() {
   try {
-    const cached = localStorage.getItem('dp-auth-user');
-    if (cached) {
-      const u = JSON.parse(cached);
-      if (u?.email) {
-        window.location.replace('/app');
-        return;
-      }
+    const cached = window.dpAuthStore?.loadUserCache?.();
+    if (cached?.email) {
+      window.location.replace('/app');
+      return;
     }
   } catch (_) {}
 })();

@@ -389,9 +389,9 @@
       let username = '';
       let user = null;
       try {
-        user = JSON.parse(localStorage.getItem('dp-auth-user') || 'null');
+        user = window.authClient?.getUser?.() ?? window.dpAuthStore?.loadUserCache?.() ?? null;
         username = window.authClient?.getUser?.()?.username
-          ?? JSON.parse(localStorage.getItem('dp-auth-user') || '{}')?.username
+          ?? window.dpAuthStore?.loadUserCache?.()?.username
           ?? '';
       } catch (_) {}
 

@@ -3,6 +3,7 @@
 // Reuses .doc-card / .doc-card-grid — no new visual language.
 
 import { createLoadDataBtn } from '../import/import_data.js';
+import { loadScopedJson, saveScopedJson } from '../auth/auth_hooks.js';
 
 const RECENT_KEY  = 'dp_recent_items';
 const MAX_RECENT  = 6;
@@ -15,14 +16,11 @@ function _esc(s) {
 export function recordRecentItem({ id, name, type = 'notebook' }) {
   const items = _getRecent().filter(i => i.id !== id);
   items.unshift({ id, name, type, lastOpenedAt: Date.now() });
-  try {
-    localStorage.setItem(RECENT_KEY, JSON.stringify(items.slice(0, MAX_RECENT)));
-  } catch (_) {}
+  saveScopedJson(RECENT_KEY, items.slice(0, MAX_RECENT));
 }
 
 function _getRecent() {
-  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); }
-  catch { return []; }
+  return loadScopedJson(RECENT_KEY, []);
 }
 
 function _relTime(ts) {
@@ -45,11 +43,11 @@ function _getGreeting() {
 
 function _getSubtext() {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return '新的一天，从容开始。';
-  if (hour >= 12 && hour < 14) return '午后时光，慢慢来。';
+  if (hour >= 5 && hour < 12) return '新的一天，从容开始.';
+  if (hour >= 12 && hour < 14) return '午后时光，慢慢来.';
   if (hour >= 14 && hour < 18) return '下午好，状态怎么样？';
-  if (hour >= 18 && hour < 22) return '忙了一天，辛苦了。';
-  return '注意休息。';
+  if (hour >= 18 && hour < 22) return '忙了一天，辛苦了.';
+  return '早点睡吧.';
 }
 
 // ── SVG helpers ───────────────────────────────────────────────────────────────

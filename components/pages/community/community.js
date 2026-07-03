@@ -179,14 +179,14 @@
 
     function setupUserArea() {
       let user = null;
-      try { user = JSON.parse(localStorage.getItem('dp-auth-user') || 'null'); } catch (_) {}
+      try { user = window.authClient?.getUser?.() ?? window.dpAuthStore?.loadUserCache?.() ?? null; } catch (_) {}
       const loginBtn = document.getElementById('login-btn');
       const avatarBtn = document.getElementById('avatar-btn');
 
       let username = '';
       try {
         username = window.authClient?.getUser?.()?.username
-          ?? JSON.parse(localStorage.getItem('dp-auth-user') || '{}')?.username
+          ?? window.dpAuthStore?.loadUserCache?.()?.username
           ?? '';
       } catch (_) {}
 
@@ -275,7 +275,7 @@
 
     function loadFavorites() {
       try {
-        const v = JSON.parse(localStorage.getItem('dp-favorite-tutorials') || '[]');
+        const v = window.dpAuthStore?.loadScopedJson?.('dp-favorite-tutorials', []) ?? [];
         tutorialsState.favs = new Set(Array.isArray(v) ? v.map(x => String(x)) : []);
       } catch (_) {
         tutorialsState.favs = new Set();

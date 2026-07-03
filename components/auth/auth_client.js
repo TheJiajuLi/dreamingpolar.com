@@ -11,13 +11,16 @@ const CACHE_KEYS = [
   'dreaming-polar-nb-outputs',
   'dp-activity-log',
   'dp-activity-events',
+  'dp_recent_items',
+  'dp_recent_files',
   'dp-cloud-file-meta',
   'dp-favorite-tutorials',
-  'dp-auth-user',
+  'dp-aria-chat-history',
 ];
 
-function clearBusinessCache() {
+function clearBusinessCache(userOrIdentity) {
   CACHE_KEYS.forEach((k) => {
+    try { window.dpAuthStore?.clearScopedJson?.(k, userOrIdentity); } catch (_) {}
     try { localStorage.removeItem(k); } catch (_) {}
   });
 }
@@ -86,7 +89,7 @@ export async function logout() {
   clearTimeout(_refreshTimer);
   await authFetch('/logout', { method: 'POST' }).catch(() => {});
   _accessToken = null;
-  clearBusinessCache();
+  clearBusinessCache(window.dpAuthStore?.getActiveIdentity?.() || _uiUser);
   clearUserCache();
   try { localStorage.removeItem('dp-last-user-id'); } catch (_) {}
   try { localStorage.removeItem('dp-last-user-key'); } catch (_) {}
@@ -158,6 +161,14 @@ export async function updateMeBio(bio) {
 window.authClient = { register, login, logout, getMe, updateMe, updateMeAvatar, updateMeBio, authedFetch,
                       silentRefresh, isLoggedIn, getAccessToken,
                       getUser: () => _uiUser,
+                      setUser: (user) => {
+                        _uiUser = user ?? null;
+                        if (_uiUser) saveUserCache(_uiUser);
+                        else clearUserCache();
+                        _updateVtBtn();
+                        _renderProfile();
+                        document.dispatchEvent(new CustomEvent('dp-auth-state', { detail: { user: _uiUser } }));
+                      },
                       forgotPassword, resetPassword,
                       showResetPassword: (token) => _buildResetPage(token) };
 
@@ -165,10 +176,19 @@ export function initAuth() {
   if (_authInited) return Promise.resolve(window.authClient);
   if (_authInitPromise) return _authInitPromise;
 
-  _authInitPromise = Promise.resolve().then(() => {
-    _initUI();
-    _authInited = true;
-    return window.authClient;
+  _authInitPromise = new Promise((resolve) => {
+    const start = () => {
+      _initUI();
+      _authInited = true;
+      resolve(window.authClient);
+    };
+
+    if (document.body) {
+      start();
+      return;
+    }
+
+    document.addEventListener('DOMContentLoaded', start, { once: true });
   });
 
   return _authInitPromise;
@@ -248,6 +268,7 @@ window._dpAuthLogout     = async () => {
 
 // ── Modal ─────────────────────────────────────────────────────
 function _buildOverlay() {
+  if (_uiOverlay) return;
   _uiOverlay = document.createElement('div');
   _uiOverlay.className = 'au-overlay';
   _uiOverlay.innerHTML = `
@@ -457,6 +478,7 @@ function _buildResetPage(token) {
 
 // ── Profile panel ─────────────────────────────────────────────
 function _buildProfile() {
+  if (_uiProfile) return;
   _uiProfile = document.createElement('div');
   _uiProfile.className = 'au-profile';
   document.body.appendChild(_uiProfile);
@@ -519,7 +541,7 @@ async function _fetchUser() {
     const currentUserId = _uiUser?.id != null ? String(_uiUser.id) : '';
     if (prevUserId && currentUserId && prevUserId !== currentUserId) {
       // 用户切换，清空旧缓存
-      clearBusinessCache();
+      clearBusinessCache(window.dpAuthStore?.getActiveIdentity?.() || prevUserId);
       clearUserCache();
     }
 

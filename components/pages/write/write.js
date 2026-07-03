@@ -88,9 +88,9 @@
       let username = '';
       let user = null;
       try {
-        user = JSON.parse(localStorage.getItem('dp-auth-user') || 'null');
+        user = window.authClient?.getUser?.() ?? window.dpAuthStore?.loadUserCache?.() ?? null;
         username = window.authClient?.getUser?.()?.username
-          ?? JSON.parse(localStorage.getItem('dp-auth-user') || '{}')?.username
+          ?? window.dpAuthStore?.loadUserCache?.()?.username
           ?? '';
       } catch (_) {}
 
@@ -731,7 +731,7 @@
 
     function getCachedUser() {
       try {
-        const u = JSON.parse(localStorage.getItem('dp-auth-user') || 'null');
+        const u = window.authClient?.getUser?.() ?? window.dpAuthStore?.loadUserCache?.() ?? null;
         return u && u.username ? u : null;
       } catch (_) {
         return null;

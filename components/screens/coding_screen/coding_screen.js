@@ -10,6 +10,7 @@ import { resetKernel, preloadPython, getDataFrameSchema, queryKernelContext } fr
 import { clearDataset, getAllDatasets } from '../../shared/dataset_store.js';
 import { getSettings } from '../../right_bar/settings.js';
 import { mountNbSearch } from '../../customise_code_block/nb_search.js';
+import { loadScopedJson, saveScopedJson, clearScopedJson } from '../../auth/auth_hooks.js';
 
 function setupCodingScreen() {
   const screen = document.getElementById('coding-screen');
@@ -299,25 +300,23 @@ function setupCodingScreen() {
 
   function _saveOutputs(cellId, label, lang, outputs, sourceCode) {
     if (!getSettings().cacheNotebookOutput) return;  // setting OFF → don't persist
-    let stored;
-    try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { stored = {}; }
+    const stored = loadScopedJson(NB_OUTPUTS_KEY, {});
     stored[cellId] = {
       label, lang,
       sourceCode: sourceCode ?? null,
       outputs: (outputs ?? []).map(o => o.type === 'image' ? { type: 'chart-placeholder' } : o),
     };
-    try { localStorage.setItem(NB_OUTPUTS_KEY, JSON.stringify(stored)); } catch (_) {}
+    saveScopedJson(NB_OUTPUTS_KEY, stored);
   }
 
   function _removeStoredOutput(cellId) {
-    let stored;
-    try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { stored = {}; }
+    const stored = loadScopedJson(NB_OUTPUTS_KEY, {});
     delete stored[cellId];
-    try { localStorage.setItem(NB_OUTPUTS_KEY, JSON.stringify(stored)); } catch (_) {}
+    saveScopedJson(NB_OUTPUTS_KEY, stored);
   }
 
   function _clearAllStoredOutputs() {
-    try { localStorage.removeItem(NB_OUTPUTS_KEY); } catch (_) {}
+    clearScopedJson(NB_OUTPUTS_KEY);
   }
 
   // ── Per-cell output sections ──────────────────────────
@@ -682,7 +681,7 @@ function setupCodingScreen() {
     if (sec.sectionEl.dataset.schemaVar === varName) {
       sec.sectionEl.dataset.schemaVar = '';
       let stored;
-      try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}')[cellId]; } catch { stored = null; }
+      try { stored = (loadScopedJson(NB_OUTPUTS_KEY, {}) || {})[cellId]; } catch { stored = null; }
       if (stored?.outputs?.length) {
         sec.chartPane.innerHTML = '';
         sec.chartPane.classList.remove('has-chart');
@@ -752,7 +751,7 @@ function setupCodingScreen() {
   ;(function _restoreStoredOutputs() {
     if (!getSettings().cacheNotebookOutput) return;  // setting OFF → skip restore
     let stored;
-    try { stored = JSON.parse(localStorage.getItem(NB_OUTPUTS_KEY) ?? '{}'); } catch { return; }
+    stored = loadScopedJson(NB_OUTPUTS_KEY, {});
     for (const [cellId, entry] of Object.entries(stored)) {
       if (!entry?.outputs?.length) continue;
       const sec = getOrCreateNbSection(cellId, entry.label ?? cellId, entry.lang ?? 'python');

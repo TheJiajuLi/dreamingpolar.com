@@ -1,20 +1,21 @@
 import { getDataset, getAllDatasets, setActiveDataset } from '../../shared/dataset_store.js';
 import { getCellDatasetInfo } from '../../customise_code_block/customise_code_block.js';
 import { getSettings } from '../../right_bar/settings.js';
+import { clearScopedJson, loadScopedJson, saveScopedJson } from '../../auth/auth_hooks.js';
 
 // ── Chat history persistence ──────────────────────────────────────────────────
 const _ARIA_HISTORY_KEY = 'dp-aria-chat-history';
 const _MAX_MSGS_PER_DS  = 40; // cap per dataset to stay within localStorage budget
 
 function _loadAriaHistory() {
-  try { return JSON.parse(localStorage.getItem(_ARIA_HISTORY_KEY) ?? '{}'); } catch { return {}; }
+  return loadScopedJson(_ARIA_HISTORY_KEY, {});
 }
 function _saveAriaHistory(store) {
   if (!getSettings().cacheAriaHistory) return;
-  try { localStorage.setItem(_ARIA_HISTORY_KEY, JSON.stringify(store)); } catch {}
+  saveScopedJson(_ARIA_HISTORY_KEY, store);
 }
 function _clearAriaHistory() {
-  try { localStorage.removeItem(_ARIA_HISTORY_KEY); } catch {}
+  clearScopedJson(_ARIA_HISTORY_KEY);
 }
 
 // ── Code templates inserted into the Power Notebook via ai-insert-and-run ────
@@ -87,7 +88,7 @@ function _resolveActiveContext() {
 
   // 2. Look up inject-store by filename → get the real varName + fileType
   try {
-    const store = JSON.parse(localStorage.getItem('dreaming-polar-inject-store') ?? '{}');
+    const store = loadScopedJson('dreaming-polar-inject-store', {});
     const entry = Object.values(store).find(e => e?.filename === ds.name);
     if (entry?.varName) {
       return {
