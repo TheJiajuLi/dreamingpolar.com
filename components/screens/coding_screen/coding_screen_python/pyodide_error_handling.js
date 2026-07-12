@@ -35,14 +35,26 @@ const UNAVAILABLE = new Map([
 ]);
 
 // ── Error pattern table ────────────────────────────────────────────────────────
-//  Each entry: { id, match (regex on traceback), title, hint (string | fn(match)) }
+//  Each entry: { id, match (regex on traceback), title, hint (string | fn(match) | null) }
+//  hint: null → no 💡 suggestion appended; just the raw traceback (see compiler.js)
 
 const PATTERNS = [
+  // IndentationError / TabError 是真的跟缩进有关，缩进提示准确，保留。
+  {
+    id: 'indentation',
+    match: /^(IndentationError|TabError):(.*)/m,
+    title: 'Indentation Error',
+    hint: 'Check indentation — Python requires consistent spaces/tabs (don\'t mix them).',
+  },
+  // 纯 SyntaxError 成因五花八门（用了 new/缺冒号/括号不匹配/中文标点…），
+  // 一律套"检查缩进"会误导。这里不给提示（hint: null → 不追加 💡 那行），
+  // 直接透传原始 traceback（已含 SyntaxError 行号和 ^ 箭头），让用户自己看
+  // 真正的报错位置。
   {
     id: 'syntax',
-    match: /^(SyntaxError|IndentationError|TabError):(.*)/m,
+    match: /^SyntaxError:(.*)/m,
     title: 'Syntax Error',
-    hint: 'Check indentation (Python requires consistent spaces/tabs) and that all brackets are closed.',
+    hint: null,
   },
   {
     id: 'name',
