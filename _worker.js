@@ -26,6 +26,12 @@ export default {
     if (url.pathname === '/mobile') {
       return Response.redirect(url.origin + '/mobile.html', 302);
     }
+    if (url.pathname === '/privacy') {
+      return Response.redirect(url.origin + '/privacy.html', 302);
+    }
+    if (url.pathname === '/terms') {
+      return Response.redirect(url.origin + '/terms.html', 302);
+    }
     return fetch(request);
   },
 };
