@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Notebook</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{--bg:#F7F8FA;--text:#1A1A1A;--muted:#94A3B8;--border:#E8ECF0;--accent:#6366F1;--surface:#FFFFFF}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* ── Top bar ── */
+.nb-editor-top{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0}
+.nb-editor-back{width:34px;height:34px;border:none;background:none;font-size:20px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nb-editor-name-el{flex:1;font-size:16px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.nb-run-all-btn{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.nb-run-all-btn:disabled{opacity:.6}
+
+/* ── Cells ── */
+.nb-cells-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:10px}
+.nb-cell{background:#fff;border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.nb-cell.running{border-color:var(--accent)}
+.nb-cell.nb-success{border-color:#16a34a}
+.nb-cell.nb-error{border-color:#ef4444}
+.nb-cell-hdr{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border);background:#f8fafc}
+.nb-cell-num{font-size:12px;font-weight:700;color:var(--muted);min-width:18px;text-align:center;display:flex;align-items:center;justify-content:center}
+.nb-cell-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+.nb-cell-badge.python{background:#e0e7ff;color:#4338ca}
+.nb-cell-badge.latex{background:#f3e8ff;color:#7c3aed}
+.nb-cell-badge.markdown{background:#f1f5f9;color:#475569}
+.nb-run-btn{margin-left:auto;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.nb-run-btn:active{background:var(--bg)}
+.nb-cell-code{display:block;width:100%;padding:12px;border:none;outline:none;resize:none;font-family:'Menlo','JetBrains Mono',monospace;font-size:13px;line-height:1.6;color:var(--text);background:transparent;min-height:72px;max-height:400px;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;white-space:pre;word-wrap:normal}
+.nb-cell-output{padding:10px 12px;border-top:1px solid var(--border);background:#f8fafc;font-family:'Menlo','JetBrains Mono',monospace;font-size:12px;line-height:1.6;color:var(--text);overflow-x:auto}
+.nb-cell-output.nb-error{color:#ef4444;background:#fff1f2}
+.nb-del-btn{width:24px;height:24px;border:none;background:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:6px;margin-left:4px;flex-shrink:0}
+.nb-del-btn:active{background:var(--bg);color:#dc2626}
+
+/* ── Bottom add bar ── */
+.nb-addbar{display:flex;border-top:1px solid var(--border);background:#fff;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.nb-addbar::-webkit-scrollbar{display:none}
+.nb-tool-btn{flex-shrink:0;height:48px;padding:0 14px;border:none;background:none;font-family:inherit;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px;border-right:1px solid var(--border);white-space:nowrap}
+.nb-tool-btn:last-child{border-right:none}
+.nb-tool-btn:active{background:var(--bg)}
+.nb-tool-btn i{font-size:16px}
+
+/* ── Spinner ── */
+.spin{border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="nb-editor-top">
+  <button class="nb-editor-back" onclick="onClose()"><i class="ti ti-arrow-left"></i></button>
+  <div class="nb-editor-name-el" id="nb-editor-name">Notebook</div>
+  <button class="nb-run-all-btn" id="nb-run-all-btn" onclick="runAllCells()">
+    <i class="ti ti-player-play"></i> 全部运行
+  </button>
+</div>
+
+<div class="nb-cells-scroll" id="nb-cells-list"></div>
+
+<div class="nb-addbar">
+  <button class="nb-tool-btn" onclick="addCell('python')"><i class="ti ti-code"></i> Python</button>
+  <button class="nb-tool-btn" onclick="addCell('latex')"><i class="ti ti-math"></i> LaTeX</button>
+  <button class="nb-tool-btn" onclick="addCell('markdown')"><i class="ti ti-markdown"></i> 文本</button>
+</div>
+
+<script>
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Token auto-login ───────────────────────────────────────────────────────────
+const _params = new URLSearchParams(window.location.search);
+const _token  = _params.get('token');
+if (_token) {
+  localStorage.setItem('dp_token', _token);
+  // Also populate jm-session so internal components (compiler etc.) can auth
+  localStorage.setItem('jm-session', JSON.stringify({ token: _token, user: null }));
+}
+
+// ── Extract notebook ID from path: /notebook/embed/{id} ───────────────────────
+const _pathParts = window.location.pathname.replace(/\/$/, '').split('/');
+const _nbId = _pathParts[_pathParts.length - 1] || null;
+
+// ── JS Bridge ──────────────────────────────────────────────────────────────────
+window.notebookBridge = {
+  onSave(data) {
+    try {
+      window.flutter_inappwebview?.callHandler('onNotebookSave', JSON.stringify(data));
+    } catch(e) { /* non-WebView context */ }
+  },
+  onClose() {
+    try {
+      window.flutter_inappwebview?.callHandler('onNotebookClose');
+    } catch(e) { /* non-WebView context */ }
+  },
+};
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let _nbCells      = [];
+let _nbCurrentId  = _nbId;
+let _nbSaveTimer  = null;
+
+// ── Notebook load ──────────────────────────────────────────────────────────────
+function loadNotebook() {
+  if (!_nbCurrentId) {
+    _nbCells = [{ id: uid(), type: 'python', code: '', output: '', status: '' }];
+    renderNbCells();
+    return;
+  }
+  const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
+  const nb   = list.find(n => n.id === _nbCurrentId);
+  if (nb) {
+    document.getElementById('nb-editor-name').textContent = getNbFilename(nb.name, nb.lang);
+    _nbCells = (nb.cells && nb.cells.length)
+      ? nb.cells.map(c => ({ ...c }))
+      : [{ id: uid(), type: nb.lang === 'latex' ? 'latex' : 'python', code: '', output: '', status: '' }];
+  } else {
+    _nbCells = [{ id: uid(), type: 'python', code: '', output: '', status: '' }];
+  }
+  renderNbCells();
+}
+
+function getNbFilename(name, lang) {
+  if (!name || name.includes('.')) return name || 'Notebook';
+  const ext = { python:'.py', latex:'.tex', markdown:'.md', mixed:'.ipynb' }[lang] || '.ipynb';
+  return name + ext;
+}
+
+// ── Cell rendering ─────────────────────────────────────────────────────────────
+function renderNbCells() {
+  const container = document.getElementById('nb-cells-list');
+  if (!container) return;
+  container.innerHTML = _nbCells.map((c, i) => _cellHtml(c, i + 1)).join('');
+  container.querySelectorAll('textarea.nb-cell-code').forEach(ta => _autoResizeNb(ta));
+  _nbCells.forEach(c => { if (c.output) renderCellOutput(c.id, c.output); });
+}
+
+function _cellHtml(cell, num) {
+  const type       = cell.type || 'python';
+  const badgeLabel = type === 'python' ? 'Python' : type === 'latex' ? 'LaTeX' : '文本';
+  const ph         = type === 'python' ? '# Python 代码…' : type === 'latex' ? '输入 LaTeX 公式…' : '输入文本…';
+  const stateClass = cell.status === 'running' ? ' running' : cell.status === 'success' ? ' nb-success' : cell.status === 'error' ? ' nb-error' : '';
+  const numHtml    = cell.status === 'running'
+    ? '<div class="spin" style="width:14px;height:14px;border-width:1.5px"></div>'
+    : String(num);
+  const outStyle   = cell.output ? '' : 'display:none';
+  const outClass   = `nb-cell-output${cell.status === 'error' ? ' nb-error' : ''}`;
+  return `<div class="nb-cell${stateClass}" id="cell-${esc(cell.id)}">
+    <div class="nb-cell-hdr">
+      <span class="nb-cell-num" id="cellnum-${esc(cell.id)}">${numHtml}</span>
+      <span class="nb-cell-badge ${esc(type)}">${badgeLabel}</span>
+      <button class="nb-run-btn" onclick="runCell('${esc(cell.id)}')"><i class="ti ti-player-play" style="font-size:12px"></i></button>
+      <button class="nb-del-btn" onclick="deleteCell('${esc(cell.id)}')"><i class="ti ti-x" style="font-size:13px"></i></button>
+    </div>
+    <textarea class="nb-cell-code" placeholder="${ph}" data-cid="${esc(cell.id)}"
+      oninput="updateCellCode('${esc(cell.id)}',this.value);_autoResizeNb(this)"
+    >${esc(cell.code)}</textarea>
+    <div class="${outClass}" id="out-${esc(cell.id)}" style="${outStyle}"></div>
+  </div>`;
+}
+
+function _autoResizeNb(ta) {
+  ta.style.height = 'auto';
+  const h = Math.min(Math.max(ta.scrollHeight, 72), 400);
+  ta.style.height = h + 'px';
+  ta.style.overflowY = ta.scrollHeight > 400 ? 'auto' : 'hidden';
+}
+
+function updateCellCode(id, val) {
+  const c = _nbCells.find(c => c.id === id);
+  if (c) { c.code = val; scheduleNbSave(); }
+}
+
+// ── Save ───────────────────────────────────────────────────────────────────────
+function scheduleNbSave() {
+  clearTimeout(_nbSaveTimer);
+  _nbSaveTimer = setTimeout(saveNbNow, 1000);
+}
+
+function saveNbNow() {
+  if (!_nbCurrentId) return;
+  const list = JSON.parse(localStorage.getItem('nb-list') || '[]');
+  const idx  = list.findIndex(n => n.id === _nbCurrentId);
+  if (idx === -1) return;
+  const cells = _nbCells.map(({ id, type, code, output, status }) => ({ id, type, code, output, status }));
+  list[idx] = { ...list[idx], cells, updatedAt: Date.now() };
+  localStorage.setItem('nb-list', JSON.stringify(list));
+  window.notebookBridge.onSave({
+    id:        _nbCurrentId,
+    title:     list[idx].name || '',
+    updatedAt: Date.now(),
+  });
+}
+
+// ── Add / Delete ───────────────────────────────────────────────────────────────
+function addCell(type) {
+  const newCell = { id: uid(), type, code: '', output: '', status: '' };
+  _nbCells.push(newCell);
+  const container = document.getElementById('nb-cells-list');
+  if (!container) return;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = _cellHtml(newCell, _nbCells.length);
+  const el = wrapper.firstElementChild;
+  container.appendChild(el);
+  el.querySelectorAll('textarea.nb-cell-code').forEach(ta => { _autoResizeNb(ta); ta.focus(); });
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  scheduleNbSave();
+}
+
+function deleteCell(cellId) {
+  const el = document.getElementById('cell-' + cellId);
+  if (el) el.remove();
+  _nbCells = _nbCells.filter(c => c.id !== cellId);
+  document.querySelectorAll('.nb-cell-num').forEach((numEl, i) => {
+    if (numEl.querySelector('.spin')) return;
+    numEl.textContent = i + 1;
+  });
+  scheduleNbSave();
+}
+
+// ── Run ────────────────────────────────────────────────────────────────────────
+async function runCell(id) {
+  const cell   = _nbCells.find(c => c.id === id);
+  if (!cell) return;
+  const cellEl = document.getElementById('cell-' + id);
+  const numEl  = document.getElementById('cellnum-' + id);
+  if (!cellEl || !numEl) return;
+
+  cell.status       = 'running';
+  cellEl.className  = 'nb-cell running';
+  numEl.innerHTML   = '<div class="spin" style="width:14px;height:14px;border-width:1.5px"></div>';
+
+  let rawResult = null;
+  try {
+    const { compile } = await import('/components/compiler/compiler.js');
+    rawResult   = await compile(cell.code, cell.type === 'latex' ? 'latex' : 'python');
+    cell.output = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
+    cell.status = 'success';
+  } catch(e) {
+    const msg   = String(e?.message || e);
+    rawResult   = [{ type: 'error', content: msg }];
+    cell.output = JSON.stringify(rawResult);
+    cell.status = 'error';
+  }
+
+  const idx = _nbCells.indexOf(cell);
+  cellEl.outerHTML = _cellHtml(cell, idx + 1);
+  const newEl = document.getElementById('cell-' + id);
+  if (newEl) {
+    newEl.querySelectorAll('textarea.nb-cell-code').forEach(ta => _autoResizeNb(ta));
+    const outEl = document.getElementById('out-' + id);
+    if (outEl && rawResult) renderNbOutput(outEl, rawResult);
+  }
+  scheduleNbSave();
+}
+
+async function runAllCells() {
+  const btn = document.getElementById('nb-run-all-btn');
+  if (btn) btn.disabled = true;
+  for (const cell of _nbCells) await runCell(cell.id);
+  if (btn) btn.disabled = false;
+}
+
+// ── Output rendering ───────────────────────────────────────────────────────────
+function renderNbOutput(el, outputs) {
+  if (!el) return;
+  if (!outputs) { el.style.display = 'none'; return; }
+  if (typeof outputs === 'string') {
+    try { outputs = JSON.parse(outputs); } catch { el.style.display = ''; el.textContent = outputs; return; }
+  }
+  if (!Array.isArray(outputs)) outputs = [outputs];
+  el.style.display = '';
+  el.innerHTML = '';
+  outputs.forEach(item => {
+    if (item.type === 'viz-suggestion' || item.type === 'missing-package') return;
+    const div = document.createElement('div');
+    if (item.type === 'text' || item.type === 'stdout') {
+      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:var(--text);line-height:1.6;white-space:pre-wrap;padding:8px 10px';
+      div.textContent = item.content || item.text || '';
+    } else if (item.type === 'error') {
+      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:#dc2626;line-height:1.5;white-space:pre-wrap;border-left:2px solid #fca5a5;padding:8px 10px 8px 12px';
+      div.textContent = (item.content || item.text || '').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+    } else if (item.type === 'image') {
+      const img = document.createElement('img');
+      img.src = item.content || '';
+      img.style.cssText = 'max-width:100%;border-radius:6px;display:block;margin:8px 10px';
+      div.appendChild(img);
+    } else if (item.type === 'latex') {
+      div.style.cssText = 'padding:8px 10px;font-size:14px';
+      div.innerHTML = item.content || '';
+      el.appendChild(div);
+      if (window.MathJax) MathJax.typesetPromise([div]).catch(() => {});
+      return;
+    } else if (item.type === 'html' || item.type === 'dataframe' || item.type === 'table') {
+      div.style.cssText = 'overflow-x:auto;padding:4px 10px';
+      div.innerHTML = item.content || '';
+    } else {
+      div.style.cssText = 'font-family:Menlo,monospace;font-size:12px;color:var(--text);line-height:1.5;white-space:pre-wrap;padding:8px 10px';
+      div.textContent = item.content || item.text || JSON.stringify(item);
+    }
+    el.appendChild(div);
+  });
+}
+
+function renderCellOutput(cellId, outputs) {
+  renderNbOutput(document.getElementById('out-' + cellId), outputs);
+}
+
+// ── Close (← button or App call) ──────────────────────────────────────────────
+function onClose() {
+  saveNbNow();
+  window.notebookBridge.onClose();
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', loadNotebook);
+</script>
+
+<script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']]},startup:{ready(){MathJax.startup.defaultReady();}}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+</body>
+</html>

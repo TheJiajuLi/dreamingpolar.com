@@ -32,6 +32,10 @@ export default {
     if (url.pathname === '/terms') {
       return Response.redirect(url.origin + '/terms.html', 302);
     }
+    if (url.pathname.startsWith('/notebook/embed/')) {
+      // Serve notebook_embed.html while keeping the original URL (no redirect)
+      return fetch(new Request(url.origin + '/notebook_embed.html'));
+    }
     return fetch(request);
   },
 };
