@@ -11,7 +11,8 @@ body{font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;backgro
 
 /* ── Nav ── */
 nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#fff;border-bottom:0.5px solid #EBEBEB;position:sticky;top:0;z-index:100}
-.logo{font-size:18px;font-weight:700;color:#1A1A1A;text-decoration:none}
+.logo{display:inline-flex;align-items:center;gap:8px;font-size:18px;font-weight:700;color:#1A1A1A;text-decoration:none}
+.logo img{width:28px;height:28px;border-radius:7px;flex-shrink:0}
 .logo em{color:#6366F1;font-style:normal}
 .nav-btn{padding:8px 20px;background:#1A1A1A;color:#fff;border-radius:99px;font-size:14px;text-decoration:none;font-weight:500}
 
@@ -78,7 +79,8 @@ td.col-dp{font-weight:600;color:#16a34a}
 /* ── Footer ── */
 footer{background:#fff;border-top:0.5px solid #EBEBEB;padding:32px 24px}
 .footer-inner{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px}
-.footer-logo{font-size:16px;font-weight:700}
+.footer-logo{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:700}
+.footer-logo img{width:24px;height:24px;border-radius:6px;flex-shrink:0}
 .footer-logo em{color:#6366F1;font-style:normal}
 .footer-tagline{font-size:12px;color:#AAA;margin-top:4px}
 .footer-links{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
@@ -99,7 +101,10 @@ footer{background:#fff;border-top:0.5px solid #EBEBEB;padding:32px 24px}
 
 <!-- Nav -->
 <nav>
-  <a class="logo" href="/"><em>极</em>梦 DreamingPolar</a>
+  <a class="logo" href="/">
+    <img src="/assets/app_logo/jimeng_logo.svg" alt="极梦">
+    <em>极</em>梦 DreamingPolar
+  </a>
   <a class="nav-btn" href="https://apps.apple.com/app/id6790444925">下载 App</a>
 </nav>
 
@@ -267,7 +272,7 @@ footer{background:#fff;border-top:0.5px solid #EBEBEB;padding:32px 24px}
 <footer>
   <div class="footer-inner">
     <div>
-      <div class="footer-logo"><em>极</em>梦 DreamingPolar</div>
+      <div class="footer-logo"><img src="/assets/app_logo/jimeng_logo.svg" alt="极梦"><em>极</em>梦 DreamingPolar</div>
       <div class="footer-tagline">极梦由上海既白观海科技有限公司开发与运营</div>
     </div>
     <div class="footer-links">
