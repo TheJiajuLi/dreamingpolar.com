@@ -490,6 +490,10 @@
     }
 
     async function toggleLike() {
+      if (!window.authClient?.isLoggedIn?.()) {
+        window._dpAuthOpenLogin?.('login');
+        return;
+      }
       try {
         const token = await ensureToken();
         const method = state.liked ? 'DELETE' : 'POST';
@@ -514,7 +518,7 @@
 
         renderLikeButton();
       } catch (err) {
-        alert(err.message || '请先登录后操作');
+        console.error('[like]', err.message);
       }
     }
 
@@ -561,6 +565,10 @@
     }
 
     async function submitComment() {
+      if (!window.authClient?.isLoggedIn?.()) {
+        window._dpAuthOpenLogin?.('login');
+        return;
+      }
       const content = els.commentInput.value.trim();
       if (!content) {
         setCommentStatus('评论内容不能为空', true);

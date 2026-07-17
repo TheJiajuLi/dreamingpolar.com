@@ -23,9 +23,12 @@ export default {
     if (url.pathname === '/tutorial') {
       return Response.redirect(url.origin + '/tutorial.html' + url.search, 302);
     }
-    if (url.pathname.startsWith('/tutorial/')) {
+    if (/^\/tutorial\/[^/]+$/.test(url.pathname)) {
       const id = url.pathname.split('/')[2];
-      return fetch(`https://api.dreamingpolar.com/tutorials/${id}/preview`);
+      return fetch(
+        'https://api.dreamingpolar.com/tutorial/' + id + '/preview',
+        { headers: request.headers }
+      );
     }
     if (url.pathname === '/mobile') {
       return Response.redirect(url.origin + '/mobile.html', 302);

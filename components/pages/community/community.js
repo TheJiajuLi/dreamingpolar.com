@@ -232,7 +232,7 @@
         const btn = e.target.closest('.pill[data-filter]');
         if (!btn) return;
         if (btn.dataset.filter === 'favorites' && !hasLoginSession()) {
-          alert('请先登录查看收藏');
+          window._dpAuthOpenLogin?.('login');
           return;
         }
         tutorialsState.mode = btn.dataset.filter;
