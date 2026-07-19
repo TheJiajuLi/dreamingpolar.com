@@ -27,7 +27,12 @@ export default {
       const id = url.pathname.split('/')[2];
       return fetch(
         'https://api.dreamingpolar.com/tutorial/' + id + '/preview',
-        { headers: request.headers }
+        {
+          headers: {
+            'User-Agent': request.headers.get('User-Agent') || '',
+            'Accept': 'text/html',
+          },
+        }
       );
     }
     if (url.pathname === '/mobile') {
