@@ -4,7 +4,7 @@ export default {
     const ext = url.pathname.split('.').pop()?.toLowerCase();
     const staticExts = ['png','ico','svg','jpg','jpeg','webp','gif','css','js','woff','woff2','ttf','json','map'];
     if (staticExts.includes(ext)) {
-      return fetch(request);
+      return env.ASSETS ? env.ASSETS.fetch(request) : fetch(request);
     }
     if (url.pathname === '/community') {
       return Response.redirect(url.origin + '/community.html', 302);
@@ -23,17 +23,21 @@ export default {
     if (url.pathname === '/tutorial') {
       return Response.redirect(url.origin + '/tutorial.html' + url.search, 302);
     }
-    if (/^\/tutorial\/[^/]+$/.test(url.pathname)) {
-      const id = url.pathname.split('/')[2];
-      return fetch(
-        'https://api.dreamingpolar.com/tutorial/' + id + '/preview',
-        {
-          headers: {
-            'User-Agent': request.headers.get('User-Agent') || '',
-            'Accept': 'text/html',
-          },
-        }
-      );
+    const tutMatch = url.pathname.match(/^\/tutorial\/([^/]+)$/);
+    if (tutMatch) {
+      const id = tutMatch[1];
+      try {
+        const res = await fetch(
+          'https://api.dreamingpolar.com/tutorial/' + id + '/preview',
+          {
+            headers: {
+              'User-Agent': request.headers.get('User-Agent') || '',
+              'Accept': 'text/html,*/*',
+            },
+          }
+        );
+        if (res.ok) return res;
+      } catch (_) {}
     }
     if (url.pathname === '/mobile') {
       return Response.redirect(url.origin + '/mobile.html', 302);
@@ -45,9 +49,9 @@ export default {
       return Response.redirect(url.origin + '/terms.html', 302);
     }
     if (url.pathname.startsWith('/notebook/embed/')) {
-      // Serve notebook_embed.html while keeping the original URL (no redirect)
-      return fetch(new Request(url.origin + '/notebook_embed.html'));
+      const assetReq = new Request(url.origin + '/notebook_embed.html');
+      return env.ASSETS ? env.ASSETS.fetch(assetReq) : fetch(assetReq);
     }
-    return fetch(request);
+    return env.ASSETS ? env.ASSETS.fetch(request) : fetch(request);
   },
 };
